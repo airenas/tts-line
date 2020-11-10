@@ -17,3 +17,4 @@ go.sum
 .vscode/**
 deploy/tts-line/data/**
 Makefile.option
+internal/pkg/test/mocks/**
