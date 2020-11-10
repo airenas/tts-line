@@ -15,3 +15,5 @@
 # vendor/
 go.sum
 .vscode/**
+deploy/tts-line/data/**
+Makefile.option
