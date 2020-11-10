@@ -1,16 +1,42 @@
 package synthesizer
 
 import (
-	"errors"
-
 	"github.com/airenas/tts-line/internal/pkg/service/api"
 )
 
+//Processor worder interface
+type Processor interface {
+	Process(*TTSData) error
+}
+
 //MainWorker does synthesis work
 type MainWorker struct {
+	Processors []Processor
 }
 
 //Work is main method
-func (mw *MainWorker) Work(text string) (*api.Result, int, error) {
-	return nil, 0, errors.New("Not implemented")
+func (mw *MainWorker) Work(text string) (*api.Result, error) {
+	data := &TTSData{}
+	data.OriginalText = text
+	err := mw.processAll(data)
+	if err != nil {
+		return nil, err
+	}
+	return mapResult(data), nil
+}
+
+func (mw *MainWorker) processAll(data *TTSData) error {
+	for _, pr := range mw.Processors {
+		err := pr.Process(data)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func mapResult(data *TTSData) *api.Result {
+	res := &api.Result{}
+	res.AudioAsString = data.Text
+	return res
 }

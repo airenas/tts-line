@@ -16,7 +16,7 @@ import (
 type (
 	//Synthesizer main sythesis processor
 	Synthesizer interface {
-		Work(string) (*api.Result, int, error)
+		Work(string) (*api.Result, error)
 	}
 	//Data is service operation data
 	Data struct {
@@ -27,7 +27,7 @@ type (
 
 //StartWebServer starts the HTTP service and listens for the admin requests
 func StartWebServer(data *Data) error {
-	goapp.Log.Infof("Starting HTTP TTs LIne service at %d", data.Port)
+	goapp.Log.Infof("Starting HTTP TTS Line service at %d", data.Port)
 	r := NewRouter(data)
 	http.Handle("/", r)
 	portStr := strconv.Itoa(data.Port)
@@ -62,7 +62,7 @@ func (h *synthesisHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	resp, code, err := h.data.Processor.Work(inText.Text)
+	resp, err := h.data.Processor.Work(inText.Text)
 	if err != nil {
 		http.Error(w, "Service error", http.StatusInternalServerError)
 		goapp.Log.Error("Can't process. ", err)
@@ -70,11 +70,18 @@ func (h *synthesisHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(code)
+	w.WriteHeader(getCode(resp))
 	encoder := json.NewEncoder(w)
 	err = encoder.Encode(&resp)
 	if err != nil {
 		http.Error(w, "Can not prepare result", http.StatusInternalServerError)
 		goapp.Log.Error(err)
 	}
+}
+
+func getCode(resp *api.Result) int {
+	if len(resp.ValidationFailures) > 0 {
+		return 403
+	}
+	return 200
 }
