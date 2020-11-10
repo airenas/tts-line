@@ -28,5 +28,16 @@ func main() {
 
 func addProcessors(synt *synthesizer.MainWorker) error {
 	synt.Processors = append(synt.Processors, processor.NewNormalizer())
+	pr, err := processor.NewNumberReplace(goapp.Config.GetString("numberReplace.url"))
+	if err != nil {
+		return errors.Wrap(err, "Can't init number replace")
+	}
+	synt.Processors = append(synt.Processors, pr)
+
+	pr, err = processor.NewTagger(goapp.Config.GetString("tagger.url"))
+	if err != nil {
+		return errors.Wrap(err, "Can't init tagger")
+	}
+	synt.Processors = append(synt.Processors, pr)
 	return nil
 }

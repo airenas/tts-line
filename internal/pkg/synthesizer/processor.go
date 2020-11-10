@@ -37,6 +37,6 @@ func (mw *MainWorker) processAll(data *TTSData) error {
 
 func mapResult(data *TTSData) *api.Result {
 	res := &api.Result{}
-	res.AudioAsString = data.Text
+	res.AudioAsString = data.TextWithNumbers
 	return res
 }

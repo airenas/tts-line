@@ -30,7 +30,7 @@ func normalize(text string) string {
 	res = strings.ReplaceAll(res, "–", "-")
 	res = strings.ReplaceAll(res, "‑", "-")
 	res = strings.ReplaceAll(res, "–", "-")
-	res = strings.ReplaceAll(res, "-", " - ")
+	//res = strings.ReplaceAll(res, "-", " - ")
 	return normalizeSpaces(res)
 }
 
