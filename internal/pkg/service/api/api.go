@@ -20,5 +20,5 @@ type failure struct {
 type Result struct {
 	AudioAsString      string    `json:"audioAsString,omitempty"`
 	Error              string    `json:"error,omitempty"`
-	validationFailures []failure `json:"validTo,omitempty"`
+	ValidationFailures []failure `json:"validationFailures,omitempty"`
 }
