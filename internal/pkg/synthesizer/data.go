@@ -14,7 +14,10 @@ type TTSData struct {
 
 //ProcessedWord keeps one word info
 type ProcessedWord struct {
-	Tagged TaggedWord
+	Tagged            TaggedWord
+	UserTranscription string
+	UserSyllables     string
+	TranscriptionWord string
 }
 
 //TaggedWord - tagger's result

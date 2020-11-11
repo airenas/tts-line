@@ -92,7 +92,6 @@ func (p *validator) validateText(data *input) (*output, error) {
 		return nil, err
 	}
 	goapp.Log.Debug(b.String())
-	goapp.Log.Debug(b.String())
 	req, err := http.NewRequest("POST", p.url, b)
 	if err != nil {
 		return nil, err

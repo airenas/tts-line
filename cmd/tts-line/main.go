@@ -45,5 +45,11 @@ func addProcessors(synt *synthesizer.MainWorker) error {
 		return errors.Wrap(err, "Can't init validator")
 	}
 	synt.Processors = append(synt.Processors, pr)
+
+	pr, err = processor.NewAbbreviator(goapp.Config.GetString("abbreviator.url"))
+	if err != nil {
+		return errors.Wrap(err, "Can't init abbreviator")
+	}
+	synt.Processors = append(synt.Processors, pr)
 	return nil
 }
