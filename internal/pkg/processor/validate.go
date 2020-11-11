@@ -3,6 +3,7 @@ package processor
 import (
 	"bytes"
 	"encoding/json"
+	"io"
 	"io/ioutil"
 	"net/http"
 
@@ -108,14 +109,9 @@ func (p *validator) validateText(data *input) (*output, error) {
 		return nil, errors.New("Can't validate")
 	}
 	var res output
-	br, err := ioutil.ReadAll(resp.Body)
+	err = decodeJSONAndLog(resp.Body, &res)
 	if err != nil {
-		return nil, errors.Wrap(err, "Can't decode response")
-	}
-	goapp.Log.Debug(string(br))
-	err = json.Unmarshal(br, &res)
-	if err != nil {
-		return nil, errors.Wrap(err, "Can't decode response")
+		return nil, err
 	}
 	return &res, nil
 }
@@ -131,4 +127,17 @@ func (p *validator) mapValidatorInput(data *synthesizer.TTSData) *input {
 		}
 	}
 	return res
+}
+
+func decodeJSONAndLog(body io.ReadCloser, res interface{}) error {
+	br, err := ioutil.ReadAll(body)
+	if err != nil {
+		return errors.Wrap(err, "Can't read body")
+	}
+	goapp.Log.Debug(string(br))
+	err = json.Unmarshal(br, &res)
+	if err != nil {
+		return errors.Wrap(err, "Can't decode response")
+	}
+	return nil
 }
