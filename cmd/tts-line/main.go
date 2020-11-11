@@ -69,5 +69,23 @@ func addProcessors(synt *synthesizer.MainWorker) error {
 		return errors.Wrap(err, "Can't init acousticModel")
 	}
 	synt.Processors = append(synt.Processors, pr)
+
+	pr, err = processor.NewVocoder(goapp.Config.GetString("vocoder.url"))
+	if err != nil {
+		return errors.Wrap(err, "Can't init vocoder")
+	}
+	synt.Processors = append(synt.Processors, pr)
+
+	pr, err = processor.NewMP3(goapp.Config.GetString("mp3.url"))
+	if err != nil {
+		return errors.Wrap(err, "Can't init mp3 converter")
+	}
+	synt.Processors = append(synt.Processors, pr)
+
+	pr, err = processor.NewFiler(goapp.Config.GetString("filer.dir"))
+	if err != nil {
+		return errors.Wrap(err, "Can't init filer")
+	}
+	synt.Processors = append(synt.Processors, pr)
 	return nil
 }

@@ -10,7 +10,7 @@ validator:
   url: http://192.168.1.71:8206/text_validator
   check:
     min_words: 1
-    max_words: 5
+    max_words: 10
     no_numbers: 1
     profanity: 1
 
@@ -24,4 +24,13 @@ transcriber:
   url: http://192.168.1.71:7027/transcription?gem=gem1&joinatsi=true 
 
 acousticModel:
-  url: http://localhost:8000/model  
+  url: http://localhost:8000/model
+
+vocoder:
+  url: http://localhost:8001/model    
+
+mp3:
+  url: http://192.168.1.71:8207/convert   
+
+filer:
+  dir: /home/airenas/projects/tts-line  

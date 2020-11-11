@@ -43,7 +43,7 @@ func mapResult(data *TTSData) *api.Result {
 	if len(data.ValidationFailures) > 0 {
 		res.ValidationFailures = data.ValidationFailures
 	} else {
-		res.AudioAsString = data.Spectogram
+		res.AudioAsString = data.AudioMP3
 	}
 	return res
 }

@@ -11,6 +11,7 @@ type TTSData struct {
 	ValidationFailures []api.ValidateFailure
 	Spectogram         string
 	Audio              string
+	AudioMP3           string
 }
 
 //ProcessedWord keeps one word info
