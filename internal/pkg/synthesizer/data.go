@@ -18,6 +18,7 @@ type ProcessedWord struct {
 	UserTranscription string
 	UserSyllables     string
 	TranscriptionWord string
+	AccentVariant     *AccentVariant
 }
 
 //TaggedWord - tagger's result
@@ -26,4 +27,13 @@ type TaggedWord struct {
 	Word      string
 	Mi        string
 	Lemma     string
+}
+
+//AccentVariant - accenters's result
+type AccentVariant struct {
+	Accent   int     `json:"accent"`
+	Accented string  `json:"accented"`
+	Ml       string  `json:"ml"`
+	Syll     string  `json:"syll"`
+	Usage    float64 `json:"usage"`
 }
