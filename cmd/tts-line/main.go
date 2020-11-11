@@ -39,5 +39,11 @@ func addProcessors(synt *synthesizer.MainWorker) error {
 		return errors.Wrap(err, "Can't init tagger")
 	}
 	synt.Processors = append(synt.Processors, pr)
+
+	pr, err = processor.NewValidator(goapp.Sub(goapp.Config, "validator"))
+	if err != nil {
+		return errors.Wrap(err, "Can't init validator")
+	}
+	synt.Processors = append(synt.Processors, pr)
 	return nil
 }

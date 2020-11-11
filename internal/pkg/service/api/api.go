@@ -5,20 +5,22 @@ type Input struct {
 	Text string `json:"text,omitempty"`
 }
 
-type check struct {
-	String string `json:"text,omitempty"`
-	ID     int    `json:"manual,omitempty"`
+//Check is validation check
+type Check struct {
+	ID    string `json:"id,omitempty"`
+	Value int    `json:"value,omitempty"`
 }
 
-type failure struct {
-	FailingText     string `json:"text,omitempty"`
-	FailingPosition int    `json:"manual,omitempty"`
-	Check           check  `json:"validTo"`
+//ValidateFailure indicate validation failure position
+type ValidateFailure struct {
+	FailingText     string `json:"failingText,omitempty"`
+	FailingPosition int    `json:"failingPosition,omitempty"`
+	Check           Check  `json:"check"`
 }
 
 //Result is synthesis result
 type Result struct {
-	AudioAsString      string    `json:"audioAsString,omitempty"`
-	Error              string    `json:"error,omitempty"`
-	ValidationFailures []failure `json:"validationFailures,omitempty"`
+	AudioAsString      string            `json:"audioAsString,omitempty"`
+	Error              string            `json:"error,omitempty"`
+	ValidationFailures []ValidateFailure `json:"validationFailures,omitempty"`
 }

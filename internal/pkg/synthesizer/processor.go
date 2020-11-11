@@ -31,12 +31,19 @@ func (mw *MainWorker) processAll(data *TTSData) error {
 		if err != nil {
 			return err
 		}
+		if len(data.ValidationFailures) > 0 {
+			return nil
+		}
 	}
 	return nil
 }
 
 func mapResult(data *TTSData) *api.Result {
 	res := &api.Result{}
-	res.AudioAsString = data.TextWithNumbers
+	if len(data.ValidationFailures) > 0 {
+		res.ValidationFailures = data.ValidationFailures
+	} else {
+		res.AudioAsString = data.TextWithNumbers
+	}
 	return res
 }

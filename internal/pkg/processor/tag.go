@@ -71,7 +71,7 @@ func (p *tagger) callTag(text string) ([]*synthesizer.TaggedWord, error) {
 func mapTagResult(tags []*synthesizer.TaggedWord) []*synthesizer.ProcessedWord {
 	res := make([]*synthesizer.ProcessedWord, 0)
 	for _, t := range tags {
-		if t.Type != "SPACE" {
+		if t.Separator != "SPACE" {
 			pw := synthesizer.ProcessedWord{Tagged: *t}
 			res = append(res, &pw)
 		}

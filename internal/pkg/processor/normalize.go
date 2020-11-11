@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/airenas/go-app/pkg/goapp"
+	"github.com/airenas/tts-line/internal/pkg/service/api"
 	"github.com/airenas/tts-line/internal/pkg/synthesizer"
 )
 
@@ -19,6 +20,9 @@ func NewNormalizer() synthesizer.Processor {
 func (p *normalizer) Process(data *synthesizer.TTSData) error {
 	goapp.Log.Debugf("In: '%s'", data.OriginalText)
 	data.Text = normalize(data.OriginalText)
+	if data.Text == "" {
+		data.ValidationFailures = []api.ValidateFailure{api.ValidateFailure{Check: api.Check{ID: "no_text"}}}
+	}
 	goapp.Log.Debugf("Out: '%s'", data.Text)
 	return nil
 }

@@ -58,7 +58,7 @@ func (p *numberReplace) replace(text string) (string, error) {
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode < 200 || resp.StatusCode > 299 {
-		return "", errors.New("Can't get numers")
+		return "", errors.New("Can't get numbers")
 	}
 	var res string
 	err = json.NewDecoder(resp.Body).Decode(&res)

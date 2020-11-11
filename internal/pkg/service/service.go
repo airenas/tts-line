@@ -81,7 +81,7 @@ func (h *synthesisHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 func getCode(resp *api.Result) int {
 	if len(resp.ValidationFailures) > 0 {
-		return 403
+		return http.StatusBadRequest
 	}
 	return 200
 }
