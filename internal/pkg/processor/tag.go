@@ -33,7 +33,7 @@ func NewTagger(urlStr string) (synthesizer.Processor, error) {
 
 func (p *tagger) Process(data *synthesizer.TTSData) error {
 	goapp.Log.Debugf("In: '%s'", data.TextWithNumbers)
-	tagged, err := p.callTag(data.Text)
+	tagged, err := p.callTag(data.TextWithNumbers)
 	if err != nil {
 		return err
 	}

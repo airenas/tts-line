@@ -127,23 +127,27 @@ func setAccent(w *synthesizer.ProcessedWord, out accentOutputElement) error {
 }
 
 func findBestAccentVariant(acc []accent, mi string) *synthesizer.AccentVariant {
-	for _, a := range acc {
-		if a.Error == "" && a.MiVdu == mi {
-			for _, v := range a.Variants {
-				if v.Accent > 0 {
-					return &v
+	find := func(fa func(a *accent) bool, fv func(v *synthesizer.AccentVariant) bool) *synthesizer.AccentVariant {
+		for _, a := range acc {
+			if fa(&a) {
+				for _, v := range a.Variants {
+					if fv(&v) {
+						return &v
+					}
 				}
 			}
 		}
+		return nil
 	}
-	for _, a := range acc {
-		if a.Error == "" {
-			for _, v := range a.Variants {
-				if v.Accent > 0 {
-					return &v
-				}
-			}
-		}
+	fIsAccent := func(v *synthesizer.AccentVariant) bool { return v.Accent > 0 }
+
+	if res := find(func(a *accent) bool { return a.Error == "" && a.MiVdu == mi }, fIsAccent); res != nil {
+		return res
 	}
-	return nil
+	// no mi filter
+	if res := find(func(a *accent) bool { return a.Error == "" }, fIsAccent); res != nil {
+		return res
+	}
+	//no filter
+	return find(func(a *accent) bool { return true }, func(v *synthesizer.AccentVariant) bool { return true })
 }
