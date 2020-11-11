@@ -1,4 +1,4 @@
-port: 8000 
+port: 8010
 
 numberReplace:
   url: http://prn509.vdu.lt:9080/api/ 
@@ -22,3 +22,6 @@ accenter:
 
 transcriber:
   url: http://192.168.1.71:7027/transcription?gem=gem1&joinatsi=true 
+
+acousticModel:
+  url: http://localhost:8000/model  

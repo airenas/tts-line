@@ -7,9 +7,10 @@ type TTSData struct {
 	OriginalText       string
 	Text               string
 	TextWithNumbers    string
-	Audio              string
 	Words              []*ProcessedWord
 	ValidationFailures []api.ValidateFailure
+	Spectogram         string
+	Audio              string
 }
 
 //ProcessedWord keeps one word info
