@@ -35,7 +35,10 @@ func (p *accentuator) Process(data *synthesizer.TTSData) error {
 		if err != nil {
 			return err
 		}
-		mapAccentOutput(data, abbrResult)
+		err = mapAccentOutput(data, abbrResult)
+		if err != nil {
+			return err
+		}
 	} else {
 		goapp.Log.Debug("Skip accenter - no data in")
 	}

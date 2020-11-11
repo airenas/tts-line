@@ -57,5 +57,11 @@ func addProcessors(synt *synthesizer.MainWorker) error {
 		return errors.Wrap(err, "Can't init accenter")
 	}
 	synt.Processors = append(synt.Processors, pr)
+
+	pr, err = processor.NewTranscriber(goapp.Config.GetString("transcriber.url"))
+	if err != nil {
+		return errors.Wrap(err, "Can't init transcriber")
+	}
+	synt.Processors = append(synt.Processors, pr)
 	return nil
 }

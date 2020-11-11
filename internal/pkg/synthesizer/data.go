@@ -19,6 +19,7 @@ type ProcessedWord struct {
 	UserSyllables     string
 	TranscriptionWord string
 	AccentVariant     *AccentVariant
+	Transcription     string
 }
 
 //TaggedWord - tagger's result

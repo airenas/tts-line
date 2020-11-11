@@ -19,3 +19,6 @@ abbreviator:
 
 accenter:
   url: http://192.168.1.71:7021/accent?human=true&roe=true
+
+transcriber:
+  url: http://192.168.1.71:7027/transcription?gem=gem1&joinatsi=true 
