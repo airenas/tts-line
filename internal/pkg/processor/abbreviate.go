@@ -12,12 +12,13 @@ import (
 	"github.com/pkg/errors"
 )
 
-type httpInvokerJSON interface {
+//HTTPInvokerJSON invoker for json input
+type HTTPInvokerJSON interface {
 	InvokeJSON(interface{}, interface{}) error
 }
 
 type abbreviator struct {
-	httpWrap httpInvokerJSON
+	httpWrap HTTPInvokerJSON
 }
 
 //NewAbbreviator creates new processor
