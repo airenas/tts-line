@@ -57,6 +57,18 @@ func Test_Fail(t *testing.T) {
 	testCode(t, req, 500)
 }
 
+func Test_FailOnWrongInput(t *testing.T) {
+	initTest(t)
+	req := httptest.NewRequest("POST", "/synthesize", strings.NewReader("text"))
+	testCode(t, req, 400)
+}
+
+func TestCode(t *testing.T) {
+	assert.Equal(t, 200, getCode(&api.Result{}))
+	assert.Equal(t, 200, getCode(&api.Result{AudioAsString: "olia"}))
+	assert.Equal(t, 400, getCode(&api.Result{ValidationFailures: []api.ValidateFailure{api.ValidateFailure{}}}))
+}
+
 func newTestRouter() *mux.Router {
 	return NewRouter(newTestData())
 }
