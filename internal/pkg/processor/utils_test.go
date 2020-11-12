@@ -11,6 +11,8 @@ func TestURL(t *testing.T) {
 	assert.NotNil(t, err)
 	_, err = checkURL(":8080")
 	assert.NotNil(t, err)
+	_, err = checkURL("http://")
+	assert.NotNil(t, err)
 
 	res, err := checkURL("http://local:8080")
 	assert.Nil(t, err)
