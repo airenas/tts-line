@@ -1,41 +1,37 @@
 package processor
 
 import (
-	"bytes"
-	"encoding/json"
-	"net/http"
-
 	"github.com/airenas/go-app/pkg/goapp"
 	"github.com/airenas/tts-line/internal/pkg/synthesizer"
+	"github.com/airenas/tts-line/internal/pkg/utils"
 	"github.com/pkg/errors"
 )
 
 type accentuator struct {
-	httpclient *http.Client
-	url        string
+	httpWrap HTTPInvokerJSON
 }
 
 //NewAccentuator creates new processor
 func NewAccentuator(urlStr string) (synthesizer.Processor, error) {
 	res := &accentuator{}
 	var err error
-	res.url, err = checkURL(urlStr)
+	res.httpWrap, err = utils.NewHTTWrap(urlStr)
 	if err != nil {
-		return nil, errors.Wrap(err, "Can't parse url")
+		return nil, errors.Wrap(err, "Can't init http client")
 	}
-	res.httpclient = &http.Client{}
 	return res, nil
 }
 
 func (p *accentuator) Process(data *synthesizer.TTSData) error {
-	goapp.Log.Debugf("In: '%s'", data.TextWithNumbers)
 	inData := mapAccentInput(data)
 	if len(inData) > 0 {
-		abbrResult, err := p.accentCall(inData)
+
+		var output []accentOutputElement
+		err := p.httpWrap.InvokeJSON(inData, &output)
 		if err != nil {
 			return err
 		}
-		err = mapAccentOutput(data, abbrResult)
+		err = mapAccentOutput(data, output)
 		if err != nil {
 			return err
 		}
@@ -57,36 +53,6 @@ type accent struct {
 	Mih      string                      `json:"mih"`
 	Error    string                      `json:"error"`
 	Variants []synthesizer.AccentVariant `json:"variants"`
-}
-
-func (p *accentuator) accentCall(data []string) ([]accentOutputElement, error) {
-	b := new(bytes.Buffer)
-	err := json.NewEncoder(b).Encode(data)
-	if err != nil {
-		return nil, err
-	}
-	goapp.Log.Debug(b.String())
-	req, err := http.NewRequest("POST", p.url, b)
-	if err != nil {
-		return nil, err
-	}
-	req.Header.Set("Content-Type", "application/json")
-
-	goapp.Log.Debugf("Sending text to: %s", p.url)
-	resp, err := p.httpclient.Do(req)
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-	if resp.StatusCode < 200 || resp.StatusCode > 299 {
-		return nil, errors.New("Can't resolve accents")
-	}
-	var res []accentOutputElement
-	err = decodeJSONAndLog(resp.Body, &res)
-	if err != nil {
-		return nil, err
-	}
-	return res, nil
 }
 
 func mapAccentInput(data *synthesizer.TTSData) []string {

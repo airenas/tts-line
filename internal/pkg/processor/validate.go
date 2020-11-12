@@ -6,6 +6,8 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
+	"net/url"
+	"strings"
 
 	"github.com/airenas/tts-line/internal/pkg/service/api"
 
@@ -139,4 +141,18 @@ func decodeJSONAndLog(body io.ReadCloser, res interface{}) error {
 		return errors.Wrap(err, "Can't decode response")
 	}
 	return nil
+}
+
+func checkURL(urlStr string) (string, error) {
+	if strings.TrimSpace(urlStr) == "" {
+		return "", errors.New("No url")
+	}
+	urlRes, err := url.Parse(urlStr)
+	if err != nil {
+		return "", errors.Wrap(err, "Can't parse url "+urlStr)
+	}
+	if urlRes.Host == "" {
+		return "", errors.New("Can't parse url " + urlStr)
+	}
+	return urlRes.String(), nil
 }
