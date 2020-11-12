@@ -11,7 +11,7 @@ type Processor interface {
 
 //MainWorker does synthesis work
 type MainWorker struct {
-	Processors []Processor
+	processors []Processor
 }
 
 //Work is main method
@@ -25,8 +25,13 @@ func (mw *MainWorker) Work(text string) (*api.Result, error) {
 	return mapResult(data), nil
 }
 
+//Add add processor to the end
+func (mw *MainWorker) Add(pr Processor) {
+	mw.processors = append(mw.processors, pr)
+}
+
 func (mw *MainWorker) processAll(data *TTSData) error {
-	for _, pr := range mw.Processors {
+	for _, pr := range mw.processors {
 		err := pr.Process(data)
 		if err != nil {
 			return err

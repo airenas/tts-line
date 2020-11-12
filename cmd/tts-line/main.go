@@ -27,65 +27,65 @@ func main() {
 }
 
 func addProcessors(synt *synthesizer.MainWorker) error {
-	synt.Processors = append(synt.Processors, processor.NewNormalizer())
+	synt.Add(processor.NewNormalizer())
 	pr, err := processor.NewNumberReplace(goapp.Config.GetString("numberReplace.url"))
 	if err != nil {
 		return errors.Wrap(err, "Can't init number replace")
 	}
-	synt.Processors = append(synt.Processors, pr)
+	synt.Add(pr)
 
 	pr, err = processor.NewTagger(goapp.Config.GetString("tagger.url"))
 	if err != nil {
 		return errors.Wrap(err, "Can't init tagger")
 	}
-	synt.Processors = append(synt.Processors, pr)
+	synt.Add(pr)
 
 	pr, err = processor.NewValidator(goapp.Sub(goapp.Config, "validator"))
 	if err != nil {
 		return errors.Wrap(err, "Can't init validator")
 	}
-	synt.Processors = append(synt.Processors, pr)
+	synt.Add(pr)
 
 	pr, err = processor.NewAbbreviator(goapp.Config.GetString("abbreviator.url"))
 	if err != nil {
 		return errors.Wrap(err, "Can't init abbreviator")
 	}
-	synt.Processors = append(synt.Processors, pr)
+	synt.Add(pr)
 
 	pr, err = processor.NewAccentuator(goapp.Config.GetString("accenter.url"))
 	if err != nil {
 		return errors.Wrap(err, "Can't init accenter")
 	}
-	synt.Processors = append(synt.Processors, pr)
+	synt.Add(pr)
 
 	pr, err = processor.NewTranscriber(goapp.Config.GetString("transcriber.url"))
 	if err != nil {
 		return errors.Wrap(err, "Can't init transcriber")
 	}
-	synt.Processors = append(synt.Processors, pr)
+	synt.Add(pr)
 
 	pr, err = processor.NewAcousticModel(goapp.Config.GetString("acousticModel.url"))
 	if err != nil {
 		return errors.Wrap(err, "Can't init acousticModel")
 	}
-	synt.Processors = append(synt.Processors, pr)
+	synt.Add(pr)
 
 	pr, err = processor.NewVocoder(goapp.Config.GetString("vocoder.url"))
 	if err != nil {
 		return errors.Wrap(err, "Can't init vocoder")
 	}
-	synt.Processors = append(synt.Processors, pr)
+	synt.Add(pr)
 
 	pr, err = processor.NewMP3(goapp.Config.GetString("mp3.url"))
 	if err != nil {
 		return errors.Wrap(err, "Can't init mp3 converter")
 	}
-	synt.Processors = append(synt.Processors, pr)
+	synt.Add(pr)
 
 	pr, err = processor.NewFiler(goapp.Config.GetString("filer.dir"))
 	if err != nil {
 		return errors.Wrap(err, "Can't init filer")
 	}
-	synt.Processors = append(synt.Processors, pr)
+	synt.Add(pr)
 	return nil
 }
