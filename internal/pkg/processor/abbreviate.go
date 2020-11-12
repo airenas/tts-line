@@ -1,32 +1,33 @@
 package processor
 
 import (
-	"bytes"
-	"encoding/json"
-	"net/http"
+	"net/url"
 	"strconv"
 	"strings"
 	"unicode"
 
 	"github.com/airenas/go-app/pkg/goapp"
 	"github.com/airenas/tts-line/internal/pkg/synthesizer"
+	"github.com/airenas/tts-line/internal/pkg/utils"
 	"github.com/pkg/errors"
 )
 
+type httpInvokerJSON interface {
+	InvokeJSON(interface{}, interface{}) error
+}
+
 type abbreviator struct {
-	httpclient *http.Client
-	url        string
+	httpWrap httpInvokerJSON
 }
 
 //NewAbbreviator creates new processor
 func NewAbbreviator(urlStr string) (synthesizer.Processor, error) {
 	res := &abbreviator{}
 	var err error
-	res.url, err = checkURL(urlStr)
+	res.httpWrap, err = utils.NewHTTWrap(urlStr)
 	if err != nil {
-		return nil, errors.Wrap(err, "Can't parse url")
+		return nil, errors.Wrap(err, "Can't init http client")
 	}
-	res.httpclient = &http.Client{}
 	return res, nil
 }
 
@@ -34,11 +35,12 @@ func (p *abbreviator) Process(data *synthesizer.TTSData) error {
 	goapp.Log.Debugf("In: '%s'", data.TextWithNumbers)
 	inData := mapAbbrInput(data)
 	if len(inData) > 0 {
-		abbrResult, err := p.abbrCall(inData)
+		var outData []abbrWordOutput
+		err := p.httpWrap.InvokeJSON(inData, &outData)
 		if err != nil {
 			return err
 		}
-		mapAbbrOutput(data, abbrResult)
+		mapAbbrOutput(data, outData)
 	} else {
 		goapp.Log.Debug("Skip abbreviation - no data in")
 	}
@@ -61,36 +63,6 @@ type abbrResultWord struct {
 	WordTrans string `json:"wordTrans,omitempty"`
 	Syll      string `json:"syll,omitempty"`
 	UserTrans string `json:"userTrans,omitempty"`
-}
-
-func (p *abbreviator) abbrCall(data []abbrInput) ([]abbrWordOutput, error) {
-	b := new(bytes.Buffer)
-	err := json.NewEncoder(b).Encode(data)
-	if err != nil {
-		return nil, err
-	}
-	goapp.Log.Debug(b.String())
-	req, err := http.NewRequest("POST", p.url, b)
-	if err != nil {
-		return nil, err
-	}
-	req.Header.Set("Content-Type", "application/json")
-
-	goapp.Log.Debugf("Sending text to: %s", p.url)
-	resp, err := p.httpclient.Do(req)
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-	if resp.StatusCode < 200 || resp.StatusCode > 299 {
-		return nil, errors.New("Can't resolve abbreviations")
-	}
-	var res []abbrWordOutput
-	err = decodeJSONAndLog(resp.Body, &res)
-	if err != nil {
-		return nil, err
-	}
-	return res, nil
 }
 
 func mapAbbrInput(data *synthesizer.TTSData) []abbrInput {
@@ -158,4 +130,18 @@ func newWords(aw []abbrResultWord, w *synthesizer.ProcessedWord) []*synthesizer.
 		res = append(res, &wd)
 	}
 	return res
+}
+
+func checkURL(urlStr string) (string, error) {
+	if strings.TrimSpace(urlStr) == "" {
+		return "", errors.New("No url")
+	}
+	urlRes, err := url.Parse(urlStr)
+	if err != nil {
+		return "", errors.Wrap(err, "Can't parse url "+urlStr)
+	}
+	if urlRes.Host == "" {
+		return "", errors.New("Can't parse url " + urlStr)
+	}
+	return urlRes.String(), nil
 }
