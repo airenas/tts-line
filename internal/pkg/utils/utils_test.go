@@ -18,5 +18,6 @@ func TestURL(t *testing.T) {
 	assert.Nil(t, err)
 
 	assert.Equal(t, "http://local:8080", res)
-
 }
+
+

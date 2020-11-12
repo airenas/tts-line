@@ -7,8 +7,6 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/airenas/go-app/pkg/goapp"
-
 	"github.com/pkg/errors"
 )
 
@@ -16,6 +14,7 @@ import (
 type HTTPWrap struct {
 	HTTPClient *http.Client
 	URL        string
+	flog       func(string, string)
 }
 
 //NewHTTWrap creates new wrapper
@@ -27,6 +26,7 @@ func NewHTTWrap(urlStr string) (*HTTPWrap, error) {
 		return nil, errors.Wrap(err, "Can't parse url")
 	}
 	res.HTTPClient = &http.Client{}
+	res.flog = func(st, data string) { logData(st, data) }
 	return res, nil
 }
 
@@ -36,7 +36,7 @@ func (hw *HTTPWrap) InvokeText(dataIn string, dataOut interface{}) error {
 	if err != nil {
 		return err
 	}
-	logString("Input : ", dataIn)
+	hw.flog("Input : ", dataIn)
 	req.Header.Set("Content-Type", "text/plain")
 	return hw.invoke(req, dataOut)
 }
@@ -48,7 +48,7 @@ func (hw *HTTPWrap) InvokeJSON(dataIn interface{}, dataOut interface{}) error {
 	if err != nil {
 		return err
 	}
-	logString("Input : ", b.String())
+	hw.flog("Input : ", b.String())
 	req, err := http.NewRequest("POST", hw.URL, b)
 	if err != nil {
 		return err
@@ -58,7 +58,7 @@ func (hw *HTTPWrap) InvokeJSON(dataIn interface{}, dataOut interface{}) error {
 }
 
 func (hw *HTTPWrap) invoke(req *http.Request, dataOut interface{}) error {
-	logString("Call : ", hw.URL)
+	hw.flog("Call : ", hw.URL)
 	resp, err := hw.HTTPClient.Do(req)
 	if err != nil {
 		return err
@@ -71,20 +71,10 @@ func (hw *HTTPWrap) invoke(req *http.Request, dataOut interface{}) error {
 	if err != nil {
 		return errors.Wrap(err, "Can't read body")
 	}
-	logString("Output: ", string(br))
+	hw.flog("Output: ", string(br))
 	err = json.Unmarshal(br, dataOut)
 	if err != nil {
 		return errors.Wrap(err, "Can't decode response")
 	}
 	return nil
-}
-
-//MaxLogDataSize indicates how many bytes of data to log
-var MaxLogDataSize = 100
-
-func logString(st string, data string) {
-	if len(data) > MaxLogDataSize {
-		data = data[0:MaxLogDataSize] + "..."
-	}
-	goapp.Log.Debugf("%s %s", st, data)
 }
