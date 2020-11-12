@@ -5,7 +5,6 @@ import (
 	"os"
 	"path"
 
-	"github.com/airenas/go-app/pkg/goapp"
 	"github.com/airenas/tts-line/internal/pkg/synthesizer"
 )
 
@@ -21,7 +20,6 @@ func NewFiler(dir string) (synthesizer.Processor, error) {
 }
 
 func (p *filer) Process(data *synthesizer.TTSData) error {
-	goapp.Log.Debugf("In: '%s'", data.TextWithNumbers)
 	err := p.save(data.AudioMP3)
 	if err != nil {
 		return err
