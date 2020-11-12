@@ -23,7 +23,7 @@ func NewVocoder(urlStr string) (synthesizer.Processor, error) {
 
 func (p *vocoder) Process(data *synthesizer.TTSData) error {
 	inData := vocInput{Data: data.Spectogram}
-	var output *vocOutput
+	var output vocOutput
 	err := p.httpWrap.InvokeJSON(inData, &output)
 	if err != nil {
 		return err
