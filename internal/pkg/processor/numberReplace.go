@@ -6,12 +6,13 @@ import (
 	"github.com/pkg/errors"
 )
 
-type httpInvoker interface {
+//HTTPInvoker makes http call
+type HTTPInvoker interface {
 	InvokeText(string, interface{}) error
 }
 
 type numberReplace struct {
-	httpWrap httpInvoker
+	httpWrap HTTPInvoker
 }
 
 //NewNumberReplace creates new processor

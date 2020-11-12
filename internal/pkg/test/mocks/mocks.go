@@ -8,6 +8,8 @@ import (
 
 //go:generate pegomock generate --package=mocks --output=synthesizer.go -m github.com/airenas/tts-line/internal/pkg/service Synthesizer
 
+//go:generate pegomock generate --package=mocks --output=httpInvoker.go -m github.com/airenas/tts-line/internal/pkg/processor HTTPInvoker
+
 //AttachMockToTest register pegomock verification to be passed to testing engine
 func AttachMockToTest(t *testing.T) {
 	pegomock.RegisterMockFailHandler(handleByTest(t))
