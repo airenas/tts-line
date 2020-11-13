@@ -4,9 +4,9 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/airenas/go-app/pkg/goapp"
 	"github.com/airenas/tts-line/internal/pkg/service/api"
 	"github.com/airenas/tts-line/internal/pkg/synthesizer"
+	"github.com/airenas/tts-line/internal/pkg/utils"
 )
 
 type normalizer struct {
@@ -18,12 +18,12 @@ func NewNormalizer() synthesizer.Processor {
 }
 
 func (p *normalizer) Process(data *synthesizer.TTSData) error {
-	goapp.Log.Debugf("In: '%s'", data.OriginalText)
+	utils.LogData("Input: ", data.OriginalText)
 	data.Text = normalize(data.OriginalText)
 	if data.Text == "" {
 		data.ValidationFailures = []api.ValidateFailure{api.ValidateFailure{Check: api.Check{ID: "no_text"}}}
 	}
-	goapp.Log.Debugf("Out: '%s'", data.Text)
+	utils.LogData("Output: ", data.Text)
 	return nil
 }
 

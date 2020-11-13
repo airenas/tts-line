@@ -6,6 +6,8 @@ import (
 	"os"
 	"path"
 
+	"github.com/airenas/go-app/pkg/goapp"
+
 	"github.com/airenas/tts-line/internal/pkg/synthesizer"
 	"github.com/pkg/errors"
 )
@@ -37,6 +39,7 @@ func (p *filer) save(data string) error {
 	}
 
 	fn := path.Join(p.dir, "out.mp3")
+	goapp.Log.Debug("Saving " + fn)
 	f, err := p.fFile(fn)
 	if err != nil {
 		return errors.Wrapf(err, "Can't open %s", fn)

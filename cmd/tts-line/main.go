@@ -84,10 +84,12 @@ func addProcessors(synt *synthesizer.MainWorker) error {
 	}
 	synt.Add(pr)
 
-	pr, err = processor.NewFiler(goapp.Config.GetString("filer.dir"))
-	if err != nil {
-		return errors.Wrap(err, "Can't init filer")
+	if goapp.Config.GetString("filer.dir") != "" {
+		pr, err = processor.NewFiler(goapp.Config.GetString("filer.dir"))
+		if err != nil {
+			return errors.Wrap(err, "Can't init filer")
+		}
+		synt.Add(pr)
 	}
-	synt.Add(pr)
 	return nil
 }

@@ -26,7 +26,7 @@ func NewHTTWrap(urlStr string) (*HTTPWrap, error) {
 		return nil, errors.Wrap(err, "Can't parse url")
 	}
 	res.HTTPClient = &http.Client{}
-	res.flog = func(st, data string) { logData(st, data) }
+	res.flog = func(st, data string) { LogData(st, data) }
 	return res, nil
 }
 
