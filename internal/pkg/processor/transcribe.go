@@ -1,42 +1,41 @@
 package processor
 
 import (
-	"bytes"
-	"encoding/json"
-	"net/http"
 	"strings"
 
 	"github.com/airenas/go-app/pkg/goapp"
 	"github.com/airenas/tts-line/internal/pkg/synthesizer"
+	"github.com/airenas/tts-line/internal/pkg/utils"
 	"github.com/pkg/errors"
 )
 
 type transcriber struct {
-	httpclient *http.Client
-	url        string
+	httpWrap HTTPInvokerJSON
 }
 
 //NewTranscriber creates new processor
 func NewTranscriber(urlStr string) (synthesizer.Processor, error) {
 	res := &transcriber{}
 	var err error
-	res.url, err = checkURL(urlStr)
+	res.httpWrap, err = utils.NewHTTWrap(urlStr)
 	if err != nil {
-		return nil, errors.Wrap(err, "Can't parse url")
+		return nil, errors.Wrap(err, "Can't init http client")
 	}
-	res.httpclient = &http.Client{}
 	return res, nil
 }
 
 func (p *transcriber) Process(data *synthesizer.TTSData) error {
-	goapp.Log.Debugf("In: '%s'", data.TextWithNumbers)
-	inData := mapTransInput(data)
+	inData, err := mapTransInput(data)
+	if err != nil {
+		return err
+	}
 	if len(inData) > 0 {
-		resp, err := p.transCall(inData)
+		var output []transOutput
+		err := p.httpWrap.InvokeJSON(inData, &output)
 		if err != nil {
 			return err
 		}
-		err = mapTransOutput(data, resp)
+		err = mapTransOutput(data, output)
 		if err != nil {
 			return err
 		}
@@ -64,46 +63,7 @@ type trans struct {
 	Transcription string `json:"transcription"`
 }
 
-type aaccent struct {
-	MF       string                      `json:"mf"`
-	Mi       string                      `json:"mi"`
-	MiVdu    string                      `json:"mi_vdu"`
-	Mih      string                      `json:"mih"`
-	Error    string                      `json:"error"`
-	Variants []synthesizer.AccentVariant `json:"variants"`
-}
-
-func (p *transcriber) transCall(data []*transInput) ([]transOutput, error) {
-	b := new(bytes.Buffer)
-	err := json.NewEncoder(b).Encode(data)
-	if err != nil {
-		return nil, err
-	}
-	goapp.Log.Debug(b.String())
-	req, err := http.NewRequest("POST", p.url, b)
-	if err != nil {
-		return nil, err
-	}
-	req.Header.Set("Content-Type", "application/json")
-
-	goapp.Log.Debugf("Sending text to: %s", p.url)
-	resp, err := p.httpclient.Do(req)
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-	if resp.StatusCode < 200 || resp.StatusCode > 299 {
-		return nil, errors.New("Can't resolve accents")
-	}
-	var res []transOutput
-	err = decodeJSONAndLog(resp.Body, &res)
-	if err != nil {
-		return nil, err
-	}
-	return res, nil
-}
-
-func mapTransInput(data *synthesizer.TTSData) []*transInput {
+func mapTransInput(data *synthesizer.TTSData) ([]*transInput, error) {
 	res := []*transInput{}
 	var pr *transInput
 	for _, w := range data.Words {
@@ -119,6 +79,9 @@ func mapTransInput(data *synthesizer.TTSData) []*transInput {
 				ti.User = w.UserTranscription
 				ti.Ml = tword
 			} else {
+				if w.AccentVariant == nil {
+					return nil, errors.New("No accent variant for " + tword)
+				}
 				ti.Acc = w.AccentVariant.Accent
 				ti.Syll = w.AccentVariant.Syll
 				ti.Ml = w.AccentVariant.Ml
@@ -130,7 +93,7 @@ func mapTransInput(data *synthesizer.TTSData) []*transInput {
 			pr = ti
 		}
 	}
-	return res
+	return res, nil
 }
 
 func transWord(w *synthesizer.ProcessedWord) string {
