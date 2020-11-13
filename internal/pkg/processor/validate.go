@@ -1,15 +1,8 @@
 package processor
 
 import (
-	"bytes"
-	"encoding/json"
-	"io"
-	"io/ioutil"
-	"net/http"
-	"net/url"
-	"strings"
-
 	"github.com/airenas/tts-line/internal/pkg/service/api"
+	"github.com/airenas/tts-line/internal/pkg/utils"
 
 	"github.com/spf13/viper"
 
@@ -19,9 +12,8 @@ import (
 )
 
 type validator struct {
-	httpclient *http.Client
-	url        string
-	checks     []api.Check
+	httpWrap HTTPInvokerJSON
+	checks   []api.Check
 }
 
 //NewValidator creates new processor
@@ -31,11 +23,10 @@ func NewValidator(config *viper.Viper) (synthesizer.Processor, error) {
 	}
 	res := &validator{}
 	var err error
-	res.url, err = checkURL(config.GetString("url"))
+	res.httpWrap, err = utils.NewHTTWrap(config.GetString("url"))
 	if err != nil {
-		return nil, errors.Wrap(err, "Can't parse url")
+		return nil, errors.Wrap(err, "Can't init http client")
 	}
-	res.httpclient = &http.Client{}
 	res.checks, err = initChecks(goapp.Sub(config, "check"))
 	if err != nil {
 		return nil, errors.Wrap(err, "Can't init checks")
@@ -58,101 +49,45 @@ func initChecks(config *viper.Viper) ([]api.Check, error) {
 }
 
 func (p *validator) Process(data *synthesizer.TTSData) error {
-	goapp.Log.Debugf("In: '%s'", data.TextWithNumbers)
-	validationResult, err := p.validateText(p.mapValidatorInput(data))
+	inData := p.mapValidatorInput(data)
+	var output valOutput
+	err := p.httpWrap.InvokeJSON(inData, &output)
 	if err != nil {
 		return err
 	}
-	data.ValidationFailures = validationResult.List
+	data.ValidationFailures = output.List
 	return nil
 }
 
-type input struct {
+type valInput struct {
 	Text   string      `json:"text"`
-	Words  words       `json:"words"`
+	Words  valWords    `json:"words"`
 	Checks []api.Check `json:"checks"`
 }
 
-type words struct {
-	List []word `json:"list"`
+type valWords struct {
+	List []valWord `json:"list"`
 }
 
-type word struct {
+type valWord struct {
 	Mi    string `json:"mi"`
 	Lemma string `json:"lemma"`
 	Word  string `json:"word"`
 }
 
-type output struct {
+type valOutput struct {
 	List []api.ValidateFailure `json:"list"`
 }
 
-func (p *validator) validateText(data *input) (*output, error) {
-	b := new(bytes.Buffer)
-	err := json.NewEncoder(b).Encode(data)
-	if err != nil {
-		return nil, err
-	}
-	goapp.Log.Debug(b.String())
-	req, err := http.NewRequest("POST", p.url, b)
-	if err != nil {
-		return nil, err
-	}
-	req.Header.Set("Content-Type", "application/json")
-
-	goapp.Log.Debugf("Sending text to: %s", p.url)
-	resp, err := p.httpclient.Do(req)
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-	if resp.StatusCode < 200 || resp.StatusCode > 299 {
-		return nil, errors.New("Can't validate")
-	}
-	var res output
-	err = decodeJSONAndLog(resp.Body, &res)
-	if err != nil {
-		return nil, err
-	}
-	return &res, nil
-}
-
-func (p *validator) mapValidatorInput(data *synthesizer.TTSData) *input {
-	res := &input{}
+func (p *validator) mapValidatorInput(data *synthesizer.TTSData) *valInput {
+	res := &valInput{}
 	res.Checks = p.checks
 	res.Text = data.TextWithNumbers
 	for _, w := range data.Words {
 		tgw := w.Tagged
 		if tgw.Separator == "" {
-			res.Words.List = append(res.Words.List, word{Word: tgw.Word, Lemma: tgw.Lemma, Mi: tgw.Mi})
+			res.Words.List = append(res.Words.List, valWord{Word: tgw.Word, Lemma: tgw.Lemma, Mi: tgw.Mi})
 		}
 	}
 	return res
-}
-
-func decodeJSONAndLog(body io.ReadCloser, res interface{}) error {
-	br, err := ioutil.ReadAll(body)
-	if err != nil {
-		return errors.Wrap(err, "Can't read body")
-	}
-	goapp.Log.Debug(string(br))
-	err = json.Unmarshal(br, &res)
-	if err != nil {
-		return errors.Wrap(err, "Can't decode response")
-	}
-	return nil
-}
-
-func checkURL(urlStr string) (string, error) {
-	if strings.TrimSpace(urlStr) == "" {
-		return "", errors.New("No url")
-	}
-	urlRes, err := url.Parse(urlStr)
-	if err != nil {
-		return "", errors.Wrap(err, "Can't parse url "+urlStr)
-	}
-	if urlRes.Host == "" {
-		return "", errors.New("Can't parse url " + urlStr)
-	}
-	return urlRes.String(), nil
 }
