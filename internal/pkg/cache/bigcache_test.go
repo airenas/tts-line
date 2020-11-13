@@ -58,11 +58,11 @@ func TestWork(t *testing.T) {
 
 	res, err := c.Work("olia")
 	assert.Nil(t, err)
-	assert.NotNil(t, res)
+	assert.Equal(t, "wav", res.AudioAsString)
 	synthesizerMock.VerifyWasCalledOnce().Work(pegomock.AnyString())
 	res, err = c.Work("olia")
 	assert.Nil(t, err)
-	assert.NotNil(t, res)
+	assert.Equal(t, "wav", res.AudioAsString)
 	synthesizerMock.VerifyWasCalledOnce().Work(pegomock.AnyString())
 	res, err = c.Work("olia2")
 	assert.Nil(t, err)
