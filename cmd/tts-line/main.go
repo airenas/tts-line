@@ -5,6 +5,7 @@ import (
 	"github.com/airenas/tts-line/internal/pkg/processor"
 	"github.com/airenas/tts-line/internal/pkg/service"
 	"github.com/airenas/tts-line/internal/pkg/synthesizer"
+	"github.com/airenas/tts-line/internal/pkg/utils"
 
 	"github.com/pkg/errors"
 )
@@ -14,6 +15,7 @@ func main() {
 
 	data := service.Data{}
 	data.Port = goapp.Config.GetInt("port")
+	utils.MaxLogDataSize = goapp.Config.GetInt("maxLogDataSize")
 	synt := &synthesizer.MainWorker{}
 	err := addProcessors(synt)
 	if err != nil {
