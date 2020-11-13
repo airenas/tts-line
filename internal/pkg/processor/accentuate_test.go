@@ -43,6 +43,22 @@ func TestInvokeAccentuator(t *testing.T) {
 	assert.Equal(t, 101, d.Words[0].AccentVariant.Accent)
 }
 
+func TestInvokeAccentuator_FailOutput(t *testing.T) {
+	initTestJSON(t)
+	pr, _ := NewAccentuator("http://server")
+	assert.NotNil(t, pr)
+	pr.(*accentuator).httpWrap = httpJSONMock
+	d := synthesizer.TTSData{}
+	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Word: "word"}})
+	pegomock.When(httpJSONMock.InvokeJSON(pegomock.AnyInterface(), pegomock.AnyInterface())).Then(
+		func(params []pegomock.Param) pegomock.ReturnValues {
+			*params[1].(*[]accentOutputElement) = []accentOutputElement{}
+			return []pegomock.ReturnValue{nil}
+		})
+	err := pr.Process(&d)
+	assert.NotNil(t, err)
+}
+
 func TestInvokeAccentuator_Fail(t *testing.T) {
 	initTestJSON(t)
 	pr, _ := NewAccentuator("http://server")
