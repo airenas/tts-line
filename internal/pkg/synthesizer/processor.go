@@ -25,7 +25,7 @@ func (mw *MainWorker) Work(text string) (*api.Result, error) {
 	return mapResult(data), nil
 }
 
-//Add add processor to the end
+//Add adds a processor to the end
 func (mw *MainWorker) Add(pr Processor) {
 	mw.processors = append(mw.processors, pr)
 }

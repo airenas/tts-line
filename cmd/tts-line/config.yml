@@ -1,5 +1,5 @@
 port: 8010
-maxLogDataSize: 200
+maxLogDataSize: 500
 
 numberReplace:
   url: http://prn509.vdu.lt:9080/api/ 
@@ -34,5 +34,8 @@ mp3:
   url: http://192.168.1.71:8207/convert   
 
 filer:
-  dir: /home/airenas/projects/tts-line  
+  dir: /home/airenas/projects/tts-line
+
+cache:
+  duration: 30s
 

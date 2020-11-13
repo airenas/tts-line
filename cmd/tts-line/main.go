@@ -2,6 +2,7 @@ package main
 
 import (
 	"github.com/airenas/go-app/pkg/goapp"
+	"github.com/airenas/tts-line/internal/pkg/cache"
 	"github.com/airenas/tts-line/internal/pkg/processor"
 	"github.com/airenas/tts-line/internal/pkg/service"
 	"github.com/airenas/tts-line/internal/pkg/synthesizer"
@@ -21,7 +22,16 @@ func main() {
 	if err != nil {
 		goapp.Log.Fatal(errors.Wrap(err, "Can't init processors"))
 	}
-	data.Processor = synt
+	cc := goapp.Sub(goapp.Config, "cache")
+	if cc != nil {
+		data.Processor, err = cache.NewCacher(synt, cc)
+		if err != nil {
+			goapp.Log.Fatal(errors.Wrap(err, "Can't init cache"))
+		}
+	} else {
+		goapp.Log.Info("No cache will be used")
+		data.Processor = synt
+	}
 	err = service.StartWebServer(&data)
 	if err != nil {
 		goapp.Log.Fatal(errors.Wrap(err, "Can't start the service"))
