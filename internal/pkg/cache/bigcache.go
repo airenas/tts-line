@@ -4,24 +4,21 @@ import (
 	"time"
 
 	"github.com/airenas/go-app/pkg/goapp"
+	"github.com/airenas/tts-line/internal/pkg/service"
 	"github.com/airenas/tts-line/internal/pkg/service/api"
 	"github.com/allegro/bigcache"
 	"github.com/pkg/errors"
 	"github.com/spf13/viper"
 )
 
-type synthesizer interface {
-	Work(string) (*api.Result, error)
-}
-
 //BigCacher keeps cached results
 type BigCacher struct {
-	realSynt synthesizer
+	realSynt service.Synthesizer
 	cache    *bigcache.BigCache
 }
 
 //NewCacher creates cached worker
-func NewCacher(rw synthesizer, config *viper.Viper) (*BigCacher, error) {
+func NewCacher(rw service.Synthesizer, config *viper.Viper) (*BigCacher, error) {
 	if rw == nil {
 		return nil, errors.New("No synthesizer")
 	}
@@ -57,7 +54,7 @@ func (c *BigCacher) Work(text string) (*api.Result, error) {
 	}
 	goapp.Log.Debug("Not found in cache")
 	res, err := c.realSynt.Work(text)
-	if err == nil && len(res.ValidationFailures) == 0 {
+	if res != nil && err == nil && len(res.ValidationFailures) == 0 {
 		c.cache.Set(text, []byte(res.AudioAsString))
 	}
 	return res, err
