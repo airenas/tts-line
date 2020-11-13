@@ -2,29 +2,32 @@ package processor
 
 import (
 	"encoding/base64"
+	"io"
 	"os"
 	"path"
 
 	"github.com/airenas/tts-line/internal/pkg/synthesizer"
+	"github.com/pkg/errors"
 )
 
 type filer struct {
-	dir string
+	dir   string
+	fFile func(string) (io.WriteCloser, error)
 }
 
-//NewFiler creates new processor
+//NewFiler creates new processor that save file for testing purposes
 func NewFiler(dir string) (synthesizer.Processor, error) {
 	res := &filer{}
 	res.dir = dir
+	res.fFile = func(name string) (io.WriteCloser, error) {
+		f, err := os.Create(name)
+		return f, err
+	}
 	return res, nil
 }
 
 func (p *filer) Process(data *synthesizer.TTSData) error {
-	err := p.save(data.AudioMP3)
-	if err != nil {
-		return err
-	}
-	return nil
+	return p.save(data.AudioMP3)
 }
 
 func (p *filer) save(data string) error {
@@ -33,9 +36,10 @@ func (p *filer) save(data string) error {
 		return err
 	}
 
-	f, err := os.Create(path.Join(p.dir, "out.mp3"))
+	fn := path.Join(p.dir, "out.mp3")
+	f, err := p.fFile(fn)
 	if err != nil {
-		return err
+		return errors.Wrapf(err, "Can't open %s", fn)
 	}
 	defer f.Close()
 
