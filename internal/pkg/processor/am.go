@@ -57,7 +57,7 @@ func mapAMInput(data *synthesizer.TTSData) *amInput {
 			if sep != "" {
 				sb.WriteString(space + sep)
 			}
-			if sentenceEnd(sep) {
+			if addPause(sep) {
 				sb.WriteString(space + pause)
 			}
 		} else {
@@ -77,16 +77,19 @@ func mapAMInput(data *synthesizer.TTSData) *amInput {
 }
 
 func getSep(s string) string {
-	for _, sep := range []string{",", ".", "!", "?", "..."} {
+	for _, sep := range []string{",", ".", "!", "?", "...", ":", "-"} {
 		if s == sep {
 			return s
 		}
 	}
+	if s == ";" {
+		return ","
+	}
 	return ""
 }
 
-func sentenceEnd(s string) bool {
-	for _, sep := range []string{".", "!", "?", "..."} {
+func addPause(s string) bool {
+	for _, sep := range []string{".", "!", "?", "...", ":"} {
 		if s == sep {
 			return true
 		}

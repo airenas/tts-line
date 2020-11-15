@@ -96,3 +96,12 @@ func TestMapAMInput_SpaceEnd(t *testing.T) {
 	inp := mapAMInput(&d)
 	assert.Equal(t, "<space> v a <space>", inp.Text)
 }
+
+func TestSep(t *testing.T) {
+	for _, s := range ",:.?!-" {
+		assert.Equal(t, string(s), getSep(string(s)))
+	}
+	assert.Equal(t, "...", getSep("..."))
+	assert.Equal(t, ",", getSep(";"))
+	assert.Equal(t, "", getSep("\""))
+}
