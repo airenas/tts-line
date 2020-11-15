@@ -37,5 +37,5 @@ filer:
   dir: /home/airenas/projects/tts-line
 
 cache:
-  duration: 30s
+  duration: 10m
 
