@@ -22,5 +22,5 @@ type ValidateFailure struct {
 type Result struct {
 	AudioAsString      string            `json:"audioAsString,omitempty"`
 	Error              string            `json:"error,omitempty"`
-	ValidationFailures []ValidateFailure `json:"validationFailures,omitempty"`
+	ValidationFailures []ValidateFailure `json:"validationFailItems,omitempty"`
 }
