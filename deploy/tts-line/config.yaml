@@ -1,1 +1,40 @@
 port: 8000 
+maxLogDataSize: 100
+
+# numberReplace:
+#   url:  
+
+# tagger:
+#   url:   
+
+validator:
+  # url: 
+  check:
+    min_words: 1
+    max_words: 50
+    no_numbers: 1
+    profanity: 1
+
+# abbreviator:
+#   url:       
+
+# accenter:
+#   url: 
+
+# transcriber:
+#   url:  
+
+# acousticModel:
+#   url: 
+
+# vocoder:
+#   url:     
+
+# mp3:
+#   url:    
+
+# filer:
+#   dir: 
+
+cache:
+  duration: 20m
