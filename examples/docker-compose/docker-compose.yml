@@ -5,5 +5,14 @@ services:
     image: airenas/tts-line:${SERVICE_VERSION}
     ports:
       - "${SERVICE_PORT}:8000"
-    # environment:
+    environment:
+      - NUMBERREPLACE_URL=${NUMBERREPLACE_URL}
+      - TAGGER_URL=${TAGGER_URL} 
+      - VALIDATOR_URL=${VALIDATOR_URL}
+      - ABBREVIATOR_URL=${ABBREVIATOR_URL}
+      - ACCENTER_URL=${ACCENTER_URL}
+      - TRANSCRIBER_URL=${TRANSCRIBER_URL}
+      - ACOUSTICMODEL_URL=${ACOUSTICMODEL_URL}
+      - VOCODER_URL=${VOCODER_URL}  
+      - MP3_URL=${MP3_URL}
     # restart: unless-stopped

@@ -1,8 +1,8 @@
 port: 8010
 maxLogDataSize: 500
 
-numberReplace:
-  url: http://prn509.vdu.lt:9080/api/ 
+# numberReplace:
+#   url: http://prn509.vdu.lt:9080/api/ 
 
 tagger:
   url: http://192.168.1.71:8208/tag  
