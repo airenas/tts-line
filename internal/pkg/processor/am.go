@@ -10,23 +10,28 @@ import (
 )
 
 type amodel struct {
-	httpWrap HTTPInvokerJSON
+	httpWrap    HTTPInvokerJSON
+	spaceSymbol string
 }
 
 //NewAcousticModel creates new processor
-func NewAcousticModel(urlStr string) (synthesizer.Processor, error) {
+func NewAcousticModel(urlStr string, spaceSym string) (synthesizer.Processor, error) {
 	res := &amodel{}
 	var err error
 	res.httpWrap, err = utils.NewHTTWrap(urlStr)
 	if err != nil {
 		return nil, errors.Wrap(err, "Can't init http client")
 	}
+	res.spaceSymbol = spaceSym
+	if res.spaceSymbol == "" {
+		res.spaceSymbol = "sil"
+	}
 	return res, nil
 }
 
 func (p *amodel) Process(data *synthesizer.TTSData) error {
 	goapp.Log.Debugf("In: '%s'", data.TextWithNumbers)
-	inData := mapAMInput(data)
+	inData := p.mapAMInput(data)
 	var output amOutput
 	err := p.httpWrap.InvokeJSON(inData, &output)
 	if err != nil {
@@ -44,11 +49,11 @@ type amOutput struct {
 	Data string `json:"data"`
 }
 
-func mapAMInput(data *synthesizer.TTSData) *amInput {
+func (p *amodel) mapAMInput(data *synthesizer.TTSData) *amInput {
 	res := &amInput{}
 	var sb strings.Builder
 	space := " "
-	pause := "<space>"
+	pause := p.spaceSymbol
 	sb.WriteString(pause)
 	for _, w := range data.Words {
 		tgw := w.Tagged

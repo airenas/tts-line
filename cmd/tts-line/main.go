@@ -76,7 +76,8 @@ func addProcessors(synt *synthesizer.MainWorker) error {
 	}
 	synt.Add(pr)
 
-	pr, err = processor.NewAcousticModel(goapp.Config.GetString("acousticModel.url"))
+	pr, err = processor.NewAcousticModel(goapp.Config.GetString("acousticModel.url"),
+		goapp.Config.GetString("acousticModel.spaceSymbol"))
 	if err != nil {
 		return errors.Wrap(err, "Can't init acousticModel")
 	}
