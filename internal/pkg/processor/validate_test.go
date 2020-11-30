@@ -1,6 +1,7 @@
 package processor
 
 import (
+	"os"
 	"strings"
 	"testing"
 
@@ -97,6 +98,16 @@ func TestMapValInput(t *testing.T) {
 	assert.Equal(t, "v1", inp.Words.List[0].Word)
 	assert.Equal(t, "v2", inp.Words.List[1].Word)
 	assert.Equal(t, prv.checks, inp.Checks)
+}
+
+func TestMapValInput_FromConfig(t *testing.T) {
+	os.Setenv("VALIDATOR_CHECK_MAX_WORDS", "300")
+	pr, _ := NewValidator(newTestConfig("url: http://server\ncheck:\n  max_words: 10"))
+	assert.NotNil(t, pr)
+	prv := pr.(*validator)
+
+	assert.Equal(t, 1, len(prv.checks))
+	assert.Equal(t, 300, prv.checks[0].Value)
 }
 
 func newTestConfig(yaml string) *viper.Viper {

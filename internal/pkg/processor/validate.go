@@ -38,6 +38,9 @@ func initChecks(config *viper.Viper) ([]api.Check, error) {
 	if config == nil {
 		return nil, errors.New("No config 'check'")
 	}
+	// workaround fix env prefix
+	config.SetEnvPrefix("validator_check")
+	
 	res := make([]api.Check, 0)
 	for _, s := range []string{"min_words", "max_words", "no_numbers", "profanity"} {
 		v := config.GetInt(s)
