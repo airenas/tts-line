@@ -3,7 +3,7 @@ dist_dir=$(CURDIR)/data
 executable_name=tts-line
 main_dir=../../cmd/$(executable_name)
 service=airenas/tts-line
-version=0.1
+version=0.2
 go_build_cmd=CGO_ENABLED=0 go build -installsuffix -cgo
 commit_count=$(shell git rev-list --count HEAD)
 #####################################################################################
