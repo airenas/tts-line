@@ -55,14 +55,24 @@ func (p *amodel) mapAMInput(data *synthesizer.TTSData) *amInput {
 	space := " "
 	pause := p.spaceSymbol
 	sb.WriteString(pause)
+	lastSep := ""
 	for _, w := range data.Words {
 		tgw := w.Tagged
 		if tgw.Separator != "" {
 			sep := getSep(tgw.Separator)
 			if sep != "" {
 				sb.WriteString(space + sep)
+				lastSep = sep
 			}
 			if addPause(sep) {
+				sb.WriteString(space + pause)
+			}
+		} else if tgw.SentenceEnd {
+			if getSep(lastSep) == "" {
+				lastSep = "."
+				sb.WriteString(space + lastSep)
+			}
+			if !strings.HasSuffix(sb.String(), pause) {
 				sb.WriteString(space + pause)
 			}
 		} else {
@@ -70,6 +80,7 @@ func (p *amodel) mapAMInput(data *synthesizer.TTSData) *amInput {
 			for _, p := range phns {
 				if !skipPhn(p) {
 					sb.WriteString(space + p)
+					lastSep = p
 				}
 			}
 		}

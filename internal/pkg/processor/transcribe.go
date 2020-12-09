@@ -68,7 +68,7 @@ func mapTransInput(data *synthesizer.TTSData) ([]*transInput, error) {
 	var pr *transInput
 	for _, w := range data.Words {
 		tgw := w.Tagged
-		if tgw.Separator != "" {
+		if !tgw.IsWord() {
 			pr = nil
 		} else {
 			ti := &transInput{}
@@ -107,7 +107,7 @@ func mapTransOutput(data *synthesizer.TTSData, out []transOutput) error {
 	i := 0
 	for _, w := range data.Words {
 		tgw := w.Tagged
-		if tgw.Separator == "" {
+		if tgw.IsWord() {
 			if len(out) <= i {
 				return errors.New("Wrong transcribe result")
 			}

@@ -59,7 +59,7 @@ func mapAccentInput(data *synthesizer.TTSData) []string {
 	res := []string{}
 	for _, w := range data.Words {
 		tgw := w.Tagged
-		if tgw.Separator == "" && w.UserTranscription == "" {
+		if tgw.IsWord() && w.UserTranscription == "" {
 			res = append(res, w.Tagged.Word)
 		}
 	}
@@ -70,7 +70,7 @@ func mapAccentOutput(data *synthesizer.TTSData, out []accentOutputElement) error
 	i := 0
 	for _, w := range data.Words {
 		tgw := w.Tagged
-		if tgw.Separator == "" && w.UserTranscription == "" {
+		if tgw.IsWord() && w.UserTranscription == "" {
 			if len(out) <= i {
 				return errors.New("Wrong accent result")
 			}

@@ -89,6 +89,7 @@ func TestWork_StopProcess(t *testing.T) {
 	assert.NotNil(t, res)
 }
 
+
 type procMock struct {
 	f func(res *TTSData) error
 }

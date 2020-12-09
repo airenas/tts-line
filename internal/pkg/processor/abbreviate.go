@@ -69,7 +69,7 @@ func mapAbbrInput(data *synthesizer.TTSData) []abbrInput {
 	res := []abbrInput{}
 	for i, w := range data.Words {
 		tgw := w.Tagged
-		if tgw.Separator == "" && isAbbr(tgw.Mi, tgw.Lemma) {
+		if tgw.IsWord() && isAbbr(tgw.Mi, tgw.Lemma) {
 			res = append(res, abbrInput{Word: tgw.Word, MI: tgw.Mi, ID: strconv.Itoa(i)})
 		}
 	}

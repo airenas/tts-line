@@ -1,5 +1,5 @@
 port: 8010
-maxLogDataSize: 500
+maxLogDataSize: 3500
 
 # numberReplace:
 #   url: http://prn509.vdu.lt:9080/api/ 

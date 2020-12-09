@@ -34,12 +34,13 @@ func TestInvokeTagger(t *testing.T) {
 	pegomock.When(httpInvokerMock.InvokeText(pegomock.AnyString(), pegomock.AnyInterface())).Then(
 		func(params []pegomock.Param) pegomock.ReturnValues {
 			*params[1].(*[]*TaggedWord) = []*TaggedWord{&TaggedWord{Type: "SPACE", String: " "},
-				&TaggedWord{Type: "SEPARATOR", String: ","}, &TaggedWord{Type: "WORD", String: "word", Lemma: "lemma", Mi: "mi"}}
+				&TaggedWord{Type: "SEPARATOR", String: ","}, &TaggedWord{Type: "WORD", String: "word", Lemma: "lemma", Mi: "mi"},
+				&TaggedWord{Type: "SENTENCE_END"}}
 			return []pegomock.ReturnValue{nil}
 		})
 	err := pr.Process(&d)
 	assert.Nil(t, err)
-	assert.Equal(t, 2, len(d.Words))
+	assert.Equal(t, 3, len(d.Words))
 	assert.Equal(t, ",", d.Words[0].Tagged.Separator)
 	assert.Equal(t, "", d.Words[0].Tagged.Word)
 
@@ -47,6 +48,8 @@ func TestInvokeTagger(t *testing.T) {
 	assert.Equal(t, "word", d.Words[1].Tagged.Word)
 	assert.Equal(t, "lemma", d.Words[1].Tagged.Lemma)
 	assert.Equal(t, "mi", d.Words[1].Tagged.Mi)
+
+	assert.True(t, d.Words[2].Tagged.SentenceEnd)
 }
 
 func TestInvokeTagger_Fail(t *testing.T) {

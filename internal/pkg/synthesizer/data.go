@@ -26,10 +26,11 @@ type ProcessedWord struct {
 
 //TaggedWord - tagger's result
 type TaggedWord struct {
-	Separator string
-	Word      string
-	Mi        string
-	Lemma     string
+	Separator   string
+	SentenceEnd bool
+	Word        string
+	Mi          string
+	Lemma       string
 }
 
 //AccentVariant - accenters's result
@@ -39,4 +40,9 @@ type AccentVariant struct {
 	Ml       string  `json:"ml"`
 	Syll     string  `json:"syll"`
 	Usage    float64 `json:"usage"`
+}
+
+//IsWord returns true if object indicates word
+func (tw TaggedWord) IsWord() bool {
+	return !tw.SentenceEnd && tw.Separator == ""
 }

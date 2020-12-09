@@ -54,6 +54,8 @@ func mapTag(tag *TaggedWord) synthesizer.TaggedWord {
 	res := synthesizer.TaggedWord{}
 	if tag.Type == "SEPARATOR" {
 		res.Separator = tag.String
+	} else if tag.Type == "SENTENCE_END" {
+		res.SentenceEnd = true
 	} else if tag.Type == "WORD" {
 		res.Word = tag.String
 		res.Lemma = tag.Lemma
