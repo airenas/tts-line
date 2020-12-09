@@ -12,7 +12,7 @@ type accentuator struct {
 }
 
 //NewAccentuator creates new processor
-func NewAccentuator(urlStr string) (synthesizer.Processor, error) {
+func NewAccentuator(urlStr string) (synthesizer.PartProcessor, error) {
 	res := &accentuator{}
 	var err error
 	res.httpWrap, err = utils.NewHTTWrap(urlStr)
@@ -22,7 +22,7 @@ func NewAccentuator(urlStr string) (synthesizer.Processor, error) {
 	return res, nil
 }
 
-func (p *accentuator) Process(data *synthesizer.TTSData) error {
+func (p *accentuator) Process(data *synthesizer.TTSDataPart) error {
 	inData := mapAccentInput(data)
 	if len(inData) > 0 {
 
@@ -55,7 +55,7 @@ type accent struct {
 	Variants []synthesizer.AccentVariant `json:"variants"`
 }
 
-func mapAccentInput(data *synthesizer.TTSData) []string {
+func mapAccentInput(data *synthesizer.TTSDataPart) []string {
 	res := []string{}
 	for _, w := range data.Words {
 		tgw := w.Tagged
@@ -66,7 +66,7 @@ func mapAccentInput(data *synthesizer.TTSData) []string {
 	return res
 }
 
-func mapAccentOutput(data *synthesizer.TTSData, out []accentOutputElement) error {
+func mapAccentOutput(data *synthesizer.TTSDataPart, out []accentOutputElement) error {
 	i := 0
 	for _, w := range data.Words {
 		tgw := w.Tagged

@@ -1,5 +1,5 @@
 port: 8010
-maxLogDataSize: 3500
+maxLogDataSize: 100
 
 # numberReplace:
 #   url: http://prn509.vdu.lt:9080/api/ 
@@ -11,7 +11,7 @@ validator:
   url: http://192.168.1.71:8206/text_validator
   check:
     min_words: 1
-    max_words: 100
+    max_words: 1000
     no_numbers: 1
     profanity: 1
 

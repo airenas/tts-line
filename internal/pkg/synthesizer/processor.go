@@ -4,7 +4,7 @@ import (
 	"github.com/airenas/tts-line/internal/pkg/service/api"
 )
 
-//Processor worder interface
+//Processor interface
 type Processor interface {
 	Process(*TTSData) error
 }

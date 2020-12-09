@@ -21,7 +21,7 @@ type abbreviator struct {
 }
 
 //NewAbbreviator creates new processor
-func NewAbbreviator(urlStr string) (synthesizer.Processor, error) {
+func NewAbbreviator(urlStr string) (synthesizer.PartProcessor, error) {
 	res := &abbreviator{}
 	var err error
 	res.httpWrap, err = utils.NewHTTWrap(urlStr)
@@ -31,8 +31,7 @@ func NewAbbreviator(urlStr string) (synthesizer.Processor, error) {
 	return res, nil
 }
 
-func (p *abbreviator) Process(data *synthesizer.TTSData) error {
-	goapp.Log.Debugf("In: '%s'", data.TextWithNumbers)
+func (p *abbreviator) Process(data *synthesizer.TTSDataPart) error {
 	inData := mapAbbrInput(data)
 	if len(inData) > 0 {
 		var outData []abbrWordOutput
@@ -65,7 +64,7 @@ type abbrResultWord struct {
 	UserTrans string `json:"userTrans,omitempty"`
 }
 
-func mapAbbrInput(data *synthesizer.TTSData) []abbrInput {
+func mapAbbrInput(data *synthesizer.TTSDataPart) []abbrInput {
 	res := []abbrInput{}
 	for i, w := range data.Words {
 		tgw := w.Tagged
@@ -93,7 +92,7 @@ func allUpper(lemma string) bool {
 	return len(lemma) > 0
 }
 
-func mapAbbrOutput(data *synthesizer.TTSData, abbrOut []abbrWordOutput) error {
+func mapAbbrOutput(data *synthesizer.TTSDataPart, abbrOut []abbrWordOutput) error {
 	om := make(map[int]abbrWordOutput)
 	for _, abbr := range abbrOut {
 		iID, err := strconv.Atoi(abbr.ID)

@@ -3,7 +3,6 @@ package processor
 import (
 	"strings"
 
-	"github.com/airenas/go-app/pkg/goapp"
 	"github.com/airenas/tts-line/internal/pkg/synthesizer"
 	"github.com/airenas/tts-line/internal/pkg/utils"
 	"github.com/pkg/errors"
@@ -15,7 +14,7 @@ type amodel struct {
 }
 
 //NewAcousticModel creates new processor
-func NewAcousticModel(urlStr string, spaceSym string) (synthesizer.Processor, error) {
+func NewAcousticModel(urlStr string, spaceSym string) (synthesizer.PartProcessor, error) {
 	res := &amodel{}
 	var err error
 	res.httpWrap, err = utils.NewHTTWrap(urlStr)
@@ -29,8 +28,7 @@ func NewAcousticModel(urlStr string, spaceSym string) (synthesizer.Processor, er
 	return res, nil
 }
 
-func (p *amodel) Process(data *synthesizer.TTSData) error {
-	goapp.Log.Debugf("In: '%s'", data.TextWithNumbers)
+func (p *amodel) Process(data *synthesizer.TTSDataPart) error {
 	inData := p.mapAMInput(data)
 	var output amOutput
 	err := p.httpWrap.InvokeJSON(inData, &output)
@@ -49,12 +47,14 @@ type amOutput struct {
 	Data string `json:"data"`
 }
 
-func (p *amodel) mapAMInput(data *synthesizer.TTSData) *amInput {
+func (p *amodel) mapAMInput(data *synthesizer.TTSDataPart) *amInput {
 	res := &amInput{}
 	var sb strings.Builder
 	space := " "
 	pause := p.spaceSymbol
-	sb.WriteString(pause)
+	if data.First {
+		sb.WriteString(pause)
+	}
 	lastSep := ""
 	for _, w := range data.Words {
 		tgw := w.Tagged

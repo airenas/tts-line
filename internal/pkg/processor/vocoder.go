@@ -11,7 +11,7 @@ type vocoder struct {
 }
 
 //NewVocoder creates new processor
-func NewVocoder(urlStr string) (synthesizer.Processor, error) {
+func NewVocoder(urlStr string) (synthesizer.PartProcessor, error) {
 	res := &vocoder{}
 	var err error
 	res.httpWrap, err = utils.NewHTTWrap(urlStr)
@@ -21,7 +21,7 @@ func NewVocoder(urlStr string) (synthesizer.Processor, error) {
 	return res, nil
 }
 
-func (p *vocoder) Process(data *synthesizer.TTSData) error {
+func (p *vocoder) Process(data *synthesizer.TTSDataPart) error {
 	inData := vocInput{Data: data.Spectogram}
 	var output vocOutput
 	err := p.httpWrap.InvokeJSON(inData, &output)

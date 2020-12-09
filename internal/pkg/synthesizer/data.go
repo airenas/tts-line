@@ -7,11 +7,21 @@ type TTSData struct {
 	OriginalText       string
 	Text               string
 	TextWithNumbers    string
-	Words              []*ProcessedWord
 	ValidationFailures []api.ValidateFailure
-	Spectogram         string
-	Audio              string
-	AudioMP3           string
+
+	Words []*ProcessedWord
+	Parts []*TTSDataPart
+
+	Audio    string
+	AudioMP3 string
+}
+
+//TTSDataPart partial tts data
+type TTSDataPart struct {
+	First      bool
+	Words      []*ProcessedWord
+	Spectogram string
+	Audio      string
 }
 
 //ProcessedWord keeps one word info

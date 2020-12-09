@@ -58,36 +58,12 @@ func addProcessors(synt *synthesizer.MainWorker) error {
 	}
 	synt.Add(pr)
 
-	pr, err = processor.NewAbbreviator(goapp.Config.GetString("abbreviator.url"))
-	if err != nil {
-		return errors.Wrap(err, "Can't init abbreviator")
-	}
-	synt.Add(pr)
+	synt.Add(processor.NewSplitter())
 
-	pr, err = processor.NewAccentuator(goapp.Config.GetString("accenter.url"))
-	if err != nil {
-		return errors.Wrap(err, "Can't init accenter")
-	}
-	synt.Add(pr)
+	partRunner := synthesizer.NewPartRunner()
+	synt.Add(partRunner)
 
-	pr, err = processor.NewTranscriber(goapp.Config.GetString("transcriber.url"))
-	if err != nil {
-		return errors.Wrap(err, "Can't init transcriber")
-	}
-	synt.Add(pr)
-
-	pr, err = processor.NewAcousticModel(goapp.Config.GetString("acousticModel.url"),
-		goapp.Config.GetString("acousticModel.spaceSymbol"))
-	if err != nil {
-		return errors.Wrap(err, "Can't init acousticModel")
-	}
-	synt.Add(pr)
-
-	pr, err = processor.NewVocoder(goapp.Config.GetString("vocoder.url"))
-	if err != nil {
-		return errors.Wrap(err, "Can't init vocoder")
-	}
-	synt.Add(pr)
+	synt.Add(processor.NewJoinAudio())
 
 	pr, err = processor.NewMP3(goapp.Config.GetString("mp3.url"))
 	if err != nil {
@@ -102,5 +78,37 @@ func addProcessors(synt *synthesizer.MainWorker) error {
 		}
 		synt.Add(pr)
 	}
+
+	ppr, err := processor.NewAbbreviator(goapp.Config.GetString("abbreviator.url"))
+	if err != nil {
+		return errors.Wrap(err, "Can't init abbreviator")
+	}
+	partRunner.Add(ppr)
+
+	ppr, err = processor.NewAccentuator(goapp.Config.GetString("accenter.url"))
+	if err != nil {
+		return errors.Wrap(err, "Can't init accenter")
+	}
+	partRunner.Add(ppr)
+
+	ppr, err = processor.NewTranscriber(goapp.Config.GetString("transcriber.url"))
+	if err != nil {
+		return errors.Wrap(err, "Can't init transcriber")
+	}
+	partRunner.Add(ppr)
+
+	ppr, err = processor.NewAcousticModel(goapp.Config.GetString("acousticModel.url"),
+		goapp.Config.GetString("acousticModel.spaceSymbol"))
+	if err != nil {
+		return errors.Wrap(err, "Can't init acousticModel")
+	}
+	partRunner.Add(ppr)
+
+	ppr, err = processor.NewVocoder(goapp.Config.GetString("vocoder.url"))
+	if err != nil {
+		return errors.Wrap(err, "Can't init vocoder")
+	}
+	partRunner.Add(ppr)
+
 	return nil
 }

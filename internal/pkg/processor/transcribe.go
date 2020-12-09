@@ -14,7 +14,7 @@ type transcriber struct {
 }
 
 //NewTranscriber creates new processor
-func NewTranscriber(urlStr string) (synthesizer.Processor, error) {
+func NewTranscriber(urlStr string) (synthesizer.PartProcessor, error) {
 	res := &transcriber{}
 	var err error
 	res.httpWrap, err = utils.NewHTTWrap(urlStr)
@@ -24,7 +24,7 @@ func NewTranscriber(urlStr string) (synthesizer.Processor, error) {
 	return res, nil
 }
 
-func (p *transcriber) Process(data *synthesizer.TTSData) error {
+func (p *transcriber) Process(data *synthesizer.TTSDataPart) error {
 	inData, err := mapTransInput(data)
 	if err != nil {
 		return err
@@ -63,7 +63,7 @@ type trans struct {
 	Transcription string `json:"transcription"`
 }
 
-func mapTransInput(data *synthesizer.TTSData) ([]*transInput, error) {
+func mapTransInput(data *synthesizer.TTSDataPart) ([]*transInput, error) {
 	res := []*transInput{}
 	var pr *transInput
 	for _, w := range data.Words {
@@ -103,7 +103,7 @@ func transWord(w *synthesizer.ProcessedWord) string {
 	return w.Tagged.Word
 }
 
-func mapTransOutput(data *synthesizer.TTSData, out []transOutput) error {
+func mapTransOutput(data *synthesizer.TTSDataPart, out []transOutput) error {
 	i := 0
 	for _, w := range data.Words {
 		tgw := w.Tagged
