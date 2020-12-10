@@ -60,7 +60,7 @@ func addProcessors(synt *synthesizer.MainWorker) error {
 
 	synt.Add(processor.NewSplitter(goapp.Config.GetInt("splitter.maxChars")))
 
-	partRunner := synthesizer.NewPartRunner()
+	partRunner := synthesizer.NewPartRunner(goapp.Config.GetInt("partRunner.workers"))
 	synt.Add(partRunner)
 
 	synt.Add(processor.NewJoinAudio())

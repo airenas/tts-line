@@ -1,6 +1,10 @@
 package synthesizer
 
-import "sync"
+import (
+	"sync"
+
+	"github.com/pkg/errors"
+)
 
 //PartProcessor interface
 type PartProcessor interface {
@@ -9,35 +13,57 @@ type PartProcessor interface {
 
 //PartRunner runs parts of the job
 type PartRunner struct {
-	processors []PartProcessor
+	processors     []PartProcessor
+	parallelWorker int
 }
 
 //NewPartRunner creates parallel runner
-func NewPartRunner() *PartRunner {
-	return &PartRunner{}
+func NewPartRunner(parallelWorker int) *PartRunner {
+	if parallelWorker < 1 {
+		parallelWorker = 3
+	}
+	return &PartRunner{parallelWorker: parallelWorker}
 }
 
 //Process is main method
 func (p *PartRunner) Process(data *TTSData) error {
-	workerQueueLimit := make(chan bool, 5)
+	workerQueueLimit := make(chan bool, p.parallelWorker)
+	errCh := make(chan error, 1)
+	closeCh := make(chan bool, 1)
 	var wg sync.WaitGroup
 
-	var errorMain error
+	defer close(closeCh)
+
 	for _, part := range data.Parts {
-		workerQueueLimit <- true // try get access to work
-		wg.Add(1)
-		go func(part *TTSDataPart) {
-			defer wg.Done()
-			defer func() { <-workerQueueLimit }()
-			err := p.process(part)
-			if err != nil {
-				errorMain = err
-			}
-		}(part)
+		select {
+		case err := <-errCh:
+			return errors.Wrap(err, "Failed to process partial tasks")
+		case workerQueueLimit <- true:
+			wg.Add(1)
+			go func(part *TTSDataPart) {
+				defer wg.Done()
+				defer func() { <-workerQueueLimit }()
+				err := p.process(part, closeCh)
+				if err != nil {
+					select {
+					case <-closeCh:
+					case errCh <- err:
+					}
+				}
+			}(part)
+		}
 	}
-	wg.Wait()
-	if errorMain != nil {
-		return errorMain
+
+	waitCh := make(chan bool, 1)
+	go func() {
+		wg.Wait()
+		close(waitCh)
+	}()
+
+	select {
+	case err := <-errCh:
+		return errors.Wrap(err, "Failed to process partial tasks")
+	case <-waitCh:
 	}
 	return nil
 }
@@ -47,11 +73,16 @@ func (p *PartRunner) Add(pr PartProcessor) {
 	p.processors = append(p.processors, pr)
 }
 
-func (p *PartRunner) process(data *TTSDataPart) error {
+func (p *PartRunner) process(data *TTSDataPart, clCh <-chan bool) error {
 	for _, pr := range p.processors {
-		err := pr.Process(data)
-		if err != nil {
-			return err
+		select {
+		case <-clCh:
+			return errors.New("Unexpected work termination")
+		default:
+			err := pr.Process(data)
+			if err != nil {
+				return err
+			}
 		}
 	}
 	return nil
