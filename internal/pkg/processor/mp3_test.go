@@ -48,7 +48,6 @@ func TestInvokeMP3_Fail(t *testing.T) {
 	assert.NotNil(t, pr)
 	pr.(*mp3Converter).httpWrap = httpJSONMock
 	d := synthesizer.TTSData{}
-	d.Spectogram = "spectogram"
 	pegomock.When(httpJSONMock.InvokeJSON(pegomock.AnyInterface(), pegomock.AnyInterface())).ThenReturn(errors.New("haha"))
 	err := pr.Process(&d)
 	assert.NotNil(t, err)

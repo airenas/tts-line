@@ -40,7 +40,7 @@ func TestInvokeAcousticModel(t *testing.T) {
 	pr, _ := NewAcousticModel("http://server", "")
 	assert.NotNil(t, pr)
 	pr.(*amodel).httpWrap = httpJSONMock
-	d := synthesizer.TTSData{}
+	d := synthesizer.TTSDataPart{}
 	d.Spectogram = "spectogram"
 	pegomock.When(httpJSONMock.InvokeJSON(pegomock.AnyInterface(), pegomock.AnyInterface())).Then(
 		func(params []pegomock.Param) pegomock.ReturnValues {
@@ -57,7 +57,7 @@ func TestInvokeAcousticModel_Fail(t *testing.T) {
 	pr, _ := NewAcousticModel("http://server", "")
 	assert.NotNil(t, pr)
 	pr.(*amodel).httpWrap = httpJSONMock
-	d := synthesizer.TTSData{}
+	d := synthesizer.TTSDataPart{}
 	d.Spectogram = "spectogram"
 	pegomock.When(httpJSONMock.InvokeJSON(pegomock.AnyInterface(), pegomock.AnyInterface())).ThenReturn(errors.New("haha"))
 	err := pr.Process(&d)
@@ -66,7 +66,7 @@ func TestInvokeAcousticModel_Fail(t *testing.T) {
 
 func TestMapAMInput(t *testing.T) {
 	pr := newTestAM(t, "http://server", "<space>")
-	d := synthesizer.TTSData{}
+	d := synthesizer.TTSDataPart{First: true}
 	d.Words = append(d.Words, &synthesizer.ProcessedWord{Transcription: "v a - o l i a", Tagged: synthesizer.TaggedWord{Word: "v1"}})
 	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Separator: ","}})
 	d.Words = append(d.Words, &synthesizer.ProcessedWord{Transcription: "v a", Tagged: synthesizer.TaggedWord{Word: "v1"}})
@@ -76,7 +76,7 @@ func TestMapAMInput(t *testing.T) {
 
 func TestMapAMInput_SpaceDot(t *testing.T) {
 	pr := newTestAM(t, "http://server", "<space>")
-	d := synthesizer.TTSData{}
+	d := synthesizer.TTSDataPart{First: true}
 	d.Words = append(d.Words, &synthesizer.ProcessedWord{Transcription: "v a - o l i a", Tagged: synthesizer.TaggedWord{Word: "v1"}})
 	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Separator: "."}})
 	d.Words = append(d.Words, &synthesizer.ProcessedWord{Transcription: "v a", Tagged: synthesizer.TaggedWord{Word: "v1"}})
@@ -86,7 +86,7 @@ func TestMapAMInput_SpaceDot(t *testing.T) {
 
 func TestMapAMInput_SpaceQuestion(t *testing.T) {
 	pr := newTestAM(t, "http://server", "<space>")
-	d := synthesizer.TTSData{}
+	d := synthesizer.TTSDataPart{First: true}
 	d.Words = append(d.Words, &synthesizer.ProcessedWord{Transcription: "v a - o l i a", Tagged: synthesizer.TaggedWord{Word: "v1"}})
 	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Separator: "?"}})
 	d.Words = append(d.Words, &synthesizer.ProcessedWord{Transcription: "v a", Tagged: synthesizer.TaggedWord{Word: "v1"}})
@@ -96,7 +96,7 @@ func TestMapAMInput_SpaceQuestion(t *testing.T) {
 
 func TestMapAMInput_Exclamation(t *testing.T) {
 	pr := newTestAM(t, "http://server", "<space>")
-	d := synthesizer.TTSData{}
+	d := synthesizer.TTSDataPart{First: true}
 	d.Words = append(d.Words, &synthesizer.ProcessedWord{Transcription: "v a - o l i a", Tagged: synthesizer.TaggedWord{Word: "v1"}})
 	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Separator: "!"}})
 	d.Words = append(d.Words, &synthesizer.ProcessedWord{Transcription: "v a", Tagged: synthesizer.TaggedWord{Word: "v1"}})
@@ -106,7 +106,7 @@ func TestMapAMInput_Exclamation(t *testing.T) {
 
 func TestMapAMInput_SpaceEnd(t *testing.T) {
 	pr := newTestAM(t, "http://server", "<space>")
-	d := synthesizer.TTSData{}
+	d := synthesizer.TTSDataPart{First: true}
 	d.Words = append(d.Words, &synthesizer.ProcessedWord{Transcription: "v a", Tagged: synthesizer.TaggedWord{Word: "v1"}})
 	inp := pr.mapAMInput(&d)
 	assert.Equal(t, "<space> v a <space>", inp.Text)

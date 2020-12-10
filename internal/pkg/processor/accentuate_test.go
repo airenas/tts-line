@@ -30,7 +30,7 @@ func TestInvokeAccentuator(t *testing.T) {
 	pr, _ := NewAccentuator("http://server")
 	assert.NotNil(t, pr)
 	pr.(*accentuator).httpWrap = httpJSONMock
-	d := synthesizer.TTSData{}
+	d := synthesizer.TTSDataPart{}
 	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Word: "word"}})
 	pegomock.When(httpJSONMock.InvokeJSON(pegomock.AnyInterface(), pegomock.AnyInterface())).Then(
 		func(params []pegomock.Param) pegomock.ReturnValues {
@@ -48,7 +48,7 @@ func TestInvokeAccentuator_FailOutput(t *testing.T) {
 	pr, _ := NewAccentuator("http://server")
 	assert.NotNil(t, pr)
 	pr.(*accentuator).httpWrap = httpJSONMock
-	d := synthesizer.TTSData{}
+	d := synthesizer.TTSDataPart{}
 	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Word: "word"}})
 	pegomock.When(httpJSONMock.InvokeJSON(pegomock.AnyInterface(), pegomock.AnyInterface())).Then(
 		func(params []pegomock.Param) pegomock.ReturnValues {
@@ -64,7 +64,7 @@ func TestInvokeAccentuator_Fail(t *testing.T) {
 	pr, _ := NewAccentuator("http://server")
 	assert.NotNil(t, pr)
 	pr.(*accentuator).httpWrap = httpJSONMock
-	d := synthesizer.TTSData{}
+	d := synthesizer.TTSDataPart{}
 	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Word: "word"}})
 	pegomock.When(httpJSONMock.InvokeJSON(pegomock.AnyInterface(), pegomock.AnyInterface())).ThenReturn(errors.New("haha"))
 	err := pr.Process(&d)
@@ -75,13 +75,13 @@ func TestInvokeAccentuator_NoData(t *testing.T) {
 	initTestJSON(t)
 	pr, _ := NewAccentuator("http://server")
 	assert.NotNil(t, pr)
-	d := synthesizer.TTSData{}
+	d := synthesizer.TTSDataPart{}
 	err := pr.Process(&d)
 	assert.Nil(t, err)
 }
 
 func TestMapAccInput(t *testing.T) {
-	d := synthesizer.TTSData{}
+	d := synthesizer.TTSDataPart{}
 	d.Words = append(d.Words, &synthesizer.ProcessedWord{UserTranscription: "v a - o l i a", Tagged: synthesizer.TaggedWord{Word: "v1"}})
 	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Separator: "!"}})
 	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Word: "v2"}})
@@ -91,7 +91,7 @@ func TestMapAccInput(t *testing.T) {
 }
 
 func TestMapAccOutput(t *testing.T) {
-	d := synthesizer.TTSData{}
+	d := synthesizer.TTSDataPart{}
 	d.Words = append(d.Words, &synthesizer.ProcessedWord{UserTranscription: "v a - o l i a", Tagged: synthesizer.TaggedWord{Word: "v1"}})
 	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Separator: "!"}})
 	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Word: "v2"}})
@@ -107,7 +107,7 @@ func TestMapAccOutput(t *testing.T) {
 }
 
 func TestMapAccOutput_FindBest(t *testing.T) {
-	d := synthesizer.TTSData{}
+	d := synthesizer.TTSDataPart{}
 	d.Words = append(d.Words, &synthesizer.ProcessedWord{UserTranscription: "v a - o l i a", Tagged: synthesizer.TaggedWord{Word: "v1"}})
 	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Separator: "!"}})
 	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Word: "v2", Mi: "mi2"}})
@@ -125,7 +125,7 @@ func TestMapAccOutput_FindBest(t *testing.T) {
 }
 
 func TestMapAccOutput_Error(t *testing.T) {
-	d := synthesizer.TTSData{}
+	d := synthesizer.TTSDataPart{}
 	d.Words = append(d.Words, &synthesizer.ProcessedWord{UserTranscription: "v a - o l i a", Tagged: synthesizer.TaggedWord{Word: "v1"}})
 	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Separator: "!"}})
 	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Word: "v2", Mi: "mi2"}})
@@ -143,7 +143,7 @@ func TestMapAccOutput_Error(t *testing.T) {
 }
 
 func TestMapAccOutput_WithAccent(t *testing.T) {
-	d := synthesizer.TTSData{}
+	d := synthesizer.TTSDataPart{}
 	d.Words = append(d.Words, &synthesizer.ProcessedWord{UserTranscription: "v a - o l i a", Tagged: synthesizer.TaggedWord{Word: "v1"}})
 	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Separator: "!"}})
 	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Word: "v2", Mi: "mi2"}})

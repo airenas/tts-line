@@ -30,7 +30,7 @@ func TestInvokeVocoder(t *testing.T) {
 	pr, _ := NewVocoder("http://server")
 	assert.NotNil(t, pr)
 	pr.(*vocoder).httpWrap = httpJSONMock
-	d := synthesizer.TTSData{}
+	d := synthesizer.TTSDataPart{}
 	d.Spectogram = "spectogram"
 	pegomock.When(httpJSONMock.InvokeJSON(pegomock.AnyInterface(), pegomock.AnyInterface())).Then(
 		func(params []pegomock.Param) pegomock.ReturnValues {
@@ -47,7 +47,7 @@ func TestInvokeVocoder_Fail(t *testing.T) {
 	pr, _ := NewVocoder("http://server")
 	assert.NotNil(t, pr)
 	pr.(*vocoder).httpWrap = httpJSONMock
-	d := synthesizer.TTSData{}
+	d := synthesizer.TTSDataPart{}
 	d.Spectogram = "spectogram"
 	pegomock.When(httpJSONMock.InvokeJSON(pegomock.AnyInterface(), pegomock.AnyInterface())).ThenReturn(errors.New("haha"))
 	err := pr.Process(&d)

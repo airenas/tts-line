@@ -40,7 +40,7 @@ func TestInvokeNewAbbreviator(t *testing.T) {
 	pr, _ := NewAbbreviator("http://server")
 	assert.NotNil(t, pr)
 	pr.(*abbreviator).httpWrap = httpJSONMock
-	d := synthesizer.TTSData{}
+	d := synthesizer.TTSDataPart{}
 	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Mi: "Y"}})
 	pegomock.When(httpJSONMock.InvokeJSON(pegomock.AnyInterface(), pegomock.AnyInterface())).Then(
 		func(params []pegomock.Param) pegomock.ReturnValues {
@@ -60,7 +60,7 @@ func TestInvokeNewAbbreviator_Fail(t *testing.T) {
 	pr, _ := NewAbbreviator("http://server")
 	assert.NotNil(t, pr)
 	pr.(*abbreviator).httpWrap = httpJSONMock
-	d := synthesizer.TTSData{}
+	d := synthesizer.TTSDataPart{}
 	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Mi: "Y"}})
 	pegomock.When(httpJSONMock.InvokeJSON(pegomock.AnyInterface(), pegomock.AnyInterface())).ThenReturn(errors.New("haha"))
 	err := pr.Process(&d)
@@ -68,7 +68,7 @@ func TestInvokeNewAbbreviator_Fail(t *testing.T) {
 }
 
 func TestMapAbbrOutput(t *testing.T) {
-	d := synthesizer.TTSData{}
+	d := synthesizer.TTSDataPart{}
 	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Word: "v1"}})
 	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Separator: ","}})
 
@@ -84,7 +84,7 @@ func TestMapAbbrOutput(t *testing.T) {
 }
 
 func TestMapAbbrOutput_Several(t *testing.T) {
-	d := synthesizer.TTSData{}
+	d := synthesizer.TTSDataPart{}
 	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Separator: ","}})
 	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Word: "v1"}})
 
@@ -101,7 +101,7 @@ func TestMapAbbrOutput_Several(t *testing.T) {
 }
 
 func TestMapAbbrOutput_Fail(t *testing.T) {
-	d := synthesizer.TTSData{}
+	d := synthesizer.TTSDataPart{}
 	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Word: "v1"}})
 	
 	abbrOut := []abbrWordOutput{}
