@@ -5,6 +5,11 @@ import (
 	"encoding/binary"
 )
 
+//IsValid test if wav binary data is OK, at least the size
+func IsValid(data []byte) bool {
+	return len(data) > 44
+}
+
 //TakeHeader copy header
 func TakeHeader(data []byte) []byte {
 	return data[0:40]

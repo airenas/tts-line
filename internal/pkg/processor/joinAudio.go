@@ -5,8 +5,6 @@ import (
 	"encoding/base64"
 	"fmt"
 
-	"github.com/airenas/go-app/pkg/goapp"
-
 	"github.com/airenas/tts-line/internal/pkg/synthesizer"
 	"github.com/airenas/tts-line/internal/pkg/utils"
 	"github.com/airenas/tts-line/internal/pkg/wav"
@@ -38,13 +36,18 @@ func join(parts []*synthesizer.TTSDataPart) (string, error) {
 
 	for _, part := range parts {
 		decoded, err := base64.StdEncoding.DecodeString(part.Audio)
+		if err != nil {
+			return "", err
+		}
+		if !wav.IsValid(decoded) {
+			return "", errors.New("No valid audio wave data")
+		}
 		if bufHeader == nil {
 			bufHeader = wav.TakeHeader(decoded)
 		}
 
 		size += wav.GetSize(decoded)
-		i, err := buf.Write(wav.TakeData(decoded))
-		goapp.Log.Infof("Wrote %d", i)
+		_, err = buf.Write(wav.TakeData(decoded))
 		if err != nil {
 			return "", err
 		}
@@ -54,5 +57,9 @@ func join(parts []*synthesizer.TTSDataPart) (string, error) {
 	enc.Write(bufHeader)
 	enc.Write(wav.SizeBytes(size))
 	enc.Write(buf.Bytes())
+	err := enc.Close()
+	if err != nil {
+		return "", err
+	}
 	return bufRes.String(), nil
 }
