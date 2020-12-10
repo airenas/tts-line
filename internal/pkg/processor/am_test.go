@@ -74,6 +74,16 @@ func TestMapAMInput(t *testing.T) {
 	assert.Equal(t, "<space> v a o l i a , v a <space>", inp.Text)
 }
 
+func TestMapAMInput_NoSilAtStart(t *testing.T) {
+	pr := newTestAM(t, "http://server", "sil")
+	d := synthesizer.TTSDataPart{First: false}
+	d.Words = append(d.Words, &synthesizer.ProcessedWord{Transcription: "v a - o l i a", Tagged: synthesizer.TaggedWord{Word: "v1"}})
+	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Separator: ","}})
+	d.Words = append(d.Words, &synthesizer.ProcessedWord{Transcription: "v a", Tagged: synthesizer.TaggedWord{Word: "v1"}})
+	inp := pr.mapAMInput(&d)
+	assert.Equal(t, "v a o l i a , v a sil", inp.Text)
+}
+
 func TestMapAMInput_SpaceDot(t *testing.T) {
 	pr := newTestAM(t, "http://server", "<space>")
 	d := synthesizer.TTSDataPart{First: true}
@@ -110,6 +120,47 @@ func TestMapAMInput_SpaceEnd(t *testing.T) {
 	d.Words = append(d.Words, &synthesizer.ProcessedWord{Transcription: "v a", Tagged: synthesizer.TaggedWord{Word: "v1"}})
 	inp := pr.mapAMInput(&d)
 	assert.Equal(t, "<space> v a <space>", inp.Text)
+}
+
+func TestMapAMInput_AddDotOnSentenceEnd(t *testing.T) {
+	pr := newTestAM(t, "http://server", "sil")
+	d := synthesizer.TTSDataPart{}
+	d.Words = append(d.Words, &synthesizer.ProcessedWord{Transcription: "v a", Tagged: synthesizer.TaggedWord{Word: "v1"}})
+	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{SentenceEnd: true}})
+	inp := pr.mapAMInput(&d)
+	assert.Equal(t, "v a . sil", inp.Text)
+}
+
+func TestMapAMInput_NoDotOnSentenceEnd(t *testing.T) {
+	pr := newTestAM(t, "http://server", "sil")
+	d := synthesizer.TTSDataPart{}
+	d.Words = append(d.Words, &synthesizer.ProcessedWord{Transcription: "v a", Tagged: synthesizer.TaggedWord{Word: "v1"}})
+	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Separator: "."}})
+	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{SentenceEnd: true}})
+	inp := pr.mapAMInput(&d)
+	assert.Equal(t, "v a . sil", inp.Text)
+}
+
+func TestMapAMInput_NoDotOnSentenceEnd2(t *testing.T) {
+	pr := newTestAM(t, "http://server", "sil")
+	d := synthesizer.TTSDataPart{}
+	d.Words = append(d.Words, &synthesizer.ProcessedWord{Transcription: "v a", Tagged: synthesizer.TaggedWord{Word: "v1"}})
+	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Separator: "?"}})
+	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{SentenceEnd: true}})
+	inp := pr.mapAMInput(&d)
+	assert.Equal(t, "v a ? sil", inp.Text)
+}
+
+func TestMapAMInput_SeveralSentenceEnd(t *testing.T) {
+	pr := newTestAM(t, "http://server", "sil")
+	d := synthesizer.TTSDataPart{}
+	d.Words = append(d.Words, &synthesizer.ProcessedWord{Transcription: "v a", Tagged: synthesizer.TaggedWord{Word: "v1"}})
+	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{SentenceEnd: true}})
+	d.Words = append(d.Words, &synthesizer.ProcessedWord{Transcription: "v a", Tagged: synthesizer.TaggedWord{Word: "v1"}})
+	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Separator: "?"}})
+	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{SentenceEnd: true}})
+	inp := pr.mapAMInput(&d)
+	assert.Equal(t, "v a . sil v a ? sil", inp.Text)
 }
 
 func TestSep(t *testing.T) {

@@ -49,11 +49,10 @@ type amOutput struct {
 
 func (p *amodel) mapAMInput(data *synthesizer.TTSDataPart) *amInput {
 	res := &amInput{}
-	var sb strings.Builder
-	space := " "
+	sb := &strings.Builder{}
 	pause := p.spaceSymbol
 	if data.First {
-		sb.WriteString(pause)
+		write(sb, pause)
 	}
 	lastSep := ""
 	for _, w := range data.Words {
@@ -61,35 +60,43 @@ func (p *amodel) mapAMInput(data *synthesizer.TTSDataPart) *amInput {
 		if tgw.Separator != "" {
 			sep := getSep(tgw.Separator)
 			if sep != "" {
-				sb.WriteString(space + sep)
+				write(sb, sep)
 				lastSep = sep
 			}
 			if addPause(sep) {
-				sb.WriteString(space + pause)
+				write(sb, pause)
 			}
 		} else if tgw.SentenceEnd {
 			if getSep(lastSep) == "" {
 				lastSep = "."
-				sb.WriteString(space + lastSep)
+				write(sb, lastSep)
 			}
 			if !strings.HasSuffix(sb.String(), pause) {
-				sb.WriteString(space + pause)
+				write(sb, pause)
 			}
 		} else {
 			phns := strings.Split(w.Transcription, " ")
 			for _, p := range phns {
 				if !skipPhn(p) {
-					sb.WriteString(space + p)
+					write(sb, p)
 					lastSep = p
 				}
 			}
 		}
 	}
 	if !strings.HasSuffix(sb.String(), pause) {
-		sb.WriteString(space + pause)
+		write(sb, pause)
 	}
 	res.Text = sb.String()
 	return res
+}
+
+func write(sb *strings.Builder, str string) {
+	if sb.Len() > 0 {
+		sb.WriteString(" " + str)
+	} else {
+		sb.WriteString(str)
+	}
 }
 
 func getSep(s string) string {
