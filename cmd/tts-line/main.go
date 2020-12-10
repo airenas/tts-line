@@ -78,7 +78,10 @@ func addProcessors(synt *synthesizer.MainWorker) error {
 		}
 		synt.Add(pr)
 	}
+	return addPartProcessors(partRunner)
+}
 
+func addPartProcessors(partRunner *synthesizer.PartRunner) error {
 	ppr, err := processor.NewAbbreviator(goapp.Config.GetString("abbreviator.url"))
 	if err != nil {
 		return errors.Wrap(err, "Can't init abbreviator")
