@@ -22,7 +22,7 @@ func TakeData(data []byte) []byte {
 
 //SizeBytes return wav size bytes
 func SizeBytes(data uint32) []byte {
-	res := make([]byte, 4)
-	binary.Write(bytes.NewBuffer(res), binary.LittleEndian, data)
-	return res
+	res := &bytes.Buffer{}
+	binary.Write(res, binary.LittleEndian, data)
+	return res.Bytes()
 }
