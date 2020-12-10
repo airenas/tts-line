@@ -58,7 +58,7 @@ func addProcessors(synt *synthesizer.MainWorker) error {
 	}
 	synt.Add(pr)
 
-	synt.Add(processor.NewSplitter())
+	synt.Add(processor.NewSplitter(goapp.Config.GetInt("splitter.maxChars")))
 
 	partRunner := synthesizer.NewPartRunner()
 	synt.Add(partRunner)
