@@ -13,31 +13,40 @@ import (
 
 func TestNewAcousticModel(t *testing.T) {
 	initTestJSON(t)
-	pr, err := NewAcousticModel("http://server", "")
+	pr, err := NewAcousticModel("http://server", "", "")
 	assert.Nil(t, err)
 	assert.NotNil(t, pr)
 }
 
 func TestNewAcousticModel_Space(t *testing.T) {
 	initTestJSON(t)
-	pr, _ := NewAcousticModel("http://server", "")
+	pr, _ := NewAcousticModel("http://server", "", "")
 	assert.NotNil(t, pr)
 	assert.Equal(t, "sil", pr.(*amodel).spaceSymbol)
-	pr, _ = NewAcousticModel("http://server", "<space>")
+	assert.Equal(t, "sil", pr.(*amodel).endSymbol)
+	pr, _ = NewAcousticModel("http://server", "<space>", "")
 	assert.NotNil(t, pr)
 	assert.Equal(t, "<space>", pr.(*amodel).spaceSymbol)
+	assert.Equal(t, "<space>", pr.(*amodel).endSymbol)
+}
+
+func TestNewAcousticModel_EndSymbol(t *testing.T) {
+	initTestJSON(t)
+	pr, _ := NewAcousticModel("http://server", "", "<end>")
+	assert.NotNil(t, pr)
+	assert.Equal(t, "<end>", pr.(*amodel).endSymbol)
 }
 
 func TestNewAcousticModel_Fails(t *testing.T) {
 	initTestJSON(t)
-	pr, err := NewAcousticModel("", "")
+	pr, err := NewAcousticModel("", "", "")
 	assert.NotNil(t, err)
 	assert.Nil(t, pr)
 }
 
 func TestInvokeAcousticModel(t *testing.T) {
 	initTestJSON(t)
-	pr, _ := NewAcousticModel("http://server", "")
+	pr, _ := NewAcousticModel("http://server", "", "")
 	assert.NotNil(t, pr)
 	pr.(*amodel).httpWrap = httpJSONMock
 	d := newTestTTSDataPart()
@@ -54,7 +63,7 @@ func TestInvokeAcousticModel(t *testing.T) {
 
 func TestInvokeAcousticModel_Fail(t *testing.T) {
 	initTestJSON(t)
-	pr, _ := NewAcousticModel("http://server", "")
+	pr, _ := NewAcousticModel("http://server", "", "")
 	assert.NotNil(t, pr)
 	pr.(*amodel).httpWrap = httpJSONMock
 	d := newTestTTSDataPart()
@@ -66,7 +75,7 @@ func TestInvokeAcousticModel_Fail(t *testing.T) {
 
 func TestInvokeAcousticModel_FromAM(t *testing.T) {
 	initTestJSON(t)
-	pr, _ := NewAcousticModel("http://server", "")
+	pr, _ := NewAcousticModel("http://server", "", "")
 	assert.NotNil(t, pr)
 	pr.(*amodel).httpWrap = httpJSONMock
 	d := newTestTTSDataPart()
@@ -188,6 +197,40 @@ func TestMapAMInput_SeveralSentenceEnd(t *testing.T) {
 	assert.Equal(t, "v a . sil v a ? sil", inp.Text)
 }
 
+func TestMapAMInput_CustomEnd(t *testing.T) {
+	pr := newTestAM(t, "http://server", "sil")
+	pr.endSymbol = "sp sil"
+	d := newTestTTSDataPart()
+	d.Words = append(d.Words, &synthesizer.ProcessedWord{Transcription: "v a", Tagged: synthesizer.TaggedWord{Word: "v1"}})
+	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{SentenceEnd: true}})
+	inp := pr.mapAMInput(d)
+	assert.Equal(t, "v a . sp sil", inp.Text)
+}
+
+func TestMapAMInput_CustomEnd_Dot(t *testing.T) {
+	pr := newTestAM(t, "http://server", "sil")
+	pr.endSymbol = "sp sil"
+	d := newTestTTSDataPart()
+	d.Words = append(d.Words, &synthesizer.ProcessedWord{Transcription: "v a", Tagged: synthesizer.TaggedWord{Word: "v1"}})
+	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Separator: "."}})
+	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{SentenceEnd: true}})
+	inp := pr.mapAMInput(d)
+	assert.Equal(t, "v a . sp sil", inp.Text)
+}
+
+func TestMapAMInput_CustomEnd_SeveralSentenceEnd(t *testing.T) {
+	pr := newTestAM(t, "http://server", "sil")
+	pr.endSymbol = "sp sil"
+	d := newTestTTSDataPart()
+	d.Words = append(d.Words, &synthesizer.ProcessedWord{Transcription: "v a", Tagged: synthesizer.TaggedWord{Word: "v1"}})
+	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{SentenceEnd: true}})
+	d.Words = append(d.Words, &synthesizer.ProcessedWord{Transcription: "v a", Tagged: synthesizer.TaggedWord{Word: "v1"}})
+	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Separator: "."}})
+	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{SentenceEnd: true}})
+	inp := pr.mapAMInput(d)
+	assert.Equal(t, "v a . sil v a . sp sil", inp.Text)
+}
+
 func TestSep(t *testing.T) {
 	for _, s := range ",:.?!-" {
 		assert.Equal(t, string(s), getSep(string(s)))
@@ -198,7 +241,7 @@ func TestSep(t *testing.T) {
 }
 
 func newTestAM(t *testing.T, urlStr string, spaceSym string) *amodel {
-	pr, err := NewAcousticModel(urlStr, spaceSym)
+	pr, err := NewAcousticModel(urlStr, spaceSym, spaceSym)
 	assert.Nil(t, err)
 	return pr.(*amodel)
 }

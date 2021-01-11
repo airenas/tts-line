@@ -102,7 +102,7 @@ func addPartProcessors(partRunner *synthesizer.PartRunner) error {
 	partRunner.Add(ppr)
 
 	ppr, err = processor.NewAcousticModel(goapp.Config.GetString("acousticModel.url"),
-		goapp.Config.GetString("acousticModel.spaceSymbol"))
+		goapp.Config.GetString("acousticModel.spaceSymbol"), goapp.Config.GetString("acousticModel.endSymbol"))
 	if err != nil {
 		return errors.Wrap(err, "Can't init acousticModel")
 	}

@@ -11,10 +11,11 @@ import (
 type amodel struct {
 	httpWrap    HTTPInvokerJSON
 	spaceSymbol string
+	endSymbol   string
 }
 
 //NewAcousticModel creates new processor
-func NewAcousticModel(urlStr string, spaceSym string) (synthesizer.PartProcessor, error) {
+func NewAcousticModel(urlStr string, spaceSym string, endSym string) (synthesizer.PartProcessor, error) {
 	res := &amodel{}
 	var err error
 	res.httpWrap, err = utils.NewHTTWrap(urlStr)
@@ -24,6 +25,10 @@ func NewAcousticModel(urlStr string, spaceSym string) (synthesizer.PartProcessor
 	res.spaceSymbol = spaceSym
 	if res.spaceSymbol == "" {
 		res.spaceSymbol = "sil"
+	}
+	res.endSymbol = endSym
+	if res.endSymbol == "" {
+		res.endSymbol = res.spaceSymbol
 	}
 	return res, nil
 }
@@ -53,10 +58,11 @@ func (p *amodel) mapAMInput(data *synthesizer.TTSDataPart) *amInput {
 		res.Text = data.Text
 		return res
 	}
-	sb := &strings.Builder{}
+	sb := make([]string, 0)
+	//sb := &strings.Builder{}
 	pause := p.spaceSymbol
 	if data.First {
-		write(sb, pause)
+		sb = append(sb, pause)
 	}
 	lastSep := ""
 	for _, w := range data.Words {
@@ -64,43 +70,44 @@ func (p *amodel) mapAMInput(data *synthesizer.TTSDataPart) *amInput {
 		if tgw.Separator != "" {
 			sep := getSep(tgw.Separator)
 			if sep != "" {
-				write(sb, sep)
+				sb = append(sb, sep)
 				lastSep = sep
 			}
 			if addPause(sep) {
-				write(sb, pause)
+				sb = append(sb, pause)
 			}
 		} else if tgw.SentenceEnd {
 			if getSep(lastSep) == "" {
 				lastSep = "."
-				write(sb, lastSep)
+				sb = append(sb, lastSep)
 			}
-			if !strings.HasSuffix(sb.String(), pause) {
-				write(sb, pause)
+			l := len(sb)
+			if l > 0 && sb[l-1] != pause {
+				sb = append(sb, pause)
 			}
 		} else {
 			phns := strings.Split(w.Transcription, " ")
 			for _, p := range phns {
 				if !skipPhn(p) {
-					write(sb, p)
+					sb = append(sb, p)
 					lastSep = p
 				}
 			}
 		}
 	}
-	if !strings.HasSuffix(sb.String(), pause) {
-		write(sb, pause)
-	}
-	res.Text = sb.String()
-	return res
-}
 
-func write(sb *strings.Builder, str string) {
-	if sb.Len() > 0 {
-		sb.WriteString(" " + str)
-	} else {
-		sb.WriteString(str)
+	l := len(sb)
+	if l > 0 {
+		if sb[l-1] != p.endSymbol {
+			if sb[l-1] == pause {
+				sb[l-1] = p.endSymbol
+			} else {
+				sb = append(sb, p.endSymbol)
+			}
+		}
 	}
+	res.Text = strings.Join(sb, " ")
+	return res
 }
 
 func getSep(s string) string {
