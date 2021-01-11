@@ -40,7 +40,7 @@ func TestInvokeNewAbbreviator(t *testing.T) {
 	pr, _ := NewAbbreviator("http://server")
 	assert.NotNil(t, pr)
 	pr.(*abbreviator).httpWrap = httpJSONMock
-	d := synthesizer.TTSDataPart{}
+	d := newTestTTSDataPart()
 	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Mi: "Y"}})
 	pegomock.When(httpJSONMock.InvokeJSON(pegomock.AnyInterface(), pegomock.AnyInterface())).Then(
 		func(params []pegomock.Param) pegomock.ReturnValues {
@@ -48,7 +48,7 @@ func TestInvokeNewAbbreviator(t *testing.T) {
 				Words: []abbrResultWord{abbrResultWord{Word: "olia", WordTrans: "oolia", UserTrans: "o l i a", Syll: "o-lia"}}}}
 			return []pegomock.ReturnValue{nil}
 		})
-	err := pr.Process(&d)
+	err := pr.Process(d)
 	assert.Nil(t, err)
 	assert.Equal(t, "o l i a", d.Words[0].UserTranscription)
 	assert.Equal(t, "o-lia", d.Words[0].UserSyllables)
@@ -60,15 +60,15 @@ func TestInvokeNewAbbreviator_Fail(t *testing.T) {
 	pr, _ := NewAbbreviator("http://server")
 	assert.NotNil(t, pr)
 	pr.(*abbreviator).httpWrap = httpJSONMock
-	d := synthesizer.TTSDataPart{}
+	d := newTestTTSDataPart()
 	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Mi: "Y"}})
 	pegomock.When(httpJSONMock.InvokeJSON(pegomock.AnyInterface(), pegomock.AnyInterface())).ThenReturn(errors.New("haha"))
-	err := pr.Process(&d)
+	err := pr.Process(d)
 	assert.NotNil(t, err)
 }
 
 func TestMapAbbrOutput(t *testing.T) {
-	d := synthesizer.TTSDataPart{}
+	d := newTestTTSDataPart()
 	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Word: "v1"}})
 	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Separator: ","}})
 
@@ -76,7 +76,7 @@ func TestMapAbbrOutput(t *testing.T) {
 	abbrOut = append(abbrOut, abbrWordOutput{ID: "0", Words: []abbrResultWord{
 		abbrResultWord{Word: "olia", WordTrans: "oolia", UserTrans: "o l i a", Syll: "o-lia"}}})
 
-	err := mapAbbrOutput(&d, abbrOut)
+	err := mapAbbrOutput(d, abbrOut)
 	assert.Nil(t, err)
 	assert.Equal(t, ",", d.Words[1].Tagged.Separator)
 	assert.Equal(t, "o l i a", d.Words[0].UserTranscription)
@@ -84,7 +84,7 @@ func TestMapAbbrOutput(t *testing.T) {
 }
 
 func TestMapAbbrOutput_Several(t *testing.T) {
-	d := synthesizer.TTSDataPart{}
+	d := newTestTTSDataPart()
 	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Separator: ","}})
 	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Word: "v1"}})
 
@@ -93,7 +93,7 @@ func TestMapAbbrOutput_Several(t *testing.T) {
 		abbrResultWord{Word: "v1", WordTrans: "oolia", UserTrans: "o l i a", Syll: "o-lia"},
 		abbrResultWord{Word: "v2", WordTrans: "oolia", UserTrans: "v 2", Syll: "o-lia"}}})
 
-	err := mapAbbrOutput(&d, abbrOut)
+	err := mapAbbrOutput(d, abbrOut)
 	assert.Nil(t, err)
 	assert.Equal(t, ",", d.Words[0].Tagged.Separator)
 	assert.Equal(t, "v1", d.Words[1].Tagged.Word)
@@ -101,14 +101,14 @@ func TestMapAbbrOutput_Several(t *testing.T) {
 }
 
 func TestMapAbbrOutput_Fail(t *testing.T) {
-	d := synthesizer.TTSDataPart{}
+	d := newTestTTSDataPart()
 	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Word: "v1"}})
-	
+
 	abbrOut := []abbrWordOutput{}
 	abbrOut = append(abbrOut, abbrWordOutput{ID: "XX", Words: []abbrResultWord{
 		abbrResultWord{Word: "olia", WordTrans: "oolia", UserTrans: "o l i a", Syll: "o-lia"}}})
 
-	err := mapAbbrOutput(&d, abbrOut)
+	err := mapAbbrOutput(d, abbrOut)
 	assert.NotNil(t, err)
 }
 
@@ -118,4 +118,8 @@ func TestIsAbbr(t *testing.T) {
 	assert.True(t, isAbbr("N", "PP"))
 	assert.False(t, isAbbr("Npmsnng", "Kaunas"))
 	assert.False(t, isAbbr("Npmsnng", "Pp"))
+}
+
+func newTestTTSDataPart() *synthesizer.TTSDataPart {
+	return &synthesizer.TTSDataPart{Cfg: &synthesizer.TTSConfig{}}
 }
