@@ -3,6 +3,8 @@ package processor
 import (
 	"strings"
 
+	"github.com/airenas/go-app/pkg/goapp"
+
 	"github.com/airenas/tts-line/internal/pkg/synthesizer"
 	"github.com/airenas/tts-line/internal/pkg/utils"
 	"github.com/pkg/errors"
@@ -30,6 +32,7 @@ func NewAcousticModel(urlStr string, spaceSym string, endSym string) (synthesize
 	if res.endSymbol == "" {
 		res.endSymbol = res.spaceSymbol
 	}
+	goapp.Log.Infof("AM pause: '%s', end symbol: '%s'", res.spaceSymbol, res.endSymbol)
 	return res, nil
 }
 
