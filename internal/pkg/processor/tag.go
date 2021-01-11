@@ -1,6 +1,7 @@
 package processor
 
 import (
+	"github.com/airenas/go-app/pkg/goapp"
 	"github.com/airenas/tts-line/internal/pkg/synthesizer"
 	"github.com/airenas/tts-line/internal/pkg/utils"
 	"github.com/pkg/errors"
@@ -22,6 +23,10 @@ func NewTagger(urlStr string) (synthesizer.Processor, error) {
 }
 
 func (p *tagger) Process(data *synthesizer.TTSData) error {
+	if p.skip(data) {
+		goapp.Log.Info("Skip tagger")
+		return nil
+	}
 	var output []*TaggedWord
 	err := p.httpWrap.InvokeText(data.TextWithNumbers, &output)
 	if err != nil {
@@ -62,4 +67,8 @@ func mapTag(tag *TaggedWord) synthesizer.TaggedWord {
 		res.Mi = tag.Mi
 	}
 	return res
+}
+
+func (p *tagger) skip(data *synthesizer.TTSData) bool {
+	return data.Cfg.JustAM
 }

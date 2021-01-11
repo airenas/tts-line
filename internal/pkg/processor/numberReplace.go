@@ -1,6 +1,7 @@
 package processor
 
 import (
+	"github.com/airenas/go-app/pkg/goapp"
 	"github.com/airenas/tts-line/internal/pkg/synthesizer"
 	"github.com/airenas/tts-line/internal/pkg/utils"
 	"github.com/pkg/errors"
@@ -27,5 +28,13 @@ func NewNumberReplace(urlStr string) (synthesizer.Processor, error) {
 }
 
 func (p *numberReplace) Process(data *synthesizer.TTSData) error {
+	if p.skip(data) {
+		goapp.Log.Info("Skip numberReplace")
+		return nil
+	}
 	return p.httpWrap.InvokeText(data.Text, &data.TextWithNumbers)
+}
+
+func (p *numberReplace) skip(data *synthesizer.TTSData) bool {
+	return data.Cfg.JustAM
 }

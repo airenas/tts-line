@@ -52,6 +52,10 @@ func initChecks(config *viper.Viper) ([]api.Check, error) {
 }
 
 func (p *validator) Process(data *synthesizer.TTSData) error {
+	if p.skip(data) {
+		goapp.Log.Info("Skip validator")
+		return nil
+	}
 	inData := p.mapValidatorInput(data)
 	var output valOutput
 	err := p.httpWrap.InvokeJSON(inData, &output)
@@ -93,4 +97,8 @@ func (p *validator) mapValidatorInput(data *synthesizer.TTSData) *valInput {
 		}
 	}
 	return res
+}
+
+func (p *validator) skip(data *synthesizer.TTSData) bool {
+	return data.Cfg.JustAM
 }

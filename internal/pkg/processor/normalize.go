@@ -4,6 +4,8 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/airenas/go-app/pkg/goapp"
+
 	"github.com/airenas/tts-line/internal/pkg/service/api"
 	"github.com/airenas/tts-line/internal/pkg/synthesizer"
 	"github.com/airenas/tts-line/internal/pkg/utils"
@@ -18,6 +20,10 @@ func NewNormalizer() synthesizer.Processor {
 }
 
 func (p *normalizer) Process(data *synthesizer.TTSData) error {
+	if p.skip(data) {
+		goapp.Log.Info("Skip normalize")
+		return nil
+	}
 	utils.LogData("Input: ", data.OriginalText)
 	data.Text = normalize(data.OriginalText)
 	if data.Text == "" {
@@ -44,4 +50,8 @@ func normalizeSpaces(text string) string {
 	res = strings.ReplaceAll(res, "\r", " ")
 	res = strings.TrimSpace(regSpaces.ReplaceAllString(res, " "))
 	return res
+}
+
+func (p *normalizer) skip(data *synthesizer.TTSData) bool {
+	return data.Cfg.JustAM
 }

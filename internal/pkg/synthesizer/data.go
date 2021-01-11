@@ -4,6 +4,7 @@ import "github.com/airenas/tts-line/internal/pkg/service/api"
 
 //TTSData working data for one request
 type TTSData struct {
+	Cfg                TTSConfig
 	OriginalText       string
 	Text               string
 	TextWithNumbers    string
@@ -16,8 +17,15 @@ type TTSData struct {
 	AudioMP3 string
 }
 
+//TTSConfig some TTS configuration
+type TTSConfig struct {
+	JustAM bool
+}
+
 //TTSDataPart partial tts data
 type TTSDataPart struct {
+	Text       string
+	Cfg        *TTSConfig
 	First      bool
 	Words      []*ProcessedWord
 	Spectogram string

@@ -1,5 +1,6 @@
 port: 8010
 maxLogDataSize: 500
+allowCustom: true
 
 # numberReplace:
 #   url: http://prn509.vdu.lt:9080/api/ 
@@ -25,10 +26,10 @@ transcriber:
   url: http://192.168.1.71:7027/transcription?gem=gem1&joinatsi=true 
 
 acousticModel:
-  url: http://3.140.79.47:8000/model
+  url: http://semspch04.vdu.lt:8000/model
 
 vocoder:
-  url: http://3.140.79.47:8001/model    
+  url: http://semspch04.vdu.lt:8001/model    
 
 mp3:
   url: http://192.168.1.71:8207/convert   
@@ -37,5 +38,5 @@ filer:
   dir: /home/airenas/projects/tts-line
 
 cache:
-  duration: 10m
+  duration: 0s
 

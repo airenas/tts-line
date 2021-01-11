@@ -23,6 +23,10 @@ func NewAccentuator(urlStr string) (synthesizer.PartProcessor, error) {
 }
 
 func (p *accentuator) Process(data *synthesizer.TTSDataPart) error {
+	if p.skip(data) {
+		goapp.Log.Info("Skip accentuator")
+		return nil
+	}
 	inData := mapAccentInput(data)
 	if len(inData) > 0 {
 
@@ -116,4 +120,8 @@ func findBestAccentVariant(acc []accent, mi string) *synthesizer.AccentVariant {
 	}
 	//no filter
 	return find(func(a *accent) bool { return true }, func(v *synthesizer.AccentVariant) bool { return true })
+}
+
+func (p *accentuator) skip(data *synthesizer.TTSDataPart) bool {
+	return data.Cfg.JustAM
 }

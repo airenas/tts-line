@@ -18,6 +18,7 @@ func main() {
 	data.Port = goapp.Config.GetInt("port")
 	utils.MaxLogDataSize = goapp.Config.GetInt("maxLogDataSize")
 	synt := &synthesizer.MainWorker{}
+	synt.AllowCustomCode = goapp.Config.GetBool("allowCustom")
 	err := addProcessors(synt)
 	if err != nil {
 		goapp.Log.Fatal(errors.Wrap(err, "Can't init processors"))

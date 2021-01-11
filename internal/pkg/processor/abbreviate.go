@@ -32,6 +32,10 @@ func NewAbbreviator(urlStr string) (synthesizer.PartProcessor, error) {
 }
 
 func (p *abbreviator) Process(data *synthesizer.TTSDataPart) error {
+	if p.skip(data) {
+		goapp.Log.Info("Skip abbreviator")
+		return nil
+	}
 	inData := mapAbbrInput(data)
 	if len(inData) > 0 {
 		var outData []abbrWordOutput
@@ -129,4 +133,8 @@ func newWords(aw []abbrResultWord, w *synthesizer.ProcessedWord) []*synthesizer.
 		res = append(res, &wd)
 	}
 	return res
+}
+
+func (p *abbreviator) skip(data *synthesizer.TTSDataPart) bool {
+	return data.Cfg.JustAM
 }

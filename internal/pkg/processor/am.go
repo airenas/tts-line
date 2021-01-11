@@ -49,6 +49,10 @@ type amOutput struct {
 
 func (p *amodel) mapAMInput(data *synthesizer.TTSDataPart) *amInput {
 	res := &amInput{}
+	if data.Cfg.JustAM {
+		res.Text = data.Text
+		return res
+	}
 	sb := &strings.Builder{}
 	pause := p.spaceSymbol
 	if data.First {
