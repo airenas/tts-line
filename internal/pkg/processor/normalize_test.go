@@ -32,3 +32,10 @@ func TestNormalizeProcess_NoText(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Equal(t, "no_text", d.ValidationFailures[0].Check.ID)
 }
+
+func TestNormalize_Skip(t *testing.T) {
+	d := &synthesizer.TTSData{}
+	d.Cfg.JustAM = true
+	err := NewNormalizer().Process(d)
+	assert.Nil(t, err)
+}

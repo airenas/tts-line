@@ -61,3 +61,11 @@ func TestInvokeNumberReplace_Fail(t *testing.T) {
 	err := pr.Process(&d)
 	assert.NotNil(t, err)
 }
+
+func TestInvokeNumberReplace_Skip(t *testing.T) {
+	d := &synthesizer.TTSData{}
+	d.Cfg.JustAM = true
+	pr, _ := NewNumberReplace("http://server")
+	err := pr.Process(d)
+	assert.Nil(t, err)
+}

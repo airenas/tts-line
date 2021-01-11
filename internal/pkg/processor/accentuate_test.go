@@ -80,6 +80,14 @@ func TestInvokeAccentuator_NoData(t *testing.T) {
 	assert.Nil(t, err)
 }
 
+func TestInvokeAccentuator_Skip(t *testing.T) {
+	d := newTestTTSDataPart()
+	d.Cfg.JustAM = true
+	pr, _ := NewAccentuator("http://server")
+	err := pr.Process(d)
+	assert.Nil(t, err)
+}
+
 func TestMapAccInput(t *testing.T) {
 	d := newTestTTSDataPart()
 	d.Words = append(d.Words, &synthesizer.ProcessedWord{UserTranscription: "v a - o l i a", Tagged: synthesizer.TaggedWord{Word: "v1"}})

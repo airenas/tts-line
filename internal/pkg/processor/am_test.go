@@ -64,6 +64,22 @@ func TestInvokeAcousticModel_Fail(t *testing.T) {
 	assert.NotNil(t, err)
 }
 
+func TestInvokeAcousticModel_FromAM(t *testing.T) {
+	initTestJSON(t)
+	pr, _ := NewAcousticModel("http://server", "")
+	assert.NotNil(t, pr)
+	pr.(*amodel).httpWrap = httpJSONMock
+	d := newTestTTSDataPart()
+	d.Cfg.JustAM = true
+	d.Text = "olia"
+	pegomock.When(httpJSONMock.InvokeJSON(pegomock.AnyInterface(), pegomock.AnyInterface())).ThenReturn(nil)
+	err := pr.Process(d)
+	assert.Nil(t, err)
+	cp1, _ := httpJSONMock.VerifyWasCalledOnce().InvokeJSON(pegomock.AnyInterface(), pegomock.AnyInterface()).GetCapturedArguments()
+	assert.Equal(t, &amInput{Text: "olia"}, cp1)
+
+}
+
 func TestMapAMInput(t *testing.T) {
 	pr := newTestAM(t, "http://server", "<space>")
 	d := newTestTTSDataPart()

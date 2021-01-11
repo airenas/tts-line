@@ -66,6 +66,13 @@ func TestInvokeNewAbbreviator_Fail(t *testing.T) {
 	err := pr.Process(d)
 	assert.NotNil(t, err)
 }
+func TestInvokeAbbr_Skip(t *testing.T) {
+	d := newTestTTSDataPart()
+	d.Cfg.JustAM = true
+	pr, _ := NewAbbreviator("http://server")
+	err := pr.Process(d)
+	assert.Nil(t, err)
+}
 
 func TestMapAbbrOutput(t *testing.T) {
 	d := newTestTTSDataPart()

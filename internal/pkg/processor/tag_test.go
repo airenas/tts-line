@@ -62,3 +62,11 @@ func TestInvokeTagger_Fail(t *testing.T) {
 	err := pr.Process(&d)
 	assert.NotNil(t, err)
 }
+
+func TestInvokeTagger_Skip(t *testing.T) {
+	d := &synthesizer.TTSData{}
+	d.Cfg.JustAM = true
+	pr, _ := NewTagger("http://server")
+	err := pr.Process(d)
+	assert.Nil(t, err)
+}

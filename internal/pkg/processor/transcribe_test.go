@@ -79,6 +79,14 @@ func TestInvokeTranscriber_NoData(t *testing.T) {
 	assert.Nil(t, err)
 }
 
+func TestInvokeTranscriber_Skip(t *testing.T) {
+	d := newTestTTSDataPart()
+	d.Cfg.JustAM = true
+	pr, _ := NewTranscriber("http://server")
+	err := pr.Process(d)
+	assert.Nil(t, err)
+}
+
 func TestInvokeTranscriber_FailOutput(t *testing.T) {
 	initTestJSON(t)
 	pr, _ := NewTranscriber("http://server")

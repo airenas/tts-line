@@ -85,6 +85,15 @@ func TestInvokeValidator_Fail(t *testing.T) {
 	assert.NotNil(t, err)
 }
 
+
+func TestInvokeValidator_Skip(t *testing.T) {
+	d := &synthesizer.TTSData{}
+	d.Cfg.JustAM = true
+	pr, _ := NewValidator(newTestConfig("url: http://server\ncheck:\n  min_words: 1"))
+	err := pr.Process(d)
+	assert.Nil(t, err)
+}
+
 func TestMapValInput(t *testing.T) {
 	pr, _ := NewValidator(newTestConfig("url: http://server\ncheck:\n  min_words: 1"))
 	assert.NotNil(t, pr)
