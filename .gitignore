@@ -18,3 +18,5 @@ go.sum
 deploy/tts-line/data/**
 Makefile.option
 internal/pkg/test/mocks/**
+cmd/tts-line/__debug_bin
+out.mp3
