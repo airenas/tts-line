@@ -7,6 +7,7 @@ import (
 	"github.com/airenas/tts-line/internal/pkg/service"
 	"github.com/airenas/tts-line/internal/pkg/synthesizer"
 	"github.com/airenas/tts-line/internal/pkg/utils"
+	"github.com/spf13/viper"
 
 	"github.com/pkg/errors"
 )
@@ -79,36 +80,36 @@ func addProcessors(synt *synthesizer.MainWorker) error {
 		}
 		synt.Add(pr)
 	}
-	return addPartProcessors(partRunner)
+	return addPartProcessors(partRunner, goapp.Config)
 }
 
-func addPartProcessors(partRunner *synthesizer.PartRunner) error {
-	ppr, err := processor.NewAbbreviator(goapp.Config.GetString("abbreviator.url"))
+func addPartProcessors(partRunner *synthesizer.PartRunner, cfg *viper.Viper) error {
+	ppr, err := processor.NewAbbreviator(cfg.GetString("abbreviator.url"))
 	if err != nil {
 		return errors.Wrap(err, "Can't init abbreviator")
 	}
 	partRunner.Add(ppr)
 
-	ppr, err = processor.NewAccentuator(goapp.Config.GetString("accenter.url"))
+	ppr, err = processor.NewAccentuator(cfg.GetString("accenter.url"))
 	if err != nil {
 		return errors.Wrap(err, "Can't init accenter")
 	}
 	partRunner.Add(ppr)
 
-	ppr, err = processor.NewTranscriber(goapp.Config.GetString("transcriber.url"))
+	ppr, err = processor.NewTranscriber(cfg.GetString("transcriber.url"))
 	if err != nil {
 		return errors.Wrap(err, "Can't init transcriber")
 	}
 	partRunner.Add(ppr)
 
-	ppr, err = processor.NewAcousticModel(goapp.Sub(goapp.Config, "acousticModel"))
+	ppr, err = processor.NewAcousticModel(goapp.Sub(cfg, "acousticModel"))
 	if err != nil {
 		return errors.Wrap(err, "Can't init acousticModel")
 	}
 	partRunner.Add(ppr)
 
-	if !goapp.Config.GetBool("acousticModel.hasVocoder") {
-		ppr, err = processor.NewVocoder(goapp.Config.GetString("vocoder.url"))
+	if !cfg.GetBool("acousticModel.hasVocoder") {
+		ppr, err = processor.NewVocoder(cfg.GetString("vocoder.url"))
 		if err != nil {
 			return errors.Wrap(err, "Can't init vocoder")
 		}

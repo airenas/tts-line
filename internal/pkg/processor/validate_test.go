@@ -2,7 +2,6 @@ package processor
 
 import (
 	"os"
-	"strings"
 	"testing"
 
 	"github.com/petergtz/pegomock"
@@ -13,6 +12,7 @@ import (
 
 	"github.com/airenas/tts-line/internal/pkg/service/api"
 	"github.com/airenas/tts-line/internal/pkg/synthesizer"
+	"github.com/airenas/tts-line/internal/pkg/test"
 )
 
 func TestNewValidator(t *testing.T) {
@@ -85,7 +85,6 @@ func TestInvokeValidator_Fail(t *testing.T) {
 	assert.NotNil(t, err)
 }
 
-
 func TestInvokeValidator_Skip(t *testing.T) {
 	d := &synthesizer.TTSData{}
 	d.Cfg.JustAM = true
@@ -120,8 +119,5 @@ func TestMapValInput_FromConfig(t *testing.T) {
 }
 
 func newTestConfig(yaml string) *viper.Viper {
-	res := viper.New()
-	res.SetConfigType("yaml")
-	res.ReadConfig(strings.NewReader(yaml))
-	return res
+	return test.NewConfig(yaml)
 }
