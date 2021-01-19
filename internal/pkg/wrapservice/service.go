@@ -68,7 +68,7 @@ func (h *synthesisHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		goapp.Log.Error("Can't process. ", err)
 		return
 	}
-	res := &api.Result{AudioAsString: resp}
+	res := &api.Result{Data: resp}
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)

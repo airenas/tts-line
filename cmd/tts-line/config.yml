@@ -26,7 +26,10 @@ transcriber:
   url: http://192.168.1.71:7027/transcription?gem=gem1&joinatsi=true 
 
 acousticModel:
-  url: http://semspch04.vdu.lt:8000/model
+  # url: http://semspch04.vdu.lt:8000/model
+  url: http://localhost:8011/synthesize
+  hasVocoder: true
+
 
 vocoder:
   url: http://semspch04.vdu.lt:8001/model    

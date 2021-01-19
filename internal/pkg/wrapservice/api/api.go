@@ -7,5 +7,5 @@ type Input struct {
 
 //Result is synthesis result
 type Result struct {
-	AudioAsString string `json:"audioAsString,omitempty"`
+	Data string `json:"data,omitempty"`
 }

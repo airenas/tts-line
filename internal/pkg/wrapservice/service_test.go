@@ -45,7 +45,7 @@ func Test_Returns(t *testing.T) {
 	req := httptest.NewRequest("POST", "/synthesize", toReader(api.Input{Text: "olia"}))
 	resp := testCode(t, req, 200)
 	bytes, _ := ioutil.ReadAll(resp.Body)
-	assert.Contains(t, string(bytes), `"audioAsString":"wav"`)
+	assert.Contains(t, string(bytes), `"data":"wav"`)
 	txt := synthesizerMock.VerifyWasCalled(pegomock.Once()).Work(pegomock.AnyString()).GetCapturedArguments()
 	assert.Equal(t, "olia", txt)
 }
