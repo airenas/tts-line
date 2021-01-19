@@ -1,7 +1,7 @@
 port: ${PORT}
 
 acousticModel:
-  url: ${ACOUSTIC_MODEL_URL}
+  url: ${ACOUSTICMODEL_URL}
 
 vocoder:
   url: ${VOCODER_URL}  

@@ -20,3 +20,4 @@ Makefile.option
 internal/pkg/test/mocks/**
 cmd/tts-line/__debug_bin
 out.mp3
+deploy/am-voc-wrapper/bin/am-voc-wrapper
