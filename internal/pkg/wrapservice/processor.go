@@ -30,13 +30,13 @@ func NewProcessor(amURL, vocURL string) (*Processor, error) {
 //Work is main method
 func (p *Processor) Work(text string) (string, error) {
 	amIn := amInput{Text: text}
-	var amOut amOutput
+	var amOut output
 	err := p.amWrap.InvokeJSON(&amIn, &amOut)
 	if err != nil {
 		return "", errors.Wrap(err, "Can't invoke AM")
 	}
-	vocIn := vocInput{Data: amOut.Data}
-	var vocOut vocOutput
+	vocIn := output{Data: amOut.Data}
+	var vocOut output
 	err = p.vocWrap.InvokeJSON(&vocIn, &vocOut)
 	if err != nil {
 		return "", errors.Wrap(err, "Can't invoke Vocoder")
@@ -48,14 +48,6 @@ type amInput struct {
 	Text string `json:"text"`
 }
 
-type amOutput struct {
-	Data string `json:"data"`
-}
-
-type vocInput struct {
-	Data string `json:"data"`
-}
-
-type vocOutput struct {
+type output struct {
 	Data string `json:"data"`
 }

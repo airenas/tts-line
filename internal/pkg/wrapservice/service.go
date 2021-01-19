@@ -14,14 +14,14 @@ import (
 )
 
 type (
-	//Synthesizer main sythesis processor
-	Synthesizer interface {
+	//WaveSynthesizer main sythesis processor
+	WaveSynthesizer interface {
 		Work(string) (string, error)
 	}
 	//Data is service operation data
 	Data struct {
 		Port      int
-		Processor Synthesizer
+		Processor WaveSynthesizer
 	}
 )
 

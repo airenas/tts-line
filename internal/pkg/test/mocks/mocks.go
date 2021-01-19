@@ -12,6 +12,8 @@ import (
 
 //go:generate pegomock generate --package=mocks --output=httpInvokerJSOM.go -m github.com/airenas/tts-line/internal/pkg/processor HTTPInvokerJSON
 
+//go:generate pegomock generate --package=mocks --output=waveSynthesizer.go -m github.com/airenas/tts-line/internal/pkg/wrapservice WaveSynthesizer
+
 //AttachMockToTest register pegomock verification to be passed to testing engine
 func AttachMockToTest(t *testing.T) {
 	pegomock.RegisterMockFailHandler(handleByTest(t))
