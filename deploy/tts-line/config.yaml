@@ -24,8 +24,8 @@ validator:
 # transcriber:
 #   url:  
 
-# acousticModel:
-#   url: 
+acousticModel:
+  url: http://localhost:8000/model 
 
 # vocoder:
 #   url:     
