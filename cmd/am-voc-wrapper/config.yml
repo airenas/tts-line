@@ -1,0 +1,8 @@
+port: 8011
+maxLogDataSize: 500
+
+acousticModel:
+  url: http://semspch04.vdu.lt:8000/model
+
+vocoder:
+  url: http://semspch04.vdu.lt:8001/model    
