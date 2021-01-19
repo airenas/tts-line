@@ -101,18 +101,19 @@ func addPartProcessors(partRunner *synthesizer.PartRunner) error {
 	}
 	partRunner.Add(ppr)
 
-	ppr, err = processor.NewAcousticModel(goapp.Config.GetString("acousticModel.url"),
-		goapp.Config.GetString("acousticModel.spaceSymbol"), goapp.Config.GetString("acousticModel.endSymbol"))
+	ppr, err = processor.NewAcousticModel(goapp.Sub(goapp.Config, "acousticModel"))
 	if err != nil {
 		return errors.Wrap(err, "Can't init acousticModel")
 	}
 	partRunner.Add(ppr)
 
-	ppr, err = processor.NewVocoder(goapp.Config.GetString("vocoder.url"))
-	if err != nil {
-		return errors.Wrap(err, "Can't init vocoder")
+	if !goapp.Config.GetBool("acousticModel.hasVocoder") {
+		ppr, err = processor.NewVocoder(goapp.Config.GetString("vocoder.url"))
+		if err != nil {
+			return errors.Wrap(err, "Can't init vocoder")
+		}
+		partRunner.Add(ppr)
 	}
-	partRunner.Add(ppr)
 
 	return nil
 }

@@ -4,6 +4,7 @@ import (
 	"strings"
 
 	"github.com/airenas/go-app/pkg/goapp"
+	"github.com/spf13/viper"
 
 	"github.com/airenas/tts-line/internal/pkg/synthesizer"
 	"github.com/airenas/tts-line/internal/pkg/utils"
@@ -14,25 +15,32 @@ type amodel struct {
 	httpWrap    HTTPInvokerJSON
 	spaceSymbol string
 	endSymbol   string
+	hasVocoder  bool
 }
 
 //NewAcousticModel creates new processor
-func NewAcousticModel(urlStr string, spaceSym string, endSym string) (synthesizer.PartProcessor, error) {
+func NewAcousticModel(config *viper.Viper) (synthesizer.PartProcessor, error) {
+	if config == nil {
+		return nil, errors.New("No acousticModel config")
+	}
+
 	res := &amodel{}
 	var err error
-	res.httpWrap, err = utils.NewHTTWrap(urlStr)
+	res.httpWrap, err = utils.NewHTTWrap(config.GetString("url"))
 	if err != nil {
 		return nil, errors.Wrap(err, "Can't init http client")
 	}
-	res.spaceSymbol = spaceSym
+	res.spaceSymbol = config.GetString("spaceSymbol")
 	if res.spaceSymbol == "" {
 		res.spaceSymbol = "sil"
 	}
-	res.endSymbol = endSym
+	res.endSymbol = config.GetString("endSymbol")
 	if res.endSymbol == "" {
 		res.endSymbol = res.spaceSymbol
 	}
+	res.hasVocoder = config.GetBool("hasVocoder")
 	goapp.Log.Infof("AM pause: '%s', end symbol: '%s'", res.spaceSymbol, res.endSymbol)
+	goapp.Log.Infof("AM hasVocoder: %t", res.hasVocoder)
 	return res, nil
 }
 
@@ -43,7 +51,11 @@ func (p *amodel) Process(data *synthesizer.TTSDataPart) error {
 	if err != nil {
 		return err
 	}
-	data.Spectogram = output.Data
+	if p.hasVocoder {
+		data.Audio = output.Data
+	} else {
+		data.Spectogram = output.Data
+	}
 	return nil
 }
 

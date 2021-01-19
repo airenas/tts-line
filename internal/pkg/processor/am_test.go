@@ -1,10 +1,12 @@
 package processor
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/petergtz/pegomock"
 	"github.com/pkg/errors"
+	"github.com/spf13/viper"
 
 	"github.com/stretchr/testify/assert"
 
@@ -13,18 +15,18 @@ import (
 
 func TestNewAcousticModel(t *testing.T) {
 	initTestJSON(t)
-	pr, err := NewAcousticModel("http://server", "", "")
+	pr, err := NewAcousticModel(newTestConfig("url: http://server\n"))
 	assert.Nil(t, err)
 	assert.NotNil(t, pr)
 }
 
 func TestNewAcousticModel_Space(t *testing.T) {
 	initTestJSON(t)
-	pr, _ := NewAcousticModel("http://server", "", "")
+	pr, _ := NewAcousticModel(newTestConfig("url: http://server\n"))
 	assert.NotNil(t, pr)
 	assert.Equal(t, "sil", pr.(*amodel).spaceSymbol)
 	assert.Equal(t, "sil", pr.(*amodel).endSymbol)
-	pr, _ = NewAcousticModel("http://server", "<space>", "")
+	pr, _ = NewAcousticModel(newTestConfig("url: http://server\nspaceSymbol: <space>"))
 	assert.NotNil(t, pr)
 	assert.Equal(t, "<space>", pr.(*amodel).spaceSymbol)
 	assert.Equal(t, "<space>", pr.(*amodel).endSymbol)
@@ -32,21 +34,32 @@ func TestNewAcousticModel_Space(t *testing.T) {
 
 func TestNewAcousticModel_EndSymbol(t *testing.T) {
 	initTestJSON(t)
-	pr, _ := NewAcousticModel("http://server", "", "<end>")
+	pr, _ := NewAcousticModel(newTestConfig("url: http://server\nendSymbol: <end>"))
 	assert.NotNil(t, pr)
 	assert.Equal(t, "<end>", pr.(*amodel).endSymbol)
 }
 
 func TestNewAcousticModel_Fails(t *testing.T) {
 	initTestJSON(t)
-	pr, err := NewAcousticModel("", "", "")
+	pr, err := NewAcousticModel(nil)
+	assert.NotNil(t, err)
+	assert.Nil(t, pr)
+	pr, err = NewAcousticModel(newTestConfig(""))
 	assert.NotNil(t, err)
 	assert.Nil(t, pr)
 }
 
+func TestNewAcousticModel_ReadVocoder(t *testing.T) {
+	initTestJSON(t)
+	pr := newTestAMCfg(t, newTestConfig("url: http://server\nhasVocoder: true"))
+	assert.True(t, pr.hasVocoder)
+	pr = newTestAMCfg(t, newTestConfig("url: http://server"))
+	assert.False(t, pr.hasVocoder)
+}
+
 func TestInvokeAcousticModel(t *testing.T) {
 	initTestJSON(t)
-	pr, _ := NewAcousticModel("http://server", "", "")
+	pr, _ := NewAcousticModel(newTestConfig("url: http://server\n"))
 	assert.NotNil(t, pr)
 	pr.(*amodel).httpWrap = httpJSONMock
 	d := newTestTTSDataPart()
@@ -63,7 +76,7 @@ func TestInvokeAcousticModel(t *testing.T) {
 
 func TestInvokeAcousticModel_Fail(t *testing.T) {
 	initTestJSON(t)
-	pr, _ := NewAcousticModel("http://server", "", "")
+	pr, _ := NewAcousticModel(newTestConfig("url: http://server\n"))
 	assert.NotNil(t, pr)
 	pr.(*amodel).httpWrap = httpJSONMock
 	d := newTestTTSDataPart()
@@ -75,7 +88,7 @@ func TestInvokeAcousticModel_Fail(t *testing.T) {
 
 func TestInvokeAcousticModel_FromAM(t *testing.T) {
 	initTestJSON(t)
-	pr, _ := NewAcousticModel("http://server", "", "")
+	pr, _ := NewAcousticModel(newTestConfig("url: http://server\n"))
 	assert.NotNil(t, pr)
 	pr.(*amodel).httpWrap = httpJSONMock
 	d := newTestTTSDataPart()
@@ -241,7 +254,11 @@ func TestSep(t *testing.T) {
 }
 
 func newTestAM(t *testing.T, urlStr string, spaceSym string) *amodel {
-	pr, err := NewAcousticModel(urlStr, spaceSym, spaceSym)
+	return newTestAMCfg(t, newTestConfig(fmt.Sprintf("url: %s\nspaceSymbol: %s\nendSymbol: %s", urlStr, spaceSym, "")))
+}
+
+func newTestAMCfg(t *testing.T, cfg *viper.Viper) *amodel {
+	pr, err := NewAcousticModel(cfg)
 	assert.Nil(t, err)
 	return pr.(*amodel)
 }
