@@ -27,7 +27,7 @@ transcriber:
 
 acousticModel:
   # url: http://semspch04.vdu.lt:8000/model
-  url: http://localhost:8011/synthesize
+  url: http://semspch04.vdu.lt:8006/synthesize
   hasVocoder: true
 
 

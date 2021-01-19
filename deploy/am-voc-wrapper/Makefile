@@ -6,13 +6,13 @@ PORT?=8000
 ########### SERVICE#################################################################
 logs:
 	mkdir -p $@
-install-service: deploy/service/am-voc.service | logs
-	cp deploy/service/am-voc.service /etc/systemd/system/
+install-service: am-voc.service | logs
+	cp am-voc.service /etc/systemd/system/
 	systemctl enable am-voc.service
 uninstall-service:
 	systemctl disable am-voc.service
 	rm -f /etc/systemd/system/am-voc.service
-deploy/service/am-voc.service: deploy/service/am-voc.service.in
+am-voc.service: am-voc.service.in
 	cat $< | envsubst > $@
 run-service:
 	$(dist_dir)/$(executable_name)
