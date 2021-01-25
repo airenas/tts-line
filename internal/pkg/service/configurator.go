@@ -12,6 +12,10 @@ import (
 	"github.com/pkg/errors"
 )
 
+const (
+	headerDefaultFormat = "x-tts-default-output-format"
+)
+
 //TTSConfigutaror tts request configuration
 type TTSConfigutaror struct {
 	defaultOutputFormat string
@@ -45,7 +49,7 @@ func (c *TTSConfigutaror) Configure(r *http.Request, inText *api.Input) (*api.TT
 	res.Text = inText.Text
 	res.OutputFormat = inText.OutputFormat
 	if res.OutputFormat == "" {
-		res.OutputFormat = getHeader(r, "x-tts-default-output-format")
+		res.OutputFormat = getHeader(r, headerDefaultFormat)
 	}
 	if res.OutputFormat == "" {
 		res.OutputFormat = c.defaultOutputFormat
