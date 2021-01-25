@@ -1,5 +1,11 @@
 port: 8000 
 maxLogDataSize: 100
+options:
+  output:
+    defaultFormat: mp3 
+    # metadata:
+    #   - copyright=UAB Intelektika
+    #   - description=encoded by UAB Intelektika 
 
 # numberReplace:
 #   url:  
@@ -30,7 +36,7 @@ acousticModel:
 # vocoder:
 #   url:     
 
-# mp3:
+# audioConvert:
 #   url:    
 
 # filer:
