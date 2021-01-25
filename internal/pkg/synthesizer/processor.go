@@ -20,9 +20,10 @@ type MainWorker struct {
 }
 
 //Work is main method
-func (mw *MainWorker) Work(text string) (*api.Result, error) {
+func (mw *MainWorker) Work(input *api.TTSRequestConfig) (*api.Result, error) {
 	data := &TTSData{}
-	data.OriginalText = text
+	data.OriginalText = input.Text
+	data.Input = input
 	if mw.AllowCustomCode {
 		tryCustomCode(data)
 	}

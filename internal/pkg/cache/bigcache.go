@@ -42,20 +42,20 @@ func NewCacher(rw service.Synthesizer, config *viper.Viper) (*BigCacher, error) 
 }
 
 //Work try find in cache or invoke real worker
-func (c *BigCacher) Work(text string) (*api.Result, error) {
+func (c *BigCacher) Work(inp *api.TTSRequestConfig) (*api.Result, error) {
 	if c.cache == nil {
-		return c.realSynt.Work(text)
+		return c.realSynt.Work(inp)
 	}
 
-	entry, err := c.cache.Get(text)
+	entry, err := c.cache.Get(key(inp))
 	if err == nil {
 		goapp.Log.Debug("Found in cache")
 		return &api.Result{AudioAsString: string(entry)}, nil
 	}
 	goapp.Log.Debug("Not found in cache")
-	res, err := c.realSynt.Work(text)
+	res, err := c.realSynt.Work(inp)
 	if res != nil && err == nil && len(res.ValidationFailures) == 0 {
-		c.cache.Set(text, []byte(res.AudioAsString))
+		c.cache.Set(key(inp), []byte(res.AudioAsString))
 	}
 	return res, err
 }
@@ -65,4 +65,8 @@ func getCleanDuration(dur time.Duration) time.Duration {
 		return dur
 	}
 	return 5 * time.Minute
+}
+
+func key(inp *api.TTSRequestConfig) string {
+	return inp.Text + inp.OutputFormat
 }

@@ -3,6 +3,8 @@ package api
 //Input is sythesis input data
 type Input struct {
 	Text string `json:"text,omitempty"`
+	//Possible values are m4a, mp3
+	OutputFormat string `json:"outputFormat,omitempty"`
 }
 
 //Check is validation check
@@ -23,4 +25,11 @@ type Result struct {
 	AudioAsString      string            `json:"audioAsString,omitempty"`
 	Error              string            `json:"error,omitempty"`
 	ValidationFailures []ValidateFailure `json:"validationFailItems,omitempty"`
+}
+
+//TTSRequestConfig config for request
+type TTSRequestConfig struct {
+	Text           string
+	OutputFormat   string
+	OutputMetadata []string
 }

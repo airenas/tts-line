@@ -14,14 +14,20 @@ import (
 )
 
 type (
+	//Configurator configures request from header and request and configuration
+	Configurator interface {
+		Configure(*http.Request, *api.Input) (*api.TTSRequestConfig, error)
+	}
+
 	//Synthesizer main sythesis processor
 	Synthesizer interface {
-		Work(string) (*api.Result, error)
+		Work(*api.TTSRequestConfig) (*api.Result, error)
 	}
 	//Data is service operation data
 	Data struct {
-		Port      int
-		Processor Synthesizer
+		Port         int
+		Processor    Synthesizer
+		Configurator Configurator
 	}
 )
 
@@ -62,7 +68,14 @@ func (h *synthesisHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	resp, err := h.data.Processor.Work(inText.Text)
+	cfg, err := h.data.Configurator.Configure(r, &inText)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		goapp.Log.Error("Cannot prepare request config " + err.Error())
+		return
+	}
+
+	resp, err := h.data.Processor.Work(cfg)
 	if err != nil {
 		http.Error(w, "Service error", http.StatusInternalServerError)
 		goapp.Log.Error("Can't process. ", err)

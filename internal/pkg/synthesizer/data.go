@@ -4,6 +4,7 @@ import "github.com/airenas/tts-line/internal/pkg/service/api"
 
 //TTSData working data for one request
 type TTSData struct {
+	Input              *api.TTSRequestConfig
 	Cfg                TTSConfig
 	OriginalText       string
 	Text               string

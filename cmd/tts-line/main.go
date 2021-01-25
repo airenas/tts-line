@@ -34,6 +34,10 @@ func main() {
 		goapp.Log.Info("No cache will be used")
 		data.Processor = synt
 	}
+	data.Configurator, err = service.NewTTSConfigurator(goapp.Sub(goapp.Config, "options"))
+	if err != nil {
+		goapp.Log.Fatal(errors.Wrap(err, "Can't init configurator"))
+	}
 	err = service.StartWebServer(&data)
 	if err != nil {
 		goapp.Log.Fatal(errors.Wrap(err, "Can't start the service"))

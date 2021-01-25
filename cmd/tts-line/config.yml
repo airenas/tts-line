@@ -1,6 +1,12 @@
 port: 8010
 maxLogDataSize: 500
 allowCustom: true
+options:
+  output:
+    defaultFormat: mp3 
+    metadata:
+      - copyright=UAB Intelektika
+      - description=encoded by UAB Intelektika 
 
 # numberReplace:
 #   url: http://prn509.vdu.lt:9080/api/ 

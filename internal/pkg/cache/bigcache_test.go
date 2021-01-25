@@ -12,6 +12,7 @@ import (
 
 	"github.com/airenas/tts-line/internal/pkg/service/api"
 	"github.com/airenas/tts-line/internal/pkg/test/mocks"
+	"github.com/airenas/tts-line/internal/pkg/test/mocks/matchers"
 )
 
 var (
@@ -54,63 +55,83 @@ func TestWork(t *testing.T) {
 	initTest(t)
 	c, _ := NewCacher(synthesizerMock, newTestConfig("duration: 10s"))
 	assert.NotNil(t, c)
-	pegomock.When(synthesizerMock.Work(pegomock.AnyString())).ThenReturn(&api.Result{AudioAsString: "wav"}, nil)
+	pegomock.When(synthesizerMock.Work(matchers.AnyPtrToApiTTSRequestConfig())).
+		ThenReturn(&api.Result{AudioAsString: "wav"}, nil)
 
-	res, err := c.Work("olia")
+	res, err := c.Work(newtestInput("olia"))
 	assert.Nil(t, err)
 	assert.Equal(t, "wav", res.AudioAsString)
-	synthesizerMock.VerifyWasCalledOnce().Work(pegomock.AnyString())
-	res, err = c.Work("olia")
+	synthesizerMock.VerifyWasCalledOnce().Work(matchers.AnyPtrToApiTTSRequestConfig())
+	res, err = c.Work(newtestInput("olia"))
 	assert.Nil(t, err)
 	assert.Equal(t, "wav", res.AudioAsString)
-	synthesizerMock.VerifyWasCalledOnce().Work(pegomock.AnyString())
-	res, err = c.Work("olia2")
+	synthesizerMock.VerifyWasCalledOnce().Work(matchers.AnyPtrToApiTTSRequestConfig())
+	res, err = c.Work(newtestInput("olia2"))
 	assert.Nil(t, err)
 	assert.NotNil(t, res)
-	synthesizerMock.VerifyWasCalled(pegomock.Twice()).Work(pegomock.AnyString())
+	synthesizerMock.VerifyWasCalled(pegomock.Twice()).Work(matchers.AnyPtrToApiTTSRequestConfig())
 }
 
 func TestWork_Failure(t *testing.T) {
 	initTest(t)
 	c, _ := NewCacher(synthesizerMock, newTestConfig("duration: 10s"))
 	assert.NotNil(t, c)
-	pegomock.When(synthesizerMock.Work(pegomock.AnyString())).ThenReturn(nil, errors.New("haha"))
+	pegomock.When(synthesizerMock.Work(matchers.AnyPtrToApiTTSRequestConfig())).
+		ThenReturn(nil, errors.New("haha"))
 
-	_, err := c.Work("olia")
+	_, err := c.Work(newtestInput("olia"))
 	assert.NotNil(t, err)
-	synthesizerMock.VerifyWasCalledOnce().Work(pegomock.AnyString())
-	_, err = c.Work("olia")
+	synthesizerMock.VerifyWasCalledOnce().Work(matchers.AnyPtrToApiTTSRequestConfig())
+	_, err = c.Work(newtestInput("olia"))
 	assert.NotNil(t, err)
-	synthesizerMock.VerifyWasCalled(pegomock.Twice()).Work(pegomock.AnyString())
+	synthesizerMock.VerifyWasCalled(pegomock.Twice()).Work(matchers.AnyPtrToApiTTSRequestConfig())
 }
 
 func TestWork_NoCache(t *testing.T) {
 	initTest(t)
 	c, _ := NewCacher(synthesizerMock, newTestConfig("duration: 0s"))
 	assert.NotNil(t, c)
-	pegomock.When(synthesizerMock.Work(pegomock.AnyString())).ThenReturn(&api.Result{AudioAsString: "wav"}, nil)
+	pegomock.When(synthesizerMock.Work(matchers.AnyPtrToApiTTSRequestConfig())).
+		ThenReturn(&api.Result{AudioAsString: "wav"}, nil)
 
-	_, err := c.Work("olia")
+	_, err := c.Work(newtestInput("olia"))
 	assert.Nil(t, err)
-	synthesizerMock.VerifyWasCalledOnce().Work(pegomock.AnyString())
-	_, err = c.Work("olia")
+	synthesizerMock.VerifyWasCalledOnce().Work(matchers.AnyPtrToApiTTSRequestConfig())
+	_, err = c.Work(newtestInput("olia"))
 	assert.Nil(t, err)
-	synthesizerMock.VerifyWasCalled(pegomock.Twice()).Work(pegomock.AnyString())
+	synthesizerMock.VerifyWasCalled(pegomock.Twice()).Work(matchers.AnyPtrToApiTTSRequestConfig())
 }
 
 func TestWork_NoCacheValidation(t *testing.T) {
 	initTest(t)
 	c, _ := NewCacher(synthesizerMock, newTestConfig("duration: 10s"))
 	assert.NotNil(t, c)
-	pegomock.When(synthesizerMock.Work(pegomock.AnyString())).ThenReturn(&api.Result{
-		ValidationFailures: []api.ValidateFailure{api.ValidateFailure{}}}, nil)
+	pegomock.When(synthesizerMock.Work(matchers.AnyPtrToApiTTSRequestConfig())).
+		ThenReturn(&api.Result{
+			ValidationFailures: []api.ValidateFailure{api.ValidateFailure{}}}, nil)
 
-	_, err := c.Work("olia")
+	_, err := c.Work(newtestInput("olia"))
 	assert.Nil(t, err)
-	synthesizerMock.VerifyWasCalledOnce().Work(pegomock.AnyString())
-	_, err = c.Work("olia")
+	synthesizerMock.VerifyWasCalledOnce().Work(matchers.AnyPtrToApiTTSRequestConfig())
+	_, err = c.Work(newtestInput("olia"))
 	assert.Nil(t, err)
-	synthesizerMock.VerifyWasCalled(pegomock.Twice()).Work(pegomock.AnyString())
+	synthesizerMock.VerifyWasCalled(pegomock.Twice()).Work(matchers.AnyPtrToApiTTSRequestConfig())
+}
+
+func TestWork_Key(t *testing.T) {
+	initTest(t)
+	c, _ := NewCacher(synthesizerMock, newTestConfig("duration: 10s"))
+	assert.NotNil(t, c)
+	pegomock.When(synthesizerMock.Work(matchers.AnyPtrToApiTTSRequestConfig())).
+		ThenReturn(&api.Result{AudioAsString: "wav"}, nil)
+
+	c.Work(newtestInput("olia"))
+	c.Work(&api.TTSRequestConfig{Text: "olia", OutputFormat: "mp3"})
+	synthesizerMock.VerifyWasCalled(pegomock.Twice()).Work(matchers.AnyPtrToApiTTSRequestConfig())
+	c.Work(&api.TTSRequestConfig{Text: "olia", OutputFormat: "mp3"})
+	synthesizerMock.VerifyWasCalled(pegomock.Twice()).Work(matchers.AnyPtrToApiTTSRequestConfig())
+	c.Work(&api.TTSRequestConfig{Text: "olia", OutputFormat: "m4a"})
+	synthesizerMock.VerifyWasCalled(pegomock.Times(3)).Work(matchers.AnyPtrToApiTTSRequestConfig())
 }
 
 func newTestConfig(yaml string) *viper.Viper {
@@ -118,4 +139,8 @@ func newTestConfig(yaml string) *viper.Viper {
 	res.SetConfigType("yaml")
 	res.ReadConfig(strings.NewReader(yaml))
 	return res
+}
+
+func newtestInput(txt string) *api.TTSRequestConfig {
+	return &api.TTSRequestConfig{Text: txt}
 }
