@@ -16,15 +16,18 @@ import (
 
 	"github.com/airenas/tts-line/internal/pkg/service/api"
 	"github.com/airenas/tts-line/internal/pkg/test/mocks"
+	"github.com/airenas/tts-line/internal/pkg/test/mocks/matchers"
 )
 
 var (
 	synthesizerMock *mocks.MockSynthesizer
+	cnfMock         *mocks.MockConfigurator
 )
 
 func initTest(t *testing.T) {
 	mocks.AttachMockToTest(t)
 	synthesizerMock = mocks.NewMockSynthesizer()
+	cnfMock = mocks.NewMockConfigurator()
 }
 
 func TestWrongPath(t *testing.T) {
@@ -41,20 +44,42 @@ func TestWrongMethod(t *testing.T) {
 
 func Test_Returns(t *testing.T) {
 	initTest(t)
-	pegomock.When(synthesizerMock.Work(pegomock.AnyString())).ThenReturn(&api.Result{AudioAsString: "wav"}, nil)
+	pegomock.When(cnfMock.Configure(matchers.AnyPtrToHttpRequest(), matchers.AnyPtrToApiInput())).
+		ThenReturn(&api.TTSRequestConfig{Text: "olia1", OutputFormat: "mp3"}, nil)
+	pegomock.When(synthesizerMock.Work(matchers.AnyPtrToApiTTSRequestConfig())).
+		ThenReturn(&api.Result{AudioAsString: "wav"}, nil)
+
 	req := httptest.NewRequest("POST", "/synthesize", toReader(api.Input{Text: "olia"}))
 	resp := testCode(t, req, 200)
 	bytes, _ := ioutil.ReadAll(resp.Body)
 	assert.Contains(t, string(bytes), `"audioAsString":"wav"`)
-	txt := synthesizerMock.VerifyWasCalled(pegomock.Once()).Work(pegomock.AnyString()).GetCapturedArguments()
-	assert.Equal(t, "olia", txt)
+	txt := synthesizerMock.VerifyWasCalled(pegomock.Once()).Work(matchers.AnyPtrToApiTTSRequestConfig()).GetCapturedArguments()
+	assert.Equal(t, "olia1", txt.Text)
+	assert.Equal(t, "mp3", txt.OutputFormat)
+	_, inp := cnfMock.VerifyWasCalled(pegomock.Once()).Configure(matchers.AnyPtrToHttpRequest(), matchers.AnyPtrToApiInput()).
+		GetCapturedArguments()
+	assert.Equal(t, "olia", inp.Text)
 }
 
 func Test_Fail(t *testing.T) {
 	initTest(t)
-	pegomock.When(synthesizerMock.Work(pegomock.AnyString())).ThenReturn(nil, errors.New("haha"))
+	pegomock.When(cnfMock.Configure(matchers.AnyPtrToHttpRequest(), matchers.AnyPtrToApiInput())).
+		ThenReturn(&api.TTSRequestConfig{Text: "olia1", OutputFormat: "mp3"}, nil)
+	pegomock.When(synthesizerMock.Work(matchers.AnyPtrToApiTTSRequestConfig())).ThenReturn(nil, errors.New("haha"))
 	req := httptest.NewRequest("POST", "/synthesize", toReader(api.Input{Text: "olia"}))
 	testCode(t, req, 500)
+}
+
+func Test_FailConfigure(t *testing.T) {
+	initTest(t)
+	pegomock.When(cnfMock.Configure(matchers.AnyPtrToHttpRequest(), matchers.AnyPtrToApiInput())).
+		ThenReturn(nil, errors.New("No format mmp"))
+	pegomock.When(synthesizerMock.Work(matchers.AnyPtrToApiTTSRequestConfig())).
+		ThenReturn(&api.Result{AudioAsString: "wav"}, nil)
+
+	req := httptest.NewRequest("POST", "/synthesize", toReader(api.Input{Text: "olia"}))
+	resp := testCode(t, req, 400)
+	assert.Equal(t, "No format mmp\n", resp.Body.String())
 }
 
 func Test_FailOnWrongInput(t *testing.T) {
@@ -79,7 +104,7 @@ func toReader(inData api.Input) io.Reader {
 }
 
 func newTestData() *Data {
-	res := &Data{Processor: synthesizerMock}
+	res := &Data{Processor: synthesizerMock, Configurator: cnfMock}
 	return res
 }
 

@@ -29,7 +29,7 @@ func TestWork(t *testing.T) {
 		d.AudioMP3 = "mp3"
 		return nil
 	}
-	res, err := worker.Work("olia")
+	res, err := worker.Work(&api.TTSRequestConfig{Text: "olia"})
 	assert.Nil(t, err)
 	assert.NotNil(t, res)
 	assert.Equal(t, "mp3", res.AudioAsString)
@@ -40,7 +40,7 @@ func TestWork_Fails(t *testing.T) {
 	processorMock.f = func(d *TTSData) error {
 		return errors.New("olia")
 	}
-	res, err := worker.Work("olia")
+	res, err := worker.Work(&api.TTSRequestConfig{Text: "olia"})
 	assert.NotNil(t, err)
 	assert.Nil(t, res)
 }
@@ -51,7 +51,7 @@ func TestWork_ValidationFailure(t *testing.T) {
 		d.ValidationFailures = append(d.ValidationFailures, api.ValidateFailure{FailingPosition: 10})
 		return nil
 	}
-	res, err := worker.Work("olia")
+	res, err := worker.Work(&api.TTSRequestConfig{Text: "olia"})
 	assert.Nil(t, err)
 	assert.NotNil(t, res)
 	assert.Equal(t, "", res.AudioAsString)
@@ -69,7 +69,7 @@ func TestWork_Several(t *testing.T) {
 		return nil
 	}}
 	worker.Add(processorMock1)
-	res, _ := worker.Work("olia")
+	res, _ := worker.Work(&api.TTSRequestConfig{Text: "olia"})
 	assert.Equal(t, "wavmp3", res.AudioAsString)
 }
 
@@ -84,11 +84,10 @@ func TestWork_StopProcess(t *testing.T) {
 		return nil
 	}}
 	worker.Add(processorMock1)
-	res, err := worker.Work("olia")
+	res, err := worker.Work(&api.TTSRequestConfig{Text: "olia"})
 	assert.Nil(t, err)
 	assert.NotNil(t, res)
 }
-
 
 type procMock struct {
 	f func(res *TTSData) error
