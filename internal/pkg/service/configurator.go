@@ -55,7 +55,7 @@ func (c *TTSConfigutaror) Configure(r *http.Request, inText *api.Input) (*api.TT
 		res.OutputFormat = c.defaultOutputFormat
 	}
 	if res.OutputFormat != "mp3" && res.OutputFormat != "m4a" {
-		return nil, errors.Errorf("Unsuported format '%s'", res.OutputFormat)
+		return nil, errors.Errorf("Unsupported output format '%s'", res.OutputFormat)
 	}
 	res.OutputMetadata = c.outputMetadata
 	return res, nil

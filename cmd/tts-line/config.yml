@@ -41,7 +41,7 @@ vocoder:
   url: http://semspch04.vdu.lt:8001/model    
 
 audioConvert:
-  url: http://192.168.1.71:8207/convert   
+  url: http://localhost:8003/convert   
 
 filer:
   dir: /home/airenas/projects/tts-line
