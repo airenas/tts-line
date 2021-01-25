@@ -71,7 +71,7 @@ func addProcessors(synt *synthesizer.MainWorker) error {
 
 	synt.Add(processor.NewJoinAudio())
 
-	pr, err = processor.NewMP3(goapp.Config.GetString("mp3.url"))
+	pr, err = processor.NewConverter(goapp.Config.GetString("audioConvert.url"))
 	if err != nil {
 		return errors.Wrap(err, "Can't init mp3 converter")
 	}
