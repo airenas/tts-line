@@ -30,7 +30,11 @@ func TestNewTTSConfigurator_SeveralMetadata(t *testing.T) {
 func TestNewTTSConfigurator_Fail(t *testing.T) {
 	_, err := NewTTSConfigurator(test.NewConfig(""))
 	assert.NotNil(t, err)
+	_, err = NewTTSConfigurator(nil)
+	assert.NotNil(t, err)
 	_, err = NewTTSConfigurator(test.NewConfig("output:\n  defaultFormat: \n  metadata:\n   - r=aaa"))
+	assert.NotNil(t, err)
+	_, err = NewTTSConfigurator(test.NewConfig("output:\n  defaultFormat: mp4\n  metadata:\n   - r=aaa"))
 	assert.NotNil(t, err)
 	_, err = NewTTSConfigurator(test.NewConfig("output:\n  defaultFormat: mp3\n  metadata:\n   - raaa"))
 	assert.NotNil(t, err)
@@ -76,6 +80,13 @@ func TestConfigure_FailFormat(t *testing.T) {
 	assert.NotNil(t, err)
 	req.Header.Add(headerDefaultFormat, "aaa")
 	_, err = c.Configure(req, &api.Input{Text: "olia"})
+	assert.NotNil(t, err)
+}
+
+func TestConfigure_FailTextFormat(t *testing.T) {
+	c, _ := NewTTSConfigurator(test.NewConfig("output:\n  defaultFormat: mp3\n  metadata:\n   - r=a"))
+	req := httptest.NewRequest("POST", "/synthesize", strings.NewReader("text"))
+	_, err := c.Configure(req, &api.Input{Text: "olia", OutputFormat: "m4a", OutputTextFormat: "ooo"})
 	assert.NotNil(t, err)
 }
 
