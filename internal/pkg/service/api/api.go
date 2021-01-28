@@ -4,7 +4,9 @@ package api
 type Input struct {
 	Text string `json:"text,omitempty"`
 	//Possible values are m4a, mp3
-	OutputFormat string `json:"outputFormat,omitempty"`
+	OutputFormat         string `json:"outputFormat,omitempty"`
+	ReturnNormalizedText bool   `json:"returnNormalizedText,omitempty"`
+	AllowCollectData     *bool  `json:"allowCollectData,omitempty"`
 }
 
 //Check is validation check
@@ -25,11 +27,15 @@ type Result struct {
 	AudioAsString      string            `json:"audioAsString,omitempty"`
 	Error              string            `json:"error,omitempty"`
 	ValidationFailures []ValidateFailure `json:"validationFailItems,omitempty"`
+	NoramalizedText    string            `json:"noramalizedText,omitempty"`
+	RequestID          string            `json:"requestID,omitempty"`
 }
 
 //TTSRequestConfig config for request
 type TTSRequestConfig struct {
-	Text           string
-	OutputFormat   string
-	OutputMetadata []string
+	Text                 string
+	OutputFormat         string
+	OutputMetadata       []string
+	ReturnNormalizedText bool
+	AllowCollectData     bool
 }

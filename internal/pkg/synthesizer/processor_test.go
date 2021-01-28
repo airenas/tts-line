@@ -89,6 +89,28 @@ func TestWork_StopProcess(t *testing.T) {
 	assert.NotNil(t, res)
 }
 
+func TestWork_HasUUID(t *testing.T) {
+	initTest(t)
+	res, _ := worker.Work(&api.TTSRequestConfig{Text: "olia", AllowCollectData: true, ReturnNormalizedText: true})
+	assert.NotEqual(t, "", res.RequestID)
+	res, _ = worker.Work(&api.TTSRequestConfig{Text: "olia", AllowCollectData: true, ReturnNormalizedText: false})
+	assert.Equal(t, "", res.RequestID)
+	res, _ = worker.Work(&api.TTSRequestConfig{Text: "olia", AllowCollectData: false, ReturnNormalizedText: true})
+	assert.Equal(t, "", res.RequestID)
+}
+
+func TestWork_NormalizedText(t *testing.T) {
+	initTest(t)
+	processorMock.f = func(d *TTSData) error {
+		d.TextWithNumbers = "olia lia"
+		return nil
+	}
+	res, _ := worker.Work(&api.TTSRequestConfig{Text: "olia", ReturnNormalizedText: true})
+	assert.Equal(t, "olia lia", res.NoramalizedText)
+	res, _ = worker.Work(&api.TTSRequestConfig{Text: "olia", ReturnNormalizedText: false})
+	assert.Equal(t, "", res.NoramalizedText)
+}
+
 type procMock struct {
 	f func(res *TTSData) error
 }

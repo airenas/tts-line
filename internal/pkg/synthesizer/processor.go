@@ -4,6 +4,7 @@ import (
 	"strings"
 
 	"github.com/airenas/go-app/pkg/goapp"
+	"github.com/google/uuid"
 
 	"github.com/airenas/tts-line/internal/pkg/service/api"
 )
@@ -24,6 +25,7 @@ func (mw *MainWorker) Work(input *api.TTSRequestConfig) (*api.Result, error) {
 	data := &TTSData{}
 	data.OriginalText = input.Text
 	data.Input = input
+	data.RequestID = uuid.NewString()
 	if mw.AllowCustomCode {
 		tryCustomCode(data)
 	}
@@ -58,6 +60,12 @@ func mapResult(data *TTSData) *api.Result {
 		res.ValidationFailures = data.ValidationFailures
 	} else {
 		res.AudioAsString = data.AudioMP3
+		if data.Input.ReturnNormalizedText {
+			res.NoramalizedText = data.TextWithNumbers
+			if data.Input.AllowCollectData {
+				res.RequestID = data.RequestID
+			}
+		}
 	}
 	return res
 }

@@ -58,6 +58,8 @@ func (c *TTSConfigutaror) Configure(r *http.Request, inText *api.Input) (*api.TT
 		return nil, errors.Errorf("Unsupported output format '%s'", res.OutputFormat)
 	}
 	res.OutputMetadata = c.outputMetadata
+	res.ReturnNormalizedText = inText.ReturnNormalizedText
+	res.AllowCollectData = inText.AllowCollectData != nil && *inText.AllowCollectData
 	return res, nil
 }
 

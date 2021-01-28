@@ -1,5 +1,5 @@
 port: 8010
-maxLogDataSize: 500
+maxLogDataSize: 1500
 allowCustom: true
 options:
   output:
