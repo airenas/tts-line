@@ -60,8 +60,7 @@ func mapResult(data *TTSData) *api.Result {
 		res.ValidationFailures = data.ValidationFailures
 	} else {
 		res.AudioAsString = data.AudioMP3
-		if data.Input.ReturnNormalizedText {
-			res.NoramalizedText = data.TextWithNumbers
+		if data.Input.OutputTextFormat != api.TextNone {
 			if data.Input.AllowCollectData {
 				res.RequestID = data.RequestID
 			}

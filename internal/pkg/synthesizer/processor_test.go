@@ -91,24 +91,24 @@ func TestWork_StopProcess(t *testing.T) {
 
 func TestWork_HasUUID(t *testing.T) {
 	initTest(t)
-	res, _ := worker.Work(&api.TTSRequestConfig{Text: "olia", AllowCollectData: true, ReturnNormalizedText: true})
+	res, _ := worker.Work(&api.TTSRequestConfig{Text: "olia", AllowCollectData: true, OutputTextFormat: api.TextNormalized})
 	assert.NotEqual(t, "", res.RequestID)
-	res, _ = worker.Work(&api.TTSRequestConfig{Text: "olia", AllowCollectData: true, ReturnNormalizedText: false})
+	res, _ = worker.Work(&api.TTSRequestConfig{Text: "olia", AllowCollectData: true, OutputTextFormat: api.TextNone})
 	assert.Equal(t, "", res.RequestID)
-	res, _ = worker.Work(&api.TTSRequestConfig{Text: "olia", AllowCollectData: false, ReturnNormalizedText: true})
+	res, _ = worker.Work(&api.TTSRequestConfig{Text: "olia", AllowCollectData: false, OutputTextFormat: api.TextNormalized})
 	assert.Equal(t, "", res.RequestID)
 }
 
-func TestWork_NormalizedText(t *testing.T) {
+func TestWork_ReturnText(t *testing.T) {
 	initTest(t)
 	processorMock.f = func(d *TTSData) error {
 		d.TextWithNumbers = "olia lia"
 		return nil
 	}
-	res, _ := worker.Work(&api.TTSRequestConfig{Text: "olia", ReturnNormalizedText: true})
-	assert.Equal(t, "olia lia", res.NoramalizedText)
-	res, _ = worker.Work(&api.TTSRequestConfig{Text: "olia", ReturnNormalizedText: false})
-	assert.Equal(t, "", res.NoramalizedText)
+	// res, _ := worker.Work(&api.TTSRequestConfig{Text: "olia", OutputTextFormat: api.TextNormalized})
+	// assert.Equal(t, "olia lia", res.Text)
+	res, _ := worker.Work(&api.TTSRequestConfig{Text: "olia", OutputTextFormat: api.TextNone})
+	assert.Equal(t, "", res.Text)
 }
 
 type procMock struct {

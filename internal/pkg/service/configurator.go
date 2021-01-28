@@ -58,9 +58,27 @@ func (c *TTSConfigutaror) Configure(r *http.Request, inText *api.Input) (*api.TT
 		return nil, errors.Errorf("Unsupported output format '%s'", res.OutputFormat)
 	}
 	res.OutputMetadata = c.outputMetadata
-	res.ReturnNormalizedText = inText.ReturnNormalizedText
+	var err error
+	res.OutputTextFormat, err = getOutputTextFormat(inText.OutputTextFormat)
+	if err != nil {
+		return nil, err
+	}
 	res.AllowCollectData = inText.AllowCollectData != nil && *inText.AllowCollectData
 	return res, nil
+}
+
+func getOutputTextFormat(s string) (api.TextFormatEnum, error) {
+	st := strings.TrimSpace(s)
+	if st == "" || st == "none" {
+		return api.TextNone, nil
+	}
+	if st == "normalized" {
+		return api.TextNormalized, nil
+	}
+	if st == "accented" {
+		return api.TextAccented, nil
+	}
+	return api.TextNone, errors.New("Unknown text format " + s)
 }
 
 func getHeader(r *http.Request, key string) string {

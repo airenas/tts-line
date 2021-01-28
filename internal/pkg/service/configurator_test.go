@@ -78,3 +78,23 @@ func TestConfigure_FailFormat(t *testing.T) {
 	_, err = c.Configure(req, &api.Input{Text: "olia"})
 	assert.NotNil(t, err)
 }
+
+func TestOutputTextFormat(t *testing.T) {
+	tests := []struct {
+		in    string
+		res   api.TextFormatEnum
+		isErr bool
+	}{
+		{in: "", res: api.TextNone, isErr: false},
+		{in: "none", res: api.TextNone, isErr: false},
+		{in: "normalized", res: api.TextNormalized, isErr: false},
+		{in: "accented", res: api.TextAccented, isErr: false},
+		{in: "olia", res: api.TextNone, isErr: true},
+	}
+
+	for _, tc := range tests {
+		v, err := getOutputTextFormat(tc.in)
+		assert.Equal(t, tc.res, v)
+		assert.Equal(t, tc.isErr, err != nil)
+	}
+}
