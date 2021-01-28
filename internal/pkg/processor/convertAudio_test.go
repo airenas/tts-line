@@ -33,7 +33,7 @@ func TestInvokeConvert(t *testing.T) {
 	pr.(*audioConverter).httpWrap = httpJSONMock
 	d := synthesizer.TTSData{}
 	d.Audio = "wav"
-	d.Input = &api.TTSRequestConfig{OutputMetadata: []string{"olia"}, OutputFormat: "mp3"}
+	d.Input = &api.TTSRequestConfig{OutputMetadata: []string{"olia"}, OutputFormat: api.AudioMP3}
 	pegomock.When(httpJSONMock.InvokeJSON(pegomock.AnyInterface(), pegomock.AnyInterface())).Then(
 		func(params []pegomock.Param) pegomock.ReturnValues {
 			*params[1].(*audioConvertOutput) = audioConvertOutput{Data: "mp3"}

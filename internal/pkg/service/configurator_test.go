@@ -14,7 +14,7 @@ func TestNewTTSConfigurator(t *testing.T) {
 	c, err := NewTTSConfigurator(test.NewConfig("output:\n  defaultFormat: mp3\n  metadata:\n   - r=aaa"))
 	assert.Nil(t, err)
 	if assert.NotNil(t, c) {
-		assert.Equal(t, "mp3", c.defaultOutputFormat)
+		assert.Equal(t, "mp3", c.defaultOutputFormat.String())
 		assert.Equal(t, []string{"r=aaa"}, c.outputMetadata)
 	}
 }
@@ -43,7 +43,7 @@ func TestConfigure_Text(t *testing.T) {
 	assert.Nil(t, err)
 	if assert.NotNil(t, res) {
 		assert.Equal(t, "olia", res.Text)
-		assert.Equal(t, "mp3", res.OutputFormat)
+		assert.Equal(t, "mp3", res.OutputFormat.String())
 		assert.Equal(t, []string{"r=a"}, res.OutputMetadata)
 	}
 }
@@ -54,7 +54,7 @@ func TestConfigure_Format(t *testing.T) {
 	res, err := c.Configure(req, &api.Input{Text: "olia", OutputFormat: "m4a"})
 	assert.Nil(t, err)
 	if assert.NotNil(t, res) {
-		assert.Equal(t, "m4a", res.OutputFormat)
+		assert.Equal(t, "m4a", res.OutputFormat.String())
 	}
 }
 
@@ -65,7 +65,7 @@ func TestConfigure_FormatHeader(t *testing.T) {
 	res, err := c.Configure(req, &api.Input{Text: "olia"})
 	assert.Nil(t, err)
 	if assert.NotNil(t, res) {
-		assert.Equal(t, "m4a", res.OutputFormat)
+		assert.Equal(t, "m4a", res.OutputFormat.String())
 	}
 }
 
@@ -94,6 +94,25 @@ func TestOutputTextFormat(t *testing.T) {
 
 	for _, tc := range tests {
 		v, err := getOutputTextFormat(tc.in)
+		assert.Equal(t, tc.res, v)
+		assert.Equal(t, tc.isErr, err != nil)
+	}
+}
+
+func TestOutputAudioFormat(t *testing.T) {
+	tests := []struct {
+		in    string
+		res   api.AudioFormatEnum
+		isErr bool
+	}{
+		{in: "", res: api.AudioNone, isErr: false},
+		{in: "mp3", res: api.AudioMP3, isErr: false},
+		{in: "m4a", res: api.AudioM4A, isErr: false},
+		{in: "olia", res: api.AudioNone, isErr: true},
+	}
+
+	for _, tc := range tests {
+		v, err := getOutputAudioFormat(tc.in)
 		assert.Equal(t, tc.res, v)
 		assert.Equal(t, tc.isErr, err != nil)
 	}

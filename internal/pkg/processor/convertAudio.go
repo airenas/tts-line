@@ -22,7 +22,7 @@ func NewConverter(urlStr string) (synthesizer.Processor, error) {
 }
 
 func (p *audioConverter) Process(data *synthesizer.TTSData) error {
-	inData := audioConvertInput{Data: data.Audio, Format: data.Input.OutputFormat,
+	inData := audioConvertInput{Data: data.Audio, Format: data.Input.OutputFormat.String(),
 		Metadata: data.Input.OutputMetadata}
 	var output audioConvertOutput
 	err := p.httpWrap.InvokeJSON(inData, &output)

@@ -18,7 +18,7 @@ const (
 
 //TTSConfigutaror tts request configuration
 type TTSConfigutaror struct {
-	defaultOutputFormat string
+	defaultOutputFormat api.AudioFormatEnum
 	outputMetadata      []string
 }
 
@@ -28,11 +28,16 @@ func NewTTSConfigurator(cfg *viper.Viper) (*TTSConfigutaror, error) {
 		return nil, errors.New("No request config 'options'")
 	}
 	res := &TTSConfigutaror{}
-	res.defaultOutputFormat = cfg.GetString("output.defaultFormat")
-	if res.defaultOutputFormat == "" {
+	var err error
+	res.defaultOutputFormat, err = getOutputAudioFormat(cfg.GetString("output.defaultFormat"))
+	if err != nil {
+		return nil, errors.Wrap(err, "Can't init format")
+	}
+	if res.defaultOutputFormat == api.AudioNone {
 		return nil, errors.New("No output.defaultFormat configured")
 	}
-	goapp.Log.Infof("Default output format: %s", res.defaultOutputFormat)
+
+	goapp.Log.Infof("Default output format: %s", res.defaultOutputFormat.String())
 	res.outputMetadata = cfg.GetStringSlice("output.metadata")
 	for _, m := range res.outputMetadata {
 		if !strings.Contains(m, "=") {
@@ -47,18 +52,16 @@ func NewTTSConfigurator(cfg *viper.Viper) (*TTSConfigutaror, error) {
 func (c *TTSConfigutaror) Configure(r *http.Request, inText *api.Input) (*api.TTSRequestConfig, error) {
 	res := &api.TTSRequestConfig{}
 	res.Text = inText.Text
-	res.OutputFormat = inText.OutputFormat
-	if res.OutputFormat == "" {
-		res.OutputFormat = getHeader(r, headerDefaultFormat)
+	var err error
+	res.OutputFormat, err = getOutputAudioFormat(defaultS(inText.OutputFormat, getHeader(r, headerDefaultFormat)))
+	if err != nil {
+		return nil, err
 	}
-	if res.OutputFormat == "" {
+	if res.OutputFormat == api.AudioNone {
 		res.OutputFormat = c.defaultOutputFormat
 	}
-	if res.OutputFormat != "mp3" && res.OutputFormat != "m4a" {
-		return nil, errors.Errorf("Unsupported output format '%s'", res.OutputFormat)
-	}
+
 	res.OutputMetadata = c.outputMetadata
-	var err error
 	res.OutputTextFormat, err = getOutputTextFormat(inText.OutputTextFormat)
 	if err != nil {
 		return nil, err
@@ -81,6 +84,27 @@ func getOutputTextFormat(s string) (api.TextFormatEnum, error) {
 	return api.TextNone, errors.New("Unknown text format " + s)
 }
 
+func getOutputAudioFormat(s string) (api.AudioFormatEnum, error) {
+	st := strings.TrimSpace(s)
+	if st == "" {
+		return api.AudioNone, nil
+	}
+	if st == "mp3" {
+		return api.AudioMP3, nil
+	}
+	if st == "m4a" {
+		return api.AudioM4A, nil
+	}
+	return api.AudioNone, errors.New("Unknown audio format " + s)
+}
+
 func getHeader(r *http.Request, key string) string {
 	return r.Header.Get(key)
+}
+
+func defaultS(s, s1 string) string {
+	if strings.TrimSpace(s) != "" {
+		return s
+	}
+	return s1
 }

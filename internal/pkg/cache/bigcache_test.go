@@ -126,12 +126,19 @@ func TestWork_Key(t *testing.T) {
 		ThenReturn(&api.Result{AudioAsString: "wav"}, nil)
 
 	c.Work(newtestInput("olia"))
-	c.Work(&api.TTSRequestConfig{Text: "olia", OutputFormat: "mp3"})
+	c.Work(&api.TTSRequestConfig{Text: "olia", OutputFormat: api.AudioMP3})
 	synthesizerMock.VerifyWasCalled(pegomock.Twice()).Work(matchers.AnyPtrToApiTTSRequestConfig())
-	c.Work(&api.TTSRequestConfig{Text: "olia", OutputFormat: "mp3"})
+	c.Work(&api.TTSRequestConfig{Text: "olia", OutputFormat: api.AudioMP3})
 	synthesizerMock.VerifyWasCalled(pegomock.Twice()).Work(matchers.AnyPtrToApiTTSRequestConfig())
-	c.Work(&api.TTSRequestConfig{Text: "olia", OutputFormat: "m4a"})
+	c.Work(&api.TTSRequestConfig{Text: "olia", OutputFormat: api.AudioM4A})
 	synthesizerMock.VerifyWasCalled(pegomock.Times(3)).Work(matchers.AnyPtrToApiTTSRequestConfig())
+}
+
+func Test_Key(t *testing.T) {
+	initTest(t)
+	assert.Equal(t, "olia_mp3_", key(&api.TTSRequestConfig{Text: "olia", OutputFormat: api.AudioMP3}))
+	assert.Equal(t, "olia1_m4a_accented", key(&api.TTSRequestConfig{Text: "olia1", OutputFormat: api.AudioM4A,
+		OutputTextFormat: api.TextAccented}))
 }
 
 func newTestConfig(yaml string) *viper.Viper {

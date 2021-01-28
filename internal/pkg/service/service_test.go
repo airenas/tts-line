@@ -45,7 +45,7 @@ func TestWrongMethod(t *testing.T) {
 func Test_Returns(t *testing.T) {
 	initTest(t)
 	pegomock.When(cnfMock.Configure(matchers.AnyPtrToHttpRequest(), matchers.AnyPtrToApiInput())).
-		ThenReturn(&api.TTSRequestConfig{Text: "olia1", OutputFormat: "mp3"}, nil)
+		ThenReturn(&api.TTSRequestConfig{Text: "olia1", OutputFormat: api.AudioMP3}, nil)
 	pegomock.When(synthesizerMock.Work(matchers.AnyPtrToApiTTSRequestConfig())).
 		ThenReturn(&api.Result{AudioAsString: "wav"}, nil)
 
@@ -55,7 +55,7 @@ func Test_Returns(t *testing.T) {
 	assert.Contains(t, string(bytes), `"audioAsString":"wav"`)
 	txt := synthesizerMock.VerifyWasCalled(pegomock.Once()).Work(matchers.AnyPtrToApiTTSRequestConfig()).GetCapturedArguments()
 	assert.Equal(t, "olia1", txt.Text)
-	assert.Equal(t, "mp3", txt.OutputFormat)
+	assert.Equal(t, "mp3", txt.OutputFormat.String())
 	_, inp := cnfMock.VerifyWasCalled(pegomock.Once()).Configure(matchers.AnyPtrToHttpRequest(), matchers.AnyPtrToApiInput()).
 		GetCapturedArguments()
 	assert.Equal(t, "olia", inp.Text)
@@ -64,7 +64,7 @@ func Test_Returns(t *testing.T) {
 func Test_Fail(t *testing.T) {
 	initTest(t)
 	pegomock.When(cnfMock.Configure(matchers.AnyPtrToHttpRequest(), matchers.AnyPtrToApiInput())).
-		ThenReturn(&api.TTSRequestConfig{Text: "olia1", OutputFormat: "mp3"}, nil)
+		ThenReturn(&api.TTSRequestConfig{Text: "olia1", OutputFormat: api.AudioMP3}, nil)
 	pegomock.When(synthesizerMock.Work(matchers.AnyPtrToApiTTSRequestConfig())).ThenReturn(nil, errors.New("haha"))
 	req := httptest.NewRequest("POST", "/synthesize", toReader(api.Input{Text: "olia"}))
 	testCode(t, req, 500)

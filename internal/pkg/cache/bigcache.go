@@ -68,5 +68,5 @@ func getCleanDuration(dur time.Duration) time.Duration {
 }
 
 func key(inp *api.TTSRequestConfig) string {
-	return inp.Text + inp.OutputFormat
+	return inp.Text + "_" + inp.OutputFormat.String() + "_" + inp.OutputTextFormat.String()
 }
