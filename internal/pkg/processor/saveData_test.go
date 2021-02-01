@@ -25,20 +25,20 @@ func initTestDB(t *testing.T) {
 
 func TestNewSaver(t *testing.T) {
 	initTestDB(t)
-	pr, err := NewSaver(dbMock)
+	pr, err := NewSaver(dbMock, utils.RequestOriginal)
 	assert.NotNil(t, pr)
 	assert.Nil(t, err)
 }
 
 func TestNewSaver_Fail(t *testing.T) {
 	initTestDB(t)
-	_, err := NewSaver(nil)
+	_, err := NewSaver(nil, utils.RequestOriginal)
 	assert.NotNil(t, err)
 }
 
 func TestSave_Ignore(t *testing.T) {
 	initTestDB(t)
-	pr, _ := NewSaver(dbMock)
+	pr, _ := NewSaver(dbMock, utils.RequestOriginal)
 	assert.NotNil(t, pr)
 	d := &synthesizer.TTSData{}
 	d.Input = &api.TTSRequestConfig{AllowCollectData: false}
@@ -49,7 +49,7 @@ func TestSave_Ignore(t *testing.T) {
 
 func TestSave_Call(t *testing.T) {
 	initTestDB(t)
-	pr, _ := NewSaver(dbMock)
+	pr, _ := NewSaver(dbMock, utils.RequestOriginal)
 	assert.NotNil(t, pr)
 	d := &synthesizer.TTSData{}
 	d.RequestID = "olia"
@@ -62,12 +62,30 @@ func TestSave_Call(t *testing.T) {
 		GetCapturedArguments()
 	assert.Equal(t, "olia", cRID)
 	assert.Equal(t, "tata", cText)
-	assert.Equal(t, utils.RequestMain, cType)
+	assert.Equal(t, utils.RequestOriginal, cType)
+}
+
+func TestSave_Normalized(t *testing.T) {
+	initTestDB(t)
+	pr, _ := NewSaver(dbMock, utils.RequestNormalized)
+	assert.NotNil(t, pr)
+	d := &synthesizer.TTSData{}
+	d.RequestID = "olia"
+	d.TextWithNumbers = "normalized"
+	d.Input = &api.TTSRequestConfig{AllowCollectData: true}
+	err := pr.Process(d)
+	assert.Nil(t, err)
+	cRID, cText, cType := dbMock.VerifyWasCalled(pegomock.Once()).
+		Save(pegomock.AnyString(), pegomock.AnyString(), matchers.AnyUtilsRequestTypeEnum()).
+		GetCapturedArguments()
+	assert.Equal(t, "olia", cRID)
+	assert.Equal(t, "normalized", cText)
+	assert.Equal(t, utils.RequestNormalized, cType)
 }
 
 func TestSave_Fail(t *testing.T) {
 	initTestDB(t)
-	pr, _ := NewSaver(dbMock)
+	pr, _ := NewSaver(dbMock, utils.RequestOriginal)
 	assert.NotNil(t, pr)
 	d := &synthesizer.TTSData{}
 	d.RequestID = "olia"

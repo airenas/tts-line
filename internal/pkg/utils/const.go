@@ -4,10 +4,15 @@ package utils
 type RequestTypeEnum int
 
 const (
-	//RequestMain value
-	RequestMain RequestTypeEnum = iota
+	//RequestOriginal value
+	RequestOriginal RequestTypeEnum = iota + 1
+	//RequestNormalized value
+	RequestNormalized
 )
 
 func (e RequestTypeEnum) String() string {
-	return [...]string{"", "main"}[e]
+	if e < RequestOriginal || e > RequestNormalized {
+		return ""
+	}
+	return [...]string{"original", "normalized"}[e]
 }

@@ -14,15 +14,16 @@ type SaverDB interface {
 }
 
 type saver struct {
-	s SaverDB
+	sDB   SaverDB
+	tType utils.RequestTypeEnum
 }
 
 //NewSaver creates new text to db processor
-func NewSaver(s SaverDB) (synthesizer.Processor, error) {
+func NewSaver(s SaverDB, t utils.RequestTypeEnum) (synthesizer.Processor, error) {
 	if s == nil {
 		return nil, errors.New("No Saver")
 	}
-	return &saver{s: s}, nil
+	return &saver{sDB: s, tType: t}, nil
 }
 
 func (p *saver) Process(data *synthesizer.TTSData) error {
@@ -32,5 +33,12 @@ func (p *saver) Process(data *synthesizer.TTSData) error {
 	}
 	defer goapp.Estimate("SaveToDB")()
 
-	return p.s.Save(data.RequestID, data.OriginalText, utils.RequestMain)
+	return p.sDB.Save(data.RequestID, getText(data, p.tType), p.tType)
+}
+
+func getText(data *synthesizer.TTSData, t utils.RequestTypeEnum) string {
+	if t == utils.RequestOriginal {
+		return data.OriginalText
+	}
+	return data.TextWithNumbers
 }
