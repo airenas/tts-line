@@ -3,6 +3,7 @@ package main
 import (
 	"github.com/airenas/go-app/pkg/goapp"
 	"github.com/airenas/tts-line/internal/pkg/cache"
+	"github.com/airenas/tts-line/internal/pkg/mongodb"
 	"github.com/airenas/tts-line/internal/pkg/processor"
 	"github.com/airenas/tts-line/internal/pkg/service"
 	"github.com/airenas/tts-line/internal/pkg/synthesizer"
@@ -20,7 +21,13 @@ func main() {
 	utils.MaxLogDataSize = goapp.Config.GetInt("maxLogDataSize")
 	synt := &synthesizer.MainWorker{}
 	synt.AllowCustomCode = goapp.Config.GetBool("allowCustom")
-	err := addProcessors(synt)
+	sp, err := mongodb.NewSessionProvider(goapp.Config.GetString("mongo.url"))
+	if err != nil {
+		goapp.Log.Fatal(errors.Wrap(err, "Can't init mongo session provider"))
+	}
+	defer sp.Close()
+
+	err = addProcessors(synt, sp)
 	if err != nil {
 		goapp.Log.Fatal(errors.Wrap(err, "Can't init processors"))
 	}
@@ -44,13 +51,27 @@ func main() {
 	}
 }
 
-func addProcessors(synt *synthesizer.MainWorker) error {
+func addProcessors(synt *synthesizer.MainWorker, sp *mongodb.SessionProvider) error {
+	ts, err := mongodb.NewTextSaver(sp)
+	if err != nil {
+		return errors.Wrap(err, "Can't init text to DB saver")
+	}
+	sv, err := processor.NewSaver(ts, utils.RequestOriginal)
+	if err != nil {
+		return errors.Wrap(err, "Can't init text to DB saver")
+	}
+	synt.Add(sv)
 	synt.Add(processor.NewNormalizer())
 	pr, err := processor.NewNumberReplace(goapp.Config.GetString("numberReplace.url"))
 	if err != nil {
 		return errors.Wrap(err, "Can't init number replace")
 	}
 	synt.Add(pr)
+	sv, err = processor.NewSaver(ts, utils.RequestNormalized)
+	if err != nil {
+		return errors.Wrap(err, "Can't init text to DB saver")
+	}
+	synt.Add(sv)
 
 	pr, err = processor.NewTagger(goapp.Config.GetString("tagger.url"))
 	if err != nil {

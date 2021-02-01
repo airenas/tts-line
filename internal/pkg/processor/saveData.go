@@ -31,7 +31,7 @@ func (p *saver) Process(data *synthesizer.TTSData) error {
 		goapp.Log.Info("Skip saving to DB")
 		return nil
 	}
-	defer goapp.Estimate("SaveToDB")()
+	defer goapp.Estimate("SaveToDB " + p.tType.String())()
 
 	return p.sDB.Save(data.RequestID, getText(data, p.tType), p.tType)
 }
