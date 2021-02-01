@@ -1,0 +1,80 @@
+package processor
+
+import (
+	"testing"
+
+	"github.com/petergtz/pegomock"
+	"github.com/pkg/errors"
+	"github.com/stretchr/testify/assert"
+
+	"github.com/airenas/tts-line/internal/pkg/service/api"
+	"github.com/airenas/tts-line/internal/pkg/synthesizer"
+	"github.com/airenas/tts-line/internal/pkg/test/mocks"
+	"github.com/airenas/tts-line/internal/pkg/test/mocks/matchers"
+	"github.com/airenas/tts-line/internal/pkg/utils"
+)
+
+var (
+	dbMock *mocks.MockSaverDB
+)
+
+func initTestDB(t *testing.T) {
+	mocks.AttachMockToTest(t)
+	dbMock = mocks.NewMockSaverDB()
+}
+
+func TestNewSaver(t *testing.T) {
+	initTestDB(t)
+	pr, err := NewSaver(dbMock)
+	assert.NotNil(t, pr)
+	assert.Nil(t, err)
+}
+
+func TestNewSaver_Fail(t *testing.T) {
+	initTestDB(t)
+	_, err := NewSaver(nil)
+	assert.NotNil(t, err)
+}
+
+func TestSave_Ignore(t *testing.T) {
+	initTestDB(t)
+	pr, _ := NewSaver(dbMock)
+	assert.NotNil(t, pr)
+	d := &synthesizer.TTSData{}
+	d.Input = &api.TTSRequestConfig{AllowCollectData: false}
+	err := pr.Process(d)
+	assert.Nil(t, err)
+	dbMock.VerifyWasCalled(pegomock.Never()).Save(pegomock.AnyString(), pegomock.AnyString(), matchers.AnyUtilsRequestTypeEnum())
+}
+
+func TestSave_Call(t *testing.T) {
+	initTestDB(t)
+	pr, _ := NewSaver(dbMock)
+	assert.NotNil(t, pr)
+	d := &synthesizer.TTSData{}
+	d.RequestID = "olia"
+	d.OriginalText = "tata"
+	d.Input = &api.TTSRequestConfig{AllowCollectData: true}
+	err := pr.Process(d)
+	assert.Nil(t, err)
+	cRID, cText, cType := dbMock.VerifyWasCalled(pegomock.Once()).
+		Save(pegomock.AnyString(), pegomock.AnyString(), matchers.AnyUtilsRequestTypeEnum()).
+		GetCapturedArguments()
+	assert.Equal(t, "olia", cRID)
+	assert.Equal(t, "tata", cText)
+	assert.Equal(t, utils.RequestMain, cType)
+}
+
+func TestSave_Fail(t *testing.T) {
+	initTestDB(t)
+	pr, _ := NewSaver(dbMock)
+	assert.NotNil(t, pr)
+	d := &synthesizer.TTSData{}
+	d.RequestID = "olia"
+	d.OriginalText = "tata"
+	d.Input = &api.TTSRequestConfig{AllowCollectData: true}
+	pegomock.When(dbMock.Save(pegomock.AnyString(), pegomock.AnyString(), matchers.AnyUtilsRequestTypeEnum())).
+		ThenReturn(errors.New("haha"))
+	err := pr.Process(d)
+	assert.NotNil(t, err)
+}
