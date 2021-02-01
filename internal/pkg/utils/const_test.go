@@ -6,7 +6,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestRequestTypeStrin(t *testing.T) {
+func TestRequestTypeString(t *testing.T) {
 	assert.Equal(t, "RequestType:0", RequestTypeEnum(0).String())
 	assert.Equal(t, "original", RequestOriginal.String())
 	assert.Equal(t, "normalized", RequestNormalized.String())

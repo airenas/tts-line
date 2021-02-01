@@ -1,5 +1,7 @@
 package api
 
+import "strconv"
+
 //TextFormatEnum represent possible output text types
 type TextFormatEnum int
 
@@ -13,6 +15,9 @@ const (
 )
 
 func (e TextFormatEnum) String() string {
+	if e < TextNone || e > TextAccented {
+		return "TextFormatEnum:" + strconv.Itoa(int(e))
+	}
 	return [...]string{"", "normalized", "accented"}[e]
 }
 
@@ -24,15 +29,18 @@ const (
 	AudioNone AudioFormatEnum = iota
 	//AudioMP3 value
 	AudioMP3
-	//AudioM4A value
+	//AudioM4A value`
 	AudioM4A
 )
 
 func (e AudioFormatEnum) String() string {
+	if e < AudioNone || e > AudioM4A {
+		return "AudioFormatEnum:" + strconv.Itoa(int(e))
+	}
 	return [...]string{"", "mp3", "m4a"}[e]
 }
 
-//TTSRequestConfig config for request
+//TTSRequestConfig config for request`
 type TTSRequestConfig struct {
 	Text             string
 	OutputFormat     AudioFormatEnum
