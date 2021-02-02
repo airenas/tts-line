@@ -4,7 +4,8 @@ import (
 	"time"
 )
 
-type textRecord struct {
+//TextRecord data in mongo db
+type TextRecord struct {
 	ID      string    `json:"id"`
 	Type    int       `json:"type"`
 	Text    string    `json:"text"`
