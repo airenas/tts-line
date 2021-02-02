@@ -5,6 +5,7 @@ LABEL Description="This image is used to host the TTS Line service" \
 WORKDIR /app
 
 COPY data/tts-line /app/
+COPY data/tts-export /app/
 COPY config.yaml /app/
 
 ENTRYPOINT ["./tts-line"]

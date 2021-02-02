@@ -1,22 +1,24 @@
 #####################################################################################
 dist_dir=$(CURDIR)/data
 executable_name=tts-line
-main_dir=../../cmd/$(executable_name)
+main_dir=../../cmd
 service=airenas/tts-line
-version=0.5
+version=0.6
 go_build_cmd=CGO_ENABLED=0 go build -installsuffix -cgo
 commit_count=$(shell git rev-list --count HEAD)
 #####################################################################################
 $(dist_dir):
 	mkdir -p $@
 $(dist_dir)/$(executable_name): | $(dist_dir)
-	cd $(main_dir) && $(go_build_cmd) -o $(dist_dir)/$(executable_name) 
+	cd $(main_dir)/$(executable_name) && $(go_build_cmd) -o $@
+$(dist_dir)/tts-export: | $(dist_dir)
+	cd $(main_dir)/tts-export && $(go_build_cmd) -o $@ 	
 #####################################################################################
-build: $(dist_dir)/$(executable_name)
+build: $(dist_dir)/$(executable_name) $(dist_dir)/tts-export
 ########### DOCKER ##################################################################
 tag=$(service):$(version).$(commit_count)
 
-dbuild: $(dist_dir)/$(executable_name)
+dbuild: $(dist_dir)/$(executable_name) $(dist_dir)/tts-export
 	docker build -t $(tag) ./
 
 dpush: dbuild
