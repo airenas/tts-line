@@ -14,6 +14,7 @@ import (
 
 const (
 	headerDefaultFormat = "x-tts-default-output-format"
+	headerCollectData   = "x-tts-collect-data"
 )
 
 //TTSConfigutaror tts request configuration
@@ -66,7 +67,10 @@ func (c *TTSConfigutaror) Configure(r *http.Request, inText *api.Input) (*api.TT
 	if err != nil {
 		return nil, err
 	}
-	res.AllowCollectData = inText.AllowCollectData != nil && *inText.AllowCollectData
+	res.AllowCollectData, err = getAllowCollect(inText.AllowCollectData, getHeader(r, headerCollectData))
+	if err != nil {
+		return nil, err
+	}
 	return res, nil
 }
 
@@ -82,6 +86,23 @@ func getOutputTextFormat(s string) (api.TextFormatEnum, error) {
 		return api.TextAccented, nil
 	}
 	return api.TextNone, errors.New("Unknown text format " + s)
+}
+
+func getAllowCollect(v *bool, s string) (bool, error) {
+	st := strings.TrimSpace(strings.ToLower(s))
+	if st == "" || st == "request" {
+		return v != nil && *v, nil
+	}
+	if v == nil {
+		return st == "always", nil
+	}
+	if st == "always" && *v {
+		return true, nil
+	}
+	if st == "never" && !*v {
+		return false, nil
+	}
+	return false, errors.Errorf("AllowCollectData=%t is rejected for this key.", *v)
 }
 
 func getOutputAudioFormat(s string) (api.AudioFormatEnum, error) {

@@ -83,6 +83,17 @@ func TestConfigure_FailFormat(t *testing.T) {
 	assert.NotNil(t, err)
 }
 
+func TestConfigure_FailCollect(t *testing.T) {
+	c, _ := NewTTSConfigurator(test.NewConfig("output:\n  defaultFormat: mp3\n"))
+	req := httptest.NewRequest("POST", "/synthesize", strings.NewReader("text"))
+	b := true
+	_, err := c.Configure(req, &api.Input{Text: "olia", AllowCollectData: &b})
+	assert.Nil(t, err)
+	req.Header.Add(headerCollectData, "never")
+	_, err = c.Configure(req, &api.Input{Text: "olia", AllowCollectData: &b})
+	assert.NotNil(t, err)
+}
+
 func TestConfigure_FailTextFormat(t *testing.T) {
 	c, _ := NewTTSConfigurator(test.NewConfig("output:\n  defaultFormat: mp3\n  metadata:\n   - r=a"))
 	req := httptest.NewRequest("POST", "/synthesize", strings.NewReader("text"))
@@ -126,5 +137,32 @@ func TestOutputAudioFormat(t *testing.T) {
 		v, err := getOutputAudioFormat(tc.in)
 		assert.Equal(t, tc.res, v)
 		assert.Equal(t, tc.isErr, err != nil)
+	}
+}
+
+func TestAllowCollect(t *testing.T) {
+	bt := true
+	bf := false
+	tests := []struct {
+		v     *bool
+		h     string
+		res   bool
+		isErr bool
+	}{
+		{v: nil, h: "", res: false, isErr: false},
+		{v: &bf, h: "", res: false, isErr: false},
+		{v: &bt, h: "", res: true, isErr: false},	
+		{v: nil, h: "never", res: false, isErr: false},	
+		{v: nil, h: "always", res: true, isErr: false},	
+		{v: &bt, h: "always", res: true, isErr: false},
+		{v: &bf, h: "never", res: false, isErr: false},
+		{v: &bf, h: "always", res: false, isErr: true},
+		{v: &bt, h: "never", res: false, isErr: true},		
+	}
+
+	for i, tc := range tests {
+		v, err := getAllowCollect(tc.v, tc.h)
+		assert.Equal(t, tc.res, v, "fail %d", i)
+		assert.Equal(t, tc.isErr, err != nil, "fail %d", i)
 	}
 }
