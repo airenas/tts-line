@@ -44,7 +44,9 @@ func (hw *HTTPWrap) InvokeText(dataIn string, dataOut interface{}) error {
 //InvokeJSON makes http call with json
 func (hw *HTTPWrap) InvokeJSON(dataIn interface{}, dataOut interface{}) error {
 	b := new(bytes.Buffer)
-	err := json.NewEncoder(b).Encode(dataIn)
+	enc := json.NewEncoder(b)
+	enc.SetEscapeHTML(false)
+	err := enc.Encode(dataIn)
 	if err != nil {
 		return err
 	}
