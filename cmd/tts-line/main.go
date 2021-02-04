@@ -61,12 +61,25 @@ func addProcessors(synt *synthesizer.MainWorker, sp *mongodb.SessionProvider) er
 		return errors.Wrap(err, "Can't init text to DB saver")
 	}
 	synt.Add(sv)
-	synt.Add(processor.NewNormalizer())
-	pr, err := processor.NewNumberReplace(goapp.Config.GetString("numberReplace.url"))
+	// cleaner
+	pr, err := processor.NewCleaner(goapp.Config.GetString("clean.url"))
+	if err != nil {
+		return errors.Wrap(err, "Can't init normalize/clean processor")
+	}
+	synt.Add(pr)
+	//db saver
+	sv, err = processor.NewSaver(ts, utils.RequestCleaned)
+	if err != nil {
+		return errors.Wrap(err, "Can't init text to DB saver")
+	}
+	synt.Add(sv)
+	//number replacer
+	pr, err = processor.NewNumberReplace(goapp.Config.GetString("numberReplace.url"))
 	if err != nil {
 		return errors.Wrap(err, "Can't init number replace")
 	}
 	synt.Add(pr)
+	//db saver
 	sv, err = processor.NewSaver(ts, utils.RequestNormalized)
 	if err != nil {
 		return errors.Wrap(err, "Can't init text to DB saver")

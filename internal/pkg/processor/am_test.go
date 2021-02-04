@@ -117,7 +117,6 @@ func TestInvokeAcousticModel_FromAM(t *testing.T) {
 	assert.Nil(t, err)
 	cp1, _ := httpJSONMock.VerifyWasCalledOnce().InvokeJSON(pegomock.AnyInterface(), pegomock.AnyInterface()).GetCapturedArguments()
 	assert.Equal(t, &amInput{Text: "olia"}, cp1)
-
 }
 
 func TestMapAMInput(t *testing.T) {

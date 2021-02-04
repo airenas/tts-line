@@ -40,5 +40,8 @@ func getText(data *synthesizer.TTSData, t utils.RequestTypeEnum) string {
 	if t == utils.RequestOriginal {
 		return data.OriginalText
 	}
+	if t == utils.RequestCleaned {
+		return data.Text
+	}
 	return data.TextWithNumbers
 }

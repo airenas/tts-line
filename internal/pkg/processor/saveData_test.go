@@ -96,3 +96,14 @@ func TestSave_Fail(t *testing.T) {
 	err := pr.Process(d)
 	assert.NotNil(t, err)
 }
+
+func TestGetText(t *testing.T) {
+	d := &synthesizer.TTSData{}
+	d.RequestID = "olia"
+	d.OriginalText = "tata"
+	d.Text = "cleaned"
+	d.TextWithNumbers = "t numbers"
+	assert.Equal(t, "tata", getText(d, utils.RequestOriginal))
+	assert.Equal(t, "cleaned", getText(d, utils.RequestCleaned))
+	assert.Equal(t, "t numbers", getText(d, utils.RequestNormalized))
+}

@@ -10,11 +10,13 @@ const (
 	RequestOriginal RequestTypeEnum = iota + 1
 	//RequestNormalized value
 	RequestNormalized
+	//RequestCleaned value
+	RequestCleaned
 )
 
 func (e RequestTypeEnum) String() string {
-	if e < RequestOriginal || e > RequestNormalized {
+	if e < RequestOriginal || e > RequestCleaned {
 		return "RequestType:" + strconv.Itoa(int(e))
 	}
-	return [...]string{"", "original", "normalized"}[e]
+	return [...]string{"", "original", "normalized", "cleaned"}[e]
 }
