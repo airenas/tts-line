@@ -22,3 +22,4 @@ cmd/tts-line/__debug_bin
 out.mp3
 deploy/am-voc-wrapper/bin/am-voc-wrapper
 deploy/tts-clean-text/data/**
+cmd/acronyms/acronyms.txt
