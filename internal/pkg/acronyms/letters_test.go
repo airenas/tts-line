@@ -145,3 +145,36 @@ func TestIgnoreDot(t *testing.T) {
 		assert.Equal(t, "ą3", res[0].UserTrans)
 	}
 }
+
+func TestNoFail(t *testing.T) {
+	prv, err := NewLetters()
+	assert.Nil(t, err)
+	res, err := prv.Process("'.A.", "1")
+	assert.Nil(t, err)
+	assert.NotNil(t, res)
+	if assert.Equal(t, 1, len(res)) {
+		assert.Equal(t, "a", res[0].Word)
+		assert.Equal(t, "ą", res[0].WordTrans)
+		assert.Equal(t, "ą", res[0].Syll)
+		assert.Equal(t, "ą3", res[0].UserTrans)
+	}
+}
+
+func TestNoFailSeveralWords(t *testing.T) {
+	prv, err := NewLetters()
+	assert.Nil(t, err)
+	res, err := prv.Process("'.A.W>", "1")
+	assert.Nil(t, err)
+	assert.NotNil(t, res)
+	if assert.Equal(t, 2, len(res)) {
+		assert.Equal(t, "a", res[0].Word)
+		assert.Equal(t, "ą", res[0].WordTrans)
+		assert.Equal(t, "ą", res[0].Syll)
+		assert.Equal(t, "ą3", res[0].UserTrans)
+
+		assert.Equal(t, "w", res[1].Word)
+		assert.Equal(t, "dablvė", res[1].WordTrans)
+		assert.Equal(t, "dabl-vė", res[1].Syll)
+		assert.Equal(t, "da4blvė", res[1].UserTrans)
+	}
+}

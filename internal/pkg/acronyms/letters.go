@@ -3,8 +3,8 @@ package acronyms
 import (
 	"strings"
 
+	"github.com/airenas/go-app/pkg/goapp"
 	"github.com/airenas/tts-line/internal/pkg/acronyms/service/api"
-	"github.com/pkg/errors"
 )
 
 //Letters processes letter abbreviation
@@ -22,26 +22,25 @@ func (s *Letters) Process(word, mi string) ([]api.ResultWord, error) {
 	wl := strings.ToLower(word)
 	wl = strings.TrimRight(wl, ".")
 	wr := []rune(wl)
-	from := 0
-	to := 0
-	for i, l := range wr {
+	cwr := []rune{}
+	for _, l := range wr {
 		d, ok := letters[l]
 		if !ok {
-			return nil, errors.New("Unknown letter: " + string(l))
+			goapp.Log.Warnf("Unknown letter: '%s'", string(l))
+			continue
 		}
 		if d.newWord {
-			if to > from {
-				result = append(result, *makeResultWord(wr[from:to]))
+			if len(cwr) > 0 {
+				result = append(result, *makeResultWord(cwr))
 			}
-			result = append(result, *makeResultWord(wr[i : i+1]))
-			from = i + 1
-			to = i + 1
+			result = append(result, *makeResultWord([]rune{l}))
+			cwr = []rune{}
 		} else {
-			to++
+			cwr = append(cwr, l)
 		}
 	}
-	if to > from {
-		result = append(result, *makeResultWord(wr[from:to]))
+	if len(cwr) > 0 {
+		result = append(result, *makeResultWord(cwr))
 	}
 	return result, nil
 }
