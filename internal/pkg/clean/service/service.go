@@ -23,7 +23,7 @@ type (
 
 //StartWebServer starts the HTTP service and listens for the convert requests
 func StartWebServer(data *Data) error {
-	goapp.Log.Infof("Starting HTTP audio convert service at %d", data.Port)
+	goapp.Log.Infof("Starting HTTP service at %d", data.Port)
 	portStr := strconv.Itoa(data.Port)
 
 	e := initRoutes(data)
@@ -37,7 +37,7 @@ func StartWebServer(data *Data) error {
 func initRoutes(data *Data) *echo.Echo {
 	e := echo.New()
 	e.Use(middleware.Logger())
-	p := prometheus.NewPrometheus("echo", nil)
+	p := prometheus.NewPrometheus("clean", nil)
 	p.Use(e)
 
 	e.POST("/clean", handleClean(data))

@@ -29,8 +29,7 @@ func TestLive(t *testing.T) {
 	initTest(t)
 	req := httptest.NewRequest(http.MethodGet, "/live", nil)
 
-	e := initRoutes(tData)
-	e.ServeHTTP(tRec, req)
+	tEcho.ServeHTTP(tRec, req)
 	assert.Equal(t, http.StatusOK, tRec.Code)
 	assert.Equal(t, `{"service":"OK"}`, tRec.Body.String())
 }

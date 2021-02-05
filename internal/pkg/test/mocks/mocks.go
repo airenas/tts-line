@@ -20,6 +20,8 @@ import (
 
 //go:generate pegomock generate --package=mocks --output=exporter.go -m github.com/airenas/tts-line/internal/pkg/exporter Exporter
 
+//go:generate pegomock generate --package=mocks --output=acrWorker.go -m github.com/airenas/tts-line/internal/pkg/acronyms/service Worker
+
 //AttachMockToTest register pegomock verification to be passed to testing engine
 func AttachMockToTest(t *testing.T) {
 	pegomock.RegisterMockFailHandler(handleByTest(t))
