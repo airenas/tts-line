@@ -23,3 +23,5 @@ out.mp3
 deploy/am-voc-wrapper/bin/am-voc-wrapper
 deploy/tts-clean-text/data/**
 cmd/acronyms/acronyms.txt
+deploy/acronyms/Makefile.options
+deploy/acronyms/data/**
