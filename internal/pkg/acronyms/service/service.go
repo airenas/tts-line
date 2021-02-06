@@ -5,8 +5,11 @@ import (
 	"strconv"
 	"strings"
 
+	"log"
+
 	"github.com/airenas/go-app/pkg/goapp"
 	"github.com/airenas/tts-line/internal/pkg/acronyms/service/api"
+	"github.com/facebookgo/grace/gracehttp"
 	"github.com/labstack/echo-contrib/prometheus"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
@@ -34,10 +37,14 @@ func StartWebServer(data *Data) error {
 
 	e := initRoutes(data)
 
-	if err := e.Start(":" + portStr); err != nil {
-		return errors.Wrap(err, "Can't start HTTP listener at port "+portStr)
-	}
-	return nil
+	e.Server.Addr = ":" + portStr
+
+	w := goapp.Log.Writer()
+	defer w.Close()
+	l := log.New(w, "", 0)
+	gracehttp.SetLogger(l)
+
+	return gracehttp.Serve(e.Server)
 }
 
 func initRoutes(data *Data) *echo.Echo {
@@ -46,9 +53,8 @@ func initRoutes(data *Data) *echo.Echo {
 	p := prometheus.NewPrometheus("acronyms", nil)
 	p.Use(e)
 
-	e.POST("/abbreviations", handleList(data))
-	e.GET("/abbreviation/:word", handleOne(data))
-
+	e.POST("/acronyms", handleList(data))
+	e.GET("/acronym/:word", handleOne(data))
 	e.GET("/live", live(data))
 
 	goapp.Log.Info("Routes:")
