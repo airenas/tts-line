@@ -50,7 +50,7 @@ func TestNotFound(t *testing.T) {
 
 func TestProvides(t *testing.T) {
 	initTest(t)
-	req := httptest.NewRequest(http.MethodPost, "/abbreviations", strings.NewReader(`[]`))
+	req := httptest.NewRequest(http.MethodPost, "/acronyms", strings.NewReader(`[]`))
 	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
 
 	tEcho.ServeHTTP(tRec, req)
@@ -61,7 +61,7 @@ func TestProvides(t *testing.T) {
 
 func TestFails_Data(t *testing.T) {
 	initTest(t)
-	req := httptest.NewRequest(http.MethodPost, "/abbreviations", strings.NewReader(`["word":"aa]`))
+	req := httptest.NewRequest(http.MethodPost, "/acronyms", strings.NewReader(`["word":"aa]`))
 	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
 
 	tEcho.ServeHTTP(tRec, req)
@@ -71,7 +71,7 @@ func TestFails_Data(t *testing.T) {
 func TestFails(t *testing.T) {
 	initTest(t)
 	pegomock.When(wMock.Process(pegomock.AnyString(), pegomock.AnyString())).ThenReturn(nil, errors.New("err"))
-	req := httptest.NewRequest(http.MethodPost, "/abbreviations", strings.NewReader(`[{"word":"aa"}]`))
+	req := httptest.NewRequest(http.MethodPost, "/acronyms", strings.NewReader(`[{"word":"aa"}]`))
 	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
 
 	tEcho.ServeHTTP(tRec, req)
@@ -82,7 +82,7 @@ func TestFails(t *testing.T) {
 func TestReturnsResponse(t *testing.T) {
 	initTest(t)
 	pegomock.When(wMock.Process(pegomock.AnyString(), pegomock.AnyString())).ThenReturn([]api.ResultWord{{Word: "aa"}}, nil)
-	req := httptest.NewRequest(http.MethodPost, "/abbreviations", strings.NewReader(`[{"word":"aa"}]`))
+	req := httptest.NewRequest(http.MethodPost, "/acronyms", strings.NewReader(`[{"word":"aa"}]`))
 	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
 
 	tEcho.ServeHTTP(tRec, req)
@@ -93,7 +93,7 @@ func TestReturnsResponse(t *testing.T) {
 
 func TestGETFailEmpty(t *testing.T) {
 	initTest(t)
-	req := httptest.NewRequest(http.MethodGet, "/abbreviation/", nil)
+	req := httptest.NewRequest(http.MethodGet, "/acronym/", nil)
 
 	tEcho.ServeHTTP(tRec, req)
 
@@ -103,7 +103,7 @@ func TestGETFailEmpty(t *testing.T) {
 func TestGETFails(t *testing.T) {
 	initTest(t)
 	pegomock.When(wMock.Process(pegomock.AnyString(), pegomock.AnyString())).ThenReturn(nil, errors.New("err"))
-	req := httptest.NewRequest(http.MethodGet, "/abbreviation/aa", nil)
+	req := httptest.NewRequest(http.MethodGet, "/acronym/aa", nil)
 
 	tEcho.ServeHTTP(tRec, req)
 
@@ -113,7 +113,7 @@ func TestGETFails(t *testing.T) {
 func TestGETReturnsResponse(t *testing.T) {
 	initTest(t)
 	pegomock.When(wMock.Process(pegomock.AnyString(), pegomock.AnyString())).ThenReturn([]api.ResultWord{{Word: "aa"}}, nil)
-	req := httptest.NewRequest(http.MethodGet, "/abbreviation/aa", nil)
+	req := httptest.NewRequest(http.MethodGet, "/acronym/aa", nil)
 
 	tEcho.ServeHTTP(tRec, req)
 
