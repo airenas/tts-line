@@ -25,3 +25,4 @@ deploy/tts-clean-text/data/**
 cmd/acronyms/acronyms.txt
 deploy/acronyms/Makefile.options
 deploy/acronyms/data/**
+cmd/acronyms/acronyms
