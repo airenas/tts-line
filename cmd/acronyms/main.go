@@ -6,6 +6,7 @@ import (
 	"github.com/airenas/go-app/pkg/goapp"
 	"github.com/airenas/tts-line/internal/pkg/acronyms"
 	"github.com/airenas/tts-line/internal/pkg/acronyms/service"
+	"github.com/labstack/gommon/color"
 
 	"github.com/pkg/errors"
 )
@@ -21,6 +22,8 @@ func main() {
 	if err != nil {
 		goapp.Log.Fatal(errors.Wrap(err, "Can't init provider"))
 	}
+
+	printBanner()
 
 	err = service.StartWebServer(&data)
 	if err != nil {
@@ -46,4 +49,28 @@ func provider() (service.Worker, error) {
 	}
 
 	return acronyms.NewProcessor(as, ls)
+}
+
+var (
+	version string
+)
+
+func printBanner() {
+	banner := `
+    ___                                             
+   /   | ______________  ____  __  ______ ___  _____
+  / /| |/ ___/ ___/ __ \/ __ \/ / / / __ ` + "`" + `__ \/ ___/
+ / ___ / /__/ /  / /_/ / / / / /_/ / / / / / (__  ) 
+/_/  |_\___/_/   \____/_/ /_/\__, /_/ /_/ /_/____/  
+              ________  ____//___/_(_)_______       
+             / ___/ _ \/ ___/ | / / / ___/ _ \      
+            (__  )  __/ /   | |/ / / /__/  __/      
+		   /____/\___/_/    |___/_/\___/\___/  v: %s 
+
+%s
+________________________________________________________                                                 
+
+`
+	cl := color.New()
+	cl.Printf(banner, cl.Red(version), cl.Green("https://github.com/airenas/tts-line"))
 }
