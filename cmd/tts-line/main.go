@@ -124,9 +124,9 @@ func addProcessors(synt *synthesizer.MainWorker, sp *mongodb.SessionProvider) er
 }
 
 func addPartProcessors(partRunner *synthesizer.PartRunner, cfg *viper.Viper) error {
-	ppr, err := processor.NewAbbreviator(cfg.GetString("abbreviator.url"))
+	ppr, err := processor.NewAcronyms(cfg.GetString("acronyms.url"))
 	if err != nil {
-		return errors.Wrap(err, "Can't init abbreviator")
+		return errors.Wrap(err, "Can't init acronyms service")
 	}
 	partRunner.Add(ppr)
 

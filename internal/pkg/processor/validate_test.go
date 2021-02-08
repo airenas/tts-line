@@ -6,7 +6,6 @@ import (
 
 	"github.com/petergtz/pegomock"
 	"github.com/pkg/errors"
-	"github.com/spf13/viper"
 
 	"github.com/stretchr/testify/assert"
 
@@ -17,7 +16,7 @@ import (
 
 func TestNewValidator(t *testing.T) {
 	initTestJSON(t)
-	pr, err := NewValidator(newTestConfig("url: http://server\ncheck:\n  min_words: 1"))
+	pr, err := NewValidator(test.NewConfig(t, "url: http://server\ncheck:\n  min_words: 1"))
 	assert.Nil(t, err)
 	assert.NotNil(t, pr)
 }
@@ -28,18 +27,18 @@ func TestNewValidator_Fails(t *testing.T) {
 	assert.NotNil(t, err)
 	assert.Nil(t, pr)
 
-	_, err = NewValidator(newTestConfig(""))
+	_, err = NewValidator(test.NewConfig(t, ""))
 	assert.NotNil(t, err)
 
-	_, err = NewValidator(newTestConfig("url: "))
+	_, err = NewValidator(test.NewConfig(t, "url: "))
 	assert.NotNil(t, err)
 
-	_, err = NewValidator(newTestConfig("url: http://server\n"))
+	_, err = NewValidator(test.NewConfig(t, "url: http://server\n"))
 	assert.NotNil(t, err)
 }
 
 func TestInitChecks(t *testing.T) {
-	ch, err := initChecks(newTestConfig("min_words: 1\nmax_words: 10\nno_numbers: 1\nprofanity: 1"))
+	ch, err := initChecks(test.NewConfig(t, "min_words: 1\nmax_words: 10\nno_numbers: 1\nprofanity: 1"))
 	assert.Nil(t, err)
 	assert.Equal(t, 4, len(ch))
 	assert.Equal(t, 1, ch[0].Value)
@@ -49,14 +48,14 @@ func TestInitChecks(t *testing.T) {
 }
 
 func TestInitChecks_Ignore(t *testing.T) {
-	ch, err := initChecks(newTestConfig("min_words: 0"))
+	ch, err := initChecks(test.NewConfig(t, "min_words: 0"))
 	assert.Nil(t, err)
 	assert.Equal(t, 0, len(ch))
 }
 
 func TestInvokeValidator(t *testing.T) {
 	initTestJSON(t)
-	pr, _ := NewValidator(newTestConfig("url: http://server\ncheck:\n  min_words: 1"))
+	pr, _ := NewValidator(test.NewConfig(t, "url: http://server\ncheck:\n  min_words: 1"))
 	assert.NotNil(t, pr)
 	pr.(*validator).httpWrap = httpJSONMock
 	d := synthesizer.TTSData{}
@@ -75,7 +74,7 @@ func TestInvokeValidator(t *testing.T) {
 
 func TestInvokeValidator_Fail(t *testing.T) {
 	initTestJSON(t)
-	pr, _ := NewValidator(newTestConfig("url: http://server\ncheck:\n  min_words: 1"))
+	pr, _ := NewValidator(test.NewConfig(t, "url: http://server\ncheck:\n  min_words: 1"))
 	assert.NotNil(t, pr)
 	pr.(*validator).httpWrap = httpJSONMock
 	d := synthesizer.TTSData{}
@@ -88,13 +87,13 @@ func TestInvokeValidator_Fail(t *testing.T) {
 func TestInvokeValidator_Skip(t *testing.T) {
 	d := &synthesizer.TTSData{}
 	d.Cfg.JustAM = true
-	pr, _ := NewValidator(newTestConfig("url: http://server\ncheck:\n  min_words: 1"))
+	pr, _ := NewValidator(test.NewConfig(t, "url: http://server\ncheck:\n  min_words: 1"))
 	err := pr.Process(d)
 	assert.Nil(t, err)
 }
 
 func TestMapValInput(t *testing.T) {
-	pr, _ := NewValidator(newTestConfig("url: http://server\ncheck:\n  min_words: 1"))
+	pr, _ := NewValidator(test.NewConfig(t, "url: http://server\ncheck:\n  min_words: 1"))
 	assert.NotNil(t, pr)
 	prv := pr.(*validator)
 
@@ -110,14 +109,10 @@ func TestMapValInput(t *testing.T) {
 
 func TestMapValInput_FromConfig(t *testing.T) {
 	os.Setenv("VALIDATOR_CHECK_MAX_WORDS", "300")
-	pr, _ := NewValidator(newTestConfig("url: http://server\ncheck:\n  max_words: 10"))
+	pr, _ := NewValidator(test.NewConfig(t, "url: http://server\ncheck:\n  max_words: 10"))
 	assert.NotNil(t, pr)
 	prv := pr.(*validator)
 
 	assert.Equal(t, 1, len(prv.checks))
 	assert.Equal(t, 300, prv.checks[0].Value)
-}
-
-func newTestConfig(yaml string) *viper.Viper {
-	return test.NewConfig(yaml)
 }

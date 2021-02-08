@@ -16,13 +16,13 @@ type HTTPInvokerJSON interface {
 	InvokeJSON(interface{}, interface{}) error
 }
 
-type abbreviator struct {
+type acronyms struct {
 	httpWrap HTTPInvokerJSON
 }
 
-//NewAbbreviator creates new processor
-func NewAbbreviator(urlStr string) (synthesizer.PartProcessor, error) {
-	res := &abbreviator{}
+//NewAcronyms creates new processor
+func NewAcronyms(urlStr string) (synthesizer.PartProcessor, error) {
+	res := &acronyms{}
 	var err error
 	res.httpWrap, err = utils.NewHTTWrap(urlStr)
 	if err != nil {
@@ -31,14 +31,14 @@ func NewAbbreviator(urlStr string) (synthesizer.PartProcessor, error) {
 	return res, nil
 }
 
-func (p *abbreviator) Process(data *synthesizer.TTSDataPart) error {
+func (p *acronyms) Process(data *synthesizer.TTSDataPart) error {
 	if p.skip(data) {
-		goapp.Log.Info("Skip abbreviator")
+		goapp.Log.Info("Skip acronyms")
 		return nil
 	}
 	inData := mapAbbrInput(data)
 	if len(inData) > 0 {
-		var outData []abbrWordOutput
+		var outData []acrWordOutput
 		err := p.httpWrap.InvokeJSON(inData, &outData)
 		if err != nil {
 			return err
@@ -50,30 +50,30 @@ func (p *abbreviator) Process(data *synthesizer.TTSDataPart) error {
 	return nil
 }
 
-type abbrInput struct {
+type acrInput struct {
 	Word string `json:"word,omitempty"`
 	MI   string `json:"mi,omitempty"`
 	ID   string `json:"id,omitempty"`
 }
 
-type abbrWordOutput struct {
-	ID    string           `json:"id,omitempty"`
-	Words []abbrResultWord `json:"words,omitempty"`
+type acrWordOutput struct {
+	ID    string          `json:"id,omitempty"`
+	Words []acrResultWord `json:"words,omitempty"`
 }
 
-type abbrResultWord struct {
+type acrResultWord struct {
 	Word      string `json:"word,omitempty"`
 	WordTrans string `json:"wordTrans,omitempty"`
 	Syll      string `json:"syll,omitempty"`
 	UserTrans string `json:"userTrans,omitempty"`
 }
 
-func mapAbbrInput(data *synthesizer.TTSDataPart) []abbrInput {
-	res := []abbrInput{}
+func mapAbbrInput(data *synthesizer.TTSDataPart) []acrInput {
+	res := []acrInput{}
 	for i, w := range data.Words {
 		tgw := w.Tagged
 		if tgw.IsWord() && isAbbr(tgw.Mi, tgw.Lemma) {
-			res = append(res, abbrInput{Word: tgw.Word, MI: tgw.Mi, ID: strconv.Itoa(i)})
+			res = append(res, acrInput{Word: tgw.Word, MI: tgw.Mi, ID: strconv.Itoa(i)})
 		}
 	}
 	return res
@@ -96,8 +96,8 @@ func allUpper(lemma string) bool {
 	return len(lemma) > 0
 }
 
-func mapAbbrOutput(data *synthesizer.TTSDataPart, abbrOut []abbrWordOutput) error {
-	om := make(map[int]abbrWordOutput)
+func mapAbbrOutput(data *synthesizer.TTSDataPart, abbrOut []acrWordOutput) error {
+	om := make(map[int]acrWordOutput)
 	for _, abbr := range abbrOut {
 		iID, err := strconv.Atoi(abbr.ID)
 		if err != nil {
@@ -118,7 +118,7 @@ func mapAbbrOutput(data *synthesizer.TTSDataPart, abbrOut []abbrWordOutput) erro
 	return nil
 }
 
-func newWords(aw []abbrResultWord, w *synthesizer.ProcessedWord) []*synthesizer.ProcessedWord {
+func newWords(aw []acrResultWord, w *synthesizer.ProcessedWord) []*synthesizer.ProcessedWord {
 	res := []*synthesizer.ProcessedWord{}
 	for i, r := range aw {
 		wd := synthesizer.ProcessedWord{}
@@ -135,6 +135,6 @@ func newWords(aw []abbrResultWord, w *synthesizer.ProcessedWord) []*synthesizer.
 	return res
 }
 
-func (p *abbreviator) skip(data *synthesizer.TTSDataPart) bool {
+func (p *acronyms) skip(data *synthesizer.TTSDataPart) bool {
 	return data.Cfg.JustAM
 }

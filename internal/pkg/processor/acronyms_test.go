@@ -23,29 +23,29 @@ func initTestJSON(t *testing.T) {
 
 func TestNewAbbreviator(t *testing.T) {
 	initTestJSON(t)
-	pr, err := NewAbbreviator("http://server")
+	pr, err := NewAcronyms("http://server")
 	assert.Nil(t, err)
 	assert.NotNil(t, pr)
 }
 
 func TestNewAbbreviator_Fails(t *testing.T) {
 	initTestJSON(t)
-	pr, err := NewAbbreviator("")
+	pr, err := NewAcronyms("")
 	assert.NotNil(t, err)
 	assert.Nil(t, pr)
 }
 
 func TestInvokeNewAbbreviator(t *testing.T) {
 	initTestJSON(t)
-	pr, _ := NewAbbreviator("http://server")
+	pr, _ := NewAcronyms("http://server")
 	assert.NotNil(t, pr)
-	pr.(*abbreviator).httpWrap = httpJSONMock
+	pr.(*acronyms).httpWrap = httpJSONMock
 	d := newTestTTSDataPart()
 	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Mi: "Y"}})
 	pegomock.When(httpJSONMock.InvokeJSON(pegomock.AnyInterface(), pegomock.AnyInterface())).Then(
 		func(params []pegomock.Param) pegomock.ReturnValues {
-			*params[1].(*[]abbrWordOutput) = []abbrWordOutput{abbrWordOutput{ID: "0",
-				Words: []abbrResultWord{abbrResultWord{Word: "olia", WordTrans: "oolia", UserTrans: "o l i a", Syll: "o-lia"}}}}
+			*params[1].(*[]acrWordOutput) = []acrWordOutput{{ID: "0",
+				Words: []acrResultWord{{Word: "olia", WordTrans: "oolia", UserTrans: "o l i a", Syll: "o-lia"}}}}
 			return []pegomock.ReturnValue{nil}
 		})
 	err := pr.Process(d)
@@ -57,9 +57,9 @@ func TestInvokeNewAbbreviator(t *testing.T) {
 
 func TestInvokeNewAbbreviator_Fail(t *testing.T) {
 	initTestJSON(t)
-	pr, _ := NewAbbreviator("http://server")
+	pr, _ := NewAcronyms("http://server")
 	assert.NotNil(t, pr)
-	pr.(*abbreviator).httpWrap = httpJSONMock
+	pr.(*acronyms).httpWrap = httpJSONMock
 	d := newTestTTSDataPart()
 	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Mi: "Y"}})
 	pegomock.When(httpJSONMock.InvokeJSON(pegomock.AnyInterface(), pegomock.AnyInterface())).ThenReturn(errors.New("haha"))
@@ -69,7 +69,7 @@ func TestInvokeNewAbbreviator_Fail(t *testing.T) {
 func TestInvokeAbbr_Skip(t *testing.T) {
 	d := newTestTTSDataPart()
 	d.Cfg.JustAM = true
-	pr, _ := NewAbbreviator("http://server")
+	pr, _ := NewAcronyms("http://server")
 	err := pr.Process(d)
 	assert.Nil(t, err)
 }
@@ -79,9 +79,9 @@ func TestMapAbbrOutput(t *testing.T) {
 	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Word: "v1"}})
 	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Separator: ","}})
 
-	abbrOut := []abbrWordOutput{}
-	abbrOut = append(abbrOut, abbrWordOutput{ID: "0", Words: []abbrResultWord{
-		abbrResultWord{Word: "olia", WordTrans: "oolia", UserTrans: "o l i a", Syll: "o-lia"}}})
+	abbrOut := []acrWordOutput{}
+	abbrOut = append(abbrOut, acrWordOutput{ID: "0", Words: []acrResultWord{
+		{Word: "olia", WordTrans: "oolia", UserTrans: "o l i a", Syll: "o-lia"}}})
 
 	err := mapAbbrOutput(d, abbrOut)
 	assert.Nil(t, err)
@@ -95,10 +95,10 @@ func TestMapAbbrOutput_Several(t *testing.T) {
 	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Separator: ","}})
 	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Word: "v1"}})
 
-	abbrOut := []abbrWordOutput{}
-	abbrOut = append(abbrOut, abbrWordOutput{ID: "1", Words: []abbrResultWord{
-		abbrResultWord{Word: "v1", WordTrans: "oolia", UserTrans: "o l i a", Syll: "o-lia"},
-		abbrResultWord{Word: "v2", WordTrans: "oolia", UserTrans: "v 2", Syll: "o-lia"}}})
+	abbrOut := []acrWordOutput{}
+	abbrOut = append(abbrOut, acrWordOutput{ID: "1", Words: []acrResultWord{
+		{Word: "v1", WordTrans: "oolia", UserTrans: "o l i a", Syll: "o-lia"},
+		{Word: "v2", WordTrans: "oolia", UserTrans: "v 2", Syll: "o-lia"}}})
 
 	err := mapAbbrOutput(d, abbrOut)
 	assert.Nil(t, err)
@@ -111,9 +111,9 @@ func TestMapAbbrOutput_Fail(t *testing.T) {
 	d := newTestTTSDataPart()
 	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Word: "v1"}})
 
-	abbrOut := []abbrWordOutput{}
-	abbrOut = append(abbrOut, abbrWordOutput{ID: "XX", Words: []abbrResultWord{
-		abbrResultWord{Word: "olia", WordTrans: "oolia", UserTrans: "o l i a", Syll: "o-lia"}}})
+	abbrOut := []acrWordOutput{}
+	abbrOut = append(abbrOut, acrWordOutput{ID: "XX", Words: []acrResultWord{
+		{Word: "olia", WordTrans: "oolia", UserTrans: "o l i a", Syll: "o-lia"}}})
 
 	err := mapAbbrOutput(d, abbrOut)
 	assert.NotNil(t, err)
