@@ -19,4 +19,5 @@ func TestChangeSymbols(t *testing.T) {
 func TestChangeLetters(t *testing.T) {
 	assert.Equal(t, "Janis", changeSymbols("Jānis"))
 	assert.Equal(t, "Agrastas", changeSymbols("Ägrastas"))
+	assert.Equal(t, "fizinės", changeSymbols("fizinės"))
 }

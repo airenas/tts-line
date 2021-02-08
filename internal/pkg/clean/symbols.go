@@ -1,5 +1,7 @@
 package clean
 
+import "strings"
+
 var replaceableSymbols map[rune][]rune
 
 func init() {
@@ -64,12 +66,18 @@ func changeSymbols(line string) string {
 	if len(line) == 0 {
 		return line
 	}
-	runes := []rune(line)
+	lineU := changeSeveralSymbols(line)
+	runes := []rune(lineU)
 	res := make([]rune, 0)
 	for _, r := range runes {
 		res = append(res, changeSymbol(r)...)
 	}
 	return string(res)
+}
+
+func changeSeveralSymbols(line string) string {
+	res := strings.ReplaceAll(line, "ė", "ė") // target is not a simple ė!
+	return res
 }
 
 func changeSymbol(r rune) []rune {
