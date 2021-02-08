@@ -10,13 +10,13 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/gorilla/mux"
 	"github.com/petergtz/pegomock"
 	"github.com/stretchr/testify/assert"
 
 	"github.com/airenas/tts-line/internal/pkg/service/api"
 	"github.com/airenas/tts-line/internal/pkg/test/mocks"
 	"github.com/airenas/tts-line/internal/pkg/test/mocks/matchers"
+	"github.com/labstack/echo/v4"
 )
 
 var (
@@ -24,10 +24,19 @@ var (
 	cnfMock         *mocks.MockConfigurator
 )
 
+var (
+	tData *Data
+	tEcho *echo.Echo
+	tResp *httptest.ResponseRecorder
+)
+
 func initTest(t *testing.T) {
 	mocks.AttachMockToTest(t)
 	synthesizerMock = mocks.NewMockSynthesizer()
 	cnfMock = mocks.NewMockConfigurator()
+	tData = newTestData()
+	tEcho = initRoutes(tData)
+	tResp = httptest.NewRecorder()
 }
 
 func TestWrongPath(t *testing.T) {
@@ -50,6 +59,7 @@ func Test_Returns(t *testing.T) {
 		ThenReturn(&api.Result{AudioAsString: "wav"}, nil)
 
 	req := httptest.NewRequest("POST", "/synthesize", toReader(api.Input{Text: "olia"}))
+	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
 	resp := testCode(t, req, 200)
 	bytes, _ := ioutil.ReadAll(resp.Body)
 	assert.Contains(t, string(bytes), `"audioAsString":"wav"`)
@@ -67,6 +77,7 @@ func Test_Fail(t *testing.T) {
 		ThenReturn(&api.TTSRequestConfig{Text: "olia1", OutputFormat: api.AudioMP3}, nil)
 	pegomock.When(synthesizerMock.Work(matchers.AnyPtrToApiTTSRequestConfig())).ThenReturn(nil, errors.New("haha"))
 	req := httptest.NewRequest("POST", "/synthesize", toReader(api.Input{Text: "olia"}))
+	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
 	testCode(t, req, 500)
 }
 
@@ -78,24 +89,22 @@ func Test_FailConfigure(t *testing.T) {
 		ThenReturn(&api.Result{AudioAsString: "wav"}, nil)
 
 	req := httptest.NewRequest("POST", "/synthesize", toReader(api.Input{Text: "olia"}))
+	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
 	resp := testCode(t, req, 400)
-	assert.Equal(t, "No format mmp\n", resp.Body.String())
+	assert.Equal(t, `{"message":"No format mmp"}` + "\n", resp.Body.String())
 }
 
 func Test_FailOnWrongInput(t *testing.T) {
 	initTest(t)
 	req := httptest.NewRequest("POST", "/synthesize", strings.NewReader("text"))
+	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
 	testCode(t, req, 400)
 }
 
 func TestCode(t *testing.T) {
 	assert.Equal(t, 200, getCode(&api.Result{}))
 	assert.Equal(t, 200, getCode(&api.Result{AudioAsString: "olia"}))
-	assert.Equal(t, 400, getCode(&api.Result{ValidationFailures: []api.ValidateFailure{api.ValidateFailure{}}}))
-}
-
-func newTestRouter() *mux.Router {
-	return NewRouter(newTestData())
+	assert.Equal(t, 400, getCode(&api.Result{ValidationFailures: []api.ValidateFailure{{}}}))
 }
 
 func toReader(inData api.Input) io.Reader {
@@ -109,8 +118,7 @@ func newTestData() *Data {
 }
 
 func testCode(t *testing.T, req *http.Request, code int) *httptest.ResponseRecorder {
-	resp := httptest.NewRecorder()
-	newTestRouter().ServeHTTP(resp, req)
-	assert.Equal(t, code, resp.Code)
-	return resp
+	tEcho.ServeHTTP(tResp, req)
+	assert.Equal(t, code, tResp.Code)
+	return tResp
 }

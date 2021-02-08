@@ -2,15 +2,19 @@ package service
 
 import (
 	"encoding/json"
+	"log"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/airenas/tts-line/internal/pkg/service/api"
+	"github.com/facebookgo/grace/gracehttp"
 
 	"github.com/airenas/go-app/pkg/goapp"
-	"github.com/gorilla/mux"
 
-	"github.com/pkg/errors"
+	"github.com/labstack/echo-contrib/prometheus"
+	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v4/middleware"
 )
 
 type (
@@ -34,61 +38,68 @@ type (
 //StartWebServer starts the HTTP service and listens for the admin requests
 func StartWebServer(data *Data) error {
 	goapp.Log.Infof("Starting HTTP TTS Line service at %d", data.Port)
-	r := NewRouter(data)
-	http.Handle("/", r)
 	portStr := strconv.Itoa(data.Port)
-	err := http.ListenAndServe(":"+portStr, nil)
 
-	if err != nil {
-		return errors.Wrap(err, "Can't start HTTP listener at port "+portStr)
-	}
-	return nil
+	e := initRoutes(data)
+
+	e.Server.Addr = ":" + portStr
+
+	w := goapp.Log.Writer()
+	defer w.Close()
+	l := log.New(w, "", 0)
+	gracehttp.SetLogger(l)
+
+	return gracehttp.Serve(e.Server)
 }
 
-//NewRouter creates the router for HTTP service
-func NewRouter(data *Data) *mux.Router {
-	router := mux.NewRouter()
-	router.Methods("POST").Path("/synthesize").Handler(&synthesisHandler{data: data})
-	return router
+func initRoutes(data *Data) *echo.Echo {
+	e := echo.New()
+	e.Use(middleware.Logger())
+	p := prometheus.NewPrometheus("tts", nil)
+	p.Use(e)
+
+	e.POST("/synthesize", synthesizeText(data))
+	e.GET("/live", live(data))
+
+	goapp.Log.Info("Routes:")
+	for _, r := range e.Routes() {
+		goapp.Log.Infof("  %s %s", r.Method, r.Path)
+	}
+	return e
 }
 
-type synthesisHandler struct {
-	data *Data
-}
+func synthesizeText(data *Data) func(echo.Context) error {
+	return func(c echo.Context) error {
+		defer goapp.Estimate("Service synthesize method")()
 
-func (h *synthesisHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	goapp.Log.Infof("Request from %s", r.RemoteAddr)
+		ctype := c.Request().Header.Get(echo.HeaderContentType)
+		if !strings.HasPrefix(ctype, echo.MIMEApplicationJSON) {
+			goapp.Log.Error("Wrong content type")
+			return echo.NewHTTPError(http.StatusBadRequest, "Wrong content type. Expected '"+echo.MIMEApplicationJSON+"'")
+		}
+		inp := new(api.Input)
+		if err := c.Bind(inp); err != nil {
+			goapp.Log.Error(err)
+			return echo.NewHTTPError(http.StatusBadRequest, "Cannot decode input")
+		}
 
-	decoder := json.NewDecoder(r.Body)
-	var inText api.Input
-	err := decoder.Decode(&inText)
-	if err != nil {
-		http.Error(w, "Cannot decode input", http.StatusBadRequest)
-		goapp.Log.Error("Cannot decode input" + err.Error())
-		return
-	}
+		cfg, err := data.Configurator.Configure(c.Request(), inp)
+		if err != nil {
+			goapp.Log.Error("Cannot prepare request config " + err.Error())
+			return echo.NewHTTPError(http.StatusBadRequest, err.Error())
+		}
 
-	cfg, err := h.data.Configurator.Configure(r, &inText)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		goapp.Log.Error("Cannot prepare request config " + err.Error())
-		return
-	}
+		resp, err := data.Processor.Work(cfg)
+		if err != nil {
+			goapp.Log.Error("Can't process. ", err)
+			return echo.NewHTTPError(http.StatusInternalServerError, "Service error")
+		}
 
-	resp, err := h.data.Processor.Work(cfg)
-	if err != nil {
-		http.Error(w, "Service error", http.StatusInternalServerError)
-		goapp.Log.Error("Can't process. ", err)
-		return
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(getCode(resp))
-	encoder := json.NewEncoder(w)
-	err = encoder.Encode(&resp)
-	if err != nil {
-		http.Error(w, "Can not prepare result", http.StatusInternalServerError)
-		goapp.Log.Error(err)
+		c.Response().Header().Set(echo.HeaderContentType, echo.MIMEApplicationJSONCharsetUTF8)
+		c.Response().WriteHeader(getCode(resp))
+		enc := json.NewEncoder(c.Response())
+		enc.SetEscapeHTML(false)
+		return enc.Encode(resp)
 	}
 }
 
@@ -97,4 +108,10 @@ func getCode(resp *api.Result) int {
 		return http.StatusBadRequest
 	}
 	return 200
+}
+
+func live(data *Data) func(echo.Context) error {
+	return func(c echo.Context) error {
+		return c.JSONBlob(http.StatusOK, []byte(`{"service":"OK"}`))
+	}
 }
