@@ -7,4 +7,4 @@ WORKDIR /app
 COPY data/tts-text-clean /app/
 COPY config.yaml /app/
 
-ENTRYPOINT ["./tts-clean-text"]
+ENTRYPOINT ["./tts-text-clean"]
