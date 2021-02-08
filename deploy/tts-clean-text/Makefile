@@ -4,8 +4,8 @@ executable_name=tts-text-clean
 main_dir=../../cmd
 service=airenas/tts-text-clean
 version=0.1
-go_build_cmd=CGO_ENABLED=0 go build -installsuffix -cgo
 commit_count=$(shell git rev-list --count HEAD)
+go_build_cmd=CGO_ENABLED=0 go build -installsuffix -cgo -ldflags "-X main.version=$(version).$(commit_count)" 
 #####################################################################################
 $(dist_dir):
 	mkdir -p $@

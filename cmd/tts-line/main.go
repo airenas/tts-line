@@ -8,6 +8,7 @@ import (
 	"github.com/airenas/tts-line/internal/pkg/service"
 	"github.com/airenas/tts-line/internal/pkg/synthesizer"
 	"github.com/airenas/tts-line/internal/pkg/utils"
+	"github.com/labstack/gommon/color"
 	"github.com/spf13/viper"
 
 	"github.com/pkg/errors"
@@ -45,6 +46,7 @@ func main() {
 	if err != nil {
 		goapp.Log.Fatal(errors.Wrap(err, "Can't init configurator"))
 	}
+	printBanner()
 	err = service.StartWebServer(&data)
 	if err != nil {
 		goapp.Log.Fatal(errors.Wrap(err, "Can't start the service"))
@@ -155,4 +157,24 @@ func addPartProcessors(partRunner *synthesizer.PartRunner, cfg *viper.Viper) err
 	}
 
 	return nil
+}
+
+var (
+	version string
+)
+
+func printBanner() {
+	banner := `
+     _________________    ___          
+	/_  __/_  __/ ___/   / (_)___  ___ 
+	 / /   / /  \__ \   / / / __ \/ _ \
+	/ /   / /  ___/ /  / / / / / /  __/
+   /_/   /_/  /____/  /_/_/_/ /_/\___/  v: %s 
+
+%s
+________________________________________________________                                                 
+
+`
+	cl := color.New()
+	cl.Printf(banner, cl.Red(version), cl.Green("https://github.com/airenas/tts-line"))
 }

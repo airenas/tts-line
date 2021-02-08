@@ -2,16 +2,17 @@ package service
 
 import (
 	"encoding/json"
+	"log"
 	"net/http"
 	"strconv"
 	"strings"
 
 	"github.com/airenas/go-app/pkg/goapp"
 	"github.com/airenas/tts-line/internal/pkg/clean"
+	"github.com/facebookgo/grace/gracehttp"
 	"github.com/labstack/echo-contrib/prometheus"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
-	"github.com/pkg/errors"
 )
 
 type (
@@ -28,10 +29,14 @@ func StartWebServer(data *Data) error {
 
 	e := initRoutes(data)
 
-	if err := e.Start(":" + portStr); err != nil {
-		return errors.Wrap(err, "Can't start HTTP listener at port "+portStr)
-	}
-	return nil
+	e.Server.Addr = ":" + portStr
+
+	w := goapp.Log.Writer()
+	defer w.Close()
+	l := log.New(w, "", 0)
+	gracehttp.SetLogger(l)
+
+	return gracehttp.Serve(e.Server)
 }
 
 func initRoutes(data *Data) *echo.Echo {
