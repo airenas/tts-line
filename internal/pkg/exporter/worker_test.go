@@ -43,10 +43,12 @@ func TestExport_Writes(t *testing.T) {
 func TestExport_Sort(t *testing.T) {
 	initTest(t)
 	writer := bytes.NewBufferString("")
-	pegomock.When(expMock.All()).ThenReturn([]*mongodb.TextRecord{{ID: "1", Type: 1, Text: "olia"}, {ID: "01", Type: 1, Text: "olia"}}, nil)
+	tn := time.Time{}.Add(time.Second)
+	pegomock.When(expMock.All()).ThenReturn([]*mongodb.TextRecord{{ID: "1", Type: 1, Text: "olia", Created: tn},
+		{ID: "01", Type: 1, Text: "olia", Created: tn.Add(-time.Second)}}, nil)
 	err := Export(expMock, writer)
 	assert.Nil(t, err)
-	assert.Equal(t, "[{\"id\":\"01\",\"type\":1,\"text\":\"olia\",\"created\":\"0001-01-01T00:00:00Z\"},{\"id\":\"1\",\"type\":1,\"text\":\"olia\",\"created\":\"0001-01-01T00:00:00Z\"}]\n",
+	assert.Equal(t, "[{\"id\":\"01\",\"type\":1,\"text\":\"olia\",\"created\":\"0001-01-01T00:00:00Z\"},{\"id\":\"1\",\"type\":1,\"text\":\"olia\",\"created\":\"0001-01-01T00:00:01Z\"}]\n",
 		writer.String())
 }
 
@@ -58,24 +60,32 @@ func TestExport_Fails(t *testing.T) {
 	assert.NotNil(t, err)
 }
 
-func TestCompare(t *testing.T) {
+func TestSortData(t *testing.T) {
+	tn := time.Now()
 	tests := []struct {
-		i1 mongodb.TextRecord
-		i2 mongodb.TextRecord
-		v  bool
+		d   []*mongodb.TextRecord
+		pos []int
 	}{
-		{i1: mongodb.TextRecord{ID: "1", Type: 1}, i2: mongodb.TextRecord{ID: "2", Type: 1}, v: true},
-		{i1: mongodb.TextRecord{ID: "3", Type: 1}, i2: mongodb.TextRecord{ID: "2", Type: 1}, v: false},
-		{i1: mongodb.TextRecord{ID: "1", Type: 1}, i2: mongodb.TextRecord{ID: "1", Type: 2}, v: true},
-		{i1: mongodb.TextRecord{ID: "1", Type: 2}, i2: mongodb.TextRecord{ID: "1", Type: 1}, v: false},
-		{i1: mongodb.TextRecord{ID: "1", Type: 1, Created: time.Now()},
-			i2: mongodb.TextRecord{ID: "1", Type: 1, Created: time.Now().Add(time.Second)}, v: true},
-		{i1: mongodb.TextRecord{ID: "1", Type: 1, Created: time.Now()},
-			i2: mongodb.TextRecord{ID: "1", Type: 1, Created: time.Now().Add(-time.Second)}, v: false},
+		{d: []*mongodb.TextRecord{{ID: "1", Type: 1}, {ID: "1", Type: 2}, {ID: "1", Type: 3}},
+			pos: []int{0, 1, 2}},
+		{d: []*mongodb.TextRecord{{ID: "1", Type: 2}, {ID: "1", Type: 3}, {ID: "1", Type: 1}},
+			pos: []int{1, 2, 0}},
+		{d: []*mongodb.TextRecord{{ID: "1", Type: 1, Created: tn}, {ID: "1", Type: 2, Created: tn.Add(time.Second * 5)},
+			{ID: "2", Type: 1, Created: tn.Add(time.Second * 2)}},
+			pos: []int{0, 1, 2}},
+		{d: []*mongodb.TextRecord{{ID: "1", Type: 1, Created: tn}, {ID: "1", Type: 2, Created: tn.Add(time.Second * 5)},
+			{ID: "2", Type: 1, Created: tn.Add(-time.Second * 2)}},
+			pos: []int{1, 2, 0}},
+		{d: []*mongodb.TextRecord{{ID: "1", Type: 1, Created: tn}, {ID: "1", Type: 2, Created: tn.Add(time.Second * 5)},
+			{ID: "2", Type: 1, Created: tn.Add(-time.Second * 2)}, {ID: "2", Type: 3, Created: tn.Add(time.Second * 2)},
+			{ID: "0", Type: 1, Created: tn.Add(time.Second * 2)}, {ID: "0", Type: 2, Created: tn.Add(time.Second * 2)}},
+			pos: []int{2, 3, 0, 1, 4, 5}},
 	}
 
 	for _, tc := range tests {
-		v := compare(&tc.i1, &tc.i2)
-		assert.Equal(t, tc.v, v)
+		sd := sortData(tc.d)
+		for i, v := range tc.pos {
+			assert.Equal(t, tc.d[i], sd[v], "Fail case %d", i)
+		}
 	}
 }
