@@ -104,8 +104,8 @@ func TestMapAccOutput(t *testing.T) {
 	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Separator: "!"}})
 	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Word: "v2"}})
 
-	output := []accentOutputElement{accentOutputElement{Word: "v2",
-		Accent: []accent{accent{Mi: "mi", Variants: []synthesizer.AccentVariant{synthesizer.AccentVariant{Accent: 101,
+	output := []accentOutputElement{{Word: "v2",
+		Accent: []accent{{Mi: "mi", Variants: []synthesizer.AccentVariant{{Accent: 101,
 			Syll: "v-1"}}}}}}
 
 	err := mapAccentOutput(d, output)
@@ -120,10 +120,10 @@ func TestMapAccOutput_FindBest(t *testing.T) {
 	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Separator: "!"}})
 	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Word: "v2", Mi: "mi2"}})
 
-	output := []accentOutputElement{accentOutputElement{Word: "v2",
-		Accent: []accent{accent{MiVdu: "mi1", Variants: []synthesizer.AccentVariant{synthesizer.AccentVariant{Accent: 101,
+	output := []accentOutputElement{{Word: "v2",
+		Accent: []accent{{MiVdu: "mi1", Variants: []synthesizer.AccentVariant{{Accent: 101,
 			Syll: "v-1"}}},
-			accent{MiVdu: "mi2", Variants: []synthesizer.AccentVariant{synthesizer.AccentVariant{Accent: 102,
+			{MiVdu: "mi2", Variants: []synthesizer.AccentVariant{{Accent: 102,
 				Syll: "v-1"}}},
 		}}}
 
@@ -138,10 +138,10 @@ func TestMapAccOutput_Error(t *testing.T) {
 	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Separator: "!"}})
 	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Word: "v2", Mi: "mi2"}})
 
-	output := []accentOutputElement{accentOutputElement{Word: "v2",
-		Accent: []accent{accent{MiVdu: "mi1", Error: "err", Variants: []synthesizer.AccentVariant{synthesizer.AccentVariant{Accent: 0,
+	output := []accentOutputElement{{Word: "v2",
+		Accent: []accent{{MiVdu: "mi1", Error: "err", Variants: []synthesizer.AccentVariant{{Accent: 0,
 			Syll: "v-1"}}},
-			accent{MiVdu: "mi2", Variants: []synthesizer.AccentVariant{synthesizer.AccentVariant{Accent: 102,
+			{MiVdu: "mi2", Variants: []synthesizer.AccentVariant{{Accent: 102,
 				Syll: "v-2"}}},
 		}}}
 
