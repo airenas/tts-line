@@ -92,11 +92,11 @@ func setAccent(w *synthesizer.ProcessedWord, out accentOutputElement) error {
 	if w.Tagged.Word != out.Word {
 		return errors.Errorf("Words do not match '%s' vs '%s'", w.Tagged.Word, out.Word)
 	}
-	w.AccentVariant = findBestAccentVariant(out.Accent, w.Tagged.Mi)
+	w.AccentVariant = findBestAccentVariant(out.Accent, w.Tagged.Mi, w.Tagged.Lemma)
 	return nil
 }
 
-func findBestAccentVariant(acc []accent, mi string) *synthesizer.AccentVariant {
+func findBestAccentVariant(acc []accent, mi string, lema string) *synthesizer.AccentVariant {
 	find := func(fa func(a *accent) bool, fv func(v *synthesizer.AccentVariant) bool) *synthesizer.AccentVariant {
 		for _, a := range acc {
 			if fa(&a) {
@@ -110,6 +110,10 @@ func findBestAccentVariant(acc []accent, mi string) *synthesizer.AccentVariant {
 		return nil
 	}
 	fIsAccent := func(v *synthesizer.AccentVariant) bool { return v.Accent > 0 }
+
+	if res := find(func(a *accent) bool { return a.Error == "" && a.MiVdu == mi && a.MF == lema }, fIsAccent); res != nil {
+	 	return res
+	}
 
 	if res := find(func(a *accent) bool { return a.Error == "" && a.MiVdu == mi }, fIsAccent); res != nil {
 		return res

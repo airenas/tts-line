@@ -34,8 +34,8 @@ func TestInvokeAccentuator(t *testing.T) {
 	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Word: "word"}})
 	pegomock.When(httpJSONMock.InvokeJSON(pegomock.AnyInterface(), pegomock.AnyInterface())).Then(
 		func(params []pegomock.Param) pegomock.ReturnValues {
-			*params[1].(*[]accentOutputElement) = []accentOutputElement{accentOutputElement{Word: "word",
-				Accent: []accent{accent{Mi: "mi", Variants: []synthesizer.AccentVariant{synthesizer.AccentVariant{Accent: 101}}}}}}
+			*params[1].(*[]accentOutputElement) = []accentOutputElement{{Word: "word",
+				Accent: []accent{{Mi: "mi", Variants: []synthesizer.AccentVariant{{Accent: 101}}}}}}
 			return []pegomock.ReturnValue{nil}
 		})
 	err := pr.Process(d)
@@ -156,12 +156,12 @@ func TestMapAccOutput_WithAccent(t *testing.T) {
 	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Separator: "!"}})
 	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Word: "v2", Mi: "mi2"}})
 
-	output := []accentOutputElement{accentOutputElement{Word: "v2",
-		Accent: []accent{accent{MiVdu: "mi1", Error: "err", Variants: []synthesizer.AccentVariant{synthesizer.AccentVariant{Accent: 0,
-			Syll: "v-1"}}},
-			accent{MiVdu: "mi2", Variants: []synthesizer.AccentVariant{
-				synthesizer.AccentVariant{Accent: 0, Syll: "v-2"},
-				synthesizer.AccentVariant{Accent: 103, Syll: "v-3"},
+	output := []accentOutputElement{{Word: "v2",
+		Accent: []accent{
+			{MiVdu: "mi1", Error: "err", Variants: []synthesizer.AccentVariant{{Accent: 0, Syll: "v-1"}}},
+			{MiVdu: "mi2", Variants: []synthesizer.AccentVariant{
+				{Accent: 0, Syll: "v-2"},
+				{Accent: 103, Syll: "v-3"},
 			}},
 		}}}
 
@@ -169,4 +169,12 @@ func TestMapAccOutput_WithAccent(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Equal(t, "v-3", d.Words[2].AccentVariant.Syll)
 	assert.Equal(t, 103, d.Words[2].AccentVariant.Accent)
+}
+
+func TestFindBest_UseLemma(t *testing.T) {
+	acc := []accent{{MiVdu: "mi2", MF: "lema1", Variants: []synthesizer.AccentVariant{{Accent: 101}}},
+		{MiVdu: "mi2", MF: "lema", Variants: []synthesizer.AccentVariant{{Accent: 103}}}}
+	res := findBestAccentVariant(acc, "mi2", "lema")
+
+	assert.Equal(t, 103, res.Accent)
 }
