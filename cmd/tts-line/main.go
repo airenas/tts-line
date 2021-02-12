@@ -1,6 +1,8 @@
 package main
 
 import (
+	"strconv"
+
 	"github.com/airenas/go-app/pkg/goapp"
 	"github.com/airenas/tts-line/internal/pkg/cache"
 	"github.com/airenas/tts-line/internal/pkg/mongodb"
@@ -10,6 +12,9 @@ import (
 	"github.com/airenas/tts-line/internal/pkg/utils"
 	"github.com/labstack/gommon/color"
 	"github.com/spf13/viper"
+
+	"net/http"
+	_ "net/http/pprof"
 
 	"github.com/pkg/errors"
 )
@@ -46,7 +51,11 @@ func main() {
 	if err != nil {
 		goapp.Log.Fatal(errors.Wrap(err, "Can't init configurator"))
 	}
+
 	printBanner()
+
+	go startPerfEndpoint()
+
 	err = service.StartWebServer(&data)
 	if err != nil {
 		goapp.Log.Fatal(errors.Wrap(err, "Can't start the service"))
@@ -157,6 +166,18 @@ func addPartProcessors(partRunner *synthesizer.PartRunner, cfg *viper.Viper) err
 	}
 
 	return nil
+}
+
+func startPerfEndpoint() {
+	port := goapp.Config.GetInt("DEBUG_PORT")
+	if port > 0 {
+		goapp.Log.Infof("Starting Debug http endpoit at %d", port)
+		portStr := strconv.Itoa(port)
+		err := http.ListenAndServe(":"+portStr, nil)
+		if err != nil {
+			goapp.Log.Error(errors.Wrap(err, "Can't start Debug endpoint at "+portStr))
+		}
+	}
 }
 
 var (
