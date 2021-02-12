@@ -26,3 +26,4 @@ cmd/acronyms/acronyms.txt
 deploy/acronyms/Makefile.options
 deploy/acronyms/data/**
 cmd/acronyms/acronyms
+examples/docker-compose/.mongo/**
