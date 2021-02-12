@@ -141,6 +141,39 @@ func Test_Key(t *testing.T) {
 		OutputTextFormat: api.TextAccented}))
 }
 
+func Test_MaxMB(t *testing.T) {
+	initTest(t)
+	c, _ := NewCacher(synthesizerMock, newTestConfig("duration: 10s\nmaxMB: 1"))
+	assert.NotNil(t, c)
+	pegomock.When(synthesizerMock.Work(matchers.AnyPtrToApiTTSRequestConfig())).
+		ThenReturn(&api.Result{AudioAsString: strOfSize(1024 * 1024 / 64)}, nil) // 64 shards in cache hardcoded
+
+	c.Work(newtestInput("olia"))
+	synthesizerMock.VerifyWasCalled(pegomock.Once()).Work(matchers.AnyPtrToApiTTSRequestConfig())
+	c.Work(newtestInput("olia"))
+	synthesizerMock.VerifyWasCalled(pegomock.Twice()).Work(matchers.AnyPtrToApiTTSRequestConfig()) //expected not to add
+	c.Work(newtestInput("olia"))
+	synthesizerMock.VerifyWasCalled(pegomock.Times(3)).Work(matchers.AnyPtrToApiTTSRequestConfig())
+}
+
+func Test_MaxTextLen(t *testing.T) {
+	initTest(t)
+	c, _ := NewCacher(synthesizerMock, newTestConfig("duration: 10s\nmaxTextLen: 10"))
+	assert.NotNil(t, c)
+	pegomock.When(synthesizerMock.Work(matchers.AnyPtrToApiTTSRequestConfig())).
+		ThenReturn(&api.Result{AudioAsString: "wav"}, nil) // 64 shards in cache hardcoded
+
+	c.Work(newtestInput("0123456789"))
+	synthesizerMock.VerifyWasCalled(pegomock.Once()).Work(matchers.AnyPtrToApiTTSRequestConfig())
+	c.Work(newtestInput("0123456789"))
+	synthesizerMock.VerifyWasCalled(pegomock.Once()).Work(matchers.AnyPtrToApiTTSRequestConfig())
+
+	c.Work(newtestInput("01234567891"))
+	synthesizerMock.VerifyWasCalled(pegomock.Times(2)).Work(matchers.AnyPtrToApiTTSRequestConfig())
+	c.Work(newtestInput("01234567891"))
+	synthesizerMock.VerifyWasCalled(pegomock.Times(3)).Work(matchers.AnyPtrToApiTTSRequestConfig())
+}
+
 func newTestConfig(yaml string) *viper.Viper {
 	res := viper.New()
 	res.SetConfigType("yaml")
@@ -150,4 +183,8 @@ func newTestConfig(yaml string) *viper.Viper {
 
 func newtestInput(txt string) *api.TTSRequestConfig {
 	return &api.TTSRequestConfig{Text: txt}
+}
+
+func strOfSize(s int) string {
+	return string(make([]byte, s))
 }

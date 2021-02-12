@@ -13,8 +13,9 @@ import (
 
 //BigCacher keeps cached results
 type BigCacher struct {
-	realSynt service.Synthesizer
-	cache    *bigcache.BigCache
+	realSynt   service.Synthesizer
+	cache      *bigcache.BigCache
+	maxTextLen int // do not add to cache bigger results
 }
 
 //NewCacher creates cached worker
@@ -29,13 +30,22 @@ func NewCacher(rw service.Synthesizer, config *viper.Viper) (*BigCacher, error) 
 		cfg := bigcache.DefaultConfig(dur)
 		cfg.CleanWindow = getCleanDuration(config.GetDuration("cleanDuration"))
 		cfg.Logger = goapp.Log
+		cfg.Shards = 64
 		cfg.HardMaxCacheSize = config.GetInt("maxMB")
+		if cfg.HardMaxCacheSize > 0 {
+			cfg.MaxEntriesInWindow = cfg.HardMaxCacheSize * 1024
+		}
 		var err error
 		res.cache, err = bigcache.NewBigCache(cfg)
 		if err != nil {
 			return nil, errors.Wrap(err, "Can't init cache")
 		}
+		res.maxTextLen = config.GetInt("maxTextLen")
 		goapp.Log.Infof("Cache initialized with duration: %s, clean duration: %s", dur.String(), cfg.CleanWindow.String())
+		if cfg.HardMaxCacheSize > 0 {
+			goapp.Log.Infof("Cache max memomy in MB %d", cfg.HardMaxCacheSize)
+		}
+		goapp.Log.Infof("Cache max len for caching text %d", res.maxTextLen)
 	} else {
 		goapp.Log.Infof("No cache initialized")
 	}
@@ -44,7 +54,7 @@ func NewCacher(rw service.Synthesizer, config *viper.Viper) (*BigCacher, error) 
 
 //Work try find in cache or invoke real worker
 func (c *BigCacher) Work(inp *api.TTSRequestConfig) (*api.Result, error) {
-	if c.cache == nil {
+	if c.cache == nil || !c.isOK(inp) {
 		return c.realSynt.Work(inp)
 	}
 
@@ -59,6 +69,10 @@ func (c *BigCacher) Work(inp *api.TTSRequestConfig) (*api.Result, error) {
 		c.cache.Set(key(inp), []byte(res.AudioAsString))
 	}
 	return res, err
+}
+
+func (c *BigCacher) isOK(inp *api.TTSRequestConfig) bool {
+	return c.maxTextLen == 0 || len(inp.Text) <= c.maxTextLen
 }
 
 func getCleanDuration(dur time.Duration) time.Duration {
