@@ -14,5 +14,28 @@ services:
       - TRANSCRIBER_URL=${TRANSCRIBER_URL}
       - ACOUSTICMODEL_URL=${ACOUSTICMODEL_URL}
       - VOCODER_URL=${VOCODER_URL}  
-      - MP3_URL=${MP3_URL}
-    # restart: unless-stopped
+      - AUDIOCONVERT_URL=http://audioconverter:8000/convert
+      - CLEAN_URL=http://text-clean:8000/clean
+
+  text-clean:
+    image: airenas/tts-text-clean:0.1.123
+    ports:
+      - "8011:8000"  
+
+  audioconverter:
+    image: airenas/audio-convert-service:0.1.8
+    ports:
+      - "8013:8000"
+
+  mongo:
+    image: mongo:4.4.1
+    environment:
+      MONGO_DATA_DIR: "/data/db"
+      MONGO_LOG_DIR: "/dev/null"
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_USER}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASS}
+    volumes:
+      - ./.mongo:/data/db  
+    command: mongod --logpath=/dev/null # --quiet
+    ports:
+      - "27017:27017"

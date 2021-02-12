@@ -169,9 +169,9 @@ func addPartProcessors(partRunner *synthesizer.PartRunner, cfg *viper.Viper) err
 }
 
 func startPerfEndpoint() {
-	port := goapp.Config.GetInt("DEBUG_PORT")
+	port := goapp.Config.GetInt("debug.port")
 	if port > 0 {
-		goapp.Log.Infof("Starting Debug http endpoit at %d", port)
+		goapp.Log.Infof("Starting Debug http endpoit at [::]:%d", port)
 		portStr := strconv.Itoa(port)
 		err := http.ListenAndServe(":"+portStr, nil)
 		if err != nil {
