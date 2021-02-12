@@ -29,12 +29,13 @@ func NewCacher(rw service.Synthesizer, config *viper.Viper) (*BigCacher, error) 
 		cfg := bigcache.DefaultConfig(dur)
 		cfg.CleanWindow = getCleanDuration(config.GetDuration("cleanDuration"))
 		cfg.Logger = goapp.Log
+		cfg.HardMaxCacheSize = config.GetInt("maxMB")
 		var err error
 		res.cache, err = bigcache.NewBigCache(cfg)
 		if err != nil {
 			return nil, errors.Wrap(err, "Can't init cache")
 		}
-		goapp.Log.Infof("Cache initialized with duration: %s", dur.String())
+		goapp.Log.Infof("Cache initialized with duration: %s, clean duration: %s", dur.String(), cfg.CleanWindow.String())
 	} else {
 		goapp.Log.Infof("No cache initialized")
 	}
