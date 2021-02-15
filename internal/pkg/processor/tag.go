@@ -47,10 +47,8 @@ type TaggedWord struct {
 func mapTagResult(tags []*TaggedWord) []*synthesizer.ProcessedWord {
 	res := make([]*synthesizer.ProcessedWord, 0)
 	for _, t := range tags {
-		if t.Type != "SPACE" {
-			pw := synthesizer.ProcessedWord{Tagged: mapTag(t)}
-			res = append(res, &pw)
-		}
+		pw := synthesizer.ProcessedWord{Tagged: mapTag(t)}
+		res = append(res, &pw)
 	}
 	return res
 }
@@ -65,6 +63,8 @@ func mapTag(tag *TaggedWord) synthesizer.TaggedWord {
 		res.Word = tag.String
 		res.Lemma = tag.Lemma
 		res.Mi = tag.Mi
+	} else if tag.Type == "SPACE" {
+		res.Space = true
 	}
 	return res
 }

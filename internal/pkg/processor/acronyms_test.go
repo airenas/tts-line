@@ -77,6 +77,7 @@ func TestInvokeAbbr_Skip(t *testing.T) {
 func TestMapAbbrOutput(t *testing.T) {
 	d := newTestTTSDataPart()
 	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Word: "v1"}})
+	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Space: true}})
 	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Separator: ","}})
 
 	abbrOut := []acrWordOutput{}
@@ -85,7 +86,7 @@ func TestMapAbbrOutput(t *testing.T) {
 
 	err := mapAbbrOutput(d, abbrOut)
 	assert.Nil(t, err)
-	assert.Equal(t, ",", d.Words[1].Tagged.Separator)
+	assert.Equal(t, ",", d.Words[2].Tagged.Separator)
 	assert.Equal(t, "o l i a", d.Words[0].UserTranscription)
 	assert.Equal(t, "olia", d.Words[0].Tagged.Word)
 }

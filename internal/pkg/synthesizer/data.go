@@ -48,6 +48,7 @@ type ProcessedWord struct {
 type TaggedWord struct {
 	Separator   string
 	SentenceEnd bool
+	Space       bool
 	Word        string
 	Mi          string
 	Lemma       string
@@ -64,5 +65,5 @@ type AccentVariant struct {
 
 //IsWord returns true if object indicates word
 func (tw TaggedWord) IsWord() bool {
-	return !tw.SentenceEnd && tw.Separator == ""
+	return !tw.SentenceEnd && tw.Separator == "" && !tw.Space
 }

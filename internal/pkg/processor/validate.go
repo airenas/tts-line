@@ -40,7 +40,7 @@ func initChecks(config *viper.Viper) ([]api.Check, error) {
 	}
 	// workaround fix env prefix
 	config.SetEnvPrefix("validator_check")
-	
+
 	res := make([]api.Check, 0)
 	for _, s := range []string{"min_words", "max_words", "no_numbers", "profanity"} {
 		v := config.GetInt(s)
@@ -92,7 +92,7 @@ func (p *validator) mapValidatorInput(data *synthesizer.TTSData) *valInput {
 	res.Text = data.TextWithNumbers
 	for _, w := range data.Words {
 		tgw := w.Tagged
-		if tgw.Separator == "" {
+		if tgw.IsWord() {
 			res.Words.List = append(res.Words.List, valWord{Word: tgw.Word, Lemma: tgw.Lemma, Mi: tgw.Mi})
 		}
 	}

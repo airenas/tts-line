@@ -149,6 +149,20 @@ func TestMapTransInput_User(t *testing.T) {
 	assert.Equal(t, "olia3", inp[0].User)
 }
 
+func TestMapTransInput_Space(t *testing.T) {
+	d := synthesizer.TTSDataPart{}
+	d.Words = append(d.Words, &synthesizer.ProcessedWord{TranscriptionWord: "olia", UserTranscription: "olia3",
+		Tagged: synthesizer.TaggedWord{Word: "v1"},
+	})
+	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Space: true}})
+	inp, err := mapTransInput(&d)
+	assert.Nil(t, err)
+	if assert.Equal(t, 1, len(inp)) {
+		assert.Equal(t, "olia", inp[0].Word)
+		assert.Equal(t, "olia3", inp[0].User)
+	}
+}
+
 func TestMapTransOutput(t *testing.T) {
 	d := synthesizer.TTSDataPart{}
 	d.Words = append(d.Words, &synthesizer.ProcessedWord{TranscriptionWord: "olia", Tagged: synthesizer.TaggedWord{Word: "v1"}})

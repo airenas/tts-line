@@ -262,6 +262,40 @@ func TestMapAMInput_CustomEnd_SeveralSentenceEnd(t *testing.T) {
 	assert.Equal(t, "v a . sil v a . sp sil", inp.Text)
 }
 
+func TestAddPause(t *testing.T) {
+	d := newTestTTSDataPart()
+	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Word: "v1"}})
+	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Separator: "."}})
+	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Space: true}})
+	assert.True(t, addPause(".", d.Words, 1))
+	assert.True(t, addPause("?", d.Words, 1))
+	assert.True(t, addPause("!", d.Words, 1))
+	assert.True(t, addPause("-", d.Words, 1))
+	assert.True(t, addPause(":", d.Words, 1))
+
+	d = newTestTTSDataPart()
+	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Word: "v1"}})
+	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Separator: "-"}})
+	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Word: "v1"}})
+	assert.False(t, addPause("-", d.Words, 1))
+	assert.False(t, addPause(":", d.Words, 1))
+	assert.True(t, addPause(".", d.Words, 1))
+	assert.True(t, addPause("?", d.Words, 1))
+	assert.True(t, addPause("!", d.Words, 1))
+	
+	d = newTestTTSDataPart()
+	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Word: "v1"}})
+	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Separator: "-"}})
+	assert.True(t, addPause("-", d.Words, 1))
+	assert.True(t, addPause(":", d.Words, 1))
+
+	d = newTestTTSDataPart()
+	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Separator: "-"}})
+	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Word: "v1"}})
+	assert.True(t, addPause("-", d.Words, 0))
+	assert.True(t, addPause(":", d.Words, 0))
+}
+
 func TestSep(t *testing.T) {
 	for _, s := range ",:.?!-" {
 		assert.Equal(t, string(s), getSep(string(s)))

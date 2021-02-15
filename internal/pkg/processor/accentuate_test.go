@@ -94,6 +94,7 @@ func TestMapAccInput(t *testing.T) {
 	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Separator: "!"}})
 	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Word: "v2"}})
 	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Word: "v3"}})
+	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Space: true}})
 	inp := mapAccentInput(d)
 	assert.Equal(t, []string{"v2", "v3"}, inp)
 }
@@ -102,6 +103,7 @@ func TestMapAccOutput(t *testing.T) {
 	d := newTestTTSDataPart()
 	d.Words = append(d.Words, &synthesizer.ProcessedWord{UserTranscription: "v a - o l i a", Tagged: synthesizer.TaggedWord{Word: "v1"}})
 	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Separator: "!"}})
+	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Space: true}})
 	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Word: "v2"}})
 
 	output := []accentOutputElement{{Word: "v2",
@@ -110,8 +112,8 @@ func TestMapAccOutput(t *testing.T) {
 
 	err := mapAccentOutput(d, output)
 	assert.Nil(t, err)
-	assert.Equal(t, 101, d.Words[2].AccentVariant.Accent)
-	assert.Equal(t, "v-1", d.Words[2].AccentVariant.Syll)
+	assert.Equal(t, 101, d.Words[3].AccentVariant.Accent)
+	assert.Equal(t, "v-1", d.Words[3].AccentVariant.Syll)
 }
 
 func TestMapAccOutput_FindBest(t *testing.T) {

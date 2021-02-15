@@ -95,6 +95,22 @@ func TestSplit_OnSentenceEnd(t *testing.T) {
 	assert.Equal(t, 3, len(r[0].Words))
 }
 
+func TestSplit_OnPunctSpace(t *testing.T) {
+	d := synthesizer.TTSData{}
+	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Word: "0123456789"}})
+	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Separator: ","}})
+	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Space: true}})
+	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Word: "0123456789"}})
+	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Separator: ","}})
+	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Word: "0123456789"}})
+	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Separator: "?"}})
+	r, err := split(d.Words, 25)
+	assert.Nil(t, err)
+	assert.Equal(t, 2, len(r))
+	assert.Equal(t, 3, len(r[0].Words))
+	assert.Equal(t, 4, len(r[1].Words))
+}
+
 func TestSplit_OnPunct(t *testing.T) {
 	d := synthesizer.TTSData{}
 	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Word: "0123456789"}})
@@ -113,25 +129,29 @@ func TestSplit_OnSpace(t *testing.T) {
 	d := synthesizer.TTSData{}
 	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Word: "0123456789"}})
 	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Word: "0123456789"}})
+	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Space: true}})
 	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Word: "0123456789"}})
 	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Separator: "?"}})
 	r, err := split(d.Words, 25)
 	assert.Nil(t, err)
 	assert.Equal(t, 2, len(r))
-	assert.Equal(t, 2, len(r[0].Words))
+	assert.Equal(t, 3, len(r[0].Words))
 	assert.Equal(t, 2, len(r[1].Words))
 }
 
 func TestSplit_OnSpace2(t *testing.T) {
 	d := synthesizer.TTSData{}
 	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Word: "0123456789"}})
+	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Space: true}})
 	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Word: "0123456789"}})
+	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Space: true}})
 	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Word: "0123456789"}})
+	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Space: true}})
 	r, err := split(d.Words, 25)
 	assert.Nil(t, err)
 	assert.Equal(t, 2, len(r))
-	assert.Equal(t, 2, len(r[0].Words))
-	assert.Equal(t, 1, len(r[1].Words))
+	assert.Equal(t, 4, len(r[0].Words))
+	assert.Equal(t, 2, len(r[1].Words))
 }
 
 func TestSplit_First(t *testing.T) {

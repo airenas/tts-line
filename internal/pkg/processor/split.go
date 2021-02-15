@@ -48,19 +48,27 @@ func split(data []*synthesizer.ProcessedWord, max int) ([]*synthesizer.TTSDataPa
 	from := 0
 	l := len(data)
 	for from < l {
-		to := findSentenceEnd(data, from, max, func(tw *synthesizer.TaggedWord) bool { return tw.SentenceEnd })
+		to := findSentenceEnd(data, from, max, func(tw, twPr *synthesizer.TaggedWord) bool { return tw.SentenceEnd })
 		if to > from {
 			res = append(res, &synthesizer.TTSDataPart{Words: data[from:to]})
 			from = to
 			continue
 		}
-		to = findSentenceEnd(data, from, max, func(tw *synthesizer.TaggedWord) bool { return tw.Separator != "" })
+		to = findSentenceEnd(data, from, max, func(tw, twPr *synthesizer.TaggedWord) bool {
+			return twPr != nil && twPr.Separator != "" && tw.Space
+		})
 		if to > from {
 			res = append(res, &synthesizer.TTSDataPart{Words: data[from:to]})
 			from = to
 			continue
 		}
-		to = findSentenceEnd(data, from, max, func(tw *synthesizer.TaggedWord) bool { return true })
+		to = findSentenceEnd(data, from, max, func(tw, twPr *synthesizer.TaggedWord) bool { return tw.Separator != "" })
+		if to > from {
+			res = append(res, &synthesizer.TTSDataPart{Words: data[from:to]})
+			from = to
+			continue
+		}
+		to = findSentenceEnd(data, from, max, func(tw, twPr *synthesizer.TaggedWord) bool { return true })
 		if to > from {
 			res = append(res, &synthesizer.TTSDataPart{Words: data[from:to]})
 			from = to
@@ -75,9 +83,10 @@ func split(data []*synthesizer.ProcessedWord, max int) ([]*synthesizer.TTSDataPa
 	return res, nil
 }
 
-func findSentenceEnd(data []*synthesizer.ProcessedWord, from int, max int, cmp func(tw *synthesizer.TaggedWord) bool) int {
+func findSentenceEnd(data []*synthesizer.ProcessedWord, from int, max int, cmp func(tw, twPr *synthesizer.TaggedWord) bool) int {
 	chCount := 0
 	lastI := from - 1
+	var pr *synthesizer.TaggedWord
 	for i := from; i < len(data); i++ {
 		tw := &data[i].Tagged
 		if tw.Word != "" {
@@ -86,9 +95,10 @@ func findSentenceEnd(data []*synthesizer.ProcessedWord, from int, max int, cmp f
 		if chCount > max {
 			return lastI + 1
 		}
-		if cmp(tw) {
+		if cmp(tw, pr) {
 			lastI = i
 		}
+		pr = tw
 	}
 	return len(data)
 }
