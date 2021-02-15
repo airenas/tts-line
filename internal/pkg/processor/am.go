@@ -82,7 +82,8 @@ func (p *amodel) mapAMInput(data *synthesizer.TTSDataPart) *amInput {
 	lastSep := ""
 	for i, w := range data.Words {
 		tgw := w.Tagged
-		if tgw.Separator != "" {
+		if tgw.Space {
+		} else if tgw.Separator != "" {
 			sep := getSep(tgw.Separator)
 			if sep != "" {
 				sb = append(sb, sep)
@@ -143,8 +144,8 @@ func addPause(s string, words []*synthesizer.ProcessedWord, pos int) bool {
 			return true
 		}
 	}
-	if (s == "-" || s == ":") {
-		if (pos > 0 && pos < len(words) - 1) {
+	if s == "-" || s == ":" {
+		if pos > 0 && pos < len(words)-1 {
 			return !words[pos-1].Tagged.IsWord() || !words[pos+1].Tagged.IsWord()
 		}
 		return true

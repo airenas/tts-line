@@ -262,6 +262,24 @@ func TestMapAMInput_CustomEnd_SeveralSentenceEnd(t *testing.T) {
 	assert.Equal(t, "v a . sil v a . sp sil", inp.Text)
 }
 
+func TestMapAMInput_SkipSpaces(t *testing.T) {
+	pr := newTestAM(t, "http://server", "sil")
+	pr.endSymbol = "sp sil"
+	d := newTestTTSDataPart()
+	d.Words = append(d.Words, &synthesizer.ProcessedWord{Transcription: "v a", Tagged: synthesizer.TaggedWord{Word: "v1"}})
+	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Space: true}})
+	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{SentenceEnd: true}})
+	d.Words = append(d.Words, &synthesizer.ProcessedWord{Transcription: "v a", Tagged: synthesizer.TaggedWord{Word: "v1"}})
+	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Space: true}})
+	d.Words = append(d.Words, &synthesizer.ProcessedWord{Transcription: "v a", Tagged: synthesizer.TaggedWord{Word: "v1"}})
+	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Space: true}})
+	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Separator: "."}})
+	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Space: true}})
+	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{SentenceEnd: true}})
+	inp := pr.mapAMInput(d)
+	assert.Equal(t, "v a . sil v a v a . sp sil", inp.Text)
+}
+
 func TestAddPause(t *testing.T) {
 	d := newTestTTSDataPart()
 	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Word: "v1"}})
