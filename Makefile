@@ -19,6 +19,9 @@ build-docker:
 push-docker:
 	cd deploy/tts-line && $(MAKE) dpush
 
+generate-diagram:
+	cd info && $(MAKE) generate
+
 clean:
 	cd deploy/tts-line && $(MAKE) clean
 

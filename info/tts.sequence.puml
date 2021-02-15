@@ -1,0 +1,137 @@
+@startuml TTS
+
+skinparam sequence {
+ParticipantBorderColor Black
+ActorBorderColor Black
+
+ParticipantBackgroundColor White
+ActorBackgroundColor White
+
+ArrowColor black
+LifeLineBorderColor black
+LifeLineBackgroundColor lightgray
+
+BoxBorderColor black
+}
+skinparam databaseBackgroundColor White
+skinparam dataBaseBorderColor Blue
+
+hide footbox
+title TTS Synthesize method
+
+' skinparam handwritten true
+
+actor User
+participant "TTS" as tts
+database "DB" as DB
+participant "Clean" as Clean
+participant "Number\nreplace" as num
+participant "Tagger" as tagger
+participant "Lex" as lex
+participant "Morf" as morf
+participant "Text\nValidator" as validator
+participant "Acronym" as acronym
+participant "Accenter" as accenter
+participant "Transcriber" as transcriber
+
+box "On GPU" #LightBlue
+participant "AM-Voc\nWrapper" as amVoc
+participant "AM" as am
+participant "Vocoder" as vocoder
+end box
+participant "Mp3/M4a\nconverter" as converter
+
+User -> tts: synthesize
+activate tts
+
+tts -[#blue]> DB: save original text
+activate DB #lightblue
+DB -[#blue]-> tts:
+deactivate DB
+
+tts -> Clean: clean text, drop html tags
+activate Clean
+Clean --> tts:
+deactivate Clean
+
+tts -[#blue]> DB: save cleaned text
+activate DB #lightblue
+DB -[#blue]-> tts:
+deactivate DB
+
+tts -> num: 
+activate num
+num --> tts:
+deactivate num
+
+tts -[#blue]> DB: save normalized text
+activate DB #lightblue
+DB -[#blue]-> tts:
+deactivate DB
+
+
+tts -> tagger: 
+activate tagger
+tagger -> lex: 
+activate lex
+lex --> tagger:
+deactivate lex
+
+tagger -> morf: 
+activate morf
+morf --> tagger:
+deactivate morf
+
+tagger --> tts:
+deactivate tagger
+
+tts -> validator: 
+activate validator
+validator --> tts:
+deactivate validator
+
+tts -> tts: Split into batches
+
+par
+
+tts -> acronym: 
+activate acronym
+acronym --> tts:
+deactivate acronym
+
+tts -> accenter: 
+activate accenter
+accenter --> tts:
+deactivate accenter
+
+tts -> transcriber: 
+activate transcriber
+transcriber --> tts:
+deactivate transcriber
+
+tts -> amVoc: 
+activate amVoc
+
+amVoc -> am: 
+activate am
+am --> amVoc:
+deactivate am
+
+amVoc -> vocoder: 
+activate vocoder
+vocoder --> amVoc:
+deactivate vocoder
+amVoc --> tts:
+deactivate amVoc
+end
+
+tts -> converter: 
+activate converter
+converter --> tts:
+deactivate converter
+
+
+tts --> User: response
+deactivate tts
+
+@enduml
