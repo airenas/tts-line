@@ -84,7 +84,7 @@ func (p *amodel) mapAMInput(data *synthesizer.TTSDataPart) *amInput {
 		tgw := w.Tagged
 		if tgw.Space {
 		} else if tgw.Separator != "" {
-			sep := getSep(tgw.Separator)
+			sep := getSep(tgw.Separator, data.Words, i)
 			if sep != "" {
 				sb = append(sb, sep)
 				lastSep = sep
@@ -93,7 +93,7 @@ func (p *amodel) mapAMInput(data *synthesizer.TTSDataPart) *amInput {
 				sb = append(sb, pause)
 			}
 		} else if tgw.SentenceEnd {
-			if getSep(lastSep) == "" {
+			if lastSep == "" {
 				lastSep = "."
 				sb = append(sb, lastSep)
 			}
@@ -106,7 +106,7 @@ func (p *amodel) mapAMInput(data *synthesizer.TTSDataPart) *amInput {
 			for _, p := range phns {
 				if !skipPhn(p) {
 					sb = append(sb, p)
-					lastSep = p
+					lastSep = ""
 				}
 			}
 		}
@@ -126,14 +126,20 @@ func (p *amodel) mapAMInput(data *synthesizer.TTSDataPart) *amInput {
 	return res
 }
 
-func getSep(s string) string {
-	for _, sep := range [...]string{",", ".", "!", "?", "...", ":", "-"} {
+func getSep(s string, words []*synthesizer.ProcessedWord, pos int) string {
+	for _, sep := range [...]string{",", ".", "!", "?", "..."} {
 		if s == sep {
 			return s
 		}
 	}
 	if s == ";" {
 		return ","
+	}
+	if s == "-" || s == ":" {
+		if pos > 0 && pos < len(words)-1 && words[pos-1].Tagged.IsWord() && words[pos+1].Tagged.IsWord() {
+			return "" // drop dash and colon if between words
+		}
+		return s
 	}
 	return ""
 }

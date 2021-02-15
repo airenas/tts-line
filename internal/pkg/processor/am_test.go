@@ -262,6 +262,20 @@ func TestMapAMInput_CustomEnd_SeveralSentenceEnd(t *testing.T) {
 	assert.Equal(t, "v a . sil v a . sp sil", inp.Text)
 }
 
+func TestMapAMInput_DropDash(t *testing.T) {
+	pr := newTestAM(t, "http://server", "<space>")
+	d := newTestTTSDataPart()
+	d.First = true
+	d.Words = append(d.Words, &synthesizer.ProcessedWord{Transcription: "v a", Tagged: synthesizer.TaggedWord{Word: "v1"}})
+	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Separator: "-"}})
+	d.Words = append(d.Words, &synthesizer.ProcessedWord{Transcription: "v a", Tagged: synthesizer.TaggedWord{Word: "v1"}})
+	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Separator: "-"}})
+	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Space: true}})
+	d.Words = append(d.Words, &synthesizer.ProcessedWord{Transcription: "v a", Tagged: synthesizer.TaggedWord{Word: "v1"}})
+	inp := pr.mapAMInput(d)
+	assert.Equal(t, "<space> v a v a - <space> v a <space>", inp.Text)
+}
+
 func TestMapAMInput_SkipSpaces(t *testing.T) {
 	pr := newTestAM(t, "http://server", "sil")
 	pr.endSymbol = "sp sil"
@@ -315,12 +329,21 @@ func TestAddPause(t *testing.T) {
 }
 
 func TestSep(t *testing.T) {
+	tw := make ([]*synthesizer.ProcessedWord, 0)
+	tw = append(tw, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Separator: "-"}})
 	for _, s := range ",:.?!-" {
-		assert.Equal(t, string(s), getSep(string(s)))
+		assert.Equal(t, string(s), getSep(string(s), tw, 0))
 	}
-	assert.Equal(t, "...", getSep("..."))
-	assert.Equal(t, ",", getSep(";"))
-	assert.Equal(t, "", getSep("\""))
+	assert.Equal(t, "...", getSep("...", tw, 0))
+	assert.Equal(t, ",", getSep(";", tw, 0))
+	assert.Equal(t, "", getSep("\"", tw, 0))
+	tw = make ([]*synthesizer.ProcessedWord, 0)
+	tw = append(tw, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Word: "aa"}})
+	tw = append(tw, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Separator: "-"}})
+	tw = append(tw, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Word: "aa"}})
+	for _, s := range ":-" {
+		assert.Equal(t, "", getSep(string(s), tw, 1))
+	}	
 }
 
 func newTestAM(t *testing.T, urlStr string, spaceSym string) *amodel {
