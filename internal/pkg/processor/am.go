@@ -18,6 +18,19 @@ type amodel struct {
 	hasVocoder  bool
 }
 
+var trMap map[string]string
+
+func init() {
+	trMap = map[string]string{"\"Eu": "eu",
+		"\"oi": "\"o: i", `"Oi`: `"o i`,
+		`^Oi`: `"o i`, `^oi`: `"o i`,
+		`Oi`: `o i`, `oi`: `o i`,
+		`"ou`: `"o: u`, `"Ou`: `"o u`, `^ou`: `"o u`, `^Ou`: `"o u`,
+		`ou`: `o u`, `Ou`: `o u`,
+		`"iui`: `"iu i`,
+	}
+}
+
 //NewAcousticModel creates new processor
 func NewAcousticModel(config *viper.Viper) (synthesizer.PartProcessor, error) {
 	if config == nil {
@@ -104,8 +117,9 @@ func (p *amodel) mapAMInput(data *synthesizer.TTSDataPart) *amInput {
 		} else {
 			phns := strings.Split(w.Transcription, " ")
 			for _, p := range phns {
-				if !skipPhn(p) {
-					sb = append(sb, p)
+				pt := changePhn(p)
+				if pt != "" {
+					sb = append(sb, pt)
 					lastSep = ""
 				}
 			}
@@ -159,6 +173,13 @@ func addPause(s string, words []*synthesizer.ProcessedWord, pos int) bool {
 	return false
 }
 
-func skipPhn(s string) bool {
-	return s == "-"
+func changePhn(s string) string {
+	if s == "-" {
+		return ""
+	}
+	ch := trMap[s]
+	if ch != "" {
+		return ch
+	}
+	return s
 }

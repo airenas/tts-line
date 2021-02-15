@@ -177,6 +177,15 @@ func TestMapAMInput_Exclamation(t *testing.T) {
 	assert.Equal(t, "<space> v a o l i a ! <space> v a <space>", inp.Text)
 }
 
+func TestMapAMInput_ChangePhone(t *testing.T) {
+	pr := newTestAM(t, "http://server", "<space>")
+	d := newTestTTSDataPart()
+
+	d.Words = append(d.Words, &synthesizer.ProcessedWord{Transcription: "v a - \"oi \"iui", Tagged: synthesizer.TaggedWord{Word: "v1"}})
+	inp := pr.mapAMInput(d)
+	assert.Equal(t, "v a \"o: i \"iu i <space>", inp.Text)
+}
+
 func TestMapAMInput_SpaceEnd(t *testing.T) {
 	pr := newTestAM(t, "http://server", "<space>")
 	d := newTestTTSDataPart()
@@ -314,7 +323,7 @@ func TestAddPause(t *testing.T) {
 	assert.True(t, addPause(".", d.Words, 1))
 	assert.True(t, addPause("?", d.Words, 1))
 	assert.True(t, addPause("!", d.Words, 1))
-	
+
 	d = newTestTTSDataPart()
 	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Word: "v1"}})
 	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Separator: "-"}})
@@ -329,7 +338,7 @@ func TestAddPause(t *testing.T) {
 }
 
 func TestSep(t *testing.T) {
-	tw := make ([]*synthesizer.ProcessedWord, 0)
+	tw := make([]*synthesizer.ProcessedWord, 0)
 	tw = append(tw, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Separator: "-"}})
 	for _, s := range ",:.?!-" {
 		assert.Equal(t, string(s), getSep(string(s), tw, 0))
@@ -337,13 +346,34 @@ func TestSep(t *testing.T) {
 	assert.Equal(t, "...", getSep("...", tw, 0))
 	assert.Equal(t, ",", getSep(";", tw, 0))
 	assert.Equal(t, "", getSep("\"", tw, 0))
-	tw = make ([]*synthesizer.ProcessedWord, 0)
+	tw = make([]*synthesizer.ProcessedWord, 0)
 	tw = append(tw, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Word: "aa"}})
 	tw = append(tw, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Separator: "-"}})
 	tw = append(tw, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Word: "aa"}})
 	for _, s := range ":-" {
 		assert.Equal(t, "", getSep(string(s), tw, 1))
-	}	
+	}
+}
+
+func TestChangePhn(t *testing.T) {
+	tests := []struct {
+		v string
+		e string
+	}{
+		{v: "-", e: ""},
+		{v: "e", e: "e"},
+		{v: "\"Eu", e: "eu"},
+		{v: "Ou", e: "o u"},
+		{v: "\"ou", e: "\"o: u"},
+		{v: "^Oi", e: "\"o i"},
+		{v: "\"iui", e: "\"iu i"},
+		{v: "^Oi", e: "\"o i"},
+		{v: "\"oi", e: "\"o: i"},
+	}
+
+	for i, tc := range tests {
+		assert.Equal(t, tc.e, changePhn(tc.v), "Fail %d", i)
+	}
 }
 
 func newTestAM(t *testing.T, urlStr string, spaceSym string) *amodel {
