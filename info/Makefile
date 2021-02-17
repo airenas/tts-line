@@ -1,2 +1,5 @@
-generate: 
-	cat tts.sequence.puml | docker run --rm -i think/plantuml -tpng > tts.png
+generate: tts.png
+
+tts.png: tts.synthesize.puml 
+	cat $< | docker run --rm -i think/plantuml -tpng > $@_
+	mv $@_ $@
