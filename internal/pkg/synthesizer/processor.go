@@ -64,6 +64,9 @@ func mapResult(data *TTSData) *api.Result {
 			if data.Input.AllowCollectData {
 				res.RequestID = data.RequestID
 			}
+			if (data.Input.OutputTextFormat == api.TextNormalized) {
+				res.Text = data.TextWithNumbers
+			}
 		}
 	}
 	return res
