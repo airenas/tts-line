@@ -48,7 +48,7 @@ activate DB #lightblue
 DB -[#blue]-> tts:
 deactivate DB
 
-tts -> comparator: Compare user's vs original text 
+tts -> comparator: compare user's vs original text 
 activate comparator
 comparator --> tts:
 deactivate comparator
@@ -78,7 +78,7 @@ activate validator
 validator --> tts:
 deactivate validator
 
-tts -> tts: Split into batches
+tts -> tts: split into batches
 
 par
 
@@ -92,7 +92,7 @@ activate accenter
 accenter --> tts:
 deactivate accenter
 
-tts -> tts: Replace/add user's accents
+tts -> tts: replace/add user's accents
 
 tts -> transcriber: 
 activate transcriber
