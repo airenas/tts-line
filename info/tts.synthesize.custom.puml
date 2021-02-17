@@ -17,15 +17,14 @@ skinparam databaseBackgroundColor White
 skinparam dataBaseBorderColor Blue
 
 hide footbox
-title TTS Synthesize method
+title TTS Synthesize With Custom normalization/accents
 
 ' skinparam handwritten true
 
 actor User
 participant "TTS" as tts
 database "DB" as DB
-participant "Clean" as Clean
-participant "Number\nreplace" as num
+participant "Comparator" as comparator
 participant "Tagger" as tagger
 participant "Lex" as lex
 participant "Morf" as morf
@@ -41,34 +40,23 @@ participant "Vocoder" as vocoder
 end box
 participant "Mp3/M4a\nconverter" as converter
 
-User -> tts: synthesize
+User -> tts: synthesizeCustom(\nrequestID)
 activate tts
 
-tts -[#blue]> DB: save original text
+tts -[#blue]> DB: get original text (requestID)
 activate DB #lightblue
 DB -[#blue]-> tts:
 deactivate DB
 
-tts -> Clean: clean text, drop html tags
-activate Clean
-Clean --> tts:
-deactivate Clean
+tts -> comparator: Compare user's vs original text 
+activate comparator
+comparator --> tts:
+deactivate comparator
 
-tts -[#blue]> DB: save cleaned text
+tts -[#blue]> DB: save user's text
 activate DB #lightblue
 DB -[#blue]-> tts:
 deactivate DB
-
-tts -> num: 
-activate num
-num --> tts:
-deactivate num
-
-tts -[#blue]> DB: save normalized text
-activate DB #lightblue
-DB -[#blue]-> tts:
-deactivate DB
-
 
 tts -> tagger: 
 activate tagger
@@ -103,6 +91,8 @@ tts -> accenter:
 activate accenter
 accenter --> tts:
 deactivate accenter
+
+tts -> tts: Replace/add user's accents
 
 tts -> transcriber: 
 activate transcriber
