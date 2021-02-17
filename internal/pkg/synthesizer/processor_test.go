@@ -105,10 +105,47 @@ func TestWork_ReturnText(t *testing.T) {
 		d.TextWithNumbers = "olia lia"
 		return nil
 	}
-	// res, _ := worker.Work(&api.TTSRequestConfig{Text: "olia", OutputTextFormat: api.TextNormalized})
-	// assert.Equal(t, "olia lia", res.Text)
-	res, _ := worker.Work(&api.TTSRequestConfig{Text: "olia", OutputTextFormat: api.TextNone})
+	res, _ := worker.Work(&api.TTSRequestConfig{Text: "olia", OutputTextFormat: api.TextNormalized})
+	assert.Equal(t, "olia lia", res.Text)
+	res, _ = worker.Work(&api.TTSRequestConfig{Text: "olia", OutputTextFormat: api.TextNone})
 	assert.Equal(t, "", res.Text)
+}
+
+func TestMapResult_Accented(t *testing.T) {
+	d := &TTSData{}
+	d.Input = &api.TTSRequestConfig{OutputTextFormat: api.TextAccented}
+	d.Parts = []*TTSDataPart{{Words: []*ProcessedWord{&ProcessedWord{Tagged: TaggedWord{Word: "aa"},
+		AccentVariant: &AccentVariant{Accent: 101}},
+		&ProcessedWord{Tagged: TaggedWord{Space: true}}, &ProcessedWord{Tagged: TaggedWord{Separator: ","}},
+		&ProcessedWord{Tagged: TaggedWord{Word: "ai"}, AccentVariant: &AccentVariant{Accent: 302}}}}}
+	res, err := mapResult(d)
+	assert.Nil(t, err)
+	assert.Equal(t, "a{\\}a ,ai{~}", res.Text)
+}
+
+func TestMapResult_Normalized(t *testing.T) {
+	d := &TTSData{}
+	d.Input = &api.TTSRequestConfig{OutputTextFormat: api.TextNormalized}
+	d.TextWithNumbers = "oo"
+	res, err := mapResult(d)
+	assert.Nil(t, err)
+	assert.Equal(t, "oo", res.Text)
+}
+
+func TestMapResult_AccentedFail(t *testing.T) {
+	d := &TTSData{}
+	d.Input = &api.TTSRequestConfig{OutputTextFormat: api.TextAccented}
+	d.Parts = []*TTSDataPart{{Words: []*ProcessedWord{&ProcessedWord{Tagged: TaggedWord{Word: "aa"},
+		AccentVariant: &AccentVariant{Accent: 401}}}}}
+	_, err := mapResult(d)
+	assert.NotNil(t, err)
+}
+
+func TestMapResult_FailOutputTextType(t *testing.T) {
+	d := &TTSData{}
+	d.Input = &api.TTSRequestConfig{OutputTextFormat: api.TextFormatEnum(10)}
+	_, err := mapResult(d)
+	assert.NotNil(t, err)
 }
 
 type procMock struct {

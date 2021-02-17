@@ -136,8 +136,8 @@ func TestWork_Key(t *testing.T) {
 
 func Test_Key(t *testing.T) {
 	initTest(t)
-	assert.Equal(t, "olia_mp3_", key(&api.TTSRequestConfig{Text: "olia", OutputFormat: api.AudioMP3}))
-	assert.Equal(t, "olia1_m4a_accented", key(&api.TTSRequestConfig{Text: "olia1", OutputFormat: api.AudioM4A,
+	assert.Equal(t, "olia_mp3", key(&api.TTSRequestConfig{Text: "olia", OutputFormat: api.AudioMP3}))
+	assert.Equal(t, "olia1_m4a", key(&api.TTSRequestConfig{Text: "olia1", OutputFormat: api.AudioM4A,
 		OutputTextFormat: api.TextAccented}))
 }
 
@@ -172,6 +172,22 @@ func Test_MaxTextLen(t *testing.T) {
 	synthesizerMock.VerifyWasCalled(pegomock.Times(2)).Work(matchers.AnyPtrToApiTTSRequestConfig())
 	c.Work(newtestInput("01234567891"))
 	synthesizerMock.VerifyWasCalled(pegomock.Times(3)).Work(matchers.AnyPtrToApiTTSRequestConfig())
+}
+
+func TestIsOK(t *testing.T) {
+	initTest(t)
+	c, _ := NewCacher(synthesizerMock, newTestConfig("duration: 10s\nmaxTextLen: 10"))
+	d := &api.TTSRequestConfig{}
+	d.Text = "aaa"
+	d.OutputTextFormat = api.TextNone
+	assert.True(t, c.isOK(d))
+	d.OutputTextFormat = api.TextAccented
+	assert.False(t, c.isOK(d))
+	d.OutputTextFormat = api.TextNormalized
+	assert.False(t, c.isOK(d))
+	d.OutputTextFormat = api.TextNone
+	d.Text = "111111111111111"
+	assert.False(t, c.isOK(d))
 }
 
 func newTestConfig(yaml string) *viper.Viper {

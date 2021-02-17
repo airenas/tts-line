@@ -72,7 +72,7 @@ func (c *BigCacher) Work(inp *api.TTSRequestConfig) (*api.Result, error) {
 }
 
 func (c *BigCacher) isOK(inp *api.TTSRequestConfig) bool {
-	return c.maxTextLen == 0 || len(inp.Text) <= c.maxTextLen
+	return (c.maxTextLen == 0 || len(inp.Text) <= c.maxTextLen) && inp.OutputTextFormat == api.TextNone
 }
 
 func getCleanDuration(dur time.Duration) time.Duration {
@@ -83,5 +83,5 @@ func getCleanDuration(dur time.Duration) time.Duration {
 }
 
 func key(inp *api.TTSRequestConfig) string {
-	return inp.Text + "_" + inp.OutputFormat.String() + "_" + inp.OutputTextFormat.String()
+	return inp.Text + "_" + inp.OutputFormat.String()
 }

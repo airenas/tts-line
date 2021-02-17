@@ -46,6 +46,5 @@ type TTSRequestConfig struct {
 	OutputFormat     AudioFormatEnum
 	OutputTextFormat TextFormatEnum
 	OutputMetadata   []string
-	TextFormat       bool
 	AllowCollectData bool
 }
