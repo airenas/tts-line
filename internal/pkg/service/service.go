@@ -2,12 +2,15 @@ package service
 
 import (
 	"encoding/json"
+	"errors"
+	"fmt"
 	"log"
 	"net/http"
 	"strconv"
 	"strings"
 
 	"github.com/airenas/tts-line/internal/pkg/service/api"
+	"github.com/airenas/tts-line/internal/pkg/utils"
 	"github.com/facebookgo/grace/gracehttp"
 
 	"github.com/airenas/go-app/pkg/goapp"
@@ -127,6 +130,9 @@ func synthesizeCustom(data *PrData) func(echo.Context) error {
 		resp, err := data.Processor.Work(cfg)
 		if err != nil {
 			goapp.Log.Error("Can't process. ", err)
+			if d, msg := badReqError(err); d {
+				return echo.NewHTTPError(http.StatusBadRequest, msg)
+			}
 			return echo.NewHTTPError(http.StatusInternalServerError, "Service error")
 		}
 
@@ -159,6 +165,20 @@ func getCode(resp *api.Result) int {
 		return http.StatusBadRequest
 	}
 	return 200
+}
+
+func badReqError(err error) (bool, string) {
+	if errors.Is(err, utils.ErrNoRecord) {
+		return true, "RequestID not found"
+	}
+	if errors.Is(err, utils.ErrTextDoesNotMatch) {
+		return true, "Original text does not match the modified"
+	}
+	var errBA *utils.ErrBadAccent
+	if errors.As(err, &errBA) {
+		return true, fmt.Sprintf("Bad accents: %v", errBA.BadAccents)
+	}
+	return false, ""
 }
 
 func live(data *Data) func(echo.Context) error {

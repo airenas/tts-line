@@ -34,10 +34,10 @@ func (p *comparator) Process(data *synthesizer.TTSData) error {
 		return err
 	}
 	if output.RC != 1 {
-		return errors.New("Text does not match")
+		return utils.ErrTextDoesNotMatch
 	}
 	if len(output.BadAccents) > 0 {
-		return errors.Errorf("Bad accents: %v", output.BadAccents)
+		return utils.NewErrBadAccent(output.BadAccents)
 	}
 	return nil
 }
