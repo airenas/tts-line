@@ -1,5 +1,8 @@
 port: 8010
 maxLogDataSize: 1500
+
+debug:
+    port: 8080
 allowCustom: true
 options:
   output:
@@ -9,13 +12,16 @@ options:
       - description=encoded by UAB Intelektika 
 
 mongo:
-   url:        
+   url: 
+   
+clean:
+  url: http://localhost:8011/clean   
 
 # numberReplace:
 #   url: http://prn509.vdu.lt:9080/api/ 
 
 tagger:
-  url: http://192.168.1.71:8208/tag  
+  url: https://sinteze.intelektika.lt/tagger/tag  
 
 validator:
   url: http://192.168.1.71:8206/text_validator
@@ -25,7 +31,10 @@ validator:
     no_numbers: 1
     profanity: 1
 
-abbreviator:
+acronyms:
+  url: http://192.168.1.71:8210/abbreviations      
+
+comparator:
   url: http://192.168.1.71:8210/abbreviations      
 
 accenter:
@@ -44,11 +53,14 @@ vocoder:
   url: http://semspch04.vdu.lt:8001/model    
 
 audioConvert:
-  url: http://localhost:8003/convert   
+  url: http://localhost:8013/convert
 
 filer:
   dir: /home/airenas/projects/tts-line
 
 cache:
-  duration: 0s
+  duration: 30s
+  cleanDuration: 30s
+  maxMB: 50
+  maxTextLen: 80
 

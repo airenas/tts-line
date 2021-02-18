@@ -1,6 +1,6 @@
--include .env
+-include Makefile.options
 #####################################################################################
-start: 
+start: .env 
 	docker-compose up -d
 
 stop:
@@ -10,6 +10,9 @@ logs:
 	docker-compose logs	
 
 clean: stop
+#####################################################################################
+.env: .env.in Makefile.options
+	cat $< | envsubst > $@
 #####################################################################################
 test:
 	curl -i -X POST http://localhost:$(SERVICE_PORT)/synthesize -d '{"text": "laba diena"}'
