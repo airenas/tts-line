@@ -7,6 +7,9 @@ import (
 	"github.com/pkg/errors"
 )
 
+//ErrNoRecord indicates no record found error
+var ErrNoRecord = errors.New("no record found")
+
 func checkURL(urlStr string) (string, error) {
 	if strings.TrimSpace(urlStr) == "" {
 		return "", errors.New("No url")

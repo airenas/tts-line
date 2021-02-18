@@ -27,11 +27,17 @@ type (
 	Synthesizer interface {
 		Work(*api.TTSRequestConfig) (*api.Result, error)
 	}
-	//Data is service operation data
-	Data struct {
-		Port         int
+	//PrData is method process data
+	PrData struct {
 		Processor    Synthesizer
 		Configurator Configurator
+	}
+
+	//Data is service operation data
+	Data struct {
+		Port           int
+		SyntData       PrData
+		SyntCustomData PrData
 	}
 )
 
@@ -58,7 +64,8 @@ func initRoutes(data *Data) *echo.Echo {
 	p := prometheus.NewPrometheus("tts", nil)
 	p.Use(e)
 
-	e.POST("/synthesize", synthesizeText(data))
+	e.POST("/synthesize", synthesizeText(&data.SyntData))
+	e.POST("/synthesizeCustom", synthesizeCustom(&data.SyntCustomData))
 	e.GET("/live", live(data))
 
 	goapp.Log.Info("Routes:")
@@ -68,19 +75,14 @@ func initRoutes(data *Data) *echo.Echo {
 	return e
 }
 
-func synthesizeText(data *Data) func(echo.Context) error {
+func synthesizeText(data *PrData) func(echo.Context) error {
 	return func(c echo.Context) error {
 		defer goapp.Estimate("Service synthesize method")()
 
-		ctype := c.Request().Header.Get(echo.HeaderContentType)
-		if !strings.HasPrefix(ctype, echo.MIMEApplicationJSON) {
-			goapp.Log.Error("Wrong content type")
-			return echo.NewHTTPError(http.StatusBadRequest, "Wrong content type. Expected '"+echo.MIMEApplicationJSON+"'")
-		}
-		inp := new(api.Input)
-		if err := c.Bind(inp); err != nil {
+		inp, err := takeInput(c)
+		if err != nil {
 			goapp.Log.Error(err)
-			return echo.NewHTTPError(http.StatusBadRequest, "Cannot decode input")
+			return err
 		}
 
 		cfg, err := data.Configurator.Configure(c.Request(), inp)
@@ -95,12 +97,61 @@ func synthesizeText(data *Data) func(echo.Context) error {
 			return echo.NewHTTPError(http.StatusInternalServerError, "Service error")
 		}
 
-		c.Response().Header().Set(echo.HeaderContentType, echo.MIMEApplicationJSONCharsetUTF8)
-		c.Response().WriteHeader(getCode(resp))
-		enc := json.NewEncoder(c.Response())
-		enc.SetEscapeHTML(false)
-		return enc.Encode(resp)
+		return writeResponse(c, resp)
 	}
+}
+
+func synthesizeCustom(data *PrData) func(echo.Context) error {
+	return func(c echo.Context) error {
+		defer goapp.Estimate("Service synthesize custom method")()
+
+		rID := c.QueryParam("requestID")
+		if rID == "" {
+			goapp.Log.Error("No requestID")
+			return echo.NewHTTPError(http.StatusBadRequest, "No requestID")
+		}
+
+		inp, err := takeInput(c)
+		if err != nil {
+			goapp.Log.Error(err)
+			return err
+		}
+
+		cfg, err := data.Configurator.Configure(c.Request(), inp)
+		if err != nil {
+			goapp.Log.Error("Cannot prepare request config " + err.Error())
+			return echo.NewHTTPError(http.StatusBadRequest, err.Error())
+		}
+		cfg.RequestID = rID
+
+		resp, err := data.Processor.Work(cfg)
+		if err != nil {
+			goapp.Log.Error("Can't process. ", err)
+			return echo.NewHTTPError(http.StatusInternalServerError, "Service error")
+		}
+
+		return writeResponse(c, resp)
+	}
+}
+
+func takeInput(c echo.Context) (*api.Input, error) {
+	ctype := c.Request().Header.Get(echo.HeaderContentType)
+	if !strings.HasPrefix(ctype, echo.MIMEApplicationJSON) {
+		return nil, echo.NewHTTPError(http.StatusBadRequest, "Wrong content type. Expected '"+echo.MIMEApplicationJSON+"'")
+	}
+	inp := new(api.Input)
+	if err := c.Bind(inp); err != nil {
+		return nil, echo.NewHTTPError(http.StatusBadRequest, "Cannot decode input")
+	}
+	return inp, nil
+}
+
+func writeResponse(c echo.Context, resp *api.Result) error {
+	c.Response().Header().Set(echo.HeaderContentType, echo.MIMEApplicationJSONCharsetUTF8)
+	c.Response().WriteHeader(getCode(resp))
+	enc := json.NewEncoder(c.Response())
+	enc.SetEscapeHTML(false)
+	return enc.Encode(resp)
 }
 
 func getCode(resp *api.Result) int {

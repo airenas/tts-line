@@ -1,6 +1,8 @@
 package synthesizer
 
-import "github.com/airenas/tts-line/internal/pkg/service/api"
+import (
+	"github.com/airenas/tts-line/internal/pkg/service/api"
+)
 
 //TTSData working data for one request
 type TTSData struct {
@@ -8,6 +10,7 @@ type TTSData struct {
 	RequestID          string
 	Cfg                TTSConfig
 	OriginalText       string
+	PreviousText       string // text of previous request loaded by requestID
 	Text               string
 	TextWithNumbers    string
 	ValidationFailures []api.ValidateFailure
@@ -41,6 +44,7 @@ type ProcessedWord struct {
 	UserSyllables     string
 	TranscriptionWord string
 	AccentVariant     *AccentVariant
+	UserAccent        int
 	Transcription     string
 }
 

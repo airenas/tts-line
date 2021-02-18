@@ -8,6 +8,7 @@ import (
 	"github.com/airenas/tts-line/internal/pkg/utils"
 	"github.com/pkg/errors"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/mongo"
 )
 
 // TextSaver saves text to mongo DB
@@ -64,6 +65,32 @@ func (ss *TextSaver) All() ([]*TextRecord, error) {
 		res = append(res, &key)
 	}
 	return res, nil
+}
+
+// LoadText by ID and type
+func (ss *TextSaver) LoadText(requestID string, reqType utils.RequestTypeEnum) (string, error) {
+	ctx, cancel := mongoContext()
+	defer cancel()
+
+	session, err := ss.SessionProvider.NewSession()
+	if err != nil {
+		return "", err
+	}
+	defer session.EndSession(context.Background())
+	c := session.Client().Database(textTable).Collection(textTable)
+	var res TextRecord
+	err = c.FindOne(ctx, bson.M{
+		"$and": []bson.M{
+			{"id": sanitize(requestID)},
+			{"type": int(reqType)},
+		}}).Decode(&res)
+	if err != nil {
+		if err == mongo.ErrNoDocuments {
+			return "", utils.ErrNoRecord
+		}
+		return "", errors.Wrap(err, "Can't get data")
+	}
+	return res.Text, nil
 }
 
 func toRecord(req, text string, reqType utils.RequestTypeEnum) *TextRecord {

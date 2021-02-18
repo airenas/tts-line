@@ -43,6 +43,7 @@ func (e AudioFormatEnum) String() string {
 //TTSRequestConfig config for request`
 type TTSRequestConfig struct {
 	Text             string
+	RequestID        string
 	OutputFormat     AudioFormatEnum
 	OutputTextFormat TextFormatEnum
 	OutputMetadata   []string

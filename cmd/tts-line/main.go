@@ -37,20 +37,36 @@ func main() {
 	if err != nil {
 		goapp.Log.Fatal(errors.Wrap(err, "Can't init processors"))
 	}
+
+	//cache
 	cc := goapp.Sub(goapp.Config, "cache")
 	if cc != nil {
-		data.Processor, err = cache.NewCacher(synt, cc)
+		data.SyntData.Processor, err = cache.NewCacher(synt, cc)
 		if err != nil {
 			goapp.Log.Fatal(errors.Wrap(err, "Can't init cache"))
 		}
 	} else {
 		goapp.Log.Info("No cache will be used")
-		data.Processor = synt
+		data.SyntData.Processor = synt
 	}
-	data.Configurator, err = service.NewTTSConfigurator(goapp.Sub(goapp.Config, "options"))
+
+	// input configuration
+	data.SyntData.Configurator, err = service.NewTTSConfigurator(goapp.Sub(goapp.Config, "options"))
 	if err != nil {
 		goapp.Log.Fatal(errors.Wrap(err, "Can't init configurator"))
 	}
+
+	// init custom synthesize method
+	data.SyntCustomData.Configurator, err = service.NewTTSConfigurator(goapp.Sub(goapp.Config, "options"))
+	if err != nil {
+		goapp.Log.Fatal(errors.Wrap(err, "Can't init custom configurator"))
+	}
+	syntC := &synthesizer.MainWorker{}
+	err = addCustomProcessors(syntC, sp)
+	if err != nil {
+		goapp.Log.Fatal(errors.Wrap(err, "Can't init custom processors"))
+	}
+	data.SyntCustomData.Processor = syntC
 
 	printBanner()
 
@@ -98,6 +114,65 @@ func addProcessors(synt *synthesizer.MainWorker, sp *mongodb.SessionProvider) er
 	synt.Add(sv)
 
 	pr, err = processor.NewTagger(goapp.Config.GetString("tagger.url"))
+	if err != nil {
+		return errors.Wrap(err, "Can't init tagger")
+	}
+	synt.Add(pr)
+
+	pr, err = processor.NewValidator(goapp.Sub(goapp.Config, "validator"))
+	if err != nil {
+		return errors.Wrap(err, "Can't init validator")
+	}
+	synt.Add(pr)
+
+	synt.Add(processor.NewSplitter(goapp.Config.GetInt("splitter.maxChars")))
+
+	partRunner := synthesizer.NewPartRunner(goapp.Config.GetInt("partRunner.workers"))
+	synt.Add(partRunner)
+
+	synt.Add(processor.NewJoinAudio())
+
+	pr, err = processor.NewConverter(goapp.Config.GetString("audioConvert.url"))
+	if err != nil {
+		return errors.Wrap(err, "Can't init mp3 converter")
+	}
+	synt.Add(pr)
+
+	if goapp.Config.GetString("filer.dir") != "" {
+		pr, err = processor.NewFiler(goapp.Config.GetString("filer.dir"))
+		if err != nil {
+			return errors.Wrap(err, "Can't init filer")
+		}
+		synt.Add(pr)
+	}
+	return addPartProcessors(partRunner, goapp.Config)
+}
+
+func addCustomProcessors(synt *synthesizer.MainWorker, sp *mongodb.SessionProvider) error {
+	ts, err := mongodb.NewTextSaver(sp)
+	if err != nil {
+		return errors.Wrap(err, "Can't init text to DB saver")
+	}
+
+	pr, err := processor.NewLoader(ts)
+	if err != nil {
+		return errors.Wrap(err, "Can't init text from DB loader")
+	}
+	synt.Add(pr)
+
+	pr, err = processor.NewComparator(goapp.Config.GetString("comparator.url"))
+	if err != nil {
+		return errors.Wrap(err, "Can't init text comparator")
+	}
+	synt.Add(pr)
+
+	sv, err := processor.NewSaver(ts, utils.RequestUser)
+	if err != nil {
+		return errors.Wrap(err, "Can't init text to DB saver")
+	}
+	synt.Add(sv)
+
+	pr, err = processor.NewTaggerAccents(goapp.Config.GetString("tagger.url"))
 	if err != nil {
 		return errors.Wrap(err, "Can't init tagger")
 	}
