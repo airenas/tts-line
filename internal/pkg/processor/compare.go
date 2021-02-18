@@ -27,12 +27,27 @@ func (p *comparator) Process(data *synthesizer.TTSData) error {
 	defer goapp.Estimate("Compare")()
 	utils.LogData("Input: ", data.OriginalText)
 	utils.LogData("Input previous: ", data.PreviousText)
-	// inData := &normData{Text: data.OriginalText}
-	// var output normData
-	// err := p.httpWrap.InvokeJSON(inData, &output)
-	// if err != nil {
-	// 	return err
-	// }
-
+	inData := &compIn{Original: data.PreviousText, Modified: data.OriginalText}
+	var output compOut
+	err := p.httpWrap.InvokeJSON(inData, &output)
+	if err != nil {
+		return err
+	}
+	if output.RC != 1 {
+		return errors.New("Text does not match")
+	}
+	if len(output.BadAccents) > 0 {
+		return errors.Errorf("Bad accents: %v", output.BadAccents)
+	}
 	return nil
+}
+
+type compIn struct {
+	Original string `json:"original"`
+	Modified string `json:"modified"`
+}
+
+type compOut struct {
+	RC         int      `json:"rc"`
+	BadAccents []string `json:"badacc"`
 }
