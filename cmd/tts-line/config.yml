@@ -35,7 +35,7 @@ acronyms:
   url: http://192.168.1.71:8210/abbreviations      
 
 comparator:
-  url: http://192.168.1.71:8210/abbreviations      
+  url: http://localhost:8014/resynthvalid      
 
 accenter:
   url: http://192.168.1.71:7021/accent?human=true&roe=true

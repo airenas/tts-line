@@ -17,3 +17,6 @@ clean: stop
 test:
 	curl -i -X POST http://localhost:$(SERVICE_PORT)/synthesize -d '{"text": "laba diena"}'
 
+.EXPORT_ALL_VARIABLES:
+	
+

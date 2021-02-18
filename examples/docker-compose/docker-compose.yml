@@ -16,6 +16,7 @@ services:
       - VOCODER_URL=${VOCODER_URL}  
       - AUDIOCONVERT_URL=http://audioconverter:8000/convert
       - CLEAN_URL=http://text-clean:8000/clean
+      - COMPARATOR_URL=http://comparator:3000/resynthvalid 
 
   text-clean:
     image: airenas/tts-text-clean:0.1.123
@@ -26,6 +27,11 @@ services:
     image: airenas/audio-convert-service:0.1.8
     ports:
       - "8013:8000"
+
+  comparator:
+    image: airenas/resynth-validator:0.1.2
+    ports:
+      - "8014:3000"    
 
   mongo:
     image: mongo:4.4.1
