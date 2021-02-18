@@ -14,7 +14,7 @@ func ToAccentString(w string, a int) (string, error) {
 	pos := a%100 - 1
 	tp := a / 100
 	rn := []rune(w)
-	if pos > len(rn) || pos < 1 {
+	if pos >= len(rn) || pos < 0 {
 		return "", errors.Errorf("Wrong accent pos %d in %s", a, w)
 	}
 	as, err := toString(rn[pos], tp)
