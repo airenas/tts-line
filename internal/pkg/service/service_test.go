@@ -91,7 +91,7 @@ func Test_FailConfigure(t *testing.T) {
 	req := httptest.NewRequest("POST", "/synthesize", toReader(api.Input{Text: "olia"}))
 	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
 	resp := testCode(t, req, 400)
-	assert.Equal(t, `{"message":"No format mmp"}` + "\n", resp.Body.String())
+	assert.Equal(t, `{"message":"No format mmp"}`+"\n", resp.Body.String())
 }
 
 func Test_FailOnWrongInput(t *testing.T) {
@@ -113,7 +113,7 @@ func toReader(inData api.Input) io.Reader {
 }
 
 func newTestData() *Data {
-	res := &Data{Processor: synthesizerMock, Configurator: cnfMock}
+	res := &Data{SyntData: PrData{Processor: synthesizerMock, Configurator: cnfMock}}
 	return res
 }
 
