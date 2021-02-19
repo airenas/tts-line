@@ -1,14 +1,15 @@
 package processor
 
 import (
+	"errors"
 	"testing"
 
 	"github.com/petergtz/pegomock"
-	"github.com/pkg/errors"
 
 	"github.com/stretchr/testify/assert"
 
 	"github.com/airenas/tts-line/internal/pkg/synthesizer"
+	"github.com/airenas/tts-line/internal/pkg/utils"
 )
 
 func TestCreateTagger(t *testing.T) {
@@ -176,4 +177,60 @@ func TestClearAccents(t *testing.T) {
 		v := clearAccents(tc.v)
 		assert.Equal(t, tc.e, v, "Fail %d", i)
 	}
+}
+
+func TestMapAccent(t *testing.T) {
+	p, err := mapTagAccentResult([]*TaggedWord{{Type: "SEPARATOR", String: ","},
+		{Type: "SENTENCE_END"}}, ",")
+	assert.Nil(t, err)
+	if assert.Equal(t, 2, len(p)) {
+		assert.Equal(t, ",", p[0].Tagged.Separator)
+		assert.Equal(t, true, p[1].Tagged.SentenceEnd)
+	}
+
+	p, err = mapTagAccentResult([]*TaggedWord{{Type: "WORD", String: "mama"},
+		{Type: "SPACE", String: " "}}, "mam{a~} ")
+	assert.Nil(t, err)
+	if assert.Equal(t, 2, len(p)) {
+		assert.Equal(t, "mama", p[0].Tagged.Word)
+		assert.Equal(t, 304, p[0].UserAccent)
+		assert.Equal(t, true, p[1].Tagged.Space)
+	}
+
+	p, err = mapTagAccentResult([]*TaggedWord{{Type: "SPACE", String: " "},
+		{Type: "WORD", String: "mama"}}, " mam{a~}")
+	assert.Nil(t, err)
+	if assert.Equal(t, 2, len(p)) {
+		assert.Equal(t, true, p[0].Tagged.Space)
+		assert.Equal(t, "mama", p[1].Tagged.Word)
+		assert.Equal(t, 304, p[1].UserAccent)
+	}
+
+	p, err = mapTagAccentResult([]*TaggedWord{
+		{Type: "WORD", String: "mama"}, {Type: "WORD", String: "mama"}}, "mam{a~}mam{a~}")
+	assert.Nil(t, err)
+	if assert.Equal(t, 2, len(p)) {
+		assert.Equal(t, "mama", p[0].Tagged.Word)
+		assert.Equal(t, 304, p[0].UserAccent)
+		assert.Equal(t, "mama", p[1].Tagged.Word)
+		assert.Equal(t, 304, p[1].UserAccent)
+	}
+}
+
+func TestMapAccent_Fail(t *testing.T) {
+	_, err := mapTagAccentResult([]*TaggedWord{{Type: "WORD", String: "mama"}}, " mam{a~}")
+	assert.NotNil(t, err)
+	_, err = mapTagAccentResult([]*TaggedWord{{Type: "WORD", String: "mama"}}, ",mam{a~}")
+	assert.NotNil(t, err)
+}
+
+func TestMapAccent_ErrorType(t *testing.T) {
+	_, err := mapTagAccentResult([]*TaggedWord{{Type: "WORD", String: "mama"}}, "m{a~}m{a~}")
+	assert.NotNil(t, err)
+	var errBA *utils.ErrBadAccent
+	assert.True(t, errors.As(err, &errBA))
+
+	_, err = mapTagAccentResult([]*TaggedWord{{Type: "WORD", String: "mama"}}, ",mam{a~}")
+	assert.NotNil(t, err)
+	assert.False(t, errors.As(err, &errBA))
 }
