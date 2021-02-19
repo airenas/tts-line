@@ -141,6 +141,9 @@ func moveText(rns []rune, pos int, tag *TaggedWord) (int, int, error) {
 	if tag.Type == "SENTENCE_END" {
 		return 0, 0, nil
 	}
+	if pos >= len(rns) {
+		return 0, 0, errors.Errorf("Wrong position %d", pos)
+	}
 	tr := []rune(tag.String)
 	if tag.Type == "WORD" {
 		i := pos
