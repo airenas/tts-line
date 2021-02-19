@@ -35,8 +35,8 @@ func TestInvokeTranscriber(t *testing.T) {
 		AccentVariant: &synthesizer.AccentVariant{Accent: 103}})
 	pegomock.When(httpJSONMock.InvokeJSON(pegomock.AnyInterface(), pegomock.AnyInterface())).Then(
 		func(params []pegomock.Param) pegomock.ReturnValues {
-			*params[1].(*[]transOutput) = []transOutput{transOutput{Word: "word",
-				Transcription: []trans{trans{Transcription: "w o r d"}}}}
+			*params[1].(*[]transOutput) = []transOutput{{Word: "word",
+				Transcription: []trans{{Transcription: "w o r d"}}}}
 			return []pegomock.ReturnValue{nil}
 		})
 	err := pr.Process(&d)
@@ -183,8 +183,8 @@ func TestMapTransOutput(t *testing.T) {
 	d.Words = append(d.Words, &synthesizer.ProcessedWord{TranscriptionWord: "olia", Tagged: synthesizer.TaggedWord{Word: "v1"}})
 	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Word: "word"}})
 
-	output := []transOutput{transOutput{Word: "olia", Transcription: []trans{trans{Transcription: "trans"}}},
-		transOutput{Word: "word", Transcription: []trans{trans{Transcription: "trans1"}}}}
+	output := []transOutput{{Word: "olia", Transcription: []trans{{Transcription: "trans"}}},
+		{Word: "word", Transcription: []trans{{Transcription: "trans1"}}}}
 
 	err := mapTransOutput(&d, output)
 	assert.Nil(t, err)
@@ -200,8 +200,8 @@ func TestMapTransOutput_Sep(t *testing.T) {
 	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Word: "word"}})
 	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Separator: ","}})
 
-	output := []transOutput{transOutput{Word: "olia", Transcription: []trans{trans{Transcription: "trans"}}},
-		transOutput{Word: "word", Transcription: []trans{trans{Transcription: "trans1"}}}}
+	output := []transOutput{{Word: "olia", Transcription: []trans{{Transcription: "trans"}}},
+		{Word: "word", Transcription: []trans{{Transcription: "trans1"}}}}
 
 	err := mapTransOutput(&d, output)
 	assert.Nil(t, err)
@@ -213,7 +213,7 @@ func TestMapTransOutput_DropQMark(t *testing.T) {
 	d := synthesizer.TTSDataPart{}
 	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Word: "word"}})
 
-	output := []transOutput{transOutput{Word: "word", Transcription: []trans{trans{Transcription: "tran? - s1?"}}}}
+	output := []transOutput{{Word: "word", Transcription: []trans{{Transcription: "tran? - s1?"}}}}
 
 	err := mapTransOutput(&d, output)
 	assert.Nil(t, err)
@@ -225,7 +225,7 @@ func TestMapTransOutput_FailLen(t *testing.T) {
 	d.Words = append(d.Words, &synthesizer.ProcessedWord{TranscriptionWord: "olia", Tagged: synthesizer.TaggedWord{Word: "v1"}})
 	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Word: "word"}})
 
-	output := []transOutput{transOutput{Word: "olia", Transcription: []trans{trans{Transcription: "trans"}}}}
+	output := []transOutput{{Word: "olia", Transcription: []trans{{Transcription: "trans"}}}}
 
 	err := mapTransOutput(&d, output)
 	assert.NotNil(t, err)
@@ -236,8 +236,8 @@ func TestMapTransOutput_FailWord(t *testing.T) {
 	d.Words = append(d.Words, &synthesizer.ProcessedWord{TranscriptionWord: "olia", Tagged: synthesizer.TaggedWord{Word: "v1"}})
 	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Word: "word"}})
 
-	output := []transOutput{transOutput{Word: "olia1", Transcription: []trans{trans{Transcription: "trans"}}},
-		transOutput{Word: "word", Transcription: []trans{trans{Transcription: "trans1"}}}}
+	output := []transOutput{{Word: "olia1", Transcription: []trans{{Transcription: "trans"}}},
+		{Word: "word", Transcription: []trans{{Transcription: "trans1"}}}}
 
 	err := mapTransOutput(&d, output)
 	assert.NotNil(t, err)

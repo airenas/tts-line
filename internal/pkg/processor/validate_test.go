@@ -64,7 +64,7 @@ func TestInvokeValidator(t *testing.T) {
 		func(params []pegomock.Param) pegomock.ReturnValues {
 			assert.Equal(t, "word", params[0].(*valInput).Words.List[0].Word)
 			assert.Equal(t, "min_words", params[0].(*valInput).Checks[0].ID)
-			*params[1].(*valOutput) = valOutput{List: []api.ValidateFailure{api.ValidateFailure{Check: api.Check{ID: "olia"}, FailingPosition: 1}}}
+			*params[1].(*valOutput) = valOutput{List: []api.ValidateFailure{{Check: api.Check{ID: "olia"}, FailingPosition: 1}}}
 			return []pegomock.ReturnValue{nil}
 		})
 	err := pr.Process(&d)

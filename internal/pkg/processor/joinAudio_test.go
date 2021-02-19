@@ -23,7 +23,7 @@ func TestJoinAudio(t *testing.T) {
 	pr := NewJoinAudio()
 	d := synthesizer.TTSData{}
 	strA := getTestEncAudio(t)
-	d.Parts = []*synthesizer.TTSDataPart{&synthesizer.TTSDataPart{Audio: strA}}
+	d.Parts = []*synthesizer.TTSDataPart{{Audio: strA}}
 	err := pr.Process(&d)
 	assert.Nil(t, err)
 	assert.Equal(t, strA, d.Audio)
@@ -34,8 +34,8 @@ func TestJoinAudio_Several(t *testing.T) {
 	pr := NewJoinAudio()
 	d := synthesizer.TTSData{}
 	strA := getTestEncAudio(t)
-	d.Parts = []*synthesizer.TTSDataPart{&synthesizer.TTSDataPart{Audio: strA}, &synthesizer.TTSDataPart{Audio: strA},
-		&synthesizer.TTSDataPart{Audio: strA}}
+	d.Parts = []*synthesizer.TTSDataPart{{Audio: strA}, {Audio: strA},
+		{Audio: strA}}
 	err := pr.Process(&d)
 	assert.Nil(t, err)
 
@@ -49,7 +49,7 @@ func TestJoinAudio_DecodeFail(t *testing.T) {
 	pr := NewJoinAudio()
 	d := synthesizer.TTSData{}
 	strA := getTestEncAudio(t)
-	d.Parts = []*synthesizer.TTSDataPart{&synthesizer.TTSDataPart{Audio: strA}, &synthesizer.TTSDataPart{Audio: "aaa"}}
+	d.Parts = []*synthesizer.TTSDataPart{{Audio: strA}, {Audio: "aaa"}}
 	err := pr.Process(&d)
 	assert.NotNil(t, err)
 }
@@ -59,7 +59,7 @@ func TestJoinAudio_EmptyFail(t *testing.T) {
 	pr := NewJoinAudio()
 	d := synthesizer.TTSData{}
 	strA := getTestEncAudio(t)
-	d.Parts = []*synthesizer.TTSDataPart{&synthesizer.TTSDataPart{Audio: strA}, &synthesizer.TTSDataPart{Audio: ""}}
+	d.Parts = []*synthesizer.TTSDataPart{{Audio: strA}, {Audio: ""}}
 	err := pr.Process(&d)
 	assert.NotNil(t, err)
 }
