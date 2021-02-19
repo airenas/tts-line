@@ -18,6 +18,8 @@ import (
 
 //go:generate pegomock generate --package=mocks --output=saverDB.go -m github.com/airenas/tts-line/internal/pkg/processor SaverDB
 
+//go:generate pegomock generate --package=mocks --output=loadDB.go -m github.com/airenas/tts-line/internal/pkg/processor LoadDB
+
 //go:generate pegomock generate --package=mocks --output=exporter.go -m github.com/airenas/tts-line/internal/pkg/exporter Exporter
 
 //go:generate pegomock generate --package=mocks --output=acrWorker.go -m github.com/airenas/tts-line/internal/pkg/acronyms/service Worker
