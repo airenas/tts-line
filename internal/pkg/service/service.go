@@ -61,11 +61,16 @@ func StartWebServer(data *Data) error {
 	return gracehttp.Serve(e.Server)
 }
 
+var promMdlw *prometheus.Prometheus
+
+func init(){
+	promMdlw = prometheus.NewPrometheus("tts", nil)
+}
+
 func initRoutes(data *Data) *echo.Echo {
 	e := echo.New()
 	e.Use(middleware.Logger())
-	p := prometheus.NewPrometheus("tts", nil)
-	p.Use(e)
+	promMdlw.Use(e)
 
 	e.POST("/synthesize", synthesizeText(&data.SyntData))
 	e.POST("/synthesizeCustom", synthesizeCustom(&data.SyntCustomData))
