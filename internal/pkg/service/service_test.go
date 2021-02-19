@@ -2,7 +2,6 @@ package service
 
 import (
 	"encoding/json"
-	"errors"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -11,6 +10,7 @@ import (
 	"testing"
 
 	"github.com/petergtz/pegomock"
+	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 
 	"github.com/airenas/tts-line/internal/pkg/service/api"
@@ -185,6 +185,7 @@ func TestBadReqError(t *testing.T) {
 		{v: utils.ErrNoRecord, e: true, es: "RequestID not found"},
 		{v: utils.ErrTextDoesNotMatch, e: true, es: "Original text does not match the modified"},
 		{v: utils.NewErrBadAccent([]string{"olia"}), e: true, es: "Bad accents: [olia]"},
+		{v: errors.Wrap(utils.NewErrBadAccent([]string{"olia"}), "test"), e: true, es: "Bad accents: [olia]"},
 	}
 
 	for i, tc := range tests {
