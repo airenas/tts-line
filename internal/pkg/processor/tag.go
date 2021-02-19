@@ -153,12 +153,17 @@ func moveText(rns []rune, pos int, tag *TaggedWord) (int, int, error) {
 				i++
 				continue
 			}
-			if acc == 0 && rns[i] == '{' && i < len(rns)-3 {
+			if rns[i] == '{' && i < len(rns)-3 {
 				at := accentI.Value(rns[i+2])
 				if r != rns[i+1] || at == 0 || rns[i+3] != '}' {
 					return 0, 0, errors.Errorf("Wrong word at '%s'", string(rns[pos:min(pos+20, len(rns))]))
 				}
-				acc = at * 100 + i - pos + 1
+				if acc != 0 {
+					return 0, 0, errors.Wrapf(
+						utils.NewErrBadAccent([]string{string(rns[pos:min(pos+20, len(rns))])}),
+						"Only one accent is allowed")
+				}
+				acc = at*100 + i - pos + 1
 				i = i + 4
 			} else {
 				return 0, 0, errors.Errorf("Wrong word at '%s'", string(rns[pos:min(pos+20, len(rns))]))
