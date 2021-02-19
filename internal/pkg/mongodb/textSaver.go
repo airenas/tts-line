@@ -18,6 +18,9 @@ type TextSaver struct {
 
 //NewTextSaver creates TextSaver instance
 func NewTextSaver(sessionProvider *SessionProvider) (*TextSaver, error) {
+	if sessionProvider == nil {
+		return nil, errors.New("No session provider")
+	}
 	f := TextSaver{SessionProvider: sessionProvider}
 	return &f, nil
 }

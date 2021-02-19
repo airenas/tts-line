@@ -62,7 +62,7 @@ func main() {
 		goapp.Log.Fatal(errors.Wrap(err, "Can't init custom configurator"))
 	}
 	syntC := &synthesizer.MainWorker{}
-	err = addCustomProcessors(syntC, sp)
+	err = addCustomProcessors(syntC, sp, goapp.Config)
 	if err != nil {
 		goapp.Log.Fatal(errors.Wrap(err, "Can't init custom processors"))
 	}
@@ -148,7 +148,7 @@ func addProcessors(synt *synthesizer.MainWorker, sp *mongodb.SessionProvider) er
 	return addPartProcessors(partRunner, goapp.Config)
 }
 
-func addCustomProcessors(synt *synthesizer.MainWorker, sp *mongodb.SessionProvider) error {
+func addCustomProcessors(synt *synthesizer.MainWorker, sp *mongodb.SessionProvider, cfg *viper.Viper) error {
 	ts, err := mongodb.NewTextSaver(sp)
 	if err != nil {
 		return errors.Wrap(err, "Can't init text to DB saver")
@@ -160,7 +160,7 @@ func addCustomProcessors(synt *synthesizer.MainWorker, sp *mongodb.SessionProvid
 	}
 	synt.Add(pr)
 
-	pr, err = processor.NewComparator(goapp.Config.GetString("comparator.url"))
+	pr, err = processor.NewComparator(cfg.GetString("comparator.url"))
 	if err != nil {
 		return errors.Wrap(err, "Can't init text comparator")
 	}
@@ -172,39 +172,39 @@ func addCustomProcessors(synt *synthesizer.MainWorker, sp *mongodb.SessionProvid
 	}
 	synt.Add(sv)
 
-	pr, err = processor.NewTaggerAccents(goapp.Config.GetString("tagger.url"))
+	pr, err = processor.NewTaggerAccents(cfg.GetString("tagger.url"))
 	if err != nil {
 		return errors.Wrap(err, "Can't init tagger")
 	}
 	synt.Add(pr)
 
-	pr, err = processor.NewValidator(goapp.Sub(goapp.Config, "validator"))
+	pr, err = processor.NewValidator(goapp.Sub(cfg, "validator"))
 	if err != nil {
 		return errors.Wrap(err, "Can't init validator")
 	}
 	synt.Add(pr)
 
-	synt.Add(processor.NewSplitter(goapp.Config.GetInt("splitter.maxChars")))
+	synt.Add(processor.NewSplitter(cfg.GetInt("splitter.maxChars")))
 
-	partRunner := synthesizer.NewPartRunner(goapp.Config.GetInt("partRunner.workers"))
+	partRunner := synthesizer.NewPartRunner(cfg.GetInt("partRunner.workers"))
 	synt.Add(partRunner)
 
 	synt.Add(processor.NewJoinAudio())
 
-	pr, err = processor.NewConverter(goapp.Config.GetString("audioConvert.url"))
+	pr, err = processor.NewConverter(cfg.GetString("audioConvert.url"))
 	if err != nil {
-		return errors.Wrap(err, "Can't init mp3 converter")
+		return errors.Wrap(err, "Can't init audioConvert converter")
 	}
 	synt.Add(pr)
 
 	if goapp.Config.GetString("filer.dir") != "" {
-		pr, err = processor.NewFiler(goapp.Config.GetString("filer.dir"))
+		pr, err = processor.NewFiler(cfg.GetString("filer.dir"))
 		if err != nil {
 			return errors.Wrap(err, "Can't init filer")
 		}
 		synt.Add(pr)
 	}
-	return addPartProcessors(partRunner, goapp.Config)
+	return addPartProcessors(partRunner, cfg)
 }
 
 func addPartProcessors(partRunner *synthesizer.PartRunner, cfg *viper.Viper) error {

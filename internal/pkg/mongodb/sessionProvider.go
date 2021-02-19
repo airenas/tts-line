@@ -25,11 +25,6 @@ func newIndexData(table string, fields []string, unique bool) IndexData {
 	return IndexData{Table: table, Fields: fields, Unique: unique}
 }
 
-//SessionProviderWithDB keeps SessionProvider and database for mongo DB
-type SessionProviderWithDB struct {
-	sessionP *SessionProvider
-}
-
 //SessionProvider connects and provides session for mongo DB
 type SessionProvider struct {
 	client *mongo.Client
