@@ -35,6 +35,20 @@ func TestFilerSaves(t *testing.T) {
 	assert.Equal(t, "mp3", b.String())
 }
 
+func TestFiler_Skip(t *testing.T) {
+	pr, _ := NewFiler("/dir")
+	assert.NotNil(t, pr)
+	prf := pr.(*filer)
+	prf.fFile = func(name string) (io.WriteCloser, error) {
+		assert.Fail(t, "Not expected file save")
+		return nil, nil
+	}
+	d := synthesizer.TTSData{Input: &api.TTSRequestConfig{OutputFormat: api.AudioNone}}
+	d.AudioMP3 = base64.StdEncoding.EncodeToString([]byte("mp3"))
+	err := prf.Process(&d)
+	assert.Nil(t, err)
+}
+
 func TestFilerSaves_Fails(t *testing.T) {
 	pr, _ := NewFiler("/dir")
 	assert.NotNil(t, pr)

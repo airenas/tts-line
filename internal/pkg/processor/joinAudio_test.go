@@ -20,7 +20,6 @@ func TestNewJoinAudio(t *testing.T) {
 }
 
 func TestJoinAudio(t *testing.T) {
-	initTestJSON(t)
 	pr := NewJoinAudio()
 	d := synthesizer.TTSData{Input: &api.TTSRequestConfig{OutputFormat: api.AudioMP3}}
 	strA := getTestEncAudio(t)
@@ -28,6 +27,16 @@ func TestJoinAudio(t *testing.T) {
 	err := pr.Process(&d)
 	assert.Nil(t, err)
 	assert.Equal(t, strA, d.Audio)
+}
+
+func TestJoinAudio_Skip(t *testing.T) {
+	pr := NewJoinAudio()
+	d := synthesizer.TTSData{Input: &api.TTSRequestConfig{OutputFormat: api.AudioNone}}
+	strA := getTestEncAudio(t)
+	d.Parts = []*synthesizer.TTSDataPart{{Audio: strA}}
+	err := pr.Process(&d)
+	assert.Nil(t, err)
+	assert.Equal(t, "", d.Audio)
 }
 
 func TestJoinAudio_Several(t *testing.T) {

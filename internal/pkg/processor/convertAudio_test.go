@@ -50,6 +50,24 @@ func TestInvokeConvert(t *testing.T) {
 	assert.Equal(t, []string{"olia"}, cInp.Metadata)
 }
 
+func TestInvokeConvert_Skip(t *testing.T) {
+	initTestJSON(t)
+	pr, _ := NewConverter("http://server")
+	assert.NotNil(t, pr)
+	pr.(*audioConverter).httpWrap = httpJSONMock
+	d := synthesizer.TTSData{}
+	d.Audio = "wav"
+	d.Input = &api.TTSRequestConfig{OutputMetadata: []string{"olia"}, OutputFormat: api.AudioNone}
+	pegomock.When(httpJSONMock.InvokeJSON(pegomock.AnyInterface(), pegomock.AnyInterface())).Then(
+		func(params []pegomock.Param) pegomock.ReturnValues {
+			*params[1].(*audioConvertOutput) = audioConvertOutput{Data: "mp3"}
+			return []pegomock.ReturnValue{nil}
+		})
+	err := pr.Process(&d)
+	assert.Nil(t, err)
+	httpJSONMock.VerifyWasCalled(pegomock.Never()).InvokeJSON(pegomock.AnyInterface(), pegomock.AnyInterface())
+}
+
 func TestInvokeConvert_Fail(t *testing.T) {
 	initTestJSON(t)
 	pr, _ := NewConverter("http://server")
