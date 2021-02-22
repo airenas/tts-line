@@ -8,6 +8,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
+	"github.com/airenas/tts-line/internal/pkg/service/api"
 	"github.com/airenas/tts-line/internal/pkg/synthesizer"
 )
 
@@ -42,6 +43,19 @@ func TestInvokeTranscriber(t *testing.T) {
 	err := pr.Process(d)
 	assert.Nil(t, err)
 	assert.Equal(t, "w o r d", d.Words[0].Transcription)
+}
+
+func TestInvokeTranscriber_SkipFormat(t *testing.T) {
+	initTestJSON(t)
+	d := newTestTTSDataPart()
+	d.Cfg.Input.OutputFormat = api.AudioNone
+	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Word: "word"},
+		AccentVariant: &synthesizer.AccentVariant{Accent: 103}})
+	pr, _ := NewTranscriber("http://server")
+	pr.(*transcriber).httpWrap = httpJSONMock
+	err := pr.Process(d)
+	assert.Nil(t, err)
+	httpJSONMock.VerifyWasCalled(pegomock.Never()).InvokeJSON(pegomock.AnyInterface(), pegomock.AnyInterface())
 }
 
 func TestInvokeTranscriber_FailInput(t *testing.T) {
@@ -80,11 +94,16 @@ func TestInvokeTranscriber_NoData(t *testing.T) {
 }
 
 func TestInvokeTranscriber_Skip(t *testing.T) {
+	initTestJSON(t)
 	d := newTestTTSDataPart()
 	d.Cfg.JustAM = true
+	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Word: "word"},
+		AccentVariant: &synthesizer.AccentVariant{Accent: 103}})
 	pr, _ := NewTranscriber("http://server")
+	pr.(*transcriber).httpWrap = httpJSONMock
 	err := pr.Process(d)
 	assert.Nil(t, err)
+	httpJSONMock.VerifyWasCalled(pegomock.Never()).InvokeJSON(pegomock.AnyInterface(), pegomock.AnyInterface())
 }
 
 func TestInvokeTranscriber_FailOutput(t *testing.T) {

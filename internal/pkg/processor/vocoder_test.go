@@ -3,6 +3,7 @@ package processor
 import (
 	"testing"
 
+	"github.com/airenas/tts-line/internal/pkg/service/api"
 	"github.com/petergtz/pegomock"
 	"github.com/pkg/errors"
 
@@ -38,6 +39,19 @@ func TestInvokeVocoder(t *testing.T) {
 	err := pr.Process(d)
 	assert.Nil(t, err)
 	assert.Equal(t, "wav", d.Audio)
+}
+
+func TestInvokeVocoder_Skip(t *testing.T) {
+	initTestJSON(t)
+	pr, _ := NewVocoder("http://server")
+	assert.NotNil(t, pr)
+	pr.(*vocoder).httpWrap = httpJSONMock
+	d := newTestTTSDataPart()
+	d.Cfg.Input.OutputFormat = api.AudioNone
+	d.Spectogram = "spectogram"
+	err := pr.Process(d)
+	assert.Nil(t, err)
+	httpJSONMock.VerifyWasCalled(pegomock.Never()).InvokeJSON(pegomock.AnyInterface(), pegomock.AnyInterface())
 }
 
 func TestInvokeVocoder_Fail(t *testing.T) {
