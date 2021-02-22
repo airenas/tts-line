@@ -234,3 +234,20 @@ func TestMapAccent_ErrorType(t *testing.T) {
 	assert.NotNil(t, err)
 	assert.False(t, errors.As(err, &errBA))
 }
+
+func TestMapTag(t *testing.T) {
+	tests := []struct {
+		v TaggedWord
+		e synthesizer.TaggedWord
+	}{
+		{v: TaggedWord{Type: "WORD", String: "mama", Mi: "mi"}, e: synthesizer.TaggedWord{Word: "mama", Mi: "mi"}},
+		{v: TaggedWord{Type: "NUMBER", String: "10", Mi: "mi"}, e: synthesizer.TaggedWord{Word: "10", Mi: "mi"}},
+		{v: TaggedWord{Type: "SPACE", String: "  "}, e: synthesizer.TaggedWord{Space: true}},
+		{v: TaggedWord{Type: "SEPARATOR", String: ","}, e: synthesizer.TaggedWord{Separator: ","}},
+	}
+
+	for _, tc := range tests {
+		v := mapTag(&tc.v)
+		assert.Equal(t, tc.e, v)
+	}
+}
