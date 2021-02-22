@@ -7,8 +7,6 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/stretchr/testify/assert"
-
-	"github.com/airenas/tts-line/internal/pkg/synthesizer"
 )
 
 func TestNewVocoder(t *testing.T) {
@@ -30,14 +28,14 @@ func TestInvokeVocoder(t *testing.T) {
 	pr, _ := NewVocoder("http://server")
 	assert.NotNil(t, pr)
 	pr.(*vocoder).httpWrap = httpJSONMock
-	d := synthesizer.TTSDataPart{}
+	d := newTestTTSDataPart()
 	d.Spectogram = "spectogram"
 	pegomock.When(httpJSONMock.InvokeJSON(pegomock.AnyInterface(), pegomock.AnyInterface())).Then(
 		func(params []pegomock.Param) pegomock.ReturnValues {
 			*params[1].(*vocOutput) = vocOutput{Data: "wav"}
 			return []pegomock.ReturnValue{nil}
 		})
-	err := pr.Process(&d)
+	err := pr.Process(d)
 	assert.Nil(t, err)
 	assert.Equal(t, "wav", d.Audio)
 }
@@ -47,9 +45,9 @@ func TestInvokeVocoder_Fail(t *testing.T) {
 	pr, _ := NewVocoder("http://server")
 	assert.NotNil(t, pr)
 	pr.(*vocoder).httpWrap = httpJSONMock
-	d := synthesizer.TTSDataPart{}
+	d := newTestTTSDataPart()
 	d.Spectogram = "spectogram"
 	pegomock.When(httpJSONMock.InvokeJSON(pegomock.AnyInterface(), pegomock.AnyInterface())).ThenReturn(errors.New("haha"))
-	err := pr.Process(&d)
+	err := pr.Process(d)
 	assert.NotNil(t, err)
 }

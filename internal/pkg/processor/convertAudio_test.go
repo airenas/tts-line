@@ -56,7 +56,7 @@ func TestInvokeConvert_Fail(t *testing.T) {
 	assert.NotNil(t, pr)
 	pr.(*audioConverter).httpWrap = httpJSONMock
 	d := synthesizer.TTSData{}
-	d.Input = &api.TTSRequestConfig{}
+	d.Input = &api.TTSRequestConfig{OutputFormat: api.AudioMP3}
 	pegomock.When(httpJSONMock.InvokeJSON(pegomock.AnyInterface(), pegomock.AnyInterface())).ThenReturn(errors.New("haha"))
 	err := pr.Process(&d)
 	assert.NotNil(t, err)

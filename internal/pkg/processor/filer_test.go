@@ -9,6 +9,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 
+	"github.com/airenas/tts-line/internal/pkg/service/api"
 	"github.com/airenas/tts-line/internal/pkg/synthesizer"
 )
 
@@ -27,7 +28,7 @@ func TestFilerSaves(t *testing.T) {
 		assert.Equal(t, "/dir/out.mp3", name)
 		return &testCloser{b}, nil
 	}
-	d := synthesizer.TTSData{}
+	d := synthesizer.TTSData{Input: &api.TTSRequestConfig{OutputFormat: api.AudioMP3}}
 	d.AudioMP3 = base64.StdEncoding.EncodeToString([]byte("mp3"))
 	err := prf.Process(&d)
 	assert.Nil(t, err)
@@ -42,7 +43,7 @@ func TestFilerSaves_Fails(t *testing.T) {
 		assert.Equal(t, "/dir/out.mp3", name)
 		return nil, errors.New("olia")
 	}
-	d := synthesizer.TTSData{}
+	d := synthesizer.TTSData{Input: &api.TTSRequestConfig{OutputFormat: api.AudioMP3}}
 	d.AudioMP3 = base64.StdEncoding.EncodeToString([]byte("mp3"))
 	err := prf.Process(&d)
 	assert.NotNil(t, err)
@@ -51,7 +52,7 @@ func TestFilerSaves_Fails(t *testing.T) {
 func TestFilerSaves_FailsDecode(t *testing.T) {
 	pr, _ := NewFiler("/dir")
 	assert.NotNil(t, pr)
-	d := synthesizer.TTSData{}
+	d := synthesizer.TTSData{Input: &api.TTSRequestConfig{OutputFormat: api.AudioMP3}}
 	d.AudioMP3 = "mp3"
 	err := pr.Process(&d)
 	assert.NotNil(t, err)

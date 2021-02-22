@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"testing"
 
+	"github.com/airenas/tts-line/internal/pkg/service/api"
 	"github.com/airenas/tts-line/internal/pkg/wav"
 
 	"github.com/stretchr/testify/assert"
@@ -21,7 +22,7 @@ func TestNewJoinAudio(t *testing.T) {
 func TestJoinAudio(t *testing.T) {
 	initTestJSON(t)
 	pr := NewJoinAudio()
-	d := synthesizer.TTSData{}
+	d := synthesizer.TTSData{Input: &api.TTSRequestConfig{OutputFormat: api.AudioMP3}}
 	strA := getTestEncAudio(t)
 	d.Parts = []*synthesizer.TTSDataPart{{Audio: strA}}
 	err := pr.Process(&d)
@@ -32,7 +33,7 @@ func TestJoinAudio(t *testing.T) {
 func TestJoinAudio_Several(t *testing.T) {
 	initTestJSON(t)
 	pr := NewJoinAudio()
-	d := synthesizer.TTSData{}
+	d := synthesizer.TTSData{Input: &api.TTSRequestConfig{OutputFormat: api.AudioMP3}}
 	strA := getTestEncAudio(t)
 	d.Parts = []*synthesizer.TTSDataPart{{Audio: strA}, {Audio: strA},
 		{Audio: strA}}
@@ -47,7 +48,7 @@ func TestJoinAudio_Several(t *testing.T) {
 func TestJoinAudio_DecodeFail(t *testing.T) {
 	initTestJSON(t)
 	pr := NewJoinAudio()
-	d := synthesizer.TTSData{}
+	d := synthesizer.TTSData{Input: &api.TTSRequestConfig{OutputFormat: api.AudioMP3}}
 	strA := getTestEncAudio(t)
 	d.Parts = []*synthesizer.TTSDataPart{{Audio: strA}, {Audio: "aaa"}}
 	err := pr.Process(&d)
@@ -57,7 +58,7 @@ func TestJoinAudio_DecodeFail(t *testing.T) {
 func TestJoinAudio_EmptyFail(t *testing.T) {
 	initTestJSON(t)
 	pr := NewJoinAudio()
-	d := synthesizer.TTSData{}
+	d := synthesizer.TTSData{Input: &api.TTSRequestConfig{OutputFormat: api.AudioMP3}}
 	strA := getTestEncAudio(t)
 	d.Parts = []*synthesizer.TTSDataPart{{Audio: strA}, {Audio: ""}}
 	err := pr.Process(&d)

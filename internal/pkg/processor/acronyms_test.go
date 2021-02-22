@@ -8,6 +8,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
+	"github.com/airenas/tts-line/internal/pkg/service/api"
 	"github.com/airenas/tts-line/internal/pkg/synthesizer"
 	"github.com/airenas/tts-line/internal/pkg/test/mocks"
 )
@@ -129,5 +130,5 @@ func TestIsAbbr(t *testing.T) {
 }
 
 func newTestTTSDataPart() *synthesizer.TTSDataPart {
-	return &synthesizer.TTSDataPart{Cfg: &synthesizer.TTSConfig{}}
+	return &synthesizer.TTSDataPart{Cfg: &synthesizer.TTSConfig{Input: &api.TTSRequestConfig{OutputFormat: api.AudioMP3}}}
 }

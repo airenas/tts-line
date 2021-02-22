@@ -34,6 +34,10 @@ func TestNewTTSConfigurator_Fail(t *testing.T) {
 	assert.NotNil(t, err)
 	_, err = NewTTSConfigurator(test.NewConfig(t, "output:\n  defaultFormat: \n  metadata:\n   - r=aaa"))
 	assert.NotNil(t, err)
+	_, err = NewTTSConfigurator(test.NewConfig(t, "output:\n  defaultFormat: default\n  metadata:\n   - r=aaa"))
+	assert.NotNil(t, err)
+	_, err = NewTTSConfigurator(test.NewConfig(t, "output:\n  defaultFormat: none\n  metadata:\n   - r=aaa"))
+	assert.NotNil(t, err)
 	_, err = NewTTSConfigurator(test.NewConfig(t, "output:\n  defaultFormat: mp4\n  metadata:\n   - r=aaa"))
 	assert.NotNil(t, err)
 	_, err = NewTTSConfigurator(test.NewConfig(t, "output:\n  defaultFormat: mp3\n  metadata:\n   - raaa"))
@@ -127,7 +131,8 @@ func TestOutputAudioFormat(t *testing.T) {
 		res   api.AudioFormatEnum
 		isErr bool
 	}{
-		{in: "", res: api.AudioNone, isErr: false},
+		{in: "", res: api.AudioDefault, isErr: false},
+		{in: "none", res: api.AudioNone, isErr: false},
 		{in: "mp3", res: api.AudioMP3, isErr: false},
 		{in: "m4a", res: api.AudioM4A, isErr: false},
 		{in: "olia", res: api.AudioNone, isErr: true},
