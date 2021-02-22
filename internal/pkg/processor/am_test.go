@@ -10,6 +10,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
+	"github.com/airenas/tts-line/internal/pkg/service/api"
 	"github.com/airenas/tts-line/internal/pkg/synthesizer"
 	"github.com/airenas/tts-line/internal/pkg/test"
 )
@@ -73,6 +74,19 @@ func TestInvokeAcousticModel(t *testing.T) {
 	err := pr.Process(d)
 	assert.Nil(t, err)
 	assert.Equal(t, "spec", d.Spectogram)
+}
+
+func TestInvokeAcousticModel_Skip(t *testing.T) {
+	initTestJSON(t)
+	pr, _ := NewAcousticModel(test.NewConfig(t, "url: http://server\n"))
+	assert.NotNil(t, pr)
+	pr.(*amodel).httpWrap = httpJSONMock
+	d := newTestTTSDataPart()
+	d.Cfg.Input.OutputFormat = api.AudioNone
+	d.Spectogram = ""
+	err := pr.Process(d)
+	assert.Nil(t, err)
+	httpJSONMock.VerifyWasCalled(pegomock.Never()).InvokeJSON(pegomock.AnyInterface(), pegomock.AnyInterface())
 }
 
 func TestInvokeAcousticModel_WriteAudio(t *testing.T) {

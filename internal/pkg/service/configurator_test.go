@@ -87,6 +87,14 @@ func TestConfigure_FailFormat(t *testing.T) {
 	assert.NotNil(t, err)
 }
 
+func TestConfigure_NoneFormat(t *testing.T) {
+	c, _ := NewTTSConfigurator(test.NewConfig(t, "output:\n  defaultFormat: mp3\n  metadata:\n   - r=a"))
+	req := httptest.NewRequest("POST", "/synthesize", strings.NewReader("text"))
+	res, err := c.Configure(req, &api.Input{Text: "olia", OutputFormat: "none"})
+	assert.Nil(t, err)
+	assert.Equal(t, api.AudioNone, res.OutputFormat)
+}
+
 func TestConfigure_FailCollect(t *testing.T) {
 	c, _ := NewTTSConfigurator(test.NewConfig(t, "output:\n  defaultFormat: mp3\n"))
 	req := httptest.NewRequest("POST", "/synthesize", strings.NewReader("text"))
