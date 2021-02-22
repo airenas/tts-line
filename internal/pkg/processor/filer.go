@@ -8,6 +8,7 @@ import (
 
 	"github.com/airenas/go-app/pkg/goapp"
 
+	"github.com/airenas/tts-line/internal/pkg/service/api"
 	"github.com/airenas/tts-line/internal/pkg/synthesizer"
 	"github.com/pkg/errors"
 )
@@ -29,6 +30,9 @@ func NewFiler(dir string) (synthesizer.Processor, error) {
 }
 
 func (p *filer) Process(data *synthesizer.TTSData) error {
+	if data.Input.OutputFormat == api.AudioNone {
+		return nil
+	}
 	return p.save(data.AudioMP3)
 }
 

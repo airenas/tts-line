@@ -25,6 +25,7 @@ type TTSData struct {
 //TTSConfig some TTS configuration
 type TTSConfig struct {
 	JustAM bool
+	Input  *api.TTSRequestConfig
 }
 
 //TTSDataPart partial tts data

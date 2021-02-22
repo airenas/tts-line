@@ -17,6 +17,7 @@ func TestTextFormatEnumString(t *testing.T) {
 func TestAudioFormatEnumString(t *testing.T) {
 	assert.Equal(t, "AudioFormatEnum:-1", AudioFormatEnum(-1).String())
 	assert.Equal(t, "", AudioNone.String())
+	assert.Equal(t, "default", AudioDefault.String())
 	assert.Equal(t, "mp3", AudioMP3.String())
 	assert.Equal(t, "m4a", AudioM4A.String())
 	assert.Equal(t, "AudioFormatEnum:100", AudioFormatEnum(100).String())

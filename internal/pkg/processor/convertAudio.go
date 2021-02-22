@@ -1,6 +1,7 @@
 package processor
 
 import (
+	"github.com/airenas/tts-line/internal/pkg/service/api"
 	"github.com/airenas/tts-line/internal/pkg/synthesizer"
 	"github.com/airenas/tts-line/internal/pkg/utils"
 	"github.com/pkg/errors"
@@ -22,6 +23,9 @@ func NewConverter(urlStr string) (synthesizer.Processor, error) {
 }
 
 func (p *audioConverter) Process(data *synthesizer.TTSData) error {
+	if (data.Input.OutputFormat == api.AudioNone){
+		return nil
+	}
 	inData := audioConvertInput{Data: data.Audio, Format: data.Input.OutputFormat.String(),
 		Metadata: data.Input.OutputMetadata}
 	var output audioConvertOutput

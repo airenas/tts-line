@@ -34,7 +34,7 @@ func NewTTSConfigurator(cfg *viper.Viper) (*TTSConfigutaror, error) {
 	if err != nil {
 		return nil, errors.Wrap(err, "Can't init format")
 	}
-	if res.defaultOutputFormat == api.AudioNone {
+	if res.defaultOutputFormat == api.AudioNone || res.defaultOutputFormat == api.AudioDefault {
 		return nil, errors.New("No output.defaultFormat configured")
 	}
 
@@ -58,7 +58,7 @@ func (c *TTSConfigutaror) Configure(r *http.Request, inText *api.Input) (*api.TT
 	if err != nil {
 		return nil, err
 	}
-	if res.OutputFormat == api.AudioNone {
+	if res.OutputFormat == api.AudioDefault {
 		res.OutputFormat = c.defaultOutputFormat
 	}
 
@@ -108,13 +108,16 @@ func getAllowCollect(v *bool, s string) (bool, error) {
 func getOutputAudioFormat(s string) (api.AudioFormatEnum, error) {
 	st := strings.TrimSpace(s)
 	if st == "" {
-		return api.AudioNone, nil
+		return api.AudioDefault, nil
 	}
 	if st == "mp3" {
 		return api.AudioMP3, nil
 	}
 	if st == "m4a" {
 		return api.AudioM4A, nil
+	}
+	if st == "none" {
+		return api.AudioNone, nil
 	}
 	return api.AudioNone, errors.New("Unknown audio format " + s)
 }

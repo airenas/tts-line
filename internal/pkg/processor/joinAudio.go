@@ -5,6 +5,7 @@ import (
 	"encoding/base64"
 	"fmt"
 
+	"github.com/airenas/tts-line/internal/pkg/service/api"
 	"github.com/airenas/tts-line/internal/pkg/synthesizer"
 	"github.com/airenas/tts-line/internal/pkg/utils"
 	"github.com/airenas/tts-line/internal/pkg/wav"
@@ -20,6 +21,9 @@ func NewJoinAudio() synthesizer.Processor {
 }
 
 func (p *joinAudio) Process(data *synthesizer.TTSData) error {
+	if data.Input.OutputFormat == api.AudioNone {
+		return nil
+	}
 	var err error
 	data.Audio, err = join(data.Parts)
 	if err != nil {

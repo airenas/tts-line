@@ -6,6 +6,7 @@ import (
 	"github.com/airenas/go-app/pkg/goapp"
 	"github.com/spf13/viper"
 
+	"github.com/airenas/tts-line/internal/pkg/service/api"
 	"github.com/airenas/tts-line/internal/pkg/synthesizer"
 	"github.com/airenas/tts-line/internal/pkg/utils"
 	"github.com/pkg/errors"
@@ -58,6 +59,10 @@ func NewAcousticModel(config *viper.Viper) (synthesizer.PartProcessor, error) {
 }
 
 func (p *amodel) Process(data *synthesizer.TTSDataPart) error {
+	if data.Cfg.Input.OutputFormat == api.AudioNone {
+		return nil
+	}
+
 	inData := p.mapAMInput(data)
 	var output amOutput
 	err := p.httpWrap.InvokeJSON(inData, &output)

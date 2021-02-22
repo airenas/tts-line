@@ -27,7 +27,11 @@ func (mw *MainWorker) Work(input *api.TTSRequestConfig) (*api.Result, error) {
 	data := &TTSData{}
 	data.OriginalText = input.Text
 	data.Input = input
-	data.RequestID = uuid.NewString()
+	data.Cfg.Input = input
+	data.RequestID = input.RequestID
+	if input.RequestID == "" {
+		data.RequestID = uuid.NewString()
+	}
 	if mw.AllowCustomCode {
 		tryCustomCode(data)
 	}

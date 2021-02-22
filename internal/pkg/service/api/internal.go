@@ -27,6 +27,8 @@ type AudioFormatEnum int
 const (
 	//AudioNone value
 	AudioNone AudioFormatEnum = iota
+	//AudioDefault value
+	AudioDefault
 	//AudioMP3 value
 	AudioMP3
 	//AudioM4A value`
@@ -37,7 +39,7 @@ func (e AudioFormatEnum) String() string {
 	if e < AudioNone || e > AudioM4A {
 		return "AudioFormatEnum:" + strconv.Itoa(int(e))
 	}
-	return [...]string{"", "mp3", "m4a"}[e]
+	return [...]string{"", "default", "mp3", "m4a"}[e]
 }
 
 //TTSRequestConfig config for request`

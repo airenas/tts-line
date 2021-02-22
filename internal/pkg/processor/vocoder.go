@@ -1,6 +1,7 @@
 package processor
 
 import (
+	"github.com/airenas/tts-line/internal/pkg/service/api"
 	"github.com/airenas/tts-line/internal/pkg/synthesizer"
 	"github.com/airenas/tts-line/internal/pkg/utils"
 	"github.com/pkg/errors"
@@ -22,6 +23,10 @@ func NewVocoder(urlStr string) (synthesizer.PartProcessor, error) {
 }
 
 func (p *vocoder) Process(data *synthesizer.TTSDataPart) error {
+	if data.Cfg.Input.OutputFormat == api.AudioNone {
+		return nil
+	}
+
 	inData := vocInput{Data: data.Spectogram}
 	var output vocOutput
 	err := p.httpWrap.InvokeJSON(inData, &output)

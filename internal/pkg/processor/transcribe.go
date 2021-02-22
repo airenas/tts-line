@@ -4,6 +4,7 @@ import (
 	"strings"
 
 	"github.com/airenas/go-app/pkg/goapp"
+	"github.com/airenas/tts-line/internal/pkg/service/api"
 	"github.com/airenas/tts-line/internal/pkg/synthesizer"
 	"github.com/airenas/tts-line/internal/pkg/utils"
 	"github.com/pkg/errors"
@@ -25,6 +26,10 @@ func NewTranscriber(urlStr string) (synthesizer.PartProcessor, error) {
 }
 
 func (p *transcriber) Process(data *synthesizer.TTSDataPart) error {
+	if data.Cfg.Input.OutputFormat == api.AudioNone {
+		return nil
+	}
+
 	inData, err := mapTransInput(data)
 	if err != nil {
 		return err
@@ -83,7 +88,7 @@ func mapTransInput(data *synthesizer.TTSDataPart) ([]*transInput, error) {
 					return nil, errors.New("No accent variant for " + tword)
 				}
 				ti.Acc = w.AccentVariant.Accent
-				if (w.UserAccent > 0) {
+				if w.UserAccent > 0 {
 					ti.Acc = w.UserAccent
 				}
 				ti.Syll = w.AccentVariant.Syll
