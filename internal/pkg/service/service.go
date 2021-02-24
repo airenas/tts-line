@@ -63,7 +63,7 @@ func StartWebServer(data *Data) error {
 
 var promMdlw *prometheus.Prometheus
 
-func init(){
+func init() {
 	promMdlw = prometheus.NewPrometheus("tts", nil)
 }
 
@@ -125,12 +125,18 @@ func synthesizeCustom(data *PrData) func(echo.Context) error {
 			return err
 		}
 
+		if inp.AllowCollectData != nil && !*inp.AllowCollectData {
+			goapp.Log.Error("Can call with inp.AllowCollectData=false")
+			return echo.NewHTTPError(http.StatusBadRequest, "Method does not allow 'allowCollectData=false'")
+		}
+
 		cfg, err := data.Configurator.Configure(c.Request(), inp)
 		if err != nil {
 			goapp.Log.Error("Cannot prepare request config " + err.Error())
 			return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 		}
 		cfg.RequestID = rID
+		cfg.AllowCollectData = true // turn collect data to true as it is mandatory for this request
 
 		resp, err := data.Processor.Work(cfg)
 		if err != nil {

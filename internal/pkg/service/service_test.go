@@ -122,6 +122,46 @@ func TestCustom_Returns(t *testing.T) {
 	assert.Equal(t, "olia", inp.Text)
 }
 
+func TestCustom_SetAllowCollectData(t *testing.T) {
+	initTest(t)
+	pegomock.When(cnfMock.Configure(matchers.AnyPtrToHttpRequest(), matchers.AnyPtrToApiInput())).
+		ThenReturn(&api.TTSRequestConfig{Text: "olia1", OutputFormat: api.AudioMP3}, nil)
+	pegomock.When(synthesizerMock.Work(matchers.AnyPtrToApiTTSRequestConfig())).
+		ThenReturn(&api.Result{AudioAsString: "wav"}, nil)
+	req := httptest.NewRequest("POST", "/synthesizeCustom?requestID=1", toReader(api.Input{Text: "olia"}))
+	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+	testCode(t, req, 200)
+	inp := synthesizerMock.VerifyWasCalled(pegomock.Once()).Work(matchers.AnyPtrToApiTTSRequestConfig()).
+		GetCapturedArguments()
+	assert.Equal(t, true, inp.AllowCollectData)
+}
+
+func TestCustom_FailWithWrongAllowCollectData(t *testing.T) {
+	initTest(t)
+	pegomock.When(cnfMock.Configure(matchers.AnyPtrToHttpRequest(), matchers.AnyPtrToApiInput())).
+		ThenReturn(&api.TTSRequestConfig{Text: "olia1", OutputFormat: api.AudioMP3}, nil)
+	pegomock.When(synthesizerMock.Work(matchers.AnyPtrToApiTTSRequestConfig())).
+		ThenReturn(&api.Result{AudioAsString: "wav"}, nil)
+	b := false
+	req := httptest.NewRequest("POST", "/synthesizeCustom?requestID=1",
+		toReader(api.Input{Text: "olia", AllowCollectData: &b}))
+	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+	testCode(t, req, 400)
+}
+
+func TestCustom_AcceptsAllowCollectData(t *testing.T) {
+	initTest(t)
+	pegomock.When(cnfMock.Configure(matchers.AnyPtrToHttpRequest(), matchers.AnyPtrToApiInput())).
+		ThenReturn(&api.TTSRequestConfig{Text: "olia1", OutputFormat: api.AudioMP3}, nil)
+	pegomock.When(synthesizerMock.Work(matchers.AnyPtrToApiTTSRequestConfig())).
+		ThenReturn(&api.Result{AudioAsString: "wav"}, nil)
+	b := true
+	req := httptest.NewRequest("POST", "/synthesizeCustom?requestID=1",
+		toReader(api.Input{Text: "olia", AllowCollectData: &b}))
+	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+	testCode(t, req, 200)
+}
+
 func TestCustom_Fail(t *testing.T) {
 	initTest(t)
 	pegomock.When(cnfMock.Configure(matchers.AnyPtrToHttpRequest(), matchers.AnyPtrToApiInput())).
