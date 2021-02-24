@@ -106,4 +106,5 @@ func TestGetText(t *testing.T) {
 	assert.Equal(t, "tata", getText(d, utils.RequestOriginal))
 	assert.Equal(t, "cleaned", getText(d, utils.RequestCleaned))
 	assert.Equal(t, "t numbers", getText(d, utils.RequestNormalized))
+	assert.Equal(t, "tata", getText(d, utils.RequestUser))
 }

@@ -146,6 +146,7 @@ func synthesizeCustom(data *PrData) func(echo.Context) error {
 			}
 			return echo.NewHTTPError(http.StatusInternalServerError, "Service error")
 		}
+		resp.RequestID = ""
 
 		return writeResponse(c, resp)
 	}
