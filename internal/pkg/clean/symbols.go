@@ -59,6 +59,9 @@ func getLettersMap() map[rune]rune {
 	res['â'] = 'a'
 	res['ä'] = 'a'
 	res['ā'] = 'a'
+	res['ô'] = 'o'
+	res['о'] = 'o'
+
 	return res
 }
 
@@ -77,6 +80,10 @@ func changeSymbols(line string) string {
 
 func changeSeveralSymbols(line string) string {
 	res := strings.ReplaceAll(line, "ė", "ė") // target is not a simple ė!
+	res = strings.ReplaceAll(res, "ų", "ų")
+	res = strings.ReplaceAll(res, "š", "š")
+	res = strings.ReplaceAll(res, "cׅ", "c")
+	res = strings.ReplaceAll(res, "\u200b", "")
 	return res
 }
 
