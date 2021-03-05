@@ -10,6 +10,7 @@ func init() {
 		replaceableSymbols[r] = []rune(" ")
 	}
 	replaceableSymbols['–'] = []rune("-")
+	replaceableSymbols['―'] = []rune("-")
 	replaceableSymbols['…'] = []rune("...")
 	replaceableSymbols['\r'] = []rune("\n")
 	replaceableSymbols['‘'] = []rune("`")
@@ -61,6 +62,9 @@ func getLettersMap() map[rune]rune {
 	res['ā'] = 'a'
 	res['ô'] = 'o'
 	res['о'] = 'o'
+	res['\''] = '\''
+	res['ˈ'] = '\''
+	res['ê'] = 'ė'
 
 	return res
 }
@@ -83,6 +87,9 @@ func changeSeveralSymbols(line string) string {
 	res = strings.ReplaceAll(res, "ų", "ų")
 	res = strings.ReplaceAll(res, "š", "š")
 	res = strings.ReplaceAll(res, "cׅ", "c")
+	res = strings.ReplaceAll(res, "ą", "ą")
+	res = strings.ReplaceAll(res, "ç", "c")
+	res = strings.ReplaceAll(res, "ū", "ū")
 	res = strings.ReplaceAll(res, "\u200b", "")
 	return res
 }

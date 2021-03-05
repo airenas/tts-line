@@ -25,4 +25,11 @@ func TestChangeLetters(t *testing.T) {
 	assert.Equal(t, "fc", changeSymbols("fcׅ"))
 	assert.Equal(t, "faffa", changeSymbols("fa\u200b\u200b\u200bffa"))
 	assert.Equal(t, "ojo", changeSymbols("оjо"))
+	assert.Equal(t, "energiją", changeSymbols("energiją"))
+	assert.Equal(t, "strategija-", changeSymbols("strategija―"))
+	assert.Equal(t, "'Freda'", changeSymbols("ˈFredaˈ"))
+	assert.Equal(t, "Francois", changeSymbols("François"))
+	assert.Equal(t, "'Landė'", changeSymbols("ˈLandė'"))
+	assert.Equal(t, "maculelė", changeSymbols("maculelê"))
+	assert.Equal(t, "mūro", changeSymbols("mūro"))
 }
