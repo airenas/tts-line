@@ -6,7 +6,7 @@ var replaceableSymbols map[rune][]rune
 
 func init() {
 	replaceableSymbols = make(map[rune][]rune)
-	for _, r := range []rune(" \t•\uFEFF\x00\u007f ·­") {
+	for _, r := range []rune(" \t•\uFEFF\x00\u007f ·­˚") {
 		replaceableSymbols[r] = []rune(" ")
 	}
 	replaceableSymbols['–'] = []rune("-")
@@ -65,6 +65,7 @@ func getLettersMap() map[rune]rune {
 	res['\''] = '\''
 	res['ˈ'] = '\''
 	res['ê'] = 'ė'
+	res['ό'] = 'o'
 
 	return res
 }
@@ -90,6 +91,8 @@ func changeSeveralSymbols(line string) string {
 	res = strings.ReplaceAll(res, "ą", "ą")
 	res = strings.ReplaceAll(res, "ç", "c")
 	res = strings.ReplaceAll(res, "ū", "ū")
+	res = strings.ReplaceAll(res, "č", "č")
+	res = strings.ReplaceAll(res, "í", "i")
 	res = strings.ReplaceAll(res, "\u200b", "")
 	return res
 }
