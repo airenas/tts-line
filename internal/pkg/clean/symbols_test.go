@@ -11,6 +11,8 @@ func TestChangeSymbols(t *testing.T) {
 	assert.Equal(t, "a a", changeSymbols("a a"))
 	assert.Equal(t, "a - a -", changeSymbols("a – a –"))
 	assert.Equal(t, "a--a", changeSymbols("a--a"))
+	assert.Equal(t, "a--a", changeSymbols("a——a"))
+	assert.Equal(t, "a--a", changeSymbols("a--a"))
 	assert.Equal(t, "a\na", changeSymbols("a\na"))
 	assert.Equal(t, "a\n\na\n\n", changeSymbols("a\n\ra\r\r"))
 	assert.Equal(t, "a\n a", changeSymbols("a\n\ta"))
@@ -36,4 +38,7 @@ func TestChangeLetters(t *testing.T) {
 	assert.Equal(t, "Powrot", changeSymbols("Powrόt"))
 	assert.Equal(t, "šešiasdešimt ", changeSymbols("šešiasdešimt˚"))
 	assert.Equal(t, "Valstiečių", changeSymbols("Valstiečių"))
+	assert.Equal(t, "įstatymo", changeSymbols("įstatymo"))
+	assert.Equal(t, "grįžo", changeSymbols("grįžo"))
+	assert.Equal(t, "pratęsė", changeSymbols("pratęsė"))
 }
