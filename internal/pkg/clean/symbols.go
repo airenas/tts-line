@@ -13,6 +13,7 @@ func init() {
 	replaceableSymbols['―'] = []rune("-")
 	replaceableSymbols['—'] = []rune("-")
 	replaceableSymbols['—'] = []rune("-")
+	replaceableSymbols['⎯'] = []rune("_")
 	replaceableSymbols['‐'] = []rune("-")	
 	replaceableSymbols['…'] = []rune("...")
 	replaceableSymbols['\r'] = []rune("\n")
@@ -23,6 +24,8 @@ func init() {
 	replaceableSymbols['\r'] = []rune("\n")
 	replaceableSymbols['\r'] = []rune("\n")
 	replaceableSymbols['\u200b'] = []rune{}
+	replaceableSymbols['¡'] = []rune{}
+
 	for k, v := range getLettersMap() {
 		replaceableSymbols[k] = []rune{v}
 	}
@@ -100,6 +103,19 @@ func changeSeveralSymbols(line string) string {
 	res = strings.ReplaceAll(res, "š", "š")
 	res = strings.ReplaceAll(res, "č", "č")
 	res = strings.ReplaceAll(res, "ž", "ž")
+
+	res = strings.ReplaceAll(res, "Š", "Š")
+	res = strings.ReplaceAll(res, "Č", "Č")
+	res = strings.ReplaceAll(res, "Ž", "Ž")
+	res = strings.ReplaceAll(res, "Ė", "Ė") 
+	res = strings.ReplaceAll(res, "Cׅ", "C")
+	res = strings.ReplaceAll(res, "Ą", "Ą")
+	res = strings.ReplaceAll(res, "Į", "Į")
+	res = strings.ReplaceAll(res, "Ų", "Ų")
+	res = strings.ReplaceAll(res, "Ę", "Ę")
+	res = strings.ReplaceAll(res, "Ç", "C")
+	res = strings.ReplaceAll(res, "Ū", "Ū")
+
 	res = strings.ReplaceAll(res, "í", "i")
 	return res
 }
