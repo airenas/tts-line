@@ -48,3 +48,10 @@ func TestChangeLetters(t *testing.T) {
 	assert.Equal(t, "GRĮŽO", changeSymbols("GRĮŽO"))
 	assert.Equal(t, "PRATĘSĖ", changeSymbols("PRATĘSĖ"))
 }
+
+
+func TestDash(t *testing.T) {
+	for _, s := range []string{"-", "‒", "–"} {
+		assert.Equal(t, "-", changeSymbols(s))
+	}
+}

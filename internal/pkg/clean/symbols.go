@@ -9,17 +9,14 @@ func init() {
 	for _, r := range []rune(" \t•\uFEFF\x00\u007f ·­˚") {
 		replaceableSymbols[r] = []rune(" ")
 	}
-	replaceableSymbols['–'] = []rune("-")
-	replaceableSymbols['―'] = []rune("-")
-	replaceableSymbols['—'] = []rune("-")
-	replaceableSymbols['—'] = []rune("-")
+	for _, r := range []rune("–—―‐‑‒") {
+		replaceableSymbols[r] = []rune("-")
+	}
 	replaceableSymbols['⎯'] = []rune("_")
-	replaceableSymbols['‐'] = []rune("-")	
 	replaceableSymbols['…'] = []rune("...")
 	replaceableSymbols['\r'] = []rune("\n")
 	replaceableSymbols['‘'] = []rune("`")
 	replaceableSymbols['”'] = []rune("\"")
-	replaceableSymbols['‑'] = []rune("-")
 	replaceableSymbols['\r'] = []rune("\n")
 	replaceableSymbols['\r'] = []rune("\n")
 	replaceableSymbols['\r'] = []rune("\n")
