@@ -23,10 +23,14 @@ func (s *Letters) Process(word, mi string) ([]api.ResultWord, error) {
 	wl = strings.TrimRight(wl, ".")
 	wr := []rune(wl)
 	cwr := []rune{}
+	ad := allowDot(wl)
 	for _, l := range wr {
 		d, ok := letters[l]
 		if !ok {
 			goapp.Log.Warnf("Unknown letter: '%s'", string(l))
+			continue
+		}
+		if l == '.' && !ad {
 			continue
 		}
 		if d.newWord {
@@ -59,8 +63,20 @@ func makeResultWord(lr []rune) *api.ResultWord {
 		ssp = "-"
 	}
 	r.Word = string(lr)
+	if r.Word == "." {
+		r.Word = "taškas"
+	}
 	r.UserTrans = strings.ReplaceAll(tr, "-", "")
 	r.Syll = trimAccent(strings.ToLower(tr))
 	r.WordTrans = strings.ReplaceAll(r.Syll, "-", "")
 	return &r
+}
+
+func allowDot(w string) bool {
+	strs := strings.Split(strings.ToLower(w), ".")
+	l := len(strs)
+	if l < 2 || (strs[l-1] != "lt" && strs[l-1] != "eu") {
+		return false
+	}
+	return true
 }

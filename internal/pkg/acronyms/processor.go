@@ -27,8 +27,25 @@ func (s *Processor) Process(word, mi string) ([]api.ResultWord, error) {
 	if len(result) > 0 {
 		return result, nil
 	}
-	if strings.HasPrefix(mi, "X") && len([]rune(word)) > 4 {
+	if strings.HasPrefix(mi, "X") && !canReadAsLetters(word) {
 		return []api.ResultWord{{Word: word}}, nil
 	}
 	return s.letters.Process(word, mi)
+}
+
+func canReadAsLetters(word string) bool {
+	max := 4
+	if len([]rune(word)) <= max {
+		return true
+	}
+	if !allowDot(word) {
+		return false
+	}
+	strs := strings.Split(word, ".")
+	for _, s := range strs {
+		if len([]rune(s)) > max {
+			return false
+		}
+	}
+	return true
 }

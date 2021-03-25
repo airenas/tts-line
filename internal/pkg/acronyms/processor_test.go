@@ -95,3 +95,13 @@ func TestFailsSecond(t *testing.T) {
 	_, err = pr.Process("olia", "1")
 	assert.NotNil(t, err)
 }
+
+func TestAsLetters(t *testing.T) {
+	assert.True(t, canReadAsLetters("aaa"))
+	assert.True(t, canReadAsLetters("aaaa"))
+	assert.False(t, canReadAsLetters("aaaaa"))
+	assert.True(t, canReadAsLetters("lrt.lt"))
+	assert.False(t, canReadAsLetters("lrtas.lt"))
+	assert.True(t, canReadAsLetters("lrt.eu"))
+	assert.False(t, canReadAsLetters("lrt.va"))
+}

@@ -146,6 +146,30 @@ func TestIgnoreDot(t *testing.T) {
 	}
 }
 
+func TestAddDot(t *testing.T) {
+	prv, err := NewLetters()
+	assert.Nil(t, err)
+	res, err := prv.Process("A.LT", "1")
+	assert.Nil(t, err)
+	assert.NotNil(t, res)
+	if assert.Equal(t, 3, len(res)) {
+		assert.Equal(t, "a", res[0].Word)
+		assert.Equal(t, "ą", res[0].WordTrans)
+		assert.Equal(t, "ą", res[0].Syll)
+		assert.Equal(t, "ą3", res[0].UserTrans)
+
+		assert.Equal(t, "taškas", res[1].Word)
+		assert.Equal(t, "taškas", res[1].WordTrans)
+		assert.Equal(t, "ta-škas", res[1].Syll)
+		assert.Equal(t, "ta3škas", res[1].UserTrans)
+
+		assert.Equal(t, "lt", res[2].Word)
+		assert.Equal(t, "eltė", res[2].WordTrans)
+		assert.Equal(t, "el-tė", res[2].Syll)
+		assert.Equal(t, "eltė3", res[2].UserTrans)
+	}
+}
+
 func TestNoFail(t *testing.T) {
 	prv, err := NewLetters()
 	assert.Nil(t, err)

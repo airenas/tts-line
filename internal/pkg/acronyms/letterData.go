@@ -47,6 +47,9 @@ func init() {
 	letters['x'] = makeLD("i4ks")
 	letters['z'] = makeLD("zė3")
 	letters['ž'] = makeLD("žė3")
+	wl = makeLD("ta3-škas")
+	wl.newWord = true
+	letters['.'] = wl
 }
 
 func makeLD(ch string) *ldata {
