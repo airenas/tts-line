@@ -1,8 +1,11 @@
 package clean
 
 import (
+	"fmt"
+	"strings"
 	"testing"
 
+	"golang.org/x/text/unicode/norm"
 	"gotest.tools/assert"
 )
 
@@ -19,39 +22,69 @@ func TestChangeSymbols(t *testing.T) {
 }
 
 func TestChangeLetters(t *testing.T) {
-	assert.Equal(t, "Janis", changeSymbols("Jānis"))
-	assert.Equal(t, "Agrastas", changeSymbols("Ägrastas"))
-	assert.Equal(t, "fizinės", changeSymbols("fizinės"))
-	assert.Equal(t, "fų", changeSymbols("fų"))
-	assert.Equal(t, "fš", changeSymbols("fš"))
-	assert.Equal(t, "fc", changeSymbols("fcׅ"))
-	assert.Equal(t, "faffa", changeSymbols("fa\u200b\u200b\u200bffa"))
-	assert.Equal(t, "ojo", changeSymbols("оjо"))
-	assert.Equal(t, "energiją", changeSymbols("energiją"))
-	assert.Equal(t, "strategija-", changeSymbols("strategija―"))
-	assert.Equal(t, "'Freda'", changeSymbols("ˈFredaˈ"))
-	assert.Equal(t, "Francois", changeSymbols("François"))
-	assert.Equal(t, "'Landė'", changeSymbols("ˈLandė'"))
-	assert.Equal(t, "maculelė", changeSymbols("maculelê"))
-	assert.Equal(t, "mūro", changeSymbols("mūro"))
-	assert.Equal(t, "Garcia", changeSymbols("García"))
-	assert.Equal(t, "Powrot", changeSymbols("Powrόt"))
-	assert.Equal(t, "šešiasdešimt ", changeSymbols("šešiasdešimt˚"))
-	assert.Equal(t, "Valstiečių", changeSymbols("Valstiečių"))
-	assert.Equal(t, "įstatymo", changeSymbols("įstatymo"))
-	assert.Equal(t, "grįžo", changeSymbols("grįžo"))
-	assert.Equal(t, "pratęsė", changeSymbols("pratęsė"))
-
-	assert.Equal(t, "ŠEŠIASDEŠIMT ", changeSymbols("ŠEŠIASDEŠIMT˚"))
-	assert.Equal(t, "VALSTIEČIŲ", changeSymbols("VALSTIEČIŲ"))
-	assert.Equal(t, "ĮSTATYMO", changeSymbols("ĮSTATYMO"))
-	assert.Equal(t, "GRĮŽO", changeSymbols("GRĮŽO"))
-	assert.Equal(t, "PRATĘSĖ", changeSymbols("PRATĘSĖ"))
+	ts(t, "Janis", "Jānis")
+	ts(t, "Agrastas", "Ägrastas")
+	ts(t, "fizinės", "fizinės")
+	ts(t, "fų", "fų")
+	ts(t, "fš", "fš")
+	ts(t, "fc", "fcׅ")
+	ts(t, "faffa", "fa\u200b\u200b\u200bffa")
+	ts(t, "ojo", "оjо")
+	ts(t, "energiją", "energiją")
+	ts(t, "strategija-", "strategija―")
+	ts(t, "'Freda'", "ˈFredaˈ")
+	ts(t, "Francois", "François")
+	ts(t, "'Landė'", "ˈLandė'")
+	ts(t, "maculelė", "maculelê")
+	ts(t, "mūro", "mūro")
+	ts(t, "Garcia", "García")
+	ts(t, "Powrot", "Powrόt")
+	ts(t, "šešiasdešimt ", "šešiasdešimt˚")
+	ts(t, "Valstiečių", "Valstiečių")
+	ts(t, "įstatymo", "įstatymo")
+	ts(t, "grįžo", "grįžo")
+	ts(t, "pratęsė", "pratęsė")
+	ts(t, "Gagnamagnid", "Gagnamagnið")
+	ts(t, "Hruša", "Hrůša")
+	ts(t, "Tudos", "Tudős")
+	ts(t, "Citroen", "Citroën")
+	ts(t, "stresą", "stresą̨")
+	ts(t, "paviršius", "paviršiùs")
 }
 
+func ts(t *testing.T, expected, inp string) {
+	assert.Equal(t, expected, changeSymbols(inp))
+	up := strings.ToUpper(inp)
+	assert.Equal(t, strings.ToUpper(expected), changeSymbols(up))
+}
 
 func TestDash(t *testing.T) {
 	for _, s := range []string{"-", "‒", "–"} {
 		assert.Equal(t, "-", changeSymbols(s))
+	}
+}
+
+func TestSymbols(t *testing.T) {
+	str := changeSymbols("ą̨  a\u0328")
+	for _, r := range str {
+		fmt.Printf("a%s %d \\u%.4x\n", string(r), r, r)
+	}
+}
+
+func TestSymbols2(t *testing.T) {
+	str := "\u00f9ū" + string(rune(241)) + string(rune(7929))
+	sn := norm.NFC.String(str)
+	fmt.Printf("str = %s\n", str)
+	for _, r := range str {
+		fmt.Printf("%s %d \\u%.4x\n", string(r), r, r)
+	}
+	fmt.Printf("str = %s\n", strings.ToUpper(str))
+	for _, r := range strings.ToUpper(str) {
+		fmt.Printf("%s %d \\u%.4x\n", string(r), r, r)
+	}
+
+	fmt.Printf("sn  = %s\n", sn)
+	for _, r := range sn {
+		fmt.Printf("%s %d \\u%.4x\n", string(r), r, r)
 	}
 }

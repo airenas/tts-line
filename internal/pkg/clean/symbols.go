@@ -1,6 +1,10 @@
 package clean
 
-import "strings"
+import (
+	"unicode"
+
+	"golang.org/x/text/unicode/norm"
+)
 
 var replaceableSymbols map[rune][]rune
 
@@ -12,16 +16,15 @@ func init() {
 	for _, r := range []rune("–—―‐‑‒") {
 		replaceableSymbols[r] = []rune("-")
 	}
+	for _, r := range []rune("\u200b¡\u05c5\u0328") { // drop symbols
+		replaceableSymbols[r] = []rune{}
+	}
 	replaceableSymbols['⎯'] = []rune("_")
 	replaceableSymbols['…'] = []rune("...")
 	replaceableSymbols['\r'] = []rune("\n")
 	replaceableSymbols['‘'] = []rune("`")
 	replaceableSymbols['”'] = []rune("\"")
 	replaceableSymbols['\r'] = []rune("\n")
-	replaceableSymbols['\r'] = []rune("\n")
-	replaceableSymbols['\r'] = []rune("\n")
-	replaceableSymbols['\u200b'] = []rune{}
-	replaceableSymbols['¡'] = []rune{}
 
 	for k, v := range getLettersMap() {
 		replaceableSymbols[k] = []rune{v}
@@ -30,91 +33,42 @@ func init() {
 
 func getLettersMap() map[rune]rune {
 	res := make(map[rune]rune)
-	res[193] = 'A'
-	res[195] = 'A'
-	res[224] = 'a'
-	res[225] = 'a'
-	res[227] = 'a'
-	res[226] = 'a'
-	res[236] = 'i'
-	res[297] = 'i'
-	res[204] = 'I'
-	res[232] = 'e'
-	res[242] = 'o'
-	res[7929] = 'y'
-	res[7869] = 'e'
-	res[241] = 'n'
-	res[249] = 'u'
-	res[361] = 'u'
-	res[237] = 'i'
-	res[210] = 'O'
-	res[205] = 'I'
-	res[250] = 'u'
-	res[253] = 'y'
-	res['õ'] = 'o'
-	res['ó'] = 'o'
-	res['é'] = 'e'
-	res['Õ'] = 'O'
-	res['Å'] = 'A'
-	res['Ä'] = 'A'
-	res['Ã'] = 'A'
-	res['Â'] = 'A'
-	res['å'] = 'a'
-	res['ã'] = 'a'
-	res['â'] = 'a'
-	res['ä'] = 'a'
-	res['ā'] = 'a'
-	res['ô'] = 'o'
-	res['о'] = 'o'
 	res['\''] = '\''
 	res['ˈ'] = '\''
-	res['ê'] = 'ė'
-	res['ό'] = 'o'
-	res['е'] = 'e'
-	
+	addLetterMap(res, "āäâãåàá", 'a')
+	addLetterMap(res, "оôõόóőò", 'o')
+	addLetterMap(res, "ç", 'c')
+	addLetterMap(res, "еéëèẽ", 'e')
+	addLetterMap(res, "ê", 'ė')
+	addLetterMap(res, "ð", 'd')
+	addLetterMap(res, "ůùũú", 'u')
+	addLetterMap(res, "ìĩí", 'i')
+	addLetterMap(res, "ýỹ", 'y')
+	addLetterMap(res, "ñ", 'n')
+
 	return res
+}
+
+func addLetterMap(res map[rune]rune, add string, to rune) {
+	for _, r := range add {
+		res[r] = to
+	}
+	for _, r := range add {
+		res[unicode.ToUpper(r)] = unicode.ToUpper(to)
+	}
 }
 
 func changeSymbols(line string) string {
 	if len(line) == 0 {
 		return line
 	}
-	lineU := changeSeveralSymbols(line)
+	lineU := norm.NFC.String(line)
 	runes := []rune(lineU)
 	res := make([]rune, 0)
 	for _, r := range runes {
 		res = append(res, changeSymbol(r)...)
 	}
 	return string(res)
-}
-
-func changeSeveralSymbols(line string) string {
-	res := strings.ReplaceAll(line, "ė", "ė") // target is not a simple ė!
-	res = strings.ReplaceAll(res, "cׅ", "c")
-	res = strings.ReplaceAll(res, "ą", "ą")
-	res = strings.ReplaceAll(res, "į", "į")
-	res = strings.ReplaceAll(res, "ų", "ų")
-	res = strings.ReplaceAll(res, "ę", "ę")
-	res = strings.ReplaceAll(res, "ç", "c")
-	res = strings.ReplaceAll(res, "ū", "ū")
-	res = strings.ReplaceAll(res, "š", "š")
-	res = strings.ReplaceAll(res, "č", "č")
-	res = strings.ReplaceAll(res, "ž", "ž")
-
-	res = strings.ReplaceAll(res, "Š", "Š")
-	res = strings.ReplaceAll(res, "Č", "Č")
-	res = strings.ReplaceAll(res, "Ž", "Ž")
-	res = strings.ReplaceAll(res, "Ė", "Ė") 
-	res = strings.ReplaceAll(res, "Cׅ", "C")
-	res = strings.ReplaceAll(res, "Ą", "Ą")
-	res = strings.ReplaceAll(res, "Į", "Į")
-	res = strings.ReplaceAll(res, "Ų", "Ų")
-	res = strings.ReplaceAll(res, "Ę", "Ę")
-	res = strings.ReplaceAll(res, "Ç", "C")
-	res = strings.ReplaceAll(res, "Ū", "Ū")
-
-	res = strings.ReplaceAll(res, "í", "i")
-	return res
 }
 
 func changeSymbol(r rune) []rune {
