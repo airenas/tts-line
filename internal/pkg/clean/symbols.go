@@ -10,7 +10,7 @@ var replaceableSymbols map[rune][]rune
 
 func init() {
 	replaceableSymbols = make(map[rune][]rune)
-	for _, r := range []rune(" \t•\uFEFF\x00\u007f ·­˚") {
+	for _, r := range []rune("\u2028\uFEFF\u001e\x00\u007f\t•·­˚") {
 		replaceableSymbols[r] = []rune(" ")
 	}
 	for _, r := range []rune("–—―‐‑‒") {
