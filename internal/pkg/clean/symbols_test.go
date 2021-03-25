@@ -50,6 +50,8 @@ func TestChangeLetters(t *testing.T) {
 	ts(t, "Citroen", "Citroën")
 	ts(t, "stresą", "stresą̨")
 	ts(t, "paviršius", "paviršiùs")
+	ts(t, "semeni", "səməni")
+	ts(t, "hsi", "hşi")
 }
 
 func ts(t *testing.T, expected, inp string) {
