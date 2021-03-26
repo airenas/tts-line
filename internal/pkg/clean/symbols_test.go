@@ -52,6 +52,11 @@ func TestChangeLetters(t *testing.T) {
 	ts(t, "paviršius", "paviršiùs")
 	ts(t, "semeni", "səməni")
 	ts(t, "hsi", "hşi")
+	ts(t, "hi", "h\u200di")
+	ts(t, "hi\"", "hi‟")
+	ts(t, "inios", "˛inios")
+	ts(t, "'Kanklės", "‚Kanklės")
+	ts(t, "trijų/keturių", "trijų⁄keturių")
 }
 
 func ts(t *testing.T, expected, inp string) {
@@ -74,7 +79,7 @@ func TestSymbols(t *testing.T) {
 }
 
 func TestSymbols2(t *testing.T) {
-	str := "\u00f9ū" + string(rune(241)) + string(rune(7929))
+	str := string(rune(241)) + "\u200d" + string(rune(7929))
 	sn := norm.NFC.String(str)
 	fmt.Printf("str = %s\n", str)
 	for _, r := range str {

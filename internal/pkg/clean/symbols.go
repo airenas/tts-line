@@ -10,31 +10,29 @@ var replaceableSymbols map[rune][]rune
 
 func init() {
 	replaceableSymbols = make(map[rune][]rune)
-	for _, r := range []rune("\u2028\uFEFF\u001e\x00\u007f\t•·­˚") {
-		replaceableSymbols[r] = []rune(" ")
-	}
-	for _, r := range []rune("–—―‐‑‒") {
-		replaceableSymbols[r] = []rune("-")
-	}
-	for _, r := range []rune("\u200b¡\u05c5\u0328") { // drop symbols
+	for _, r := range []rune("\u200b¡\u05c5\u0328\u200d˛") { // drop symbols
 		replaceableSymbols[r] = []rune{}
 	}
 	replaceableSymbols['⎯'] = []rune("_")
 	replaceableSymbols['…'] = []rune("...")
-	replaceableSymbols['\r'] = []rune("\n")
 	replaceableSymbols['‘'] = []rune("`")
-	replaceableSymbols['”'] = []rune("\"")
 	replaceableSymbols['\r'] = []rune("\n")
+	replaceableSymbols['‚'] = []rune(",")
 
-	for k, v := range getLettersMap() {
+	for k, v := range getMaps() {
 		replaceableSymbols[k] = []rune{v}
 	}
 }
 
-func getLettersMap() map[rune]rune {
+func getMaps() map[rune]rune {
 	res := make(map[rune]rune)
-	res['\''] = '\''
-	res['ˈ'] = '\''
+	
+	addMap(res, "'ˈ‚", '\'')
+	addMap(res, "”‟", '"')
+	addMap(res, "\u2028\uFEFF\u001e\x00\u007f\t•·­˚", ' ')
+	addMap(res, "–—―‐‑‒", '-')
+	addMap(res, "⁄", '/')
+
 	addLetterMap(res, "āäâãåàá", 'a')
 	addLetterMap(res, "оôõόóőò", 'o')
 	addLetterMap(res, "ç", 'c')
@@ -53,9 +51,13 @@ func getLettersMap() map[rune]rune {
 func addLetterMap(res map[rune]rune, add string, to rune) {
 	for _, r := range add {
 		res[r] = to
-	}
-	for _, r := range add {
 		res[unicode.ToUpper(r)] = unicode.ToUpper(to)
+	}
+}
+
+func addMap(res map[rune]rune, add string, to rune) {
+	for _, r := range add {
+		res[r] = to
 	}
 }
 
