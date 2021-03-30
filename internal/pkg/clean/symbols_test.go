@@ -57,6 +57,14 @@ func TestChangeLetters(t *testing.T) {
 	ts(t, "inios", "˛inios")
 	ts(t, "'Kanklės", "‚Kanklės")
 	ts(t, "trijų/keturių", "trijų⁄keturių")
+	ts(t, "aštuoni⁰", "aštuoni⁰")
+	ts(t, "septyni⁰C", "septyni℃")
+	assert.Equal(t, "fiksuota", changeSymbols("ﬁksuota"))
+	ts(t, "Nasdaq\"", "Nasdaq¨")
+	ts(t, "Hustiu", "Huștiu")
+	ts(t, "Katerina", "Kateřina")
+	ts(t, "Tony'is", "Tonyʼis")
+	ts(t, "COVID", "СOVID")
 }
 
 func ts(t *testing.T, expected, inp string) {
@@ -79,8 +87,8 @@ func TestSymbols(t *testing.T) {
 }
 
 func TestSymbols2(t *testing.T) {
-	str := string(rune(241)) + "\u200d" + string(rune(7929))
-	sn := norm.NFC.String(str)
+	str := "ﬁС"
+	sn := norm.NFC.String(strings.ToLower(str))
 	fmt.Printf("str = %s\n", str)
 	for _, r := range str {
 		fmt.Printf("%s %d \\u%.4x\n", string(r), r, r)
