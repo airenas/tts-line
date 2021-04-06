@@ -10,14 +10,13 @@ var replaceableSymbols map[rune][]rune
 
 func init() {
 	replaceableSymbols = make(map[rune][]rune)
-	for _, r := range []rune("\u200b¡\u05c5\u0328\u200d˛") { // drop symbols
+	for _, r := range []rune("\u200b¡\u05c5\u0328\u200d˛\u05a4") { // drop symbols
 		replaceableSymbols[r] = []rune{}
 	}
 	replaceableSymbols['⎯'] = []rune("_")
 	replaceableSymbols['…'] = []rune("...")
 	replaceableSymbols['‘'] = []rune("`")
 	replaceableSymbols['\r'] = []rune("\n")
-	replaceableSymbols['‚'] = []rune(",")
 	replaceableSymbols['℃'] = []rune("⁰C")
 	replaceableSymbols['ﬁ'] = []rune("fi")
 
@@ -29,26 +28,29 @@ func init() {
 func getMaps() map[rune]rune {
 	res := make(map[rune]rune)
 
-	addMap(res, "'ˈ‚ʼ", '\'')
+	addMap(res, "'ˈ‚ʼ′", '\'')
 	addMap(res, "”‟¨", '"')
-	addMap(res, "\u2028\uFEFF\u001e\x00\u007f\t•·­˚", ' ')
+	addMap(res, "\u2028\uFEFF\u001e\x00\u007f\t•·­˚\u200c", ' ')
 	addMap(res, "–—―‐‑‒", '-')
 	addMap(res, "⁄", '/')
 
 	addMap(res, "С", 'C')
+	addMap(res, "К", 'K')
+	addMap(res, "\u05a7", ',')
 
-	addLetterMap(res, "āäâãåàá", 'a')
+	addLetterMap(res, "āäâãåàáă", 'a')
 	addLetterMap(res, "оôõόóőò", 'o')
 	addLetterMap(res, "ç", 'c')
-	addLetterMap(res, "еéëèẽə", 'e')
+	addLetterMap(res, "еéëèẽəě", 'e')
 	addLetterMap(res, "ê", 'ė')
 	addLetterMap(res, "ð", 'd')
-	addLetterMap(res, "ůùũú", 'u')
-	addLetterMap(res, "ìĩí", 'i')
+	addLetterMap(res, "ůùũúû", 'u')
+	addLetterMap(res, "ìĩíі", 'i')
 	addLetterMap(res, "ýỹ", 'y')
 	addLetterMap(res, "ñ", 'n')
 	addLetterMap(res, "ř", 'r')
-	addLetterMap(res, "şș", 's')
+	addLetterMap(res, "şșβ", 's')
+	addLetterMap(res, "ğ", 'g')
 
 	return res
 }
