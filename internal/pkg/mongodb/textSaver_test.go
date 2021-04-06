@@ -8,7 +8,7 @@ import (
 )
 
 func TestNewTextSaver(t *testing.T) {
-	tpr,_ :=NewSessionProvider("mongo")
+	tpr, _ := NewSessionProvider("mongo")
 	pr, err := NewTextSaver(tpr)
 	assert.NotNil(t, pr)
 	assert.Nil(t, err)

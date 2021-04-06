@@ -30,5 +30,3 @@ type Result struct {
 	Text               string            `json:"text,omitempty"`
 	RequestID          string            `json:"requestID,omitempty"`
 }
-
-

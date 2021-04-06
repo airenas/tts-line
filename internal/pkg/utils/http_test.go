@@ -82,4 +82,3 @@ func TestInvokeFail_Response(t *testing.T) {
 	err := hw.InvokeText("olia", &tt)
 	assert.NotNil(t, err)
 }
-

@@ -57,9 +57,9 @@ func TestAddCustomProcessors(t *testing.T) {
 func TestAddCustomProcessors_Fail(t *testing.T) {
 	initTest(t)
 	syntC := &synthesizer.MainWorker{}
-	assert.NotNil(t, addCustomProcessors(syntC, testDBSession, test.NewConfig(t, 
+	assert.NotNil(t, addCustomProcessors(syntC, testDBSession, test.NewConfig(t,
 		testAccenterCfg+testTransCfg+testAMCfg+testVocCfg+testTaggerCfg+testValidatorCfg+
-		testConvCfg+testAcrCfg)))
+			testConvCfg+testAcrCfg)))
 	assert.NotNil(t, addCustomProcessors(syntC, testDBSession, test.NewConfig(t, testCompCfg+
 		testAccenterCfg+testTransCfg+testAMCfg+testVocCfg+testValidatorCfg+
 		testConvCfg+testAcrCfg)))

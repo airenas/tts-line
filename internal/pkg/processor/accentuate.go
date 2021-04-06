@@ -112,7 +112,7 @@ func findBestAccentVariant(acc []accent, mi string, lema string) *synthesizer.Ac
 	fIsAccent := func(v *synthesizer.AccentVariant) bool { return v.Accent > 0 }
 
 	if res := find(func(a *accent) bool { return a.Error == "" && a.MiVdu == mi && a.MF == lema }, fIsAccent); res != nil {
-	 	return res
+		return res
 	}
 
 	if res := find(func(a *accent) bool { return a.Error == "" && a.MiVdu == mi }, fIsAccent); res != nil {

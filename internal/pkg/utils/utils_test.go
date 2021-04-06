@@ -19,5 +19,3 @@ func TestURL(t *testing.T) {
 
 	assert.Equal(t, "http://local:8080", res)
 }
-
-

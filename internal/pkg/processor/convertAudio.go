@@ -23,7 +23,7 @@ func NewConverter(urlStr string) (synthesizer.Processor, error) {
 }
 
 func (p *audioConverter) Process(data *synthesizer.TTSData) error {
-	if (data.Input.OutputFormat == api.AudioNone){
+	if data.Input.OutputFormat == api.AudioNone {
 		return nil
 	}
 	inData := audioConvertInput{Data: data.Audio, Format: data.Input.OutputFormat.String(),
