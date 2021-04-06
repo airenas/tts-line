@@ -44,21 +44,7 @@ func skipIgnoreTags(text string) (string, error) {
 	if err != nil {
 		return "", errors.Wrapf(err, "Can't parse text as html doc")
 	}
-	var checkRemoveChildren func(*html.Node)
-	checkRemoveChildren = func(n *html.Node) {
-		c := n.FirstChild
-		for c != nil {
-			nc := c.NextSibling
-			if skipNode(c) {
-				n.RemoveChild(c)
-			}
-			c = nc
-		}
-		for c := n.FirstChild; c != nil; c = c.NextSibling {
-			checkRemoveChildren(c)
-		}
-	}
-	checkRemoveChildren(doc)
+	checkRemoveChildNodes(doc)
 	return docToString(doc), nil
 }
 
@@ -66,6 +52,20 @@ func docToString(doc *html.Node) string {
 	res := strings.Builder{}
 	html.Render(&res, doc)
 	return res.String()
+}
+
+func checkRemoveChildNodes(n *html.Node) {
+	c := n.FirstChild
+	for c != nil {
+		nc := c.NextSibling
+		if skipNode(c) {
+			n.RemoveChild(c)
+		}
+		c = nc
+	}
+	for c := n.FirstChild; c != nil; c = c.NextSibling {
+		checkRemoveChildNodes(c)
+	}
 }
 
 func skipNode(n *html.Node) bool {
