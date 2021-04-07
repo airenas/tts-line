@@ -45,7 +45,7 @@ func (ss *TextSaver) Save(req, text string, reqType utils.RequestTypeEnum, tags 
 
 // All loads all records
 func (ss *TextSaver) All() ([]*TextRecord, error) {
-	ctx, cancel := mongoContext()
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute) // increase to retrieve all records
 	defer cancel()
 
 	session, err := ss.SessionProvider.NewSession()
