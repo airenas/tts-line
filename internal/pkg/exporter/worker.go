@@ -37,8 +37,8 @@ func Export(exp Exporter, wr io.Writer) error {
 	goapp.Log.Infof("Sorting data")
 	data = sortData(data)
 	goapp.Log.Infof("Writing data. %d items", len(data))
-	je := json.NewEncoder(wr)
-	return je.Encode(data)
+	return writeData(data, wr)
+
 }
 
 func sortData(data []*mongodb.TextRecord) []*mongodb.TextRecord {
@@ -66,4 +66,32 @@ func sortData(data []*mongodb.TextRecord) []*mongodb.TextRecord {
 		res = append(res, d.d...)
 	}
 	return res
+}
+
+func writeData(data []*mongodb.TextRecord, wr io.Writer) error {
+	je := json.NewEncoder(wr)
+	je.SetEscapeHTML(false)
+	_, err := wr.Write([]byte{'['})
+	if err != nil {
+		return errors.Wrap(err, "Can't write")
+	}
+	comma := false
+	for _, d := range data {
+		if comma {
+			_, err = wr.Write([]byte{','})
+			if err != nil {
+				return errors.Wrap(err, "Can't write")
+			}
+		}
+		err = je.Encode(d)
+		if err != nil {
+			return errors.Wrap(err, "Can't marshal")
+		}
+		comma = true
+	}
+	_, err = wr.Write([]byte{']'})
+	if err != nil {
+		return errors.Wrap(err, "Can't write")
+	}
+	return nil
 }
