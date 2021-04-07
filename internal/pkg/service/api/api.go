@@ -6,7 +6,7 @@ type Input struct {
 	//Possible values are m4a, mp3
 	OutputFormat     string `json:"outputFormat,omitempty"`
 	OutputTextFormat string `json:"outputTextFormat,omitempty"`
-	AllowCollectData *bool  `json:"allowCollectData,omitempty"`
+	AllowCollectData *bool  `json:"saveRequest,omitempty"`
 }
 
 //Check is validation check
