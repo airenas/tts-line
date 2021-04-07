@@ -50,4 +50,5 @@ type TTSRequestConfig struct {
 	OutputTextFormat TextFormatEnum
 	OutputMetadata   []string
 	AllowCollectData bool
+	SaveTags         []string
 }

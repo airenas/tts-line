@@ -44,7 +44,8 @@ func TestSave_Ignore(t *testing.T) {
 	d.Input = &api.TTSRequestConfig{AllowCollectData: false}
 	err := pr.Process(d)
 	assert.Nil(t, err)
-	dbMock.VerifyWasCalled(pegomock.Never()).Save(pegomock.AnyString(), pegomock.AnyString(), matchers.AnyUtilsRequestTypeEnum())
+	dbMock.VerifyWasCalled(pegomock.Never()).Save(pegomock.AnyString(), pegomock.AnyString(),
+		matchers.AnyUtilsRequestTypeEnum(), pegomock.AnyStringSlice())
 }
 
 func TestSave_Call(t *testing.T) {
@@ -54,15 +55,17 @@ func TestSave_Call(t *testing.T) {
 	d := &synthesizer.TTSData{}
 	d.RequestID = "olia"
 	d.OriginalText = "tata"
-	d.Input = &api.TTSRequestConfig{AllowCollectData: true}
+	d.Input = &api.TTSRequestConfig{AllowCollectData: true, SaveTags: []string{"olia"}}
 	err := pr.Process(d)
 	assert.Nil(t, err)
-	cRID, cText, cType := dbMock.VerifyWasCalled(pegomock.Once()).
-		Save(pegomock.AnyString(), pegomock.AnyString(), matchers.AnyUtilsRequestTypeEnum()).
+	cRID, cText, cType, cTags := dbMock.VerifyWasCalled(pegomock.Once()).
+		Save(pegomock.AnyString(), pegomock.AnyString(), matchers.AnyUtilsRequestTypeEnum(),
+			pegomock.AnyStringSlice()).
 		GetCapturedArguments()
 	assert.Equal(t, "olia", cRID)
 	assert.Equal(t, "tata", cText)
 	assert.Equal(t, utils.RequestOriginal, cType)
+	assert.Equal(t, []string{"olia"}, cTags)
 }
 
 func TestSave_Normalized(t *testing.T) {
@@ -75,8 +78,9 @@ func TestSave_Normalized(t *testing.T) {
 	d.Input = &api.TTSRequestConfig{AllowCollectData: true}
 	err := pr.Process(d)
 	assert.Nil(t, err)
-	cRID, cText, cType := dbMock.VerifyWasCalled(pegomock.Once()).
-		Save(pegomock.AnyString(), pegomock.AnyString(), matchers.AnyUtilsRequestTypeEnum()).
+	cRID, cText, cType, _ := dbMock.VerifyWasCalled(pegomock.Once()).
+		Save(pegomock.AnyString(), pegomock.AnyString(), matchers.AnyUtilsRequestTypeEnum(),
+			pegomock.AnyStringSlice()).
 		GetCapturedArguments()
 	assert.Equal(t, "olia", cRID)
 	assert.Equal(t, "normalized", cText)
@@ -91,7 +95,8 @@ func TestSave_Fail(t *testing.T) {
 	d.RequestID = "olia"
 	d.OriginalText = "tata"
 	d.Input = &api.TTSRequestConfig{AllowCollectData: true}
-	pegomock.When(dbMock.Save(pegomock.AnyString(), pegomock.AnyString(), matchers.AnyUtilsRequestTypeEnum())).
+	pegomock.When(dbMock.Save(pegomock.AnyString(), pegomock.AnyString(),
+		matchers.AnyUtilsRequestTypeEnum(), pegomock.AnyStringSlice())).
 		ThenReturn(errors.New("haha"))
 	err := pr.Process(d)
 	assert.NotNil(t, err)

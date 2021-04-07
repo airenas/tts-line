@@ -4,13 +4,14 @@ import (
 	"github.com/airenas/go-app/pkg/goapp"
 	"github.com/pkg/errors"
 
+	"github.com/airenas/tts-line/internal/pkg/service/api"
 	"github.com/airenas/tts-line/internal/pkg/synthesizer"
 	"github.com/airenas/tts-line/internal/pkg/utils"
 )
 
 //SaverDB interface for text saving
 type SaverDB interface {
-	Save(req, text string, reqType utils.RequestTypeEnum) error
+	Save(req, text string, reqType utils.RequestTypeEnum, tags []string) error
 }
 
 type saver struct {
@@ -33,7 +34,7 @@ func (p *saver) Process(data *synthesizer.TTSData) error {
 	}
 	defer goapp.Estimate("SaveToDB " + p.tType.String())()
 
-	return p.sDB.Save(data.RequestID, getText(data, p.tType), p.tType)
+	return p.sDB.Save(data.RequestID, getText(data, p.tType), p.tType, getTags(data.Input))
 }
 
 func getText(data *synthesizer.TTSData, t utils.RequestTypeEnum) string {
@@ -47,4 +48,11 @@ func getText(data *synthesizer.TTSData, t utils.RequestTypeEnum) string {
 		return data.OriginalText
 	}
 	return data.TextWithNumbers
+}
+
+func getTags(cfg *api.TTSRequestConfig) []string {
+	if cfg == nil {
+		return nil
+	}
+	return cfg.SaveTags
 }

@@ -15,8 +15,9 @@ func TestNewTextSaver(t *testing.T) {
 }
 
 func TestToRecord(t *testing.T) {
-	res := toRecord("ii", "text", utils.RequestOriginal)
+	res := toRecord("ii", "text", utils.RequestOriginal, []string{"olia", "hola"})
 	assert.Equal(t, "ii", res.ID)
 	assert.Equal(t, "text", res.Text)
 	assert.Equal(t, 1, res.Type)
+	assert.Equal(t, []string{"olia", "hola"}, res.Tags)
 }

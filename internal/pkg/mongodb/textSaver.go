@@ -26,7 +26,7 @@ func NewTextSaver(sessionProvider *SessionProvider) (*TextSaver, error) {
 }
 
 // Save text to DB
-func (ss *TextSaver) Save(req, text string, reqType utils.RequestTypeEnum) error {
+func (ss *TextSaver) Save(req, text string, reqType utils.RequestTypeEnum, tags []string) error {
 	goapp.Log.Infof("Saving ID %s", req)
 
 	ctx, cancel := mongoContext()
@@ -38,7 +38,7 @@ func (ss *TextSaver) Save(req, text string, reqType utils.RequestTypeEnum) error
 	}
 	defer session.EndSession(context.Background())
 	c := session.Client().Database(textTable).Collection(textTable)
-	res := toRecord(req, text, reqType)
+	res := toRecord(req, text, reqType, tags)
 	_, err = c.InsertOne(ctx, res)
 	return err
 }
@@ -96,11 +96,12 @@ func (ss *TextSaver) LoadText(requestID string, reqType utils.RequestTypeEnum) (
 	return res.Text, nil
 }
 
-func toRecord(req, text string, reqType utils.RequestTypeEnum) *TextRecord {
+func toRecord(req, text string, reqType utils.RequestTypeEnum, tags []string) *TextRecord {
 	res := &TextRecord{}
 	res.ID = req
 	res.Text = text
 	res.Type = int(reqType)
 	res.Created = time.Now()
+	res.Tags = tags
 	return res
 }
