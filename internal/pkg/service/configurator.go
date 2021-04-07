@@ -15,6 +15,7 @@ import (
 const (
 	headerDefaultFormat = "x-tts-default-output-format"
 	headerCollectData   = "x-tts-collect-data"
+	headerSaveTags      = "x-tts-save-tags"
 )
 
 //TTSConfigutaror tts request configuration
@@ -71,6 +72,7 @@ func (c *TTSConfigutaror) Configure(r *http.Request, inText *api.Input) (*api.TT
 	if err != nil {
 		return nil, err
 	}
+	res.SaveTags = getSaveTags(getHeader(r, headerSaveTags))
 	return res, nil
 }
 
@@ -124,6 +126,13 @@ func getOutputAudioFormat(s string) (api.AudioFormatEnum, error) {
 
 func getHeader(r *http.Request, key string) string {
 	return r.Header.Get(key)
+}
+
+func getSaveTags(v string) []string {
+	if strings.TrimSpace(v) == "" {
+		return nil
+	}
+	return strings.Split(strings.TrimSpace(v), ",")
 }
 
 func defaultS(s, s1 string) string {

@@ -77,6 +77,27 @@ func TestConfigure_FormatHeader(t *testing.T) {
 	}
 }
 
+func TestConfigure_Tags(t *testing.T) {
+	c, _ := NewTTSConfigurator(test.NewConfig(t, "output:\n  defaultFormat: mp3"))
+	req := httptest.NewRequest("POST", "/synthesize", strings.NewReader("text"))
+	req.Header.Add(headerSaveTags, "olia,hola")
+	res, err := c.Configure(req, &api.Input{Text: "olia"})
+	assert.Nil(t, err)
+	if assert.NotNil(t, res) {
+		assert.Equal(t, []string{"olia", "hola"}, res.SaveTags)
+	}
+}
+
+func TestConfigure_NoTags(t *testing.T) {
+	c, _ := NewTTSConfigurator(test.NewConfig(t, "output:\n  defaultFormat: mp3"))
+	req := httptest.NewRequest("POST", "/synthesize", strings.NewReader("text"))
+	res, err := c.Configure(req, &api.Input{Text: "olia"})
+	assert.Nil(t, err)
+	if assert.NotNil(t, res) {
+		assert.Equal(t, 0, len(res.SaveTags))
+	}
+}
+
 func TestConfigure_FailFormat(t *testing.T) {
 	c, _ := NewTTSConfigurator(test.NewConfig(t, "output:\n  defaultFormat: mp3\n  metadata:\n   - r=a"))
 	req := httptest.NewRequest("POST", "/synthesize", strings.NewReader("text"))
