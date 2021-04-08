@@ -52,3 +52,19 @@ func TestSkipNodes(t *testing.T) {
 		assert.Equal(t, tc.e, cleanHTML(tc.v), "Fail %d - %s", i, tc.i)
 	}
 }
+
+func TestCleanHTML_DropEmojis(t *testing.T) {
+	tests := []struct {
+		v string
+		e string
+		i string
+	}{
+		{v: "a 👏 a", e: "a a", i: "Simple drop"},
+		{v: "a    👏   👏   b   🏴󠁧󠁢󠁥󠁮󠁧󠁿  a", e: "a b a", i: "Drop - spaces OK"},
+		{v: "a👏b🏴󠁧󠁢󠁥󠁮󠁧󠁿a", e: "a b a", i: "Drop - space added"},
+	}
+
+	for i, tc := range tests {
+		assert.Equal(t, tc.e, cleanHTML(tc.v), "Fail %d - %s", i, tc.i)
+	}
+}

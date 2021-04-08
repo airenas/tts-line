@@ -87,7 +87,7 @@ func fixSpacesNewLines(s string) string {
 	sb := strings.Builder{}
 	sp := ""
 	for _, l := range strings.Split(strings.ReplaceAll(s, "\r", "\n"), "\n") {
-		lf := fixSpacesR(changeSymbols(html.UnescapeString(l)))
+		lf := fixSpacesR(changeSymbols(dropEmojis(html.UnescapeString(l))))
 		if lf != "" {
 			sb.WriteString(sp)
 			sb.WriteString(lf)

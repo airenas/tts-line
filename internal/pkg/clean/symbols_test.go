@@ -99,9 +99,9 @@ func TestSymbols(t *testing.T) {
 }
 
 func TestSymbols2(t *testing.T) {
-	str := "s֤"
+	str := "◌"
 	sn := norm.NFC.String(strings.ToLower(str))
-	fmt.Printf("str = %s\n", str)
+	fmt.Printf("str = %s (%d)\n", str, len(str))
 	for _, r := range str {
 		fmt.Printf("%s %d \\u%.4x\n", string(r), r, r)
 	}
