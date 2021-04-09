@@ -226,6 +226,7 @@ func TestBadReqError(t *testing.T) {
 		{v: utils.ErrTextDoesNotMatch, e: true, es: "Original text does not match the modified"},
 		{v: utils.NewErrBadAccent([]string{"olia"}), e: true, es: "Bad accents: [olia]"},
 		{v: errors.Wrap(utils.NewErrBadAccent([]string{"olia"}), "test"), e: true, es: "Bad accents: [olia]"},
+		{v: utils.NewErrWordTooLong("oliaaa"), e: true, es: "Word too long: 'oliaaa'"},
 	}
 
 	for i, tc := range tests {

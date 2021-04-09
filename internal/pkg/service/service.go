@@ -190,6 +190,10 @@ func badReqError(err error) (bool, string) {
 	if errors.As(err, &errBA) {
 		return true, fmt.Sprintf("Bad accents: %v", errBA.BadAccents)
 	}
+	var errWTA *utils.ErrWordTooLong
+	if errors.As(err, &errWTA) {
+		return true, fmt.Sprintf("Word too long: '%s'", errWTA.Word)
+	}
 	return false, ""
 }
 

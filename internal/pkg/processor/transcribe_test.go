@@ -261,3 +261,15 @@ func TestMapTransOutput_FailWord(t *testing.T) {
 	err := mapTransOutput(d, output)
 	assert.NotNil(t, err)
 }
+
+func TestMapTransOutput_FailError(t *testing.T) {
+	d := newTestTTSDataPart()
+	d.Words = append(d.Words, &synthesizer.ProcessedWord{TranscriptionWord: "olia", Tagged: synthesizer.TaggedWord{Word: "v1"}})
+	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Word: "word"}})
+
+	output := []transOutput{{Word: "olia", Transcription: []trans{{Transcription: "trans"}}},
+		{Word: "word", Error: "err"}}
+
+	err := mapTransOutput(d, output)
+	assert.NotNil(t, err)
+}

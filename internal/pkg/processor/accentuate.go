@@ -48,6 +48,7 @@ func (p *accentuator) Process(data *synthesizer.TTSDataPart) error {
 type accentOutputElement struct {
 	Accent []accent `json:"accent"`
 	Word   string   `json:"word"`
+	Error  string   `json:"error"`
 }
 
 type accent struct {
@@ -89,6 +90,13 @@ func mapAccentOutput(data *synthesizer.TTSDataPart, out []accentOutputElement) e
 }
 
 func setAccent(w *synthesizer.ProcessedWord, out accentOutputElement) error {
+	if out.Error != "" {
+		if len(w.Tagged.Word) >= 50 {
+			goapp.Log.Error(out.Error)
+			return utils.NewErrWordTooLong(w.Tagged.Word)
+		}
+		return errors.Errorf("Accent error for '%s'('%s'): %s", w.Tagged.Word, out.Word, out.Error)
+	}
 	if w.Tagged.Word != out.Word {
 		return errors.Errorf("Words do not match '%s' vs '%s'", w.Tagged.Word, out.Word)
 	}

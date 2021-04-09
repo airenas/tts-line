@@ -63,6 +63,7 @@ type transInput struct {
 type transOutput struct {
 	Transcription []trans `json:"transcription"`
 	Word          string  `json:"word"`
+	Error         string  `json:"error"`
 }
 
 type trans struct {
@@ -135,8 +136,11 @@ func mapTransOutput(data *synthesizer.TTSDataPart, out []transOutput) error {
 }
 
 func setTrans(w *synthesizer.ProcessedWord, out transOutput) error {
+	if out.Error != "" {
+		return errors.Errorf("Transcriber error for '%s'('%s'): %s", transWord(w), out.Word, out.Error)
+	}
 	if transWord(w) != out.Word {
-		return errors.Errorf("Words do not match '%s' vs '%s'", transWord(w), out.Word)
+		return errors.Errorf("Words do not match (transcriber) '%s' vs '%s'", transWord(w), out.Word)
 	}
 	for _, t := range out.Transcription {
 		if t.Transcription != "" {
