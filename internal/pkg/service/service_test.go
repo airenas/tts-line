@@ -82,6 +82,16 @@ func Test_Fail(t *testing.T) {
 	testCode(t, req, 500)
 }
 
+func Test_Fail400(t *testing.T) {
+	initTest(t)
+	pegomock.When(cnfMock.Configure(matchers.AnyPtrToHttpRequest(), matchers.AnyPtrToApiInput())).
+		ThenReturn(&api.TTSRequestConfig{Text: "olia1", OutputFormat: api.AudioMP3}, nil)
+	pegomock.When(synthesizerMock.Work(matchers.AnyPtrToApiTTSRequestConfig())).ThenReturn(nil, utils.NewErrWordTooLong("haha"))
+	req := httptest.NewRequest("POST", "/synthesize", toReader(api.Input{Text: "olia"}))
+	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+	testCode(t, req, 400)
+}
+
 func Test_FailConfigure(t *testing.T) {
 	initTest(t)
 	pegomock.When(cnfMock.Configure(matchers.AnyPtrToHttpRequest(), matchers.AnyPtrToApiInput())).
@@ -227,6 +237,7 @@ func TestBadReqError(t *testing.T) {
 		{v: utils.NewErrBadAccent([]string{"olia"}), e: true, es: "Bad accents: [olia]"},
 		{v: errors.Wrap(utils.NewErrBadAccent([]string{"olia"}), "test"), e: true, es: "Bad accents: [olia]"},
 		{v: utils.NewErrWordTooLong("oliaaa"), e: true, es: "Word too long: 'oliaaa'"},
+		{v: errors.Wrap(utils.NewErrWordTooLong("oliaaa"), "err"), e: true, es: "Word too long: 'oliaaa'"},
 	}
 
 	for i, tc := range tests {

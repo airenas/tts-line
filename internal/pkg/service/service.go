@@ -102,6 +102,9 @@ func synthesizeText(data *PrData) func(echo.Context) error {
 		resp, err := data.Processor.Work(cfg)
 		if err != nil {
 			goapp.Log.Error("Can't process. ", err)
+			if d, msg := badReqError(err); d {
+				return echo.NewHTTPError(http.StatusBadRequest, msg)
+			}
 			return echo.NewHTTPError(http.StatusInternalServerError, "Service error")
 		}
 
