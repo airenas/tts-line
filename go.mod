@@ -29,5 +29,4 @@ require (
 	go.mongodb.org/mongo-driver v1.4.2
 	golang.org/x/net v0.0.0-20201202161906-c7110b5ffcbb
 	golang.org/x/text v0.3.3
-	gotest.tools v2.2.0+incompatible
 )

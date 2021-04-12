@@ -5,8 +5,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
 	"golang.org/x/text/unicode/norm"
-	"gotest.tools/assert"
 )
 
 func TestChangeSymbols(t *testing.T) {
@@ -77,6 +77,9 @@ func TestChangeLetters(t *testing.T) {
 	ts(t, "a arba a", "a\u200carba\u200ca")
 	ts(t, "Brulard", "Brûlard")
 	ts(t, "saugios", "saugios֤")
+	ts(t, "saugios\"", "saugios″")
+	ts(t, "pagyvėjo", "pаgyvėjo")
+	ts(t, "Duričić", "Đuričić")
 }
 
 func ts(t *testing.T, expected, inp string) {
