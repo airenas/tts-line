@@ -10,15 +10,15 @@ import (
 )
 
 func TestChangeSymbols(t *testing.T) {
-	assert.Equal(t, "", changeSymbols(""))
-	assert.Equal(t, "a a", changeSymbols("a a"))
-	assert.Equal(t, "a - a -", changeSymbols("a – a –"))
-	assert.Equal(t, "a--a", changeSymbols("a--a"))
-	assert.Equal(t, "a--a", changeSymbols("a——a"))
-	assert.Equal(t, "a--a", changeSymbols("a--a"))
-	assert.Equal(t, "a\na", changeSymbols("a\na"))
-	assert.Equal(t, "a\n\na\n\n", changeSymbols("a\n\ra\r\r"))
-	assert.Equal(t, "a\n a", changeSymbols("a\n\ta"))
+	assert.Equal(t, "", ChangeSymbols(""))
+	assert.Equal(t, "a a", ChangeSymbols("a a"))
+	assert.Equal(t, "a - a -", ChangeSymbols("a – a –"))
+	assert.Equal(t, "a--a", ChangeSymbols("a--a"))
+	assert.Equal(t, "a--a", ChangeSymbols("a——a"))
+	assert.Equal(t, "a--a", ChangeSymbols("a--a"))
+	assert.Equal(t, "a\na", ChangeSymbols("a\na"))
+	assert.Equal(t, "a\n\na\n\n", ChangeSymbols("a\n\ra\r\r"))
+	assert.Equal(t, "a\n a", ChangeSymbols("a\n\ta"))
 }
 
 func TestChangeLetters(t *testing.T) {
@@ -59,7 +59,7 @@ func TestChangeLetters(t *testing.T) {
 	ts(t, "trijų/keturių", "trijų⁄keturių")
 	ts(t, "aštuoni⁰", "aštuoni⁰")
 	ts(t, "septyni⁰C", "septyni℃")
-	assert.Equal(t, "fiksuota", changeSymbols("ﬁksuota"))
+	assert.Equal(t, "fiksuota", ChangeSymbols("ﬁksuota"))
 	ts(t, "Nasdaq\"", "Nasdaq¨")
 	ts(t, "Hustiu", "Huștiu")
 	ts(t, "Katerina", "Kateřina")
@@ -83,19 +83,19 @@ func TestChangeLetters(t *testing.T) {
 }
 
 func ts(t *testing.T, expected, inp string) {
-	assert.Equal(t, expected, changeSymbols(inp))
+	assert.Equal(t, expected, ChangeSymbols(inp))
 	up := strings.ToUpper(inp)
-	assert.Equal(t, strings.ToUpper(expected), changeSymbols(up))
+	assert.Equal(t, strings.ToUpper(expected), ChangeSymbols(up))
 }
 
 func TestDash(t *testing.T) {
 	for _, s := range []string{"-", "‒", "–"} {
-		assert.Equal(t, "-", changeSymbols(s))
+		assert.Equal(t, "-", ChangeSymbols(s))
 	}
 }
 
 func TestSymbols(t *testing.T) {
-	str := changeSymbols("ą̨  a\u0328")
+	str := ChangeSymbols("ą̨  a\u0328")
 	for _, r := range str {
 		fmt.Printf("a%s %d \\u%.4x\n", string(r), r, r)
 	}

@@ -69,7 +69,9 @@ func addMap(res map[rune]rune, add string, to rune) {
 	}
 }
 
-func changeSymbols(line string) string {
+// ChangeSymbols updates symbols to be compatible with standard Lithuanian alphabet
+// Also some rare quotes are unified to the most popular ones
+func ChangeSymbols(line string) string {
 	if len(line) == 0 {
 		return line
 	}

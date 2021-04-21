@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/airenas/go-app/pkg/goapp"
+	pclean "github.com/airenas/tts-line/pkg/clean"
 	"github.com/microcosm-cc/bluemonday"
 	"github.com/pkg/errors"
 	"golang.org/x/net/html"
@@ -87,7 +88,7 @@ func fixSpacesNewLines(s string) string {
 	sb := strings.Builder{}
 	sp := ""
 	for _, l := range strings.Split(strings.ReplaceAll(s, "\r", "\n"), "\n") {
-		lf := fixSpacesR(changeSymbols(dropEmojis(html.UnescapeString(l))))
+		lf := fixSpacesR(pclean.ChangeSymbols(pclean.DropEmojis(html.UnescapeString(l))))
 		if lf != "" {
 			sb.WriteString(sp)
 			sb.WriteString(lf)
