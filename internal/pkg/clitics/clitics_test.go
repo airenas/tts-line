@@ -13,7 +13,7 @@ func TestRead(t *testing.T) {
 	assert.Equal(t, 2, len(cl))
 }
 
-func TestRead_FailEMpty(t *testing.T) {
+func TestRead_FailEmpty(t *testing.T) {
 	cl, err := readClitics(strings.NewReader(""))
 	assert.NotNil(t, err)
 	assert.Nil(t, cl)

@@ -1,0 +1,95 @@
+package clitics
+
+import (
+	"bufio"
+	"io"
+	"os"
+	"strings"
+
+	"github.com/airenas/go-app/pkg/goapp"
+	"github.com/pkg/errors"
+)
+
+type phrase struct {
+	word   string
+	lemma  string
+	accent int
+}
+
+type Phrases struct {
+	wordMap  map[string][]*phrase
+	lemmaMap map[string][]*phrase
+}
+
+func ReadPhrases(fStr string) (*Phrases, error) {
+	file, err := os.Open(fStr)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to open file: "+fStr)
+	}
+	defer file.Close()
+	return readPhrases(file)
+}
+
+func readPhrases(r io.Reader) (*Phrases, error) {
+	res := &Phrases{wordMap: make(map[string][]*phrase), lemmaMap: make(map[string][]*phrase)}
+	scanner := bufio.NewScanner(r)
+	for scanner.Scan() {
+		line := scanner.Text()
+		line = strings.TrimSpace(line)
+		if line != "" && !strings.HasPrefix(line, "//") {
+			phr, err := readLine(line)
+			if err != nil {
+				return nil, errors.Wrapf(err, "can't read line '%s'", line)
+			}
+			if phr[0].word != "" {
+				res.wordMap[phr[0].word] = phr
+			} else {
+				res.lemmaMap[phr[0].lemma] = phr
+			}
+		}
+	}
+	if scanner.Err() != nil {
+		return nil, errors.Wrap(scanner.Err(), "can read lines")
+	}
+	goapp.Log.Infof("Loaded %d phrases", len(res.wordMap)+len(res.lemmaMap))
+	return res, nil
+}
+
+func readLine(l string) ([]*phrase, error) {
+	res := make([]*phrase, 0)
+	words := strings.Split(strings.SplitN(l, ",", 1)[0], " ")
+	for _, w := range words {
+		if w != "" {
+			ph := &phrase{}
+			var err error
+			ph.word, ph.lemma, ph.accent, err = parse(w)
+			if err != nil {
+				return nil, errors.Wrapf(err, "can't parse word '%s'", w)
+			}
+			res = append(res, ph)
+		}
+	}
+	if len(res) < 2 {
+		return nil, errors.New("too short phrase")
+	}
+	return res, nil
+}
+
+func parse(w string) (word string, lemma string, accent int, err error) {
+	word, accent, err = getAccent(w)
+	if strings.HasSuffix(w, ":l") {
+		lemma = word[:len(word)-2]
+		word = ""
+	}
+	return word, lemma, accent, err
+}
+
+func getAccent(w string) (word string, accent int, err error) {
+	for i, a := range "493" {
+		in := strings.Index(w, string(a))
+		if in > -1 {
+			return w[:in] + w[in+1:], (i+1)*100 + in, nil
+		}
+	}
+	return w, 0, nil
+}

@@ -29,3 +29,4 @@ cmd/acronyms/acronyms
 examples/docker-compose/.mongo/**
 examples/docker-compose/Makefile.options
 examples/docker-compose/.env
+cmd/clitics/phrases.txt
