@@ -59,7 +59,7 @@ func readPhrases(r io.Reader) (*Phrases, error) {
 
 func readLine(l string) ([]*phrase, error) {
 	res := make([]*phrase, 0)
-	words := strings.Split(strings.SplitN(l, ",", 1)[0], " ")
+	words := strings.Split(strings.SplitN(l, ",", 2)[0], " ")
 	for _, w := range words {
 		if w != "" {
 			ph := &phrase{}

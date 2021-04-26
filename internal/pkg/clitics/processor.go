@@ -20,9 +20,14 @@ func (s *Processor) Process(words []*api.CliticsInput) ([]*api.CliticsOutput, er
 	res := make([]*api.CliticsOutput, 0)
 	for i := 0; i < len(words); i++ {
 		w := words[i]
+		added := false
 		if w.Type == "WORD" {
 			phr, ok := s.phrases.wordMap[w.String]
-			if ok {
+			phrl, okl := s.phrases.wordMap[w.Lemma]
+			if (okl) {
+				phr = append(phr, phrl...)
+			}
+			if ok || okl {
 				for _, ph := range phr {
 					nis, ok := isPhrase(words, i, ph)
 					if ok {
@@ -32,10 +37,13 @@ func (s *Processor) Process(words []*api.CliticsInput) ([]*api.CliticsOutput, er
 								Accent: accent(ph[i1]), Pos: i1})
 							i = ni
 						}
+						added = true
 						break
 					}
 				}
-			} else if s.clitics[w.String] {
+			}
+
+			if !added && s.clitics[w.String] {
 				ni, ok := nextWord(words, i+1)
 				if ok {
 					res = append(res, &api.CliticsOutput{ID: w.ID, Type: "CLITIC", AccentType: "NONE", Pos: 0})
@@ -63,9 +71,11 @@ func nextWord(words []*api.CliticsInput, from int) (int, bool) {
 
 func isPhrase(words []*api.CliticsInput, from int, ph []*phrase) ([]int, bool) {
 	res := make([]int, len(ph))
+	wf := from
 	for i, pw := range ph {
-		wi, ok := nextWord(words, from+i)
+		wi, ok := nextWord(words, wf)
 		if ok {
+			wf = wi + 1
 			nw := words[wi]
 			if pw.isLemma && pw.word == nw.Lemma || !pw.isLemma && pw.word == nw.String {
 				res[i] = wi

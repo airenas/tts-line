@@ -43,6 +43,11 @@ func TestPhrasesReadLine(t *testing.T) {
 		assert.Equal(t, &phrase{word: "bet"}, ph[1])
 		assert.Equal(t, &phrase{word: "koks", isLemma: true, accent: 202}, ph[2])
 	}
+	ph, err = readLine("ko9ks bet ko9ks:l,bla bla,")
+	assert.Nil(t, err)
+	if assert.Equal(t, 3, len(ph)) {
+		assert.Equal(t, &phrase{word: "koks", isLemma: true, accent: 202}, ph[2])
+	}
 }
 
 func TestAccentType(t *testing.T) {
