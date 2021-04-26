@@ -27,5 +27,20 @@ func TestProcess_Finds(t *testing.T) {
 		{ID: 2, Type: "WORD", String: "kažkas", Mi: ""}})
 	assert.Nil(t, err)
 	assert.NotNil(t, r)
-	assert.Equal(t, 2, len(r))
+	if assert.Equal(t, 2, len(r)) {
+		assert.Equal(t, 0, r[0].ID)
+		assert.Equal(t, 2, r[1].ID)
+	}
+}
+
+func TestProcess_Skips(t *testing.T) {
+	pr, err := NewProcessor(map[string]bool{"bet": true})
+	assert.Nil(t, err)
+	assert.NotNil(t, pr)
+	r, err := pr.Process([]*api.CliticsInput{{ID: 0, Type: "WORD", String: "bet"},
+		{ID: 1, Type: "SEP", String: " "},
+		{ID: 2, Type: "WORD", String: "kažkas", Mi: ""}})
+	assert.Nil(t, err)
+	assert.NotNil(t, r)
+	assert.Equal(t, 0, len(r))
 }

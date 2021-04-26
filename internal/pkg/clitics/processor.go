@@ -22,7 +22,7 @@ func (s *Processor) Process(words []*api.CliticsInput) ([]*api.CliticsOutput, er
 		if w.Type == "WORD" && s.clitics[w.String] {
 			ni, ok := nextWord(words[i+1:])
 			if ok {
-				nw := words[ni]
+				nw := words[ni+i+1]
 				res = append(res, &api.CliticsOutput{ID: w.ID, Type: "CLITIC", AccentType: "NONE", Pos: 0})
 				res = append(res, &api.CliticsOutput{ID: nw.ID, Type: "CLITIC", AccentType: "NORMAL", Pos: 1})
 				i = ni
