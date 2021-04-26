@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"io"
 	"os"
+	"sort"
 	"strings"
 
 	"github.com/airenas/go-app/pkg/goapp"
@@ -11,14 +12,13 @@ import (
 )
 
 type phrase struct {
-	word   string
-	lemma  string
-	accent int
+	word    string
+	isLemma bool
+	accent  int
 }
 
 type Phrases struct {
-	wordMap  map[string][]*phrase
-	lemmaMap map[string][]*phrase
+	wordMap map[string][][]*phrase
 }
 
 func ReadPhrases(fStr string) (*Phrases, error) {
@@ -31,8 +31,9 @@ func ReadPhrases(fStr string) (*Phrases, error) {
 }
 
 func readPhrases(r io.Reader) (*Phrases, error) {
-	res := &Phrases{wordMap: make(map[string][]*phrase), lemmaMap: make(map[string][]*phrase)}
+	res := &Phrases{wordMap: make(map[string][][]*phrase)}
 	scanner := bufio.NewScanner(r)
+	pc := 0
 	for scanner.Scan() {
 		line := scanner.Text()
 		line = strings.TrimSpace(line)
@@ -41,17 +42,18 @@ func readPhrases(r io.Reader) (*Phrases, error) {
 			if err != nil {
 				return nil, errors.Wrapf(err, "can't read line '%s'", line)
 			}
-			if phr[0].word != "" {
-				res.wordMap[phr[0].word] = phr
-			} else {
-				res.lemmaMap[phr[0].lemma] = phr
-			}
+			res.wordMap[phr[0].word] = append(res.wordMap[phr[0].word], phr)
+			pc++
 		}
 	}
 	if scanner.Err() != nil {
 		return nil, errors.Wrap(scanner.Err(), "can read lines")
 	}
-	goapp.Log.Infof("Loaded %d phrases", len(res.wordMap)+len(res.lemmaMap))
+	for k, v := range res.wordMap {
+		sort.Slice(v, func(i, j int) bool { return len(v[i]) > len(v[j]) })
+		res.wordMap[k] = v
+	}
+	goapp.Log.Infof("Loaded %d phrases", pc)
 	return res, nil
 }
 
@@ -62,7 +64,7 @@ func readLine(l string) ([]*phrase, error) {
 		if w != "" {
 			ph := &phrase{}
 			var err error
-			ph.word, ph.lemma, ph.accent, err = parse(w)
+			ph.word, ph.isLemma, ph.accent, err = parse(w)
 			if err != nil {
 				return nil, errors.Wrapf(err, "can't parse word '%s'", w)
 			}
@@ -75,11 +77,11 @@ func readLine(l string) ([]*phrase, error) {
 	return res, nil
 }
 
-func parse(w string) (word string, lemma string, accent int, err error) {
+func parse(w string) (word string, lemma bool, accent int, err error) {
 	word, accent, err = getAccent(w)
 	if strings.HasSuffix(w, ":l") {
-		lemma = word[:len(word)-2]
-		word = ""
+		word = word[:len(word)-2]
+		lemma = true
 	}
 	return word, lemma, accent, err
 }

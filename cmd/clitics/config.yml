@@ -1,4 +1,6 @@
 port: 8013
 
 clitics:
-  file: clitics.txt   
+  file: clitics.txt
+phrases:
+  file: phrases.txt     

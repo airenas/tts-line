@@ -34,7 +34,11 @@ func provider() (service.ClitWorker, error) {
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to read clitics")
 	}
-	return clitics.NewProcessor(cl)
+	phr, err := clitics.ReadPhrases(goapp.Config.GetString("phrases.file"))
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to read phrases")
+	}
+	return clitics.NewProcessor(cl, phr)
 }
 
 var (

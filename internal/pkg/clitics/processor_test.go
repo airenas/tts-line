@@ -9,7 +9,7 @@ import (
 )
 
 func TestProcess_None(t *testing.T) {
-	pr, err := NewProcessor(map[string]bool{"bet": true})
+	pr, err := NewProcessor(map[string]bool{"bet": true}, &Phrases{})
 	assert.Nil(t, err)
 	assert.NotNil(t, pr)
 	r, err := pr.Process([]*api.CliticsInput{{ID: 0, Type: "WORD", String: "bet"}})
@@ -19,7 +19,7 @@ func TestProcess_None(t *testing.T) {
 }
 
 func TestProcess_Finds(t *testing.T) {
-	pr, err := NewProcessor(map[string]bool{"bet": true})
+	pr, err := NewProcessor(map[string]bool{"bet": true}, &Phrases{})
 	assert.Nil(t, err)
 	assert.NotNil(t, pr)
 	r, err := pr.Process([]*api.CliticsInput{{ID: 0, Type: "WORD", String: "bet"},
@@ -34,7 +34,7 @@ func TestProcess_Finds(t *testing.T) {
 }
 
 func TestProcess_Skips(t *testing.T) {
-	pr, err := NewProcessor(map[string]bool{"bet": true})
+	pr, err := NewProcessor(map[string]bool{"bet": true}, &Phrases{})
 	assert.Nil(t, err)
 	assert.NotNil(t, pr)
 	r, err := pr.Process([]*api.CliticsInput{{ID: 0, Type: "WORD", String: "bet"},
