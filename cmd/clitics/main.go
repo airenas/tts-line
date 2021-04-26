@@ -29,7 +29,7 @@ func main() {
 	}
 }
 
-func provider() (service.Worker, error) {
+func provider() (service.ClitWorker, error) {
 	cl, err := clitics.ReadClitics(goapp.Config.GetString("clitics.file"))
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to read clitics")

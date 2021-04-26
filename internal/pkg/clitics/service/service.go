@@ -12,18 +12,17 @@ import (
 	"github.com/facebookgo/grace/gracehttp"
 	"github.com/labstack/echo-contrib/prometheus"
 	"github.com/labstack/echo/v4"
-	"github.com/labstack/echo/v4/middleware"
 )
 
 type (
-	// Worker returns available clitics in a list
-	Worker interface {
+	// ClitWorker returns available clitics in a list
+	ClitWorker interface {
 		Process(words []*api.CliticsInput) ([]*api.CliticsOutput, error)
 	}
 
 	//Data is service operation data
 	Data struct {
-		Worker Worker
+		Worker ClitWorker
 		Port   int
 	}
 )
@@ -45,11 +44,15 @@ func StartWebServer(data *Data) error {
 	return gracehttp.Serve(e.Server)
 }
 
+var promMdlw *prometheus.Prometheus
+
+func init() {
+	promMdlw = prometheus.NewPrometheus("tts", nil)
+}
+
 func initRoutes(data *Data) *echo.Echo {
 	e := echo.New()
-	e.Use(middleware.Logger())
-	p := prometheus.NewPrometheus("clitics", nil)
-	p.Use(e)
+	promMdlw.Use(e)
 
 	e.POST("/clitics", handleList(data))
 	e.GET("/live", live(data))
