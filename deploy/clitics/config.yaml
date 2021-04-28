@@ -1,0 +1,6 @@
+port: 8000 
+
+clitics:
+  file: /app/clitics.txt
+phrases:
+  file: /app/phrases.txt   
