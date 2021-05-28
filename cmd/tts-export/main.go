@@ -22,32 +22,31 @@ type params struct {
 
 func main() {
 	os.Setenv("LOGGER_OUT_NAME", "stderr")
-	goapp.StartWithDefault()
+	fs := flag.CommandLine
+	ap := &params{}
+	takeParams(fs, ap)
+	goapp.StartWithFlags(fs, os.Args)
+
 	goapp.Log.Info("Starting")
 
 	printBanner()
-
-	ap := &params{}
-	fs := flag.CommandLine
-	takeParams(fs, ap)
-	fs.Parse(os.Args[1:])
 
 	defer goapp.Estimate("Export")()
 
 	sp, err := mongodb.NewSessionProvider(goapp.Config.GetString("mongo.url"))
 	if err != nil {
-		goapp.Log.Fatal(errors.Wrap(err, "Can't init mongo session provider"))
+		goapp.Log.Fatal(errors.Wrap(err, "can't init mongo session provider"))
 	}
 	defer sp.Close()
 	ts, err := mongodb.NewTextSaver(sp)
 	if err != nil {
-		goapp.Log.Fatal(errors.Wrap(err, "Can't init DB exporter"))
+		goapp.Log.Fatal(errors.Wrap(err, "can't init DB exporter"))
 	}
 
 	p := exporter.Params{To: ap.to, Delete: ap.delete, Out: os.Stdout, Exporter: ts}
 	err = exporter.Export(p)
 	if err != nil {
-		goapp.Log.Fatal(errors.Wrap(err, "Can't start the service"))
+		goapp.Log.Fatal(errors.Wrap(err, "can't start the service"))
 	}
 	goapp.Log.Info("Finished")
 }
