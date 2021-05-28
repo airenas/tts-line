@@ -1,7 +1,10 @@
 package main
 
 import (
+	"flag"
+	"fmt"
 	"os"
+	"time"
 
 	"github.com/airenas/go-app/pkg/goapp"
 	"github.com/airenas/tts-line/internal/pkg/exporter"
@@ -12,12 +15,22 @@ import (
 	"github.com/pkg/errors"
 )
 
+type params struct {
+	delete bool
+	to     time.Time
+}
+
 func main() {
 	os.Setenv("LOGGER_OUT_NAME", "stderr")
 	goapp.StartWithDefault()
 	goapp.Log.Info("Starting")
 
 	printBanner()
+
+	ap := &params{}
+	fs := flag.CommandLine
+	takeParams(fs, ap)
+	fs.Parse(os.Args[1:])
 
 	defer goapp.Estimate("Export")()
 
@@ -31,7 +44,8 @@ func main() {
 		goapp.Log.Fatal(errors.Wrap(err, "Can't init DB exporter"))
 	}
 
-	err = exporter.Export(ts, os.Stdout)
+	p := exporter.Params{To: ap.to, Delete: ap.delete, Out: os.Stdout, Exporter: ts}
+	err = exporter.Export(p)
 	if err != nil {
 		goapp.Log.Fatal(errors.Wrap(err, "Can't start the service"))
 	}
@@ -58,4 +72,34 @@ ________________________________________________________
 	cl := color.New()
 	cl.SetOutput(colorable.NewColorableStderr())
 	cl.Printf(banner, cl.Red(version), cl.Green("https://github.com/airenas/tts-line"))
+}
+
+func takeParams(fs *flag.FlagSet, data *params) {
+	fs.Usage = func() {
+		fmt.Fprintf(fs.Output(), "Usage of %s: <params> [input-file | stdin] [output-file | stdout]\n", os.Args[0])
+		fs.PrintDefaults()
+	}
+	fs.Var(timeValue{to: &data.to}, "to", "Filter to select records to the time provided here. Format 'YYYY-MM-DD'")
+	fs.BoolVar(&data.delete, "delete", false, "Delete filtered records from database")
+}
+
+
+type timeValue struct {
+	to *time.Time
+}
+
+func (v timeValue) String() string {
+	if v.to != nil && !v.to.IsZero() {
+		return v.to.Format("2006-01-02")
+	}
+	return ""
+}
+
+func (v timeValue) Set(s string) error {
+	if u, err := time.Parse("2006-01-02", s); err != nil {
+		return err
+	} else {
+		*v.to = u
+	}
+	return nil
 }

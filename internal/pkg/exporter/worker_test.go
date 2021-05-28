@@ -26,7 +26,7 @@ func TestExport(t *testing.T) {
 	initTest(t)
 	writer := bytes.NewBufferString("")
 	pegomock.When(expMock.All()).ThenReturn([]*mongodb.TextRecord{}, nil)
-	err := Export(expMock, writer)
+	err := Export(Params{Exporter: expMock, Out: writer})
 	assert.Nil(t, err)
 	assert.Equal(t, "[]", writer.String())
 }
@@ -35,7 +35,7 @@ func TestExport_Writes(t *testing.T) {
 	initTest(t)
 	writer := bytes.NewBufferString("")
 	pegomock.When(expMock.All()).ThenReturn([]*mongodb.TextRecord{{ID: "1", Type: 1, Text: "olia"}}, nil)
-	err := Export(expMock, writer)
+	err := Export(Params{Exporter: expMock, Out: writer})
 	assert.Nil(t, err)
 	assert.Equal(t, "[{\"id\":\"1\",\"type\":1,\"text\":\"olia\",\"created\":\"0001-01-01T00:00:00Z\"}\n]", writer.String())
 }
@@ -46,7 +46,7 @@ func TestExport_Sort(t *testing.T) {
 	tn := time.Time{}.Add(time.Second)
 	pegomock.When(expMock.All()).ThenReturn([]*mongodb.TextRecord{{ID: "1", Type: 1, Text: "olia", Created: tn},
 		{ID: "01", Type: 1, Text: "olia", Created: tn.Add(-time.Second)}}, nil)
-	err := Export(expMock, writer)
+	err := Export(Params{Exporter: expMock, Out: writer})
 	assert.Nil(t, err)
 	assert.Equal(t, "[{\"id\":\"01\",\"type\":1,\"text\":\"olia\",\"created\":\"0001-01-01T00:00:00Z\"}\n,{\"id\":\"1\",\"type\":1,\"text\":\"olia\",\"created\":\"0001-01-01T00:00:01Z\"}\n]",
 		writer.String())
@@ -56,7 +56,7 @@ func TestExport_Fails(t *testing.T) {
 	initTest(t)
 	writer := bytes.NewBufferString("")
 	pegomock.When(expMock.All()).ThenReturn(nil, errors.New("olia"))
-	err := Export(expMock, writer)
+	err := Export(Params{Exporter: expMock, Out: writer})
 	assert.NotNil(t, err)
 }
 
