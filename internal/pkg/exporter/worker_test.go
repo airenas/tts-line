@@ -60,6 +60,30 @@ func TestExport_Fails(t *testing.T) {
 	assert.NotNil(t, err)
 }
 
+func TestExportFilter(t *testing.T) {
+	initTest(t)
+	writer := bytes.NewBufferString("")
+	tn := time.Time{}.Add(time.Second)
+	pegomock.When(expMock.All()).ThenReturn([]*mongodb.TextRecord{{ID: "1", Type: 1, Text: "olia", Created: tn},
+		{ID: "01", Type: 1, Text: "olia", Created: tn.Add(time.Hour * 25)}}, nil)
+	err := Export(Params{Exporter: expMock, Out: writer, Delete: true, To: tn.Add(time.Second)})
+	assert.Nil(t, err)
+	assert.Equal(t, "[{\"id\":\"1\",\"type\":1,\"text\":\"olia\",\"created\":\"0001-01-01T00:00:01Z\"}\n]", writer.String())
+	p := expMock.VerifyWasCalledOnce().Delete(pegomock.AnyString()).GetCapturedArguments()
+	assert.Equal(t, "1", p)
+}
+
+func TestExportDelete_Fails(t *testing.T) {
+	initTest(t)
+	writer := bytes.NewBufferString("")
+	tn := time.Time{}.Add(time.Second)
+	pegomock.When(expMock.All()).ThenReturn([]*mongodb.TextRecord{{ID: "1", Type: 1, Text: "olia", Created: tn},
+		{ID: "01", Type: 1, Text: "olia", Created: tn.Add(-time.Second)}}, nil)
+	pegomock.When(expMock.Delete(pegomock.AnyString())).ThenReturn(0, errors.New("olia"))
+	err := Export(Params{Exporter: expMock, Out: writer, Delete: true})
+	assert.NotNil(t, err)
+}
+
 func TestSortData(t *testing.T) {
 	tn := time.Now()
 	tests := []struct {
@@ -87,5 +111,33 @@ func TestSortData(t *testing.T) {
 		for i, v := range tc.pos {
 			assert.Equal(t, tc.d[i], sd[v], "Fail case %d", i)
 		}
+	}
+}
+
+func TestFilterData(t *testing.T) {
+	tn := time.Now()
+	tests := []struct {
+		d []*mongodb.TextRecord
+		f time.Time
+		c int
+	}{
+		{d: []*mongodb.TextRecord{{ID: "1", Type: 1, Created: tn}},
+			c: 1},
+		{d: []*mongodb.TextRecord{{ID: "1", Type: 1, Created: tn}},
+			f: tn.Add(time.Second), c: 1},
+		{d: []*mongodb.TextRecord{{ID: "1", Type: 1, Created: tn}},
+			f: tn.Add(-time.Second), c: 0},
+		{d: []*mongodb.TextRecord{{ID: "1", Type: 1, Created: tn}, {ID: "2", Type: 1, Created: tn.Add(time.Second * 2)}},
+			f: tn.Add(time.Second), c: 1},
+		{d: []*mongodb.TextRecord{{ID: "1", Type: 1, Created: tn}, {ID: "2", Type: 1, Created: tn.Add(time.Second * 2)},
+			{ID: "1", Type: 2, Created: tn.Add(time.Second * 5)}},
+			f: tn.Add(time.Second), c: 2},
+		{d: []*mongodb.TextRecord{{ID: "1", Type: 3, Created: tn}},
+			f: tn.Add(time.Second), c: 1},
+	}
+
+	for i, tc := range tests {
+		fd := filterData(tc.d, tc.f)
+		assert.Equal(t, tc.c, len(fd), "Fail case %d", i)
 	}
 }
