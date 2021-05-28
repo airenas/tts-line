@@ -76,13 +76,12 @@ ________________________________________________________
 
 func takeParams(fs *flag.FlagSet, data *params) {
 	fs.Usage = func() {
-		fmt.Fprintf(fs.Output(), "Usage of %s: <params> [input-file | stdin] [output-file | stdout]\n", os.Args[0])
+		fmt.Fprintf(fs.Output(), "Usage of %s: <params> > out.json\n", os.Args[0])
 		fs.PrintDefaults()
 	}
-	fs.Var(timeValue{to: &data.to}, "to", "Filter to select records to the time provided here. Format 'YYYY-MM-DD'")
-	fs.BoolVar(&data.delete, "delete", false, "Delete filtered records from database")
+	fs.Var(timeValue{to: &data.to}, "to", "Filters records according to the time provided here. Takes older record than the time. Format 'YYYY-MM-DD'")
+	fs.BoolVar(&data.delete, "delete", false, "Deletes filtered records from database")
 }
-
 
 type timeValue struct {
 	to *time.Time
