@@ -220,6 +220,12 @@ func addPartProcessors(partRunner *synthesizer.PartRunner, cfg *viper.Viper) err
 	}
 	partRunner.Add(ppr)
 
+	ppr, err = processor.NewClitics(cfg.GetString("clitics.url"))
+	if err != nil {
+		return errors.Wrap(err, "Can't init clitics")
+	}
+	partRunner.Add(ppr)
+
 	ppr, err = processor.NewTranscriber(cfg.GetString("transcriber.url"))
 	if err != nil {
 		return errors.Wrap(err, "Can't init transcriber")
