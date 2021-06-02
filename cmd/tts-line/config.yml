@@ -56,6 +56,9 @@ vocoder:
 audioConvert:
   url: http://localhost:8013/convert
 
+clitics:
+  url: http://localhost:8015/clitics    
+
 filer:
   dir: /home/airenas/projects/tts-line
 

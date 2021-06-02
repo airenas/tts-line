@@ -31,7 +31,14 @@ services:
   comparator:
     image: airenas/resynth-validator:0.1.2
     ports:
-      - "8014:3000"    
+      - "8014:3000"
+  
+  clitics:
+    image: airenas/clitics:0.1.206
+    environment:
+      - SECRET=${CLITICS_SECRET} 
+    ports:
+      - "8015:8000"      
 
   mongo:
     image: mongo:4.4.1

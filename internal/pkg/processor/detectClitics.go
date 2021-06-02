@@ -1,6 +1,7 @@
 package processor
 
 import (
+	"strings"
 	"time"
 
 	"github.com/airenas/go-app/pkg/goapp"
@@ -52,7 +53,7 @@ func mapCliticsInput(data *synthesizer.TTSDataPart) ([]*api.CliticsInput, error)
 		tgw := w.Tagged
 		ci := &api.CliticsInput{}
 		ci.ID = i
-		ci.String = transWord(w)
+		ci.String = strings.ToLower(transWord(w))
 		ci.Lemma = tgw.Lemma
 		ci.Mi = tgw.Mi
 		ci.Type = toType(&w.Tagged)

@@ -59,7 +59,7 @@ func TestInvokeClitics_Fail(t *testing.T) {
 func TestMapCliticsInput(t *testing.T) {
 	d := newTestTTSDataPart()
 	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Word: "olia", Lemma: "lemma", Mi: "mi"}})
-	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Word: "olia1", Lemma: "lemma", Mi: "mi"}})
+	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Word: "Olia1", Lemma: "lemma", Mi: "mi"}})
 	inp, err := mapCliticsInput(d)
 	assert.Nil(t, err)
 	if assert.Equal(t, 2, len(inp)) {
@@ -67,6 +67,7 @@ func TestMapCliticsInput(t *testing.T) {
 		assert.Equal(t, "mi", inp[0].Mi)
 		assert.Equal(t, "lemma", inp[0].Lemma)
 		assert.Equal(t, 0, inp[0].ID)
+		assert.Equal(t, "olia1", inp[1].String)
 		assert.Equal(t, 1, inp[1].ID)
 	}
 }
