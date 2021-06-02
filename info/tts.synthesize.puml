@@ -32,6 +32,7 @@ participant "Morf" as morf
 participant "Text\nValidator" as validator
 participant "Acronym" as acronym
 participant "Accenter" as accenter
+participant "Clitic" as clitic
 participant "Transcriber" as transcriber
 
 box "On GPU" #LightBlue
@@ -103,6 +104,11 @@ tts -> accenter:
 activate accenter
 accenter --> tts:
 deactivate accenter
+
+tts -> clitic: 
+activate clitic
+clitic --> tts:
+deactivate clitic
 
 tts -> transcriber: 
 activate transcriber
