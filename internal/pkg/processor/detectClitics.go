@@ -27,6 +27,10 @@ func NewClitics(urlStr string) (synthesizer.PartProcessor, error) {
 }
 
 func (p *cliticDetector) Process(data *synthesizer.TTSDataPart) error {
+	if p.skip(data) {
+		goapp.Log.Info("Skip accentuator")
+		return nil
+	}
 	inData, err := mapCliticsInput(data)
 	if err != nil {
 		return err
@@ -88,4 +92,8 @@ func mapCliticsOutput(data *synthesizer.TTSDataPart, out []api.CliticsOutput) er
 		}
 	}
 	return nil
+}
+
+func (p *cliticDetector) skip(data *synthesizer.TTSDataPart) bool {
+	return data.Cfg.JustAM
 }

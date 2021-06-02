@@ -43,6 +43,17 @@ func TestInvokeClitics(t *testing.T) {
 	assert.Equal(t, synthesizer.CliticsNone, d.Words[0].Clitic.Type)
 }
 
+func TestInvokeClitics_Skip(t *testing.T) {
+	initTestJSON(t)
+	d := newTestTTSDataPart()
+	d.Cfg.JustAM = true
+	pr, _ := NewClitics("http://server")
+	pegomock.When(httpJSONMock.InvokeJSON(pegomock.AnyInterface(), pegomock.AnyInterface())).ThenReturn(
+		errors.New("olia err"))
+	err := pr.Process(d)
+	assert.Nil(t, err)
+}
+
 func TestInvokeClitics_Fail(t *testing.T) {
 	initTestJSON(t)
 	pr, _ := NewClitics("http://server")
