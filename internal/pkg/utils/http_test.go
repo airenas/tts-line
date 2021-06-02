@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -80,5 +81,34 @@ func TestInvokeFail_Response(t *testing.T) {
 	hw, _ := NewHTTWrap(server.URL)
 	var tt testType
 	err := hw.InvokeText("olia", &tt)
+	assert.NotNil(t, err)
+}
+
+func TestTimeout(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
+		rw.Write([]byte(`{"test":"respo"}`))
+	}))
+	defer server.Close()
+	hw, _ := NewHTTWrap(server.URL)
+	hw.Timeout = time.Millisecond * 50
+	var tt testType
+	err := hw.InvokeText("olia", &tt)
+	assert.Nil(t, err)
+	err = hw.InvokeJSON(testType{Test: "haha"}, &tt)
+	assert.Nil(t, err)
+}
+
+func TestTimeout_Fail(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
+		rw.Write([]byte(`{"test":"respo"}`))
+		time.Sleep(time.Second)
+	}))
+	defer server.Close()
+	hw, _ := NewHTTWrap(server.URL)
+	hw.Timeout = time.Millisecond * 50
+	var tt testType
+	err := hw.InvokeText("olia", &tt)
+	assert.NotNil(t, err)
+	err = hw.InvokeJSON(testType{Test: "haha"}, &tt)
 	assert.NotNil(t, err)
 }

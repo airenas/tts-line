@@ -2,10 +2,12 @@ package utils
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"io/ioutil"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/pkg/errors"
 )
@@ -14,6 +16,7 @@ import (
 type HTTPWrap struct {
 	HTTPClient *http.Client
 	URL        string
+	Timeout    time.Duration
 	flog       func(string, string)
 }
 
@@ -26,6 +29,7 @@ func NewHTTWrap(urlStr string) (*HTTPWrap, error) {
 		return nil, errors.Wrapf(err, "Can't parse url '%s'", urlStr)
 	}
 	res.HTTPClient = &http.Client{}
+	res.Timeout = time.Second * 120 // add default timetout
 	res.flog = func(st, data string) { LogData(st, data) }
 	return res, nil
 }
@@ -60,6 +64,11 @@ func (hw *HTTPWrap) InvokeJSON(dataIn interface{}, dataOut interface{}) error {
 }
 
 func (hw *HTTPWrap) invoke(req *http.Request, dataOut interface{}) error {
+	if hw.Timeout > 0 {
+		ctx, cancelF := context.WithTimeout(context.Background(), hw.Timeout)
+		defer cancelF()
+		req = req.WithContext(ctx)
+	}
 	hw.flog("Call : ", hw.URL)
 	resp, err := hw.HTTPClient.Do(req)
 	if err != nil {
