@@ -24,7 +24,7 @@ func (s *Processor) Process(words []*api.CliticsInput) ([]*api.CliticsOutput, er
 		if w.Type == "WORD" {
 			phr, ok := s.phrases.wordMap[w.String]
 			phrl, okl := s.phrases.wordMap[w.Lemma]
-			if (okl) {
+			if okl {
 				phr = append(phr, phrl...)
 			}
 			if ok || okl {
@@ -91,12 +91,12 @@ func isPhrase(words []*api.CliticsInput, from int, ph []*phrase) ([]int, bool) {
 
 func accentType(ph *phrase) string {
 	if ph.accent > 0 && !ph.isLemma {
-		return "STATIC"
+		return api.TypeStatic
 	}
 	if ph.accent > 0 && ph.isLemma {
-		return "NORMAL"
+		return api.TypeNormal
 	}
-	return "NONE"
+	return api.TypeNone
 }
 
 func accent(ph *phrase) int {

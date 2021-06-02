@@ -20,13 +20,14 @@ require (
 	github.com/labstack/gommon v0.3.0
 	github.com/mattn/go-colorable v0.1.7
 	github.com/microcosm-cc/bluemonday v1.0.4
-	github.com/onsi/gomega v1.10.4 // indirect
+	github.com/onsi/ginkgo v1.16.3 // indirect
+	github.com/onsi/gomega v1.13.0 // indirect
 	github.com/petergtz/pegomock v2.9.0+incompatible
 	github.com/pkg/errors v0.9.1
 	github.com/spf13/viper v1.7.1
 	github.com/stretchr/testify v1.6.1
 	github.com/tmdvs/Go-Emoji-Utils v1.1.0
 	go.mongodb.org/mongo-driver v1.4.2
-	golang.org/x/net v0.0.0-20201202161906-c7110b5ffcbb
-	golang.org/x/text v0.3.3
+	golang.org/x/net v0.0.0-20210428140749-89ef3d95e781
+	golang.org/x/text v0.3.6
 )
