@@ -89,10 +89,7 @@ func mapTransInput(data *synthesizer.TTSDataPart) ([]*transInput, error) {
 				if w.AccentVariant == nil {
 					return nil, errors.New("No accent variant for " + tword)
 				}
-				ti.Acc = w.AccentVariant.Accent
-				if w.UserAccent > 0 {
-					ti.Acc = w.UserAccent
-				}
+				ti.Acc = synthesizer.GetTranscriberAccent(w)
 				ti.Syll = w.AccentVariant.Syll
 				ti.Ml = w.AccentVariant.Ml
 			}

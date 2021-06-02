@@ -22,6 +22,11 @@ type HTTPWrap struct {
 
 //NewHTTWrap creates new wrapper
 func NewHTTWrap(urlStr string) (*HTTPWrap, error) {
+	return NewHTTWrapT(urlStr, time.Second*120)
+}
+
+//NewHTTWrapT creates new wrapper with timer
+func NewHTTWrapT(urlStr string, timeout time.Duration) (*HTTPWrap, error) {
 	res := &HTTPWrap{}
 	var err error
 	res.URL, err = checkURL(urlStr)
@@ -29,7 +34,7 @@ func NewHTTWrap(urlStr string) (*HTTPWrap, error) {
 		return nil, errors.Wrapf(err, "Can't parse url '%s'", urlStr)
 	}
 	res.HTTPClient = &http.Client{}
-	res.Timeout = time.Second * 120 // add default timetout
+	res.Timeout = timeout
 	res.flog = func(st, data string) { LogData(st, data) }
 	return res, nil
 }

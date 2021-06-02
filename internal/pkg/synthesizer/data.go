@@ -46,7 +46,21 @@ type ProcessedWord struct {
 	TranscriptionWord string
 	AccentVariant     *AccentVariant
 	UserAccent        int
+	Clitic            Clitic
 	Transcription     string
+}
+
+type CliticAccentEnum int
+
+const (
+	CliticsUnused CliticAccentEnum = iota
+	CliticsNone
+	CliticsCustom
+)
+
+type Clitic struct {
+	Type   CliticAccentEnum
+	Accent int
 }
 
 //TaggedWord - tagger's result

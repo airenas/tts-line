@@ -106,7 +106,7 @@ func mapAccentedText(data *TTSData) (string, error) {
 			} else if tgw.Separator != "" {
 				res.WriteString(tgw.Separator)
 			} else if tgw.IsWord() {
-				aw, err := accent.ToAccentString(tgw.Word, getAccent(w.AccentVariant))
+				aw, err := accent.ToAccentString(tgw.Word, GetTranscriberAccent(w))
 				if err != nil {
 					return "", errors.Wrapf(err, "Can't mark accent for %s", tgw.Word)
 				}
@@ -117,9 +117,17 @@ func mapAccentedText(data *TTSData) (string, error) {
 	return res.String(), nil
 }
 
-func getAccent(a *AccentVariant) int {
-	if a != nil {
-		return a.Accent
+func GetTranscriberAccent(w *ProcessedWord) int {
+	if w.AccentVariant != nil {
+		res := w.AccentVariant.Accent
+		if w.UserAccent > 0 {
+			res = w.UserAccent
+		} else if w.Clitic.Type == CliticsCustom {
+			res = w.Clitic.Accent
+		} else if w.Clitic.Type == CliticsNone {
+			res = 0
+		}
+		return res
 	}
 	return 0
 }
