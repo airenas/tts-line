@@ -172,6 +172,22 @@ func TestMapTransInput_UserAccent(t *testing.T) {
 	assert.Equal(t, 103, inp[1].Acc)
 }
 
+func TestMapTransInput_CliticsAccent(t *testing.T) {
+	d := newTestTTSDataPart()
+	d.Words = append(d.Words, &synthesizer.ProcessedWord{TranscriptionWord: "olia",
+		Tagged:        synthesizer.TaggedWord{Word: "v1"},
+		AccentVariant: &synthesizer.AccentVariant{Accent: 103, Syll: "o-lia"},
+		Clitic:        synthesizer.Clitic{Type: synthesizer.CliticsCustom, Accent: 101}})
+	d.Words = append(d.Words, &synthesizer.ProcessedWord{TranscriptionWord: "olia",
+		Tagged:        synthesizer.TaggedWord{Word: "v1"},
+		AccentVariant: &synthesizer.AccentVariant{Accent: 103, Syll: "o-lia"},
+		Clitic:        synthesizer.Clitic{Type: synthesizer.CliticsNone}})
+	inp, err := mapTransInput(d)
+	assert.Nil(t, err)
+	assert.Equal(t, 101, inp[0].Acc)
+	assert.Equal(t, 0, inp[1].Acc)
+}
+
 func TestMapTransInput_User(t *testing.T) {
 	d := newTestTTSDataPart()
 	d.Words = append(d.Words, &synthesizer.ProcessedWord{TranscriptionWord: "olia", UserTranscription: "olia3",

@@ -123,6 +123,19 @@ func TestMapResult_Accented(t *testing.T) {
 	assert.Equal(t, "{a\\}a ,a{i~}", res.Text)
 }
 
+func TestGetTranscriberAccent(t *testing.T) {
+	assert.Equal(t, 101, GetTranscriberAccent(&ProcessedWord{Tagged: TaggedWord{Word: "aa"},
+		AccentVariant: &AccentVariant{Accent: 101}}))
+	assert.Equal(t, 103, GetTranscriberAccent(&ProcessedWord{Tagged: TaggedWord{Word: "aa"},
+		AccentVariant: &AccentVariant{Accent: 101}, UserAccent: 103}))
+	assert.Equal(t, 101, GetTranscriberAccent(&ProcessedWord{Tagged: TaggedWord{Word: "aa"},
+		AccentVariant: &AccentVariant{Accent: 101}, Clitic: Clitic{Type: CliticsUnused}}))
+	assert.Equal(t, 0, GetTranscriberAccent(&ProcessedWord{Tagged: TaggedWord{Word: "aa"},
+		AccentVariant: &AccentVariant{Accent: 101}, Clitic: Clitic{Type: CliticsNone}}))
+	assert.Equal(t, 105, GetTranscriberAccent(&ProcessedWord{Tagged: TaggedWord{Word: "aa"},
+		AccentVariant: &AccentVariant{Accent: 101}, Clitic: Clitic{Type: CliticsCustom, Accent: 105}}))
+}
+
 func TestMapResult_Normalized(t *testing.T) {
 	d := &TTSData{}
 	d.Input = &api.TTSRequestConfig{OutputTextFormat: api.TextNormalized}
