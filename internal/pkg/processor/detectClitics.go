@@ -28,7 +28,7 @@ func NewClitics(urlStr string) (synthesizer.PartProcessor, error) {
 
 func (p *cliticDetector) Process(data *synthesizer.TTSDataPart) error {
 	if p.skip(data) {
-		goapp.Log.Info("Skip accentuator")
+		goapp.Log.Info("Skip clitics")
 		return nil
 	}
 	inData, err := mapCliticsInput(data)
