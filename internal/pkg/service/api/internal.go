@@ -51,4 +51,5 @@ type TTSRequestConfig struct {
 	OutputMetadata   []string
 	AllowCollectData bool
 	SaveTags         []string
+	Speed            float32
 }

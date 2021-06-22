@@ -73,6 +73,13 @@ func (c *TTSConfigutaror) Configure(r *http.Request, inText *api.Input) (*api.TT
 		return nil, err
 	}
 	res.SaveTags = getSaveTags(getHeader(r, headerSaveTags))
+
+	if inText.Speed > 0.0 {
+		if inText.Speed < 0.5 || inText.Speed > 2.0 {
+			return nil, errors.Errorf("speed value (%.3f) must be in [0.5,2]. ", inText.Speed)
+		}
+		res.Speed = inText.Speed
+	}
 	return res, nil
 }
 

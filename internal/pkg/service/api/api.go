@@ -4,9 +4,10 @@ package api
 type Input struct {
 	Text string `json:"text,omitempty"`
 	//Possible values are m4a, mp3
-	OutputFormat     string `json:"outputFormat,omitempty"`
-	OutputTextFormat string `json:"outputTextFormat,omitempty"`
-	AllowCollectData *bool  `json:"saveRequest,omitempty"`
+	OutputFormat     string  `json:"outputFormat,omitempty"`
+	OutputTextFormat string  `json:"outputTextFormat,omitempty"`
+	AllowCollectData *bool   `json:"saveRequest,omitempty"`
+	Speed            float32 `json:"speed,omitempty"`
 }
 
 //Check is validation check

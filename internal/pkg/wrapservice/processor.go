@@ -28,8 +28,8 @@ func NewProcessor(amURL, vocURL string) (*Processor, error) {
 }
 
 //Work is main method
-func (p *Processor) Work(text string) (string, error) {
-	amIn := amInput{Text: text}
+func (p *Processor) Work(text string, speed float32) (string, error) {
+	amIn := amInput{Text: text, Speed: speed}
 	var amOut output
 	err := p.amWrap.InvokeJSON(&amIn, &amOut)
 	if err != nil {
@@ -45,7 +45,8 @@ func (p *Processor) Work(text string) (string, error) {
 }
 
 type amInput struct {
-	Text string `json:"text"`
+	Text  string  `json:"text"`
+	Speed float32 `json:"speedAlpha,omitempty"`
 }
 
 type output struct {

@@ -16,7 +16,7 @@ import (
 type (
 	//WaveSynthesizer main sythesis processor
 	WaveSynthesizer interface {
-		Work(string) (string, error)
+		Work(string, float32) (string, error)
 	}
 	//Data is service operation data
 	Data struct {
@@ -62,7 +62,7 @@ func (h *synthesisHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	resp, err := h.data.Processor.Work(inText.Text)
+	resp, err := h.data.Processor.Work(inText.Text, inText.Speed)
 	if err != nil {
 		http.Error(w, "Service error", http.StatusInternalServerError)
 		goapp.Log.Error("Can't process. ", err)
