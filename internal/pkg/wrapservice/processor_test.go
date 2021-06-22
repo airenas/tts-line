@@ -56,12 +56,12 @@ func TestInvokerocessor(t *testing.T) {
 			*params[1].(*output) = output{Data: "audio"}
 			return []pegomock.ReturnValue{nil}
 		})
-	text, err := pr.Work("olia")
+	text, err := pr.Work("olia", 0.9)
 	assert.Nil(t, err)
 	assert.Equal(t, "audio", text)
 
 	cp1, _ := httpAMMock.VerifyWasCalledOnce().InvokeJSON(pegomock.AnyInterface(), pegomock.AnyInterface()).GetCapturedArguments()
-	assert.Equal(t, &amInput{Text: "olia"}, cp1)
+	assert.Equal(t, &amInput{Text: "olia", Speed: 0.9}, cp1)
 
 	cp2, _ := httpVocMock.VerifyWasCalledOnce().InvokeJSON(pegomock.AnyInterface(), pegomock.AnyInterface()).GetCapturedArguments()
 	assert.Equal(t, &output{Data: "specs"}, cp2)
@@ -80,7 +80,7 @@ func TestInvokerocessor_FailAM(t *testing.T) {
 			*params[1].(*output) = output{Data: "audio"}
 			return []pegomock.ReturnValue{nil}
 		})
-	_, err := pr.Work("olia")
+	_, err := pr.Work("olia", 1)
 	assert.NotNil(t, err)
 }
 
@@ -97,6 +97,6 @@ func TestInvokerocessor_FailVoc(t *testing.T) {
 			return []pegomock.ReturnValue{nil}
 		})
 	pegomock.When(httpVocMock.InvokeJSON(pegomock.AnyInterface(), pegomock.AnyInterface())).ThenReturn(errors.New("haha"))
-	_, err := pr.Work("olia")
+	_, err := pr.Work("olia", 1)
 	assert.NotNil(t, err)
 }

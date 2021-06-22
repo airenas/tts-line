@@ -41,18 +41,19 @@ func TestWrongMethod(t *testing.T) {
 
 func Test_Returns(t *testing.T) {
 	initTest(t)
-	pegomock.When(synthesizerMock.Work(pegomock.AnyString())).ThenReturn("wav", nil)
-	req := httptest.NewRequest("POST", "/synthesize", toReader(api.Input{Text: "olia"}))
+	pegomock.When(synthesizerMock.Work(pegomock.AnyString(), pegomock.AnyFloat32())).ThenReturn("wav", nil)
+	req := httptest.NewRequest("POST", "/synthesize", toReader(api.Input{Text: "olia", Speed: 0.9}))
 	resp := testCode(t, req, 200)
 	bytes, _ := ioutil.ReadAll(resp.Body)
 	assert.Contains(t, string(bytes), `"data":"wav"`)
-	txt := synthesizerMock.VerifyWasCalled(pegomock.Once()).Work(pegomock.AnyString()).GetCapturedArguments()
+	txt, sp := synthesizerMock.VerifyWasCalled(pegomock.Once()).Work(pegomock.AnyString(), pegomock.AnyFloat32()).GetCapturedArguments()
 	assert.Equal(t, "olia", txt)
+	assert.InDelta(t, 0.9, sp, 0.0001)
 }
 
 func Test_Fail(t *testing.T) {
 	initTest(t)
-	pegomock.When(synthesizerMock.Work(pegomock.AnyString())).ThenReturn("", errors.New("haha"))
+	pegomock.When(synthesizerMock.Work(pegomock.AnyString(), pegomock.AnyFloat32())).ThenReturn("", errors.New("haha"))
 	req := httptest.NewRequest("POST", "/synthesize", toReader(api.Input{Text: "olia"}))
 	testCode(t, req, 500)
 }
