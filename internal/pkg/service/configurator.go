@@ -7,6 +7,7 @@ import (
 	"github.com/airenas/go-app/pkg/goapp"
 
 	"github.com/airenas/tts-line/internal/pkg/service/api"
+	"github.com/airenas/tts-line/internal/pkg/utils"
 	"github.com/spf13/viper"
 
 	"github.com/pkg/errors"
@@ -74,11 +75,9 @@ func (c *TTSConfigutaror) Configure(r *http.Request, inText *api.Input) (*api.TT
 	}
 	res.SaveTags = getSaveTags(getHeader(r, headerSaveTags))
 
-	if inText.Speed > 0.0 {
-		if inText.Speed < 0.5 || inText.Speed > 2.0 {
-			return nil, errors.Errorf("speed value (%.3f) must be in [0.5,2]. ", inText.Speed)
-		}
-		res.Speed = inText.Speed
+	res.Speed, err = getSpeed(inText.Speed)
+	if err != nil {
+		return nil, err
 	}
 	return res, nil
 }
@@ -140,6 +139,15 @@ func getSaveTags(v string) []string {
 		return nil
 	}
 	return strings.Split(strings.TrimSpace(v), ",")
+}
+
+func getSpeed(v float32) (float32, error) {
+	if !utils.FloatEquals(v, 0) {
+		if v < 0.5 || v > 2.0 {
+			return 0, errors.Errorf("speed value (%.3f) must be in [0.5,2]. ", v)
+		}
+	}
+	return v, nil
 }
 
 func defaultS(s, s1 string) string {

@@ -20,3 +20,8 @@ func checkURL(urlStr string) (string, error) {
 	}
 	return urlRes.String(), nil
 }
+
+const eps float32 = 0.00000001
+func FloatEquals(a, b float32) bool {
+	return (a - b) < eps && (b - a) < eps
+}

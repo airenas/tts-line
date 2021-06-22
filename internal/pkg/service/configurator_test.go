@@ -200,3 +200,25 @@ func TestAllowCollect(t *testing.T) {
 		assert.Equal(t, tc.isErr, err != nil, "fail %d", i)
 	}
 }
+
+func TestSpeedVAlue(t *testing.T) {
+	tests := []struct {
+		v     float32
+		e     float32
+		isErr bool
+	}{
+		{v: 0, e: 0, isErr: false},
+		{v: 0.1, e: 0, isErr: true},
+		{v: -20, e: 0, isErr: true},
+		{v: 0.4999, e: 0, isErr: true},
+		{v: 0.5, e: 0.5, isErr: false},
+		{v: 2, e: 2, isErr: false},
+		{v: 1, e: 1, isErr: false},
+	}
+
+	for i, tc := range tests {
+		v, err := getSpeed(tc.v)
+		assert.InDelta(t, tc.e, v, 0.0001, "fail %d", i)
+		assert.Equal(t, tc.isErr, err != nil, "fail %d  - %v", i, err)
+	}
+}
