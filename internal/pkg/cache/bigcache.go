@@ -1,6 +1,7 @@
 package cache
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/airenas/go-app/pkg/goapp"
@@ -83,5 +84,5 @@ func getCleanDuration(dur time.Duration) time.Duration {
 }
 
 func key(inp *api.TTSRequestConfig) string {
-	return inp.Text + "_" + inp.OutputFormat.String()
+	return inp.Text + "_" + inp.OutputFormat.String() + "_" + fmt.Sprintf("%.4f", inp.Speed)
 }

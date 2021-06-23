@@ -136,9 +136,11 @@ func TestWork_Key(t *testing.T) {
 
 func Test_Key(t *testing.T) {
 	initTest(t)
-	assert.Equal(t, "olia_mp3", key(&api.TTSRequestConfig{Text: "olia", OutputFormat: api.AudioMP3}))
-	assert.Equal(t, "olia1_m4a", key(&api.TTSRequestConfig{Text: "olia1", OutputFormat: api.AudioM4A,
+	assert.Equal(t, "olia_mp3_0.0000", key(&api.TTSRequestConfig{Text: "olia", OutputFormat: api.AudioMP3}))
+	assert.Equal(t, "olia1_m4a_0.0000", key(&api.TTSRequestConfig{Text: "olia1", OutputFormat: api.AudioM4A,
 		OutputTextFormat: api.TextAccented}))
+	assert.Equal(t, "olia1_m4a_0.5600", key(&api.TTSRequestConfig{Text: "olia1", OutputFormat: api.AudioM4A,
+		OutputTextFormat: api.TextAccented, Speed: 0.56}))
 }
 
 func Test_MaxMB(t *testing.T) {
