@@ -66,6 +66,7 @@ func TestInvokeAcousticModel(t *testing.T) {
 	pr.(*amodel).httpWrap = httpJSONMock
 	d := newTestTTSDataPart()
 	d.Spectogram = "spectogram"
+	d.Cfg.Input.Speed = 0.5
 	pegomock.When(httpJSONMock.InvokeJSON(pegomock.AnyInterface(), pegomock.AnyInterface())).Then(
 		func(params []pegomock.Param) pegomock.ReturnValues {
 			*params[1].(*amOutput) = amOutput{Data: "spec"}
@@ -74,6 +75,11 @@ func TestInvokeAcousticModel(t *testing.T) {
 	err := pr.Process(d)
 	assert.Nil(t, err)
 	assert.Equal(t, "spec", d.Spectogram)
+	
+	inp, _ := httpJSONMock.VerifyWasCalled(pegomock.Once()).InvokeJSON(pegomock.AnyInterface(),
+		pegomock.AnyInterface()).GetCapturedArguments()
+	ai := inp.(*amInput)	
+	assert.InDelta(t, 0.5, ai.Speed, 0.0001)
 }
 
 func TestInvokeAcousticModel_Skip(t *testing.T) {
