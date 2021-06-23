@@ -39,7 +39,7 @@ func TestNewProcessor_Fail(t *testing.T) {
 	assert.Nil(t, pr)
 }
 
-func TestInvokerocessor(t *testing.T) {
+func TestInvokeProcessor(t *testing.T) {
 	initTestJSON(t)
 	pr, _ := NewProcessor("http://server", "http://service1")
 	assert.NotNil(t, pr)
@@ -67,7 +67,7 @@ func TestInvokerocessor(t *testing.T) {
 	assert.Equal(t, &output{Data: "specs"}, cp2)
 }
 
-func TestInvokerocessor_FailAM(t *testing.T) {
+func TestInvokeProcessor_FailAM(t *testing.T) {
 	initTestJSON(t)
 	pr, _ := NewProcessor("http://server", "http://service1")
 	assert.NotNil(t, pr)
@@ -84,7 +84,7 @@ func TestInvokerocessor_FailAM(t *testing.T) {
 	assert.NotNil(t, err)
 }
 
-func TestInvokerocessor_FailVoc(t *testing.T) {
+func TestInvokeProcessor_FailVoc(t *testing.T) {
 	initTestJSON(t)
 	pr, _ := NewProcessor("http://server", "http://service1")
 	assert.NotNil(t, pr)
