@@ -144,7 +144,7 @@ func getSaveTags(v string) []string {
 func getSpeed(v float32) (float32, error) {
 	if !utils.FloatEquals(v, 0) {
 		if v < 0.5 || v > 2.0 {
-			return 0, errors.Errorf("speed value (%.3f) must be in [0.5,2]. ", v)
+			return 0, errors.Errorf("speed value (%.2f) must be in [0.5,2].", v)
 		}
 	}
 	return v, nil

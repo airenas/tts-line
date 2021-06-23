@@ -128,9 +128,16 @@ func TestConfigure_FailCollect(t *testing.T) {
 }
 
 func TestConfigure_FailTextFormat(t *testing.T) {
-	c, _ := NewTTSConfigurator(test.NewConfig(t, "output:\n  defaultFormat: mp3\n  metadata:\n   - r=a"))
+	c, _ := NewTTSConfigurator(test.NewConfig(t, "output:\n  defaultFormat: mp3\n"))
 	req := httptest.NewRequest("POST", "/synthesize", strings.NewReader("text"))
 	_, err := c.Configure(req, &api.Input{Text: "olia", OutputFormat: "m4a", OutputTextFormat: "ooo"})
+	assert.NotNil(t, err)
+}
+
+func TestConfigure_FailSpeed(t *testing.T) {
+	c, _ := NewTTSConfigurator(test.NewConfig(t, "output:\n  defaultFormat: mp3\n"))
+	req := httptest.NewRequest("POST", "/synthesize", strings.NewReader("text"))
+	_, err := c.Configure(req, &api.Input{Text: "olia", Speed: 0.4})
 	assert.NotNil(t, err)
 }
 
