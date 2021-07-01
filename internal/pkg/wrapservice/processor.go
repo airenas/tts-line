@@ -1,8 +1,11 @@
 package wrapservice
 
 import (
+	"time"
+
 	"github.com/airenas/tts-line/internal/pkg/processor"
 	"github.com/airenas/tts-line/internal/pkg/utils"
+	"github.com/cenkalti/backoff/v4"
 	"github.com/pkg/errors"
 )
 
@@ -15,12 +18,19 @@ type Processor struct {
 //NewProcessor creates new processor
 func NewProcessor(amURL, vocURL string) (*Processor, error) {
 	res := &Processor{}
-	var err error
-	res.amWrap, err = utils.NewHTTWrap(amURL)
+	am, err := utils.NewHTTWrapT(amURL, time.Minute)
 	if err != nil {
 		return nil, errors.Wrap(err, "Can't init AM client")
 	}
-	res.vocWrap, err = utils.NewHTTWrap(vocURL)
+	res.amWrap, err = utils.NewHTTPBackoff(am, newBackoff)
+	if err != nil {
+		return nil, errors.Wrap(err, "Can't init AM client")
+	}
+	voc, err := utils.NewHTTWrapT(vocURL, time.Minute)
+	if err != nil {
+		return nil, errors.Wrap(err, "Can't init Vocoder client")
+	}
+	res.vocWrap, err = utils.NewHTTPBackoff(voc, newBackoff)
 	if err != nil {
 		return nil, errors.Wrap(err, "Can't init Vocoder client")
 	}
@@ -51,4 +61,10 @@ type amInput struct {
 
 type output struct {
 	Data string `json:"data"`
+}
+
+func newBackoff() backoff.BackOff {
+	res := backoff.NewExponentialBackOff()
+	res.InitialInterval = time.Second * 2
+	return backoff.WithMaxRetries(res, 3)
 }

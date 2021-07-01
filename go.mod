@@ -5,6 +5,7 @@ go 1.15
 require (
 	github.com/airenas/go-app v0.2.2
 	github.com/allegro/bigcache v1.2.1
+	github.com/cenkalti/backoff/v4 v4.1.1
 	github.com/facebookgo/clock v0.0.0-20150410010913-600d898af40a // indirect
 	github.com/facebookgo/ensure v0.0.0-20200202191622-63f1cf65ac4c // indirect
 	github.com/facebookgo/freeport v0.0.0-20150612182905-d4adf43b75b9 // indirect
