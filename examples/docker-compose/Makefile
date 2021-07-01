@@ -15,7 +15,7 @@ clean: stop
 	cat $< | envsubst > $@
 #####################################################################################
 test:
-	curl -i -X POST http://localhost:$(SERVICE_PORT)/synthesize -d '{"text": "laba diena"}'
+	curl -i -X POST http://localhost:$(SERVICE_PORT)/synthesize -H 'Content-type: application/json' -d '{"text": "laba diena", "speed": 0.75}'
 
 .EXPORT_ALL_VARIABLES:
 	
