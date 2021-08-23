@@ -79,7 +79,7 @@ func main() {
 }
 
 func addProcessors(synt *synthesizer.MainWorker, sp *mongodb.SessionProvider) error {
-	pr, err := processor.NewAddMetrics(processor.NewMetricsCharsFunc("synthesize"))
+	pr, err := processor.NewAddMetrics(processor.NewMetricsCharsFunc("/synthesize"))
 	if err != nil {
 		return errors.Wrap(err, "can't init metrics processor")
 	}
@@ -143,7 +143,7 @@ func addProcessors(synt *synthesizer.MainWorker, sp *mongodb.SessionProvider) er
 	}
 	synt.Add(pr)
 
-	pr, err = processor.NewAddMetrics(processor.NewMetricsWaveLenFunc("synthesize"))
+	pr, err = processor.NewAddMetrics(processor.NewMetricsWaveLenFunc("/synthesize"))
 	if err != nil {
 		return errors.Wrap(err, "can't init metrics processor")
 	}
@@ -160,7 +160,7 @@ func addProcessors(synt *synthesizer.MainWorker, sp *mongodb.SessionProvider) er
 }
 
 func addCustomProcessors(synt *synthesizer.MainWorker, sp *mongodb.SessionProvider, cfg *viper.Viper) error {
-	pr, err := processor.NewAddMetrics(processor.NewMetricsCharsFunc("synthesizeCustom"))
+	pr, err := processor.NewAddMetrics(processor.NewMetricsCharsFunc("/synthesizeCustom"))
 	if err != nil {
 		return errors.Wrap(err, "can't init metrics processor")
 	}
@@ -213,7 +213,7 @@ func addCustomProcessors(synt *synthesizer.MainWorker, sp *mongodb.SessionProvid
 	}
 	synt.Add(pr)
 
-	pr, err = processor.NewAddMetrics(processor.NewMetricsWaveLenFunc("synthesizeCustom"))
+	pr, err = processor.NewAddMetrics(processor.NewMetricsWaveLenFunc("/synthesizeCustom"))
 	if err != nil {
 		return errors.Wrap(err, "can't init metrics processor")
 	}
