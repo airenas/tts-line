@@ -31,3 +31,28 @@ func SizeBytes(data uint32) []byte {
 	binary.Write(res, binary.LittleEndian, data)
 	return res.Bytes()
 }
+
+//GetSampleRate return sample rate from header
+func GetSampleRate(data []byte) uint32 {
+	return binary.LittleEndian.Uint32(data[24:28])
+}
+
+//GetSampleRate return sample rate from header
+func GetBitsPerSample(data []byte) uint16 {
+	return binary.LittleEndian.Uint16(data[34:36])
+}
+
+//GetChannels return channels
+func GetChannels(data []byte) uint16 {
+	return binary.LittleEndian.Uint16(data[22:24])
+}
+
+//GetBitsRate returns bit rate from header
+func GetBitsRate(data []byte) uint32 {
+	return binary.LittleEndian.Uint32(data[28:32])
+}
+
+//GetBitsRateCalc calculates bits per sample - sometimes there is incorect value for bitsrate in header
+func GetBitsRateCalc(data []byte) uint32 {
+	return uint32(GetSampleRate(data) * uint32(GetChannels(data)) * uint32(GetBitsPerSample(data)/8))
+}

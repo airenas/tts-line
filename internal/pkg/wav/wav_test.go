@@ -39,8 +39,42 @@ func TestSizeBytes(t *testing.T) {
 	assert.Equal(t, "00010000", fmt.Sprintf("%x", SizeBytes(256)))
 }
 
+func TestSampleRate(t *testing.T) {
+	wave := getWaveData(t)
+	assert.Equal(t, 44100, int(GetSampleRate(wave)))
+	wave = getWaveDataN(t, "test2")
+	assert.Equal(t, 44100, int(GetSampleRate(wave)))
+}
+
+func TestChannels(t *testing.T) {
+	wave := getWaveData(t)
+	assert.Equal(t, 1, int(GetChannels(wave)))
+	wave = getWaveDataN(t, "test2")
+	assert.Equal(t, 2, int(GetChannels(wave)))
+}
+
+func TestGetBitsPerSample(t *testing.T) {
+	wave := getWaveData(t)
+	assert.Equal(t, 16, int(GetBitsPerSample(wave)))
+	wave = getWaveDataN(t, "test2")
+	assert.Equal(t, 16, int(GetBitsPerSample(wave)))
+}
+
+func TestLen(t *testing.T) {
+	wave := getWaveData(t)
+	assert.InDelta(t, 0.2786, float64(GetSize(wave))/float64(GetBitsRate(wave)), 0.001)
+	assert.InDelta(t, .557, float64(GetSize(wave))/float64(GetBitsRateCalc(wave)), 0.001)
+	wave = getWaveDataN(t, "test2")
+	assert.InDelta(t, .557, float64(GetSize(wave))/float64(GetBitsRate(wave)), 0.001)
+	assert.InDelta(t, .557, float64(GetSize(wave))/float64(GetBitsRateCalc(wave)), 0.001)
+}
+
 func getWaveData(t *testing.T) []byte {
-	res, err := ioutil.ReadFile("_testdata/test.wav")
+	return getWaveDataN(t, "test")
+}
+
+func getWaveDataN(t *testing.T, name string) []byte {
+	res, err := ioutil.ReadFile(fmt.Sprintf("_testdata/%s.wav", name))
 	assert.Nil(t, err)
 	return res
 }
