@@ -25,6 +25,7 @@ require (
 	github.com/onsi/gomega v1.13.0 // indirect
 	github.com/petergtz/pegomock v2.9.0+incompatible
 	github.com/pkg/errors v0.9.1
+	github.com/prometheus/client_golang v1.1.0
 	github.com/spf13/viper v1.7.1
 	github.com/stretchr/testify v1.6.1
 	github.com/tmdvs/Go-Emoji-Utils v1.1.0

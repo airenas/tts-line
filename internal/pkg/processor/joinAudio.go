@@ -25,7 +25,7 @@ func (p *joinAudio) Process(data *synthesizer.TTSData) error {
 		return nil
 	}
 	var err error
-	data.Audio, err = join(data.Parts)
+	data.Audio, data.AudioDuration, err = join(data.Parts)
 	if err != nil {
 		return errors.Wrap(err, "Can't join audio")
 	}
@@ -33,7 +33,7 @@ func (p *joinAudio) Process(data *synthesizer.TTSData) error {
 	return nil
 }
 
-func join(parts []*synthesizer.TTSDataPart) (string, error) {
+func join(parts []*synthesizer.TTSDataPart) (string, float64, error) {
 	var buf bytes.Buffer
 	var bufHeader []byte
 	size := uint32(0)
@@ -41,10 +41,10 @@ func join(parts []*synthesizer.TTSDataPart) (string, error) {
 	for _, part := range parts {
 		decoded, err := base64.StdEncoding.DecodeString(part.Audio)
 		if err != nil {
-			return "", err
+			return "", 0, err
 		}
 		if !wav.IsValid(decoded) {
-			return "", errors.New("No valid audio wave data")
+			return "", 0, errors.New("No valid audio wave data")
 		}
 		if bufHeader == nil {
 			bufHeader = wav.TakeHeader(decoded)
@@ -53,7 +53,7 @@ func join(parts []*synthesizer.TTSDataPart) (string, error) {
 		size += wav.GetSize(decoded)
 		_, err = buf.Write(wav.TakeData(decoded))
 		if err != nil {
-			return "", err
+			return "", 0, err
 		}
 	}
 	var bufRes bytes.Buffer
@@ -63,7 +63,11 @@ func join(parts []*synthesizer.TTSDataPart) (string, error) {
 	enc.Write(buf.Bytes())
 	err := enc.Close()
 	if err != nil {
-		return "", err
+		return "", 0, err
 	}
-	return bufRes.String(), nil
+	bitsRate := wav.GetBitsRateCalc(bufHeader)
+	if bitsRate == 0 {
+		return "", 0, errors.New("can't extract bits rate from header")
+	}
+	return bufRes.String(), float64(size) / float64(bitsRate), nil
 }

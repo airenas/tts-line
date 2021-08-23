@@ -79,6 +79,11 @@ func main() {
 }
 
 func addProcessors(synt *synthesizer.MainWorker, sp *mongodb.SessionProvider) error {
+	pr, err := processor.NewAddMetrics(processor.NewMetricsCharsFunc("synthesize"))
+	if err != nil {
+		return errors.Wrap(err, "can't init metrics processor")
+	}
+	synt.Add(pr)
 	ts, err := mongodb.NewTextSaver(sp)
 	if err != nil {
 		return errors.Wrap(err, "Can't init text to DB saver")
@@ -89,7 +94,7 @@ func addProcessors(synt *synthesizer.MainWorker, sp *mongodb.SessionProvider) er
 	}
 	synt.Add(sv)
 	// cleaner
-	pr, err := processor.NewCleaner(goapp.Config.GetString("clean.url"))
+	pr, err = processor.NewCleaner(goapp.Config.GetString("clean.url"))
 	if err != nil {
 		return errors.Wrap(err, "Can't init normalize/clean processor")
 	}
@@ -138,6 +143,12 @@ func addProcessors(synt *synthesizer.MainWorker, sp *mongodb.SessionProvider) er
 	}
 	synt.Add(pr)
 
+	pr, err = processor.NewAddMetrics(processor.NewMetricsWaveLenFunc("synthesize"))
+	if err != nil {
+		return errors.Wrap(err, "can't init metrics processor")
+	}
+	synt.Add(pr)
+
 	if goapp.Config.GetString("filer.dir") != "" {
 		pr, err = processor.NewFiler(goapp.Config.GetString("filer.dir"))
 		if err != nil {
@@ -149,12 +160,17 @@ func addProcessors(synt *synthesizer.MainWorker, sp *mongodb.SessionProvider) er
 }
 
 func addCustomProcessors(synt *synthesizer.MainWorker, sp *mongodb.SessionProvider, cfg *viper.Viper) error {
+	pr, err := processor.NewAddMetrics(processor.NewMetricsCharsFunc("synthesizeCustom"))
+	if err != nil {
+		return errors.Wrap(err, "can't init metrics processor")
+	}
+	synt.Add(pr)
 	ts, err := mongodb.NewTextSaver(sp)
 	if err != nil {
 		return errors.Wrap(err, "Can't init text to DB saver")
 	}
 
-	pr, err := processor.NewLoader(ts)
+	pr, err = processor.NewLoader(ts)
 	if err != nil {
 		return errors.Wrap(err, "Can't init text from DB loader")
 	}
@@ -194,6 +210,12 @@ func addCustomProcessors(synt *synthesizer.MainWorker, sp *mongodb.SessionProvid
 	pr, err = processor.NewConverter(cfg.GetString("audioConvert.url"))
 	if err != nil {
 		return errors.Wrap(err, "Can't init audioConvert converter")
+	}
+	synt.Add(pr)
+
+	pr, err = processor.NewAddMetrics(processor.NewMetricsWaveLenFunc("synthesizeCustom"))
+	if err != nil {
+		return errors.Wrap(err, "can't init metrics processor")
 	}
 	synt.Add(pr)
 
