@@ -56,6 +56,6 @@ func NewMetricsCharsFunc(url string) func(data *synthesizer.TTSData) {
 
 func NewMetricsWaveLenFunc(url string) func(data *synthesizer.TTSData) {
 	return func(data *synthesizer.TTSData) {
-		totalDurationMetrics.WithLabelValues(url).Add(data.AudioDuration)
+		totalDurationMetrics.WithLabelValues(url).Add(data.AudioLenSeconds)
 	}
 }

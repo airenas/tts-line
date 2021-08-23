@@ -25,7 +25,7 @@ func (p *joinAudio) Process(data *synthesizer.TTSData) error {
 		return nil
 	}
 	var err error
-	data.Audio, data.AudioDuration, err = join(data.Parts)
+	data.Audio, data.AudioLenSeconds, err = join(data.Parts)
 	if err != nil {
 		return errors.Wrap(err, "Can't join audio")
 	}

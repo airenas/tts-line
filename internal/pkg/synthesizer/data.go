@@ -18,9 +18,9 @@ type TTSData struct {
 	Words []*ProcessedWord
 	Parts []*TTSDataPart
 
-	Audio         string
-	AudioMP3      string
-	AudioDuration float64 // in secs
+	Audio           string
+	AudioMP3        string
+	AudioLenSeconds float64 
 }
 
 //TTSConfig some TTS configuration

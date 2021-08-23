@@ -38,7 +38,7 @@ func TestCallsCMetricsWaveLen(t *testing.T) {
 	assert.NotNil(t, pr)
 	assert.Nil(t, err)
 	d := &synthesizer.TTSData{}
-	d.AudioDuration = 0.35
+	d.AudioLenSeconds = 0.35
 	err = pr.Process(d)
 	assert.Nil(t, err)
 	err = pr.Process(d)

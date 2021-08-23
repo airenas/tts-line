@@ -27,7 +27,7 @@ func TestJoinAudio(t *testing.T) {
 	err := pr.Process(&d)
 	assert.Nil(t, err)
 	assert.Equal(t, strA, d.Audio)
-	assert.InDelta(t, 0.5572, d.AudioDuration, 0.001)
+	assert.InDelta(t, 0.5572, d.AudioLenSeconds, 0.001)
 }
 
 func TestJoinAudio_Skip(t *testing.T) {
@@ -38,7 +38,7 @@ func TestJoinAudio_Skip(t *testing.T) {
 	err := pr.Process(&d)
 	assert.Nil(t, err)
 	assert.Equal(t, "", d.Audio)
-	assert.InDelta(t, 0.0, d.AudioDuration, 0.001)
+	assert.InDelta(t, 0.0, d.AudioLenSeconds, 0.001)
 }
 
 func TestJoinAudio_Several(t *testing.T) {
@@ -54,7 +54,7 @@ func TestJoinAudio_Several(t *testing.T) {
 	as := getTestAudioSize(strA)
 
 	assert.Equal(t, as*3, getTestAudioSize(d.Audio))
-	assert.InDelta(t, 0.5572 * 3, d.AudioDuration, 0.001)
+	assert.InDelta(t, 0.5572 * 3, d.AudioLenSeconds, 0.001)
 }
 
 func TestJoinAudio_DecodeFail(t *testing.T) {
