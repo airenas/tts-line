@@ -32,3 +32,4 @@ examples/docker-compose/.env
 cmd/clitics/phrases.txt
 deploy/clitics/Makefile.options
 deploy/clitics/data/**
+deploy/am-voc-wrapper/bin/**
