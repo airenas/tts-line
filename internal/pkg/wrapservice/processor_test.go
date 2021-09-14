@@ -5,6 +5,7 @@ import (
 
 	"github.com/petergtz/pegomock"
 	"github.com/pkg/errors"
+	"github.com/prometheus/client_golang/prometheus/testutil"
 
 	"github.com/stretchr/testify/assert"
 
@@ -65,6 +66,8 @@ func TestInvokeProcessor(t *testing.T) {
 
 	cp2, _ := httpVocMock.VerifyWasCalledOnce().InvokeJSON(pegomock.AnyInterface(), pegomock.AnyInterface()).GetCapturedArguments()
 	assert.Equal(t, &vocInput{Data: "specs", Voice: "voice"}, cp2)
+	assert.InDelta(t, 0.0, testutil.ToFloat64(totalFailureMetrics.WithLabelValues("am", "voice")), 0.000001)
+	assert.InDelta(t, 0.0, testutil.ToFloat64(totalFailureMetrics.WithLabelValues("vocoder", "voice")), 0.000001)
 }
 
 func TestInvokeProcessor_FailAM(t *testing.T) {
@@ -82,6 +85,7 @@ func TestInvokeProcessor_FailAM(t *testing.T) {
 		})
 	_, err := pr.Work("olia", 1, "voice")
 	assert.NotNil(t, err)
+	assert.InDelta(t, 1.0, testutil.ToFloat64(totalFailureMetrics.WithLabelValues("am", "voice")), 0.000001)
 }
 
 func TestInvokeProcessor_FailVoc(t *testing.T) {
@@ -99,4 +103,5 @@ func TestInvokeProcessor_FailVoc(t *testing.T) {
 	pegomock.When(httpVocMock.InvokeJSON(pegomock.AnyInterface(), pegomock.AnyInterface())).ThenReturn(errors.New("haha"))
 	_, err := pr.Work("olia", 1, "voice")
 	assert.NotNil(t, err)
+	assert.InDelta(t, 1.0, testutil.ToFloat64(totalFailureMetrics.WithLabelValues("vocoder", "voice")), 0.000001)
 }

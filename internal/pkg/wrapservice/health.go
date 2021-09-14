@@ -23,6 +23,6 @@ func NewHealthHandler(amURL, vocURL string) (http.Handler, error) {
 	goapp.Log.Infof("AM live URL: %s", amURL+"/live")
 	goapp.Log.Infof("Vocoder live URL: %s", vocURL+"/live")
 	res.AddChecker("AM", url.NewCheckerWithTimeout(amURL+"/live", timeout))
-	res.AddChecker("Vocoder", url.NewCheckerWithTimeout(amURL+"/live", timeout))
+	res.AddChecker("Vocoder", url.NewCheckerWithTimeout(vocURL+"/live", timeout))
 	return res, nil
 }
