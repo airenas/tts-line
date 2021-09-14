@@ -101,6 +101,8 @@ func Test_FailOnWrongInput(t *testing.T) {
 	req = httptest.NewRequest("POST", "/synthesize", toReader(api.Input{Text: "", Voice: "aaa"}))
 	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
 	testCode(t, req, 400)
+	req = httptest.NewRequest("POST", "/synthesize", toReader(api.Input{Text: "ttt", Voice: "aaa"}))
+	testCode(t, req, 400)
 
 }
 
