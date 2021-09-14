@@ -16,14 +16,18 @@ func main() {
 	var err error
 	data.Processor, err = wrapservice.NewProcessor(goapp.Config.GetString("acousticModel.url"), goapp.Config.GetString("vocoder.url"))
 	if err != nil {
-		goapp.Log.Fatal(errors.Wrap(err, "Can't init processor"))
+		goapp.Log.Fatal(errors.Wrap(err, "can't init processor"))
+	}
+	data.HealthHandler, err = wrapservice.NewHealthHandler(goapp.Config.GetString("acousticModel.url"), goapp.Config.GetString("vocoder.url"))
+	if err != nil {
+		goapp.Log.Fatal(errors.Wrap(err, "can't init health handler"))
 	}
 
 	printBanner()
 
 	err = wrapservice.StartWebServer(&data)
 	if err != nil {
-		goapp.Log.Fatal(errors.Wrap(err, "Can't start the service"))
+		goapp.Log.Fatal(errors.Wrap(err, "can't start the service"))
 	}
 }
 

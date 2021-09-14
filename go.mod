@@ -21,6 +21,7 @@ require (
 	github.com/labstack/gommon v0.3.0
 	github.com/mattn/go-colorable v0.1.7
 	github.com/microcosm-cc/bluemonday v1.0.4
+	github.com/mschneider82/health v0.0.0-20191023121516-d79dedea6640
 	github.com/onsi/ginkgo v1.16.3 // indirect
 	github.com/onsi/gomega v1.13.0 // indirect
 	github.com/petergtz/pegomock v2.9.0+incompatible

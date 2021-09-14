@@ -24,8 +24,9 @@ type (
 	}
 	//Data is service operation data
 	Data struct {
-		Port      int
-		Processor WaveSynthesizer
+		Port          int
+		Processor     WaveSynthesizer
+		HealthHandler http.Handler
 	}
 )
 
@@ -104,7 +105,5 @@ func handleSynthesize(data *Data) func(echo.Context) error {
 }
 
 func live(data *Data) func(echo.Context) error {
-	return func(c echo.Context) error {
-		return c.JSONBlob(http.StatusOK, []byte(`{"service":"OK"}`))
-	}
+	return echo.WrapHandler(data.HealthHandler)
 }
