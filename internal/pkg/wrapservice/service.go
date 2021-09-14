@@ -2,21 +2,25 @@ package wrapservice
 
 import (
 	"encoding/json"
+	"log"
 	"net/http"
 	"strconv"
+	"strings"
+	"time"
 
 	"github.com/airenas/tts-line/internal/pkg/wrapservice/api"
+	"github.com/facebookgo/grace/gracehttp"
+	"github.com/labstack/echo-contrib/prometheus"
+	"github.com/labstack/echo/v4"
+	"github.com/pkg/errors"
 
 	"github.com/airenas/go-app/pkg/goapp"
-	"github.com/gorilla/mux"
-
-	"github.com/pkg/errors"
 )
 
 type (
 	//WaveSynthesizer main sythesis processor
 	WaveSynthesizer interface {
-		Work(string, float32) (string, error)
+		Work(text string, speed float32, voice string) (string, error)
 	}
 	//Data is service operation data
 	Data struct {
@@ -25,57 +29,82 @@ type (
 	}
 )
 
-//StartWebServer starts the HTTP service and listens for the admin requests
+//StartWebServer starts the HTTP service and listens for synthesize requests
 func StartWebServer(data *Data) error {
-	goapp.Log.Infof("Starting HTTP TTS Line service at %d", data.Port)
-	r := NewRouter(data)
-	http.Handle("/", r)
+	goapp.Log.Infof("Starting HTTP TTS AM-VOC Wrapper Service at %d", data.Port)
 	portStr := strconv.Itoa(data.Port)
-	err := http.ListenAndServe(":"+portStr, nil)
 
-	if err != nil {
-		return errors.Wrap(err, "Can't start HTTP listener at port "+portStr)
-	}
-	return nil
+	e := initRoutes(data)
+
+	e.Server.Addr = ":" + portStr
+	e.Server.ReadHeaderTimeout = 15 * time.Second
+	e.Server.ReadTimeout = 60 * time.Second
+	e.Server.WriteTimeout = 75 * time.Second
+
+	w := goapp.Log.Writer()
+	defer w.Close()
+	l := log.New(w, "", 0)
+	gracehttp.SetLogger(l)
+
+	return gracehttp.Serve(e.Server)
 }
 
-//NewRouter creates the router for HTTP service
-func NewRouter(data *Data) *mux.Router {
-	router := mux.NewRouter()
-	router.Methods("POST").Path("/synthesize").Handler(&synthesisHandler{data: data})
-	return router
-}
+var p *prometheus.Prometheus
 
-type synthesisHandler struct {
-	data *Data
-}
-
-func (h *synthesisHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	goapp.Log.Infof("Request from %s", r.RemoteAddr)
-
-	decoder := json.NewDecoder(r.Body)
-	var inText api.Input
-	err := decoder.Decode(&inText)
-	if err != nil {
-		http.Error(w, "Cannot decode input", http.StatusBadRequest)
-		goapp.Log.Error("Cannot decode input" + err.Error())
-		return
+func initRoutes(data *Data) *echo.Echo {
+	e := echo.New()
+	if p == nil {
+		p = prometheus.NewPrometheus("avw", nil)
+		p.Use(e)
 	}
 
-	resp, err := h.data.Processor.Work(inText.Text, inText.Speed)
-	if err != nil {
-		http.Error(w, "Service error", http.StatusInternalServerError)
-		goapp.Log.Error("Can't process. ", err)
-		return
-	}
-	res := &api.Result{Data: resp}
+	e.POST("/synthesize", handleSynthesize(data))
+	e.GET("/live", live(data))
 
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	encoder := json.NewEncoder(w)
-	err = encoder.Encode(&res)
-	if err != nil {
-		http.Error(w, "Can not prepare result", http.StatusInternalServerError)
-		goapp.Log.Error(err)
+	goapp.Log.Info("Routes:")
+	for _, r := range e.Routes() {
+		goapp.Log.Infof("  %s %s", r.Method, r.Path)
+	}
+	return e
+}
+
+func handleSynthesize(data *Data) func(echo.Context) error {
+	return func(c echo.Context) error {
+		defer goapp.Estimate("Service method: synthesize")()
+
+		ctype := c.Request().Header.Get(echo.HeaderContentType)
+		if !strings.HasPrefix(ctype, echo.MIMEApplicationJSON) {
+			goapp.Log.Error("Wrong content type")
+			return echo.NewHTTPError(http.StatusBadRequest, "Wrong content type. Expected '"+echo.MIMEApplicationJSON+"'")
+		}
+		var input api.Input
+		if err := c.Bind(&input); err != nil {
+			goapp.Log.Error(err)
+			return echo.NewHTTPError(http.StatusBadRequest, "Can read data")
+		}
+		if input.Text == "" {
+			goapp.Log.Error("No text")
+			return echo.NewHTTPError(http.StatusBadRequest, "No text")
+		}
+		if input.Voice == "" {
+			goapp.Log.Error("No voice")
+			return echo.NewHTTPError(http.StatusBadRequest, "No voice")
+		}
+
+		resp, err := data.Processor.Work(input.Text, input.Speed, input.Voice)
+		if err != nil {
+			goapp.Log.Error(errors.Wrap(err, "cannot process text"))
+			return echo.NewHTTPError(http.StatusInternalServerError, "Cannot process text")
+		}
+		res := &api.Result{Data: resp}
+		c.Response().Header().Set(echo.HeaderContentType, echo.MIMEApplicationJSONCharsetUTF8)
+		c.Response().WriteHeader(http.StatusOK)
+		return json.NewEncoder(c.Response()).Encode(res)
+	}
+}
+
+func live(data *Data) func(echo.Context) error {
+	return func(c echo.Context) error {
+		return c.JSONBlob(http.StatusOK, []byte(`{"service":"OK"}`))
 	}
 }

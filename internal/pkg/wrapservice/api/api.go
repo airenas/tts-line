@@ -4,6 +4,7 @@ package api
 type Input struct {
 	Text  string  `json:"text,omitempty"`
 	Speed float32 `json:"speedAlpha,omitempty"`
+	Voice string  `json:"voice,omitempty"`
 }
 
 //Result is synthesis result

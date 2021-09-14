@@ -3,6 +3,7 @@ package wrapservice
 import (
 	"time"
 
+	"github.com/airenas/go-app/pkg/goapp"
 	"github.com/airenas/tts-line/internal/pkg/processor"
 	"github.com/airenas/tts-line/internal/pkg/utils"
 	"github.com/cenkalti/backoff/v4"
@@ -18,7 +19,8 @@ type Processor struct {
 //NewProcessor creates new processor
 func NewProcessor(amURL, vocURL string) (*Processor, error) {
 	res := &Processor{}
-	am, err := utils.NewHTTWrapT(amURL, time.Minute)
+	goapp.Log.Infof("AM URL: %s", amURL+"/model")
+	am, err := utils.NewHTTWrapT(amURL+"/model", time.Minute)
 	if err != nil {
 		return nil, errors.Wrap(err, "Can't init AM client")
 	}
@@ -26,7 +28,8 @@ func NewProcessor(amURL, vocURL string) (*Processor, error) {
 	if err != nil {
 		return nil, errors.Wrap(err, "Can't init AM client")
 	}
-	voc, err := utils.NewHTTWrapT(vocURL, time.Minute)
+	goapp.Log.Infof("Vocoder URL: %s", vocURL+"/model")
+	voc, err := utils.NewHTTWrapT(vocURL+"/model", time.Minute)
 	if err != nil {
 		return nil, errors.Wrap(err, "Can't init Vocoder client")
 	}
@@ -38,18 +41,18 @@ func NewProcessor(amURL, vocURL string) (*Processor, error) {
 }
 
 //Work is main method
-func (p *Processor) Work(text string, speed float32) (string, error) {
-	amIn := amInput{Text: text, Speed: speed}
+func (p *Processor) Work(text string, speed float32, voice string) (string, error) {
+	amIn := amInput{Text: text, Speed: speed, Voice: voice}
 	var amOut output
 	err := p.amWrap.InvokeJSON(&amIn, &amOut)
 	if err != nil {
-		return "", errors.Wrap(err, "Can't invoke AM")
+		return "", errors.Wrap(err, "can't invoke AM")
 	}
-	vocIn := output{Data: amOut.Data}
+	vocIn := vocInput{Data: amOut.Data, Voice: voice}
 	var vocOut output
 	err = p.vocWrap.InvokeJSON(&vocIn, &vocOut)
 	if err != nil {
-		return "", errors.Wrap(err, "Can't invoke Vocoder")
+		return "", errors.Wrap(err, "can't invoke Vocoder")
 	}
 	return vocOut.Data, nil
 }
@@ -57,6 +60,12 @@ func (p *Processor) Work(text string, speed float32) (string, error) {
 type amInput struct {
 	Text  string  `json:"text"`
 	Speed float32 `json:"speedAlpha,omitempty"`
+	Voice string  `json:"voice,omitempty"`
+}
+
+type vocInput struct {
+	Data  string `json:"data"`
+	Voice string `json:"voice,omitempty"`
 }
 
 type output struct {

@@ -1,8 +1,8 @@
 -include Makefile.options
 #####################################################################################
-ACOUSTICMODEL_URL?=http://localhost:8002/model
-VOCODER_URL?=http://localhost:8001/model
-PORT?=8000
+ACOUSTICMODEL_URL?=http://localhost:8000
+VOCODER_URL?=http://localhost:8001
+PORT?=8002
 ########### SERVICE#################################################################
 logs:
 	mkdir -p $@

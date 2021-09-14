@@ -1,7 +1,7 @@
 port: 8011
 
 acousticModel:
-  url: http://semspch04.vdu.lt:8000/model
+  url: http://localhost:8000
 
 vocoder:
-  url: http://semspch04.vdu.lt:8001/model    
+  url: http://localhost:8001    
