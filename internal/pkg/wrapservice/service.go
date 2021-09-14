@@ -40,7 +40,7 @@ func StartWebServer(data *Data) error {
 	e.Server.Addr = ":" + portStr
 	e.Server.ReadHeaderTimeout = 15 * time.Second
 	e.Server.ReadTimeout = 60 * time.Second
-	e.Server.WriteTimeout = 75 * time.Second
+	e.Server.WriteTimeout = 180 * time.Second
 
 	w := goapp.Log.Writer()
 	defer w.Close()
