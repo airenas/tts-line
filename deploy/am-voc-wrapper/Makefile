@@ -30,8 +30,12 @@ $(dist_dir)/$(executable_name): | $(dist_dir)
 	cd $(main_dir) && $(go_build_cmd) -o $(dist_dir)/$(executable_name) 
 $(dist_dir)/config.yaml: config.yaml.in Makefile.options
 	cat $< | envsubst > $@	
+$(dist_dir)/$(executable_name)-$(version).$(commit_count).gz: $(dist_dir)/$(executable_name)
+	gzip -c $< > $@	
 #####################################################################################
-build: $(dist_dir)/$(executable_name) $(dist_dir)/config.yaml
+build: $(dist_dir)/$(executable_name)-$(version).$(commit_count).gz
+share: $(dist_dir)/$(executable_name)-$(version).$(commit_count).gz
+	scp $(dist_dir)/$(executable_name)-$(version).$(commit_count).gz $(component-share)
 #####################################################################################
 clean:
 	rm -rf $(dist_dir)
