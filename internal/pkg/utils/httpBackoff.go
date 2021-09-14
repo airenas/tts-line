@@ -11,8 +11,10 @@ type HTTPInvokerJSON interface {
 
 //HTTPBackof http call with backoff
 type HTTPBackoff struct {
-	HTTPClient HTTPInvokerJSON
-	backoffF   func() backoff.BackOff
+	HTTPClient          HTTPInvokerJSON
+	backoffF            func() backoff.BackOff
+	InvokeIndicatorFunc func(interface{})
+	RetryIndicatorFunc  func(interface{})
 }
 
 //NewHTTPBackoff creates new wrapper with backoff
@@ -24,6 +26,12 @@ func NewHTTPBackoff(realWrapper HTTPInvokerJSON, backoffF func() backoff.BackOff
 func (hw *HTTPBackoff) InvokeJSON(dataIn interface{}, dataOut interface{}) error {
 	failC := 0
 	op := func() error {
+		if hw.InvokeIndicatorFunc != nil {
+			hw.InvokeIndicatorFunc(dataIn)
+		}
+		if failC > 0 && hw.RetryIndicatorFunc != nil {
+			hw.RetryIndicatorFunc(dataIn)
+		}
 		err := hw.HTTPClient.InvokeJSON(dataIn, dataOut)
 		if err != nil {
 			goapp.Log.Error(err)

@@ -22,21 +22,36 @@ func NewProcessor(amURL, vocURL string) (*Processor, error) {
 	goapp.Log.Infof("AM URL: %s", amURL+"/model")
 	am, err := utils.NewHTTWrapT(amURL+"/model", time.Minute)
 	if err != nil {
-		return nil, errors.Wrap(err, "Can't init AM client")
+		return nil, errors.Wrap(err, "can't init AM client")
 	}
-	res.amWrap, err = utils.NewHTTPBackoff(am, newBackoff)
+	amService, err := utils.NewHTTPBackoff(am, newBackoff)
 	if err != nil {
-		return nil, errors.Wrap(err, "Can't init AM client")
+		return nil, errors.Wrap(err, "can't init AM client")
 	}
+	amService.InvokeIndicatorFunc = func(d interface{}) {
+		totalInvokeMetrics.WithLabelValues("am", d.(*amInput).Voice).Add(1)
+	}
+	amService.RetryIndicatorFunc = func(d interface{}) {
+		totalRetryMetrics.WithLabelValues("am", d.(*amInput).Voice).Add(1)
+	}
+	res.amWrap = amService
+
 	goapp.Log.Infof("Vocoder URL: %s", vocURL+"/model")
 	voc, err := utils.NewHTTWrapT(vocURL+"/model", time.Minute)
 	if err != nil {
-		return nil, errors.Wrap(err, "Can't init Vocoder client")
+		return nil, errors.Wrap(err, "can't init Vocoder client")
 	}
-	res.vocWrap, err = utils.NewHTTPBackoff(voc, newBackoff)
+	vocService, err := utils.NewHTTPBackoff(voc, newBackoff)
 	if err != nil {
-		return nil, errors.Wrap(err, "Can't init Vocoder client")
+		return nil, errors.Wrap(err, "can't init Vocoder client")
 	}
+	vocService.InvokeIndicatorFunc = func(d interface{}) {
+		totalInvokeMetrics.WithLabelValues("vocoder", d.(*vocInput).Voice).Add(1)
+	}
+	vocService.RetryIndicatorFunc = func(d interface{}) {
+		totalRetryMetrics.WithLabelValues("vocoder", d.(*vocInput).Voice).Add(1)
+	}
+	res.vocWrap = vocService
 	return res, nil
 }
 
@@ -46,12 +61,14 @@ func (p *Processor) Work(text string, speed float32, voice string) (string, erro
 	var amOut output
 	err := p.amWrap.InvokeJSON(&amIn, &amOut)
 	if err != nil {
+		totalFailureMetrics.WithLabelValues("am", voice).Add(1)
 		return "", errors.Wrap(err, "can't invoke AM")
 	}
 	vocIn := vocInput{Data: amOut.Data, Voice: voice}
 	var vocOut output
 	err = p.vocWrap.InvokeJSON(&vocIn, &vocOut)
 	if err != nil {
+		totalFailureMetrics.WithLabelValues("vocoder", voice).Add(1)
 		return "", errors.Wrap(err, "can't invoke Vocoder")
 	}
 	return vocOut.Data, nil
