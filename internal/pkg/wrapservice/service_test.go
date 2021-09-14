@@ -28,7 +28,8 @@ var (
 func initTest(t *testing.T) {
 	mocks.AttachMockToTest(t)
 	synthesizerMock = mocks.NewMockWaveSynthesizer()
-	tData = &Data{Port: 8000, Processor: synthesizerMock}
+	var hf http.HandlerFunc = func(w http.ResponseWriter, r *http.Request) { w.WriteHeader(http.StatusOK) }
+	tData = &Data{Port: 8000, Processor: synthesizerMock, HealthHandler: hf}
 	tEcho = initRoutes(tData)
 	tRec = httptest.NewRecorder()
 }
@@ -37,6 +38,28 @@ func TestWrongPath(t *testing.T) {
 	initTest(t)
 	req := httptest.NewRequest("GET", "/invalid", nil)
 	testCode(t, req, 404)
+}
+
+func TestLive(t *testing.T) {
+	initTest(t)
+	req := httptest.NewRequest("GET", "/live", nil)
+	testCode(t, req, 200)
+}
+
+func TestLive503(t *testing.T) {
+	initTest(t)
+	var hf http.HandlerFunc = func(w http.ResponseWriter, r *http.Request) { w.WriteHeader(http.StatusServiceUnavailable) }
+	tData = &Data{Port: 8000, Processor: synthesizerMock, HealthHandler: hf}
+	tEcho = initRoutes(tData)
+	tRec = httptest.NewRecorder()
+	req := httptest.NewRequest("GET", "/live", nil)
+	testCode(t, req, 503)
+}
+
+func TestMatrics(t *testing.T) {
+	initTest(t)
+	req := httptest.NewRequest("GET", "/metrics", nil)
+	testCode(t, req, 200)
 }
 
 func TestWrongMethod(t *testing.T) {
@@ -72,6 +95,13 @@ func Test_FailOnWrongInput(t *testing.T) {
 	req := httptest.NewRequest("POST", "/synthesize", strings.NewReader("text"))
 	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
 	testCode(t, req, 400)
+	req = httptest.NewRequest("POST", "/synthesize", toReader(api.Input{Text: "olia", Voice: ""}))
+	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+	testCode(t, req, 400)
+	req = httptest.NewRequest("POST", "/synthesize", toReader(api.Input{Text: "", Voice: "aaa"}))
+	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+	testCode(t, req, 400)
+
 }
 
 func toReader(inData api.Input) io.Reader {
@@ -80,6 +110,7 @@ func toReader(inData api.Input) io.Reader {
 }
 
 func testCode(t *testing.T, req *http.Request, code int) *httptest.ResponseRecorder {
+	tRec = httptest.NewRecorder()
 	tEcho.ServeHTTP(tRec, req)
 	assert.Equal(t, code, tRec.Code)
 	return tRec

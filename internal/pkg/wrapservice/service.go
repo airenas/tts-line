@@ -56,8 +56,8 @@ func initRoutes(data *Data) *echo.Echo {
 	e := echo.New()
 	if p == nil {
 		p = prometheus.NewPrometheus("avw", nil)
-		p.Use(e)
 	}
+	p.Use(e)
 
 	e.POST("/synthesize", handleSynthesize(data))
 	e.GET("/live", live(data))
