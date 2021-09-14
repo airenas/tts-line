@@ -10,7 +10,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/gorilla/mux"
+	"github.com/labstack/echo/v4"
 	"github.com/petergtz/pegomock"
 	"github.com/stretchr/testify/assert"
 
@@ -20,11 +20,17 @@ import (
 
 var (
 	synthesizerMock *mocks.MockWaveSynthesizer
+	tData           *Data
+	tEcho           *echo.Echo
+	tRec            *httptest.ResponseRecorder
 )
 
 func initTest(t *testing.T) {
 	mocks.AttachMockToTest(t)
 	synthesizerMock = mocks.NewMockWaveSynthesizer()
+	tData = &Data{Port: 8000, Processor: synthesizerMock}
+	tEcho = initRoutes(tData)
+	tRec = httptest.NewRecorder()
 }
 
 func TestWrongPath(t *testing.T) {
@@ -41,31 +47,31 @@ func TestWrongMethod(t *testing.T) {
 
 func Test_Returns(t *testing.T) {
 	initTest(t)
-	pegomock.When(synthesizerMock.Work(pegomock.AnyString(), pegomock.AnyFloat32())).ThenReturn("wav", nil)
-	req := httptest.NewRequest("POST", "/synthesize", toReader(api.Input{Text: "olia", Speed: 0.9}))
+	pegomock.When(synthesizerMock.Work(pegomock.AnyString(), pegomock.AnyFloat32(), pegomock.AnyString())).ThenReturn("wav", nil)
+	req := httptest.NewRequest("POST", "/synthesize", toReader(api.Input{Text: "olia", Speed: 0.9, Voice: "aa"}))
+	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
 	resp := testCode(t, req, 200)
 	bytes, _ := ioutil.ReadAll(resp.Body)
 	assert.Contains(t, string(bytes), `"data":"wav"`)
-	txt, sp := synthesizerMock.VerifyWasCalled(pegomock.Once()).Work(pegomock.AnyString(), pegomock.AnyFloat32()).GetCapturedArguments()
+	txt, sp, voice := synthesizerMock.VerifyWasCalled(pegomock.Once()).Work(pegomock.AnyString(), pegomock.AnyFloat32(), pegomock.AnyString()).GetCapturedArguments()
 	assert.Equal(t, "olia", txt)
 	assert.InDelta(t, 0.9, sp, 0.0001)
+	assert.Equal(t, "aa", voice)
 }
 
 func Test_Fail(t *testing.T) {
 	initTest(t)
-	pegomock.When(synthesizerMock.Work(pegomock.AnyString(), pegomock.AnyFloat32())).ThenReturn("", errors.New("haha"))
-	req := httptest.NewRequest("POST", "/synthesize", toReader(api.Input{Text: "olia"}))
+	pegomock.When(synthesizerMock.Work(pegomock.AnyString(), pegomock.AnyFloat32(), pegomock.AnyString())).ThenReturn("", errors.New("haha"))
+	req := httptest.NewRequest("POST", "/synthesize", toReader(api.Input{Text: "olia", Voice: "aa"}))
+	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
 	testCode(t, req, 500)
 }
 
 func Test_FailOnWrongInput(t *testing.T) {
 	initTest(t)
 	req := httptest.NewRequest("POST", "/synthesize", strings.NewReader("text"))
+	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
 	testCode(t, req, 400)
-}
-
-func newTestRouter() *mux.Router {
-	return NewRouter(newTestData())
 }
 
 func toReader(inData api.Input) io.Reader {
@@ -73,14 +79,8 @@ func toReader(inData api.Input) io.Reader {
 	return strings.NewReader(string(bytes))
 }
 
-func newTestData() *Data {
-	res := &Data{Processor: synthesizerMock}
-	return res
-}
-
 func testCode(t *testing.T, req *http.Request, code int) *httptest.ResponseRecorder {
-	resp := httptest.NewRecorder()
-	newTestRouter().ServeHTTP(resp, req)
-	assert.Equal(t, code, resp.Code)
-	return resp
+	tEcho.ServeHTTP(tRec, req)
+	assert.Equal(t, code, tRec.Code)
+	return tRec
 }
