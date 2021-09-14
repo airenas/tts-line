@@ -50,3 +50,27 @@ func TestInvokeRetry(t *testing.T) {
 	assert.NotNil(t, err)
 	testHTTPWrap.VerifyWasCalled(pegomock.Times(4))
 }
+
+func TestCallbacks(t *testing.T) {
+	initTestJSON(t)
+	pr, _ := utils.NewHTTPBackoff(testHTTPWrap, func() backoff.BackOff {
+		return backoff.WithMaxRetries(&backoff.ZeroBackOff{}, 3)
+	})
+	ic := 0
+	rc := 0
+	pr.InvokeIndicatorFunc = func(d interface{}) {
+		ic++
+		assert.Equal(t, "olia", d)
+	}
+	pr.RetryIndicatorFunc = func(d interface{}) {
+		rc++
+		assert.Equal(t, "olia", d)
+	}
+	pegomock.When(testHTTPWrap.InvokeJSON(pegomock.AnyInterface(), pegomock.AnyInterface())).ThenReturn(errors.New("olia"))
+
+	err := pr.InvokeJSON("olia", "")
+	assert.NotNil(t, err)
+	testHTTPWrap.VerifyWasCalled(pegomock.Times(4))
+	assert.Equal(t, 4, ic)
+	assert.Equal(t, 3, rc)
+}
