@@ -14,6 +14,7 @@ import (
 //HTTPInvokerJSON invoker for json input
 type HTTPInvokerJSON interface {
 	InvokeJSON(interface{}, interface{}) error
+	InvokeJSONU(URL string, dataIn interface{}, dataOut interface{}) error
 }
 
 type acronyms struct {

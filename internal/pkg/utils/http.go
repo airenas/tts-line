@@ -52,6 +52,11 @@ func (hw *HTTPWrap) InvokeText(dataIn string, dataOut interface{}) error {
 
 //InvokeJSON makes http call with json
 func (hw *HTTPWrap) InvokeJSON(dataIn interface{}, dataOut interface{}) error {
+	return hw.InvokeJSONU(hw.URL, dataIn, dataOut)
+}
+
+//InvokeJSONU makes http call with json
+func (hw *HTTPWrap) InvokeJSONU(URL string, dataIn interface{}, dataOut interface{}) error {
 	b := new(bytes.Buffer)
 	enc := json.NewEncoder(b)
 	enc.SetEscapeHTML(false)
@@ -60,9 +65,9 @@ func (hw *HTTPWrap) InvokeJSON(dataIn interface{}, dataOut interface{}) error {
 		return err
 	}
 	hw.flog("Input : ", b.String())
-	req, err := http.NewRequest("POST", hw.URL, b)
+	req, err := http.NewRequest("POST", URL, b)
 	if err != nil {
-		return errors.Wrapf(err, "Can't prepare request to '%s'", hw.URL)
+		return errors.Wrapf(err, "Can't prepare request to '%s'", URL)
 	}
 	req.Header.Set("Content-Type", "application/json")
 	return hw.invoke(req, dataOut)
@@ -74,7 +79,7 @@ func (hw *HTTPWrap) invoke(req *http.Request, dataOut interface{}) error {
 		defer cancelF()
 		req = req.WithContext(ctx)
 	}
-	hw.flog("Call : ", hw.URL)
+	hw.flog("Call : ", req.URL.String())
 	resp, err := hw.HTTPClient.Do(req)
 	if err != nil {
 		return errors.Wrapf(err, "Can't call '%s'", hw.URL)

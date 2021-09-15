@@ -1,6 +1,8 @@
 package processor
 
 import (
+	"time"
+
 	"github.com/airenas/tts-line/internal/pkg/service/api"
 	"github.com/airenas/tts-line/internal/pkg/synthesizer"
 	"github.com/airenas/tts-line/internal/pkg/utils"
@@ -9,16 +11,23 @@ import (
 
 type vocoder struct {
 	httpWrap HTTPInvokerJSON
+	url      string
 }
 
 //NewVocoder creates new processor
 func NewVocoder(urlStr string) (synthesizer.PartProcessor, error) {
 	res := &vocoder{}
-	var err error
-	res.httpWrap, err = utils.NewHTTWrap(urlStr)
+
+	res.url = urlStr
+	voc, err := utils.NewHTTWrapT(getVoiceURL(res.url, "testVoice"), time.Second*45)
 	if err != nil {
-		return nil, errors.Wrap(err, "Can't init http client")
+		return nil, errors.Wrap(err, "can't init vocoder client")
 	}
+	res.httpWrap, err = utils.NewHTTPBackoff(voc, newGPUBackoff)
+	if err != nil {
+		return nil, errors.Wrap(err, "can't init vocoder client")
+	}
+
 	return res, nil
 }
 
@@ -27,9 +36,9 @@ func (p *vocoder) Process(data *synthesizer.TTSDataPart) error {
 		return nil
 	}
 
-	inData := vocInput{Data: data.Spectogram}
+	inData := vocInput{Data: data.Spectogram, Voice: data.Cfg.Input.Voice}
 	var output vocOutput
-	err := p.httpWrap.InvokeJSON(inData, &output)
+	err := p.httpWrap.InvokeJSONU(getVoiceURL(p.url, data.Cfg.Input.Voice), inData, &output)
 	if err != nil {
 		return err
 	}
@@ -38,7 +47,8 @@ func (p *vocoder) Process(data *synthesizer.TTSDataPart) error {
 }
 
 type vocInput struct {
-	Data string `json:"data"`
+	Data  string `json:"data"`
+	Voice string `json:"voice"`
 }
 
 type vocOutput struct {

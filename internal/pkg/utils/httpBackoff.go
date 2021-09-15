@@ -6,6 +6,7 @@ import (
 )
 
 type HTTPInvokerJSON interface {
+	InvokeJSONU(string, interface{}, interface{}) error
 	InvokeJSON(interface{}, interface{}) error
 }
 
@@ -24,6 +25,18 @@ func NewHTTPBackoff(realWrapper HTTPInvokerJSON, backoffF func() backoff.BackOff
 
 //InvokeJSON makes http call with json
 func (hw *HTTPBackoff) InvokeJSON(dataIn interface{}, dataOut interface{}) error {
+	return hw.invoke(func() error {
+		return hw.HTTPClient.InvokeJSON(dataIn, dataOut)
+	}, dataIn)
+}
+
+func (hw *HTTPBackoff) InvokeJSONU(URL string, dataIn interface{}, dataOut interface{}) error {
+	return hw.invoke(func() error {
+		return hw.HTTPClient.InvokeJSONU(URL, dataIn, dataOut)
+	}, dataIn)
+}
+
+func (hw *HTTPBackoff) invoke(f func() error, dataIn interface{}) error {
 	failC := 0
 	op := func() error {
 		if hw.InvokeIndicatorFunc != nil {
@@ -32,7 +45,7 @@ func (hw *HTTPBackoff) InvokeJSON(dataIn interface{}, dataOut interface{}) error
 		if failC > 0 && hw.RetryIndicatorFunc != nil {
 			hw.RetryIndicatorFunc(dataIn)
 		}
-		err := hw.HTTPClient.InvokeJSON(dataIn, dataOut)
+		err := f()
 		if err != nil {
 			goapp.Log.Error(err)
 			failC++

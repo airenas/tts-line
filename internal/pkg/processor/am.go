@@ -2,8 +2,10 @@ package processor
 
 import (
 	"strings"
+	"time"
 
 	"github.com/airenas/go-app/pkg/goapp"
+	"github.com/cenkalti/backoff/v4"
 	"github.com/spf13/viper"
 
 	"github.com/airenas/tts-line/internal/pkg/service/api"
@@ -14,6 +16,7 @@ import (
 
 type amodel struct {
 	httpWrap    HTTPInvokerJSON
+	url         string
 	spaceSymbol string
 	endSymbol   string
 	hasVocoder  bool
@@ -39,11 +42,16 @@ func NewAcousticModel(config *viper.Viper) (synthesizer.PartProcessor, error) {
 	}
 
 	res := &amodel{}
-	var err error
-	res.httpWrap, err = utils.NewHTTWrap(config.GetString("url"))
+	res.url = config.GetString("url")
+	am, err := utils.NewHTTWrapT(getVoiceURL(res.url, "testVoice"), time.Second*45)
 	if err != nil {
-		return nil, errors.Wrap(err, "Can't init http client")
+		return nil, errors.Wrap(err, "can't init AM client")
 	}
+	res.httpWrap, err = utils.NewHTTPBackoff(am, newGPUBackoff)
+	if err != nil {
+		return nil, errors.Wrap(err, "can't init AM client")
+	}
+
 	res.spaceSymbol = config.GetString("spaceSymbol")
 	if res.spaceSymbol == "" {
 		res.spaceSymbol = "sil"
@@ -65,7 +73,7 @@ func (p *amodel) Process(data *synthesizer.TTSDataPart) error {
 
 	inData := p.mapAMInput(data)
 	var output amOutput
-	err := p.httpWrap.InvokeJSON(inData, &output)
+	err := p.httpWrap.InvokeJSONU(getVoiceURL(p.url, data.Cfg.Input.Voice), inData, &output)
 	if err != nil {
 		return err
 	}
@@ -80,6 +88,7 @@ func (p *amodel) Process(data *synthesizer.TTSDataPart) error {
 type amInput struct {
 	Text  string  `json:"text"`
 	Speed float32 `json:"speedAlpha,omitempty"`
+	Voice string  `json:"voice"`
 }
 
 type amOutput struct {
@@ -89,6 +98,7 @@ type amOutput struct {
 func (p *amodel) mapAMInput(data *synthesizer.TTSDataPart) *amInput {
 	res := &amInput{}
 	res.Speed = data.Cfg.Input.Speed
+	res.Voice = data.Cfg.Input.Voice
 	if data.Cfg.JustAM {
 		res.Text = data.Text
 		return res
@@ -189,4 +199,14 @@ func changePhn(s string) string {
 		return ch
 	}
 	return s
+}
+
+func newGPUBackoff() backoff.BackOff {
+	res := backoff.NewExponentialBackOff()
+	res.InitialInterval = time.Second * 2
+	return backoff.WithMaxRetries(res, 3)
+}
+
+func getVoiceURL(url, voice string) string {
+	return strings.Replace(url, "{{voice}}", voice, -1)
 }
