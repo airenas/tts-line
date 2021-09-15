@@ -26,19 +26,26 @@ func TestNewVocoder_Fails(t *testing.T) {
 
 func TestInvokeVocoder(t *testing.T) {
 	initTestJSON(t)
-	pr, _ := NewVocoder("http://server")
+	pr, _ := NewVocoder("http://{{voice}}.server")
 	assert.NotNil(t, pr)
 	pr.(*vocoder).httpWrap = httpJSONMock
 	d := newTestTTSDataPart()
 	d.Spectogram = "spectogram"
-	pegomock.When(httpJSONMock.InvokeJSON(pegomock.AnyInterface(), pegomock.AnyInterface())).Then(
+	d.Cfg.Input.Voice = "aaa"
+	pegomock.When(httpJSONMock.InvokeJSONU(pegomock.AnyString(), pegomock.AnyInterface(), pegomock.AnyInterface())).Then(
 		func(params []pegomock.Param) pegomock.ReturnValues {
-			*params[1].(*vocOutput) = vocOutput{Data: "wav"}
+			*params[2].(*vocOutput) = vocOutput{Data: "wav"}
 			return []pegomock.ReturnValue{nil}
 		})
 	err := pr.Process(d)
 	assert.Nil(t, err)
 	assert.Equal(t, "wav", d.Audio)
+
+	url, inp, _ := httpJSONMock.VerifyWasCalled(pegomock.Once()).InvokeJSONU(pegomock.AnyString(), pegomock.AnyInterface(),
+		pegomock.AnyInterface()).GetCapturedArguments()
+	ai := inp.(vocInput)
+	assert.Equal(t, "aaa", ai.Voice)
+	assert.Equal(t, "http://aaa.server", url)
 }
 
 func TestInvokeVocoder_Skip(t *testing.T) {
@@ -51,7 +58,7 @@ func TestInvokeVocoder_Skip(t *testing.T) {
 	d.Spectogram = "spectogram"
 	err := pr.Process(d)
 	assert.Nil(t, err)
-	httpJSONMock.VerifyWasCalled(pegomock.Never()).InvokeJSON(pegomock.AnyInterface(), pegomock.AnyInterface())
+	httpJSONMock.VerifyWasCalled(pegomock.Never()).InvokeJSONU(pegomock.AnyString(), pegomock.AnyInterface(), pegomock.AnyInterface())
 }
 
 func TestInvokeVocoder_Fail(t *testing.T) {
@@ -61,7 +68,7 @@ func TestInvokeVocoder_Fail(t *testing.T) {
 	pr.(*vocoder).httpWrap = httpJSONMock
 	d := newTestTTSDataPart()
 	d.Spectogram = "spectogram"
-	pegomock.When(httpJSONMock.InvokeJSON(pegomock.AnyInterface(), pegomock.AnyInterface())).ThenReturn(errors.New("haha"))
+	pegomock.When(httpJSONMock.InvokeJSONU(pegomock.AnyString(), pegomock.AnyInterface(), pegomock.AnyInterface())).ThenReturn(errors.New("haha"))
 	err := pr.Process(d)
 	assert.NotNil(t, err)
 }
