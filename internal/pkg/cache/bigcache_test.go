@@ -108,7 +108,7 @@ func TestWork_NoCacheValidation(t *testing.T) {
 	assert.NotNil(t, c)
 	pegomock.When(synthesizerMock.Work(matchers.AnyPtrToApiTTSRequestConfig())).
 		ThenReturn(&api.Result{
-			ValidationFailures: []api.ValidateFailure{api.ValidateFailure{}}}, nil)
+			ValidationFailures: []api.ValidateFailure{{}}}, nil)
 
 	_, err := c.Work(newtestInput("olia"))
 	assert.Nil(t, err)
@@ -136,11 +136,13 @@ func TestWork_Key(t *testing.T) {
 
 func Test_Key(t *testing.T) {
 	initTest(t)
-	assert.Equal(t, "olia_mp3_0.0000", key(&api.TTSRequestConfig{Text: "olia", OutputFormat: api.AudioMP3}))
-	assert.Equal(t, "olia1_m4a_0.0000", key(&api.TTSRequestConfig{Text: "olia1", OutputFormat: api.AudioM4A,
-		OutputTextFormat: api.TextAccented}))
-	assert.Equal(t, "olia1_m4a_0.5600", key(&api.TTSRequestConfig{Text: "olia1", OutputFormat: api.AudioM4A,
-		OutputTextFormat: api.TextAccented, Speed: 0.56}))
+	assert.Equal(t, "olia_mp3_0.0000_", key(&api.TTSRequestConfig{Text: "olia", OutputFormat: api.AudioMP3}))
+	assert.Equal(t, "olia1_m4a_0.0000_aaa", key(&api.TTSRequestConfig{Text: "olia1", OutputFormat: api.AudioM4A,
+		OutputTextFormat: api.TextAccented, Voice: "aaa"}))
+	assert.Equal(t, "olia1_m4a_0.5600_aa", key(&api.TTSRequestConfig{Text: "olia1", OutputFormat: api.AudioM4A,
+		OutputTextFormat: api.TextAccented, Speed: 0.56, Voice: "aa"}))
+	assert.Equal(t, "olia1_m4a_0.5600_aaa", key(&api.TTSRequestConfig{Text: "olia1", OutputFormat: api.AudioM4A,
+		OutputTextFormat: api.TextAccented, Speed: 0.56, Voice: "aaa"}))
 }
 
 func Test_MaxMB(t *testing.T) {
