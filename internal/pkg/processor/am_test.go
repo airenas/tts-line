@@ -61,25 +61,28 @@ func TestNewAcousticModel_ReadVocoder(t *testing.T) {
 
 func TestInvokeAcousticModel(t *testing.T) {
 	initTestJSON(t)
-	pr, _ := NewAcousticModel(test.NewConfig(t, "url: http://server\n"))
+	pr, _ := NewAcousticModel(test.NewConfig(t, "url: http://{{voice}}.server\n"))
 	assert.NotNil(t, pr)
 	pr.(*amodel).httpWrap = httpJSONMock
 	d := newTestTTSDataPart()
 	d.Spectogram = "spectogram"
 	d.Cfg.Input.Speed = 0.5
-	pegomock.When(httpJSONMock.InvokeJSON(pegomock.AnyInterface(), pegomock.AnyInterface())).Then(
+	d.Cfg.Input.Voice = "aa"
+	pegomock.When(httpJSONMock.InvokeJSONU(pegomock.AnyString(), pegomock.AnyInterface(), pegomock.AnyInterface())).Then(
 		func(params []pegomock.Param) pegomock.ReturnValues {
-			*params[1].(*amOutput) = amOutput{Data: "spec"}
+			*params[2].(*amOutput) = amOutput{Data: "spec"}
 			return []pegomock.ReturnValue{nil}
 		})
 	err := pr.Process(d)
 	assert.Nil(t, err)
 	assert.Equal(t, "spec", d.Spectogram)
-	
-	inp, _ := httpJSONMock.VerifyWasCalled(pegomock.Once()).InvokeJSON(pegomock.AnyInterface(),
+
+	url, inp, _ := httpJSONMock.VerifyWasCalled(pegomock.Once()).InvokeJSONU(pegomock.AnyString(), pegomock.AnyInterface(),
 		pegomock.AnyInterface()).GetCapturedArguments()
-	ai := inp.(*amInput)	
+	ai := inp.(*amInput)
 	assert.InDelta(t, 0.5, ai.Speed, 0.0001)
+	assert.Equal(t, "aa", ai.Voice)
+	assert.Equal(t, "http://aa.server", url)
 }
 
 func TestInvokeAcousticModel_Skip(t *testing.T) {
@@ -92,7 +95,7 @@ func TestInvokeAcousticModel_Skip(t *testing.T) {
 	d.Spectogram = ""
 	err := pr.Process(d)
 	assert.Nil(t, err)
-	httpJSONMock.VerifyWasCalled(pegomock.Never()).InvokeJSON(pegomock.AnyInterface(), pegomock.AnyInterface())
+	httpJSONMock.VerifyWasCalled(pegomock.Never()).InvokeJSONU(pegomock.AnyString(), pegomock.AnyInterface(), pegomock.AnyInterface())
 }
 
 func TestInvokeAcousticModel_WriteAudio(t *testing.T) {
@@ -102,9 +105,9 @@ func TestInvokeAcousticModel_WriteAudio(t *testing.T) {
 	pr.(*amodel).httpWrap = httpJSONMock
 	d := newTestTTSDataPart()
 	d.Spectogram = "spectogram"
-	pegomock.When(httpJSONMock.InvokeJSON(pegomock.AnyInterface(), pegomock.AnyInterface())).Then(
+	pegomock.When(httpJSONMock.InvokeJSONU(pegomock.AnyString(), pegomock.AnyInterface(), pegomock.AnyInterface())).Then(
 		func(params []pegomock.Param) pegomock.ReturnValues {
-			*params[1].(*amOutput) = amOutput{Data: "audio"}
+			*params[2].(*amOutput) = amOutput{Data: "audio"}
 			return []pegomock.ReturnValue{nil}
 		})
 	err := pr.Process(d)
@@ -120,7 +123,7 @@ func TestInvokeAcousticModel_Fail(t *testing.T) {
 	pr.(*amodel).httpWrap = httpJSONMock
 	d := newTestTTSDataPart()
 	d.Spectogram = "spectogram"
-	pegomock.When(httpJSONMock.InvokeJSON(pegomock.AnyInterface(), pegomock.AnyInterface())).ThenReturn(errors.New("haha"))
+	pegomock.When(httpJSONMock.InvokeJSONU(pegomock.AnyString(), pegomock.AnyInterface(), pegomock.AnyInterface())).ThenReturn(errors.New("haha"))
 	err := pr.Process(d)
 	assert.NotNil(t, err)
 }
@@ -133,10 +136,10 @@ func TestInvokeAcousticModel_FromAM(t *testing.T) {
 	d := newTestTTSDataPart()
 	d.Cfg.JustAM = true
 	d.Text = "olia"
-	pegomock.When(httpJSONMock.InvokeJSON(pegomock.AnyInterface(), pegomock.AnyInterface())).ThenReturn(nil)
+	pegomock.When(httpJSONMock.InvokeJSONU(pegomock.AnyString(), pegomock.AnyInterface(), pegomock.AnyInterface())).ThenReturn(nil)
 	err := pr.Process(d)
 	assert.Nil(t, err)
-	cp1, _ := httpJSONMock.VerifyWasCalledOnce().InvokeJSON(pegomock.AnyInterface(), pegomock.AnyInterface()).GetCapturedArguments()
+	_, cp1, _ := httpJSONMock.VerifyWasCalledOnce().InvokeJSONU(pegomock.AnyString(), pegomock.AnyInterface(), pegomock.AnyInterface()).GetCapturedArguments()
 	assert.Equal(t, &amInput{Text: "olia"}, cp1)
 }
 
@@ -393,6 +396,22 @@ func TestChangePhn(t *testing.T) {
 
 	for i, tc := range tests {
 		assert.Equal(t, tc.e, changePhn(tc.v), "Fail %d", i)
+	}
+}
+
+func TestVoiceURL(t *testing.T) {
+	tests := []struct {
+		u string
+		v string
+		e string
+	}{
+		{u: "http://server", v: "voice", e: "http://server"},
+		{u: "http://server.{{voice}}", v: "voice", e: "http://server.voice"},
+		{u: "http://{{voice}}-server.{{voice}}", v: "voice", e: "http://voice-server.voice"},
+	}
+
+	for i, tc := range tests {
+		assert.Equal(t, tc.e, getVoiceURL(tc.u, tc.v), "Fail %d", i)
 	}
 }
 
