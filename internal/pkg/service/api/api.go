@@ -8,6 +8,7 @@ type Input struct {
 	OutputTextFormat string  `json:"outputTextFormat,omitempty"`
 	AllowCollectData *bool   `json:"saveRequest,omitempty"`
 	Speed            float32 `json:"speed,omitempty"`
+	Voice            string  `json:"voice,omitempty"`
 }
 
 //Check is validation check

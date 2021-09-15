@@ -23,31 +23,39 @@ const (
 type TTSConfigutaror struct {
 	defaultOutputFormat api.AudioFormatEnum
 	outputMetadata      []string
+	defaultVoice        string
+	availableVoices     map[string]bool
 }
 
 //NewTTSConfigurator creates the initial request configuration
 func NewTTSConfigurator(cfg *viper.Viper) (*TTSConfigutaror, error) {
 	if cfg == nil {
-		return nil, errors.New("No request config 'options'")
+		return nil, errors.New("no request config 'options'")
 	}
 	res := &TTSConfigutaror{}
 	var err error
 	res.defaultOutputFormat, err = getOutputAudioFormat(cfg.GetString("output.defaultFormat"))
 	if err != nil {
-		return nil, errors.Wrap(err, "Can't init format")
+		return nil, errors.Wrap(err, "can't init format")
 	}
 	if res.defaultOutputFormat == api.AudioNone || res.defaultOutputFormat == api.AudioDefault {
-		return nil, errors.New("No output.defaultFormat configured")
+		return nil, errors.New("no output.defaultFormat configured")
 	}
 
 	goapp.Log.Infof("Default output format: %s", res.defaultOutputFormat.String())
 	res.outputMetadata = cfg.GetStringSlice("output.metadata")
 	for _, m := range res.outputMetadata {
 		if !strings.Contains(m, "=") {
-			return nil, errors.Errorf("Metadata must contain '='. Value: '%s'", m)
+			return nil, errors.Errorf("metadata must contain '='. Value: '%s'", m)
 		}
 	}
 	goapp.Log.Infof("Metadata: %v", res.outputMetadata)
+
+	res.defaultVoice, res.availableVoices, err = initVoices(cfg.GetString("output.defaultVoice"), cfg.GetStringSlice("output.voices"))
+	if err != nil {
+		return nil, errors.Wrap(err, "can't init voices")
+	}
+	goapp.Log.Infof("Voices. Default: %s, all: %v", res.defaultVoice, res.availableVoices)
 	return res, nil
 }
 
@@ -76,6 +84,10 @@ func (c *TTSConfigutaror) Configure(r *http.Request, inText *api.Input) (*api.TT
 	res.SaveTags = getSaveTags(getHeader(r, headerSaveTags))
 
 	res.Speed, err = getSpeed(inText.Speed)
+	if err != nil {
+		return nil, err
+	}
+	res.Voice, err = c.getVoice(inText.Voice)
 	if err != nil {
 		return nil, err
 	}
@@ -128,6 +140,32 @@ func getOutputAudioFormat(s string) (api.AudioFormatEnum, error) {
 		return api.AudioNone, nil
 	}
 	return api.AudioNone, errors.New("Unknown audio format " + s)
+}
+
+func initVoices(def string, all []string) (string, map[string]bool, error) {
+	resVoice := strings.TrimSpace(def)
+	if resVoice == "" {
+		return "", nil, errors.New("no default voice")
+	}
+	resAll := make(map[string]bool)
+	resAll[resVoice] = true
+	for _, s := range all {
+		s = strings.TrimSpace(s)
+		if s != "" {
+			resAll[s] = true
+		}
+	}
+	return resVoice, resAll, nil
+}
+
+func (c *TTSConfigutaror) getVoice(voice string) (string, error) {
+	if voice == "" {
+		return c.defaultVoice, nil
+	}
+	if c.availableVoices[voice] {
+		return voice, nil
+	}
+	return "", errors.Errorf("unknown voice '%s'", voice)
 }
 
 func getHeader(r *http.Request, key string) string {

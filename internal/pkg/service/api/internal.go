@@ -52,4 +52,5 @@ type TTSRequestConfig struct {
 	AllowCollectData bool
 	SaveTags         []string
 	Speed            float32
+	Voice            string
 }
