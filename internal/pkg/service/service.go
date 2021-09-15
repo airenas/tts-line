@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/airenas/tts-line/internal/pkg/service/api"
 	"github.com/airenas/tts-line/internal/pkg/utils"
@@ -52,6 +53,10 @@ func StartWebServer(data *Data) error {
 	e := initRoutes(data)
 
 	e.Server.Addr = ":" + portStr
+	e.Server.Addr = ":" + portStr
+	e.Server.ReadHeaderTimeout = 15 * time.Second
+	e.Server.ReadTimeout = 60 * time.Second
+	e.Server.WriteTimeout = 300 * time.Second
 
 	w := goapp.Log.Writer()
 	defer w.Close()
