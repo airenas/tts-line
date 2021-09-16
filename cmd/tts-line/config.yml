@@ -9,7 +9,10 @@ options:
     defaultFormat: mp3 
     metadata:
       - copyright=UAB Intelektika
-      - description=encoded by UAB Intelektika 
+      - description=encoded by UAB Intelektika
+    defaultVoice: astra 
+    voices: 
+      - vytautas.v01  
 
 mongo:
    url: 
@@ -45,8 +48,8 @@ transcriber:
 
 acousticModel:
   # url: http://semspch04.vdu.lt:8000/model
-  url: http://semspch04.vdu.lt:8006/synthesize
-  # url: http://localhost:8000/model
+  # url: http://semspch04.vdu.lt:8006/synthesize
+  url: http://localhost:8002/synthesize
   hasVocoder: true
 
 vocoder:
