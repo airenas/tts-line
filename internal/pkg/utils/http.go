@@ -82,11 +82,11 @@ func (hw *HTTPWrap) invoke(req *http.Request, dataOut interface{}) error {
 	hw.flog("Call : ", req.URL.String())
 	resp, err := hw.HTTPClient.Do(req)
 	if err != nil {
-		return errors.Wrapf(err, "Can't call '%s'", hw.URL)
+		return errors.Wrapf(err, "Can't call '%s'", req.URL.String())
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode < 200 || resp.StatusCode > 299 {
-		return errors.Errorf("Can't invoke '%s'. Code: '%d'", hw.URL, resp.StatusCode)
+		return errors.Errorf("Can't invoke '%s'. Code: '%d'", req.URL.String(), resp.StatusCode)
 	}
 	br, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
