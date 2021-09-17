@@ -3,6 +3,13 @@
 ACOUSTICMODEL_URL?=http://localhost:8000
 VOCODER_URL?=http://localhost:8001
 PORT?=8002
+#####################################################################################
+dist_dir=$(CURDIR)/bin
+executable_name=am-voc-wrapper
+main_dir=../../cmd/$(executable_name)
+commit_count=$(shell git rev-list --count HEAD)
+version=0.2
+go_build_cmd=CGO_ENABLED=0 go build -ldflags "-X main.version=$(version).$(commit_count)"
 ########### SERVICE#################################################################
 logs:
 	mkdir -p $@
@@ -16,13 +23,6 @@ am-voc.service: am-voc.service.in
 	cat $< | envsubst > $@
 run-service:
 	$(dist_dir)/$(executable_name)
-#####################################################################################
-dist_dir=$(CURDIR)/bin
-executable_name=am-voc-wrapper
-main_dir=../../cmd/$(executable_name)
-commit_count=$(shell git rev-list --count HEAD)
-version=0.2
-go_build_cmd=CGO_ENABLED=0 go build -ldflags "-X main.version=$(version).$(commit_count)"
 #####################################################################################
 $(dist_dir):
 	mkdir -p $@
