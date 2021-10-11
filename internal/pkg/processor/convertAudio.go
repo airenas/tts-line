@@ -1,6 +1,8 @@
 package processor
 
 import (
+	"time"
+
 	"github.com/airenas/tts-line/internal/pkg/service/api"
 	"github.com/airenas/tts-line/internal/pkg/synthesizer"
 	"github.com/airenas/tts-line/internal/pkg/utils"
@@ -15,7 +17,7 @@ type audioConverter struct {
 func NewConverter(urlStr string) (synthesizer.Processor, error) {
 	res := &audioConverter{}
 	var err error
-	res.httpWrap, err = utils.NewHTTPWrap(urlStr)
+	res.httpWrap, err = utils.NewHTTPWrapT(urlStr, time.Minute * 5)
 	if err != nil {
 		return nil, errors.Wrap(err, "Can't init http client")
 	}
