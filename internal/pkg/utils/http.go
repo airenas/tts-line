@@ -20,13 +20,13 @@ type HTTPWrap struct {
 	flog       func(string, string)
 }
 
-//NewHTTWrap creates new wrapper
-func NewHTTWrap(urlStr string) (*HTTPWrap, error) {
-	return NewHTTWrapT(urlStr, time.Second*120)
+//NewHTTPWrap creates new wrapper
+func NewHTTPWrap(urlStr string) (*HTTPWrap, error) {
+	return NewHTTPWrapT(urlStr, time.Second*120)
 }
 
-//NewHTTWrapT creates new wrapper with timer
-func NewHTTWrapT(urlStr string, timeout time.Duration) (*HTTPWrap, error) {
+//NewHTTPWrapT creates new wrapper with timer
+func NewHTTPWrapT(urlStr string, timeout time.Duration) (*HTTPWrap, error) {
 	res := &HTTPWrap{}
 	var err error
 	res.URL, err = checkURL(urlStr)

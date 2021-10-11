@@ -25,7 +25,7 @@ type acronyms struct {
 func NewAcronyms(urlStr string) (synthesizer.PartProcessor, error) {
 	res := &acronyms{}
 	var err error
-	res.httpWrap, err = utils.NewHTTWrap(urlStr)
+	res.httpWrap, err = utils.NewHTTPWrap(urlStr)
 	if err != nil {
 		return nil, errors.Wrap(err, "Can't init http client")
 	}

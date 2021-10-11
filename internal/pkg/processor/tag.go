@@ -19,7 +19,7 @@ type tagger struct {
 func NewTagger(urlStr string) (synthesizer.Processor, error) {
 	res := &tagger{}
 	var err error
-	res.httpWrap, err = utils.NewHTTWrap(urlStr)
+	res.httpWrap, err = utils.NewHTTPWrap(urlStr)
 	if err != nil {
 		return nil, errors.Wrap(err, "Can't init http client")
 	}
@@ -85,7 +85,7 @@ type taggerAccents struct {
 func NewTaggerAccents(urlStr string) (synthesizer.Processor, error) {
 	res := &taggerAccents{}
 	var err error
-	res.httpWrap, err = utils.NewHTTWrap(urlStr)
+	res.httpWrap, err = utils.NewHTTPWrap(urlStr)
 	if err != nil {
 		return nil, errors.Wrap(err, "Can't init http client")
 	}

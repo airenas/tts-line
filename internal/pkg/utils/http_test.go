@@ -11,9 +11,9 @@ import (
 )
 
 func TestHTTPCreate(t *testing.T) {
-	_, err := NewHTTWrap("")
+	_, err := NewHTTPWrap("")
 	assert.NotNil(t, err)
-	hw, err := NewHTTWrap("http://local:8080")
+	hw, err := NewHTTPWrap("http://local:8080")
 	assert.NotNil(t, hw)
 	assert.Nil(t, err)
 }
@@ -30,7 +30,7 @@ func TestInvokeText(t *testing.T) {
 		rw.Write([]byte(`{"test":"respo"}`))
 	}))
 	defer server.Close()
-	hw, _ := NewHTTWrap(server.URL)
+	hw, _ := NewHTTPWrap(server.URL)
 	lg := ""
 	hw.flog = func(st, data string) {
 		lg = lg + st + data
@@ -50,7 +50,7 @@ func TestInvokeJSON(t *testing.T) {
 		rw.Write([]byte(`{"test":"respo"}`))
 	}))
 	defer server.Close()
-	hw, _ := NewHTTWrap(server.URL)
+	hw, _ := NewHTTPWrap(server.URL)
 	lg := ""
 	hw.flog = func(st, data string) {
 		lg = lg + st + data
@@ -67,7 +67,7 @@ func TestInvokeFail_Server(t *testing.T) {
 		rw.WriteHeader(400)
 	}))
 	defer server.Close()
-	hw, _ := NewHTTWrap(server.URL)
+	hw, _ := NewHTTPWrap(server.URL)
 	var tt testType
 	err := hw.InvokeText("olia", &tt)
 	assert.NotNil(t, err)
@@ -78,7 +78,7 @@ func TestInvokeFail_Response(t *testing.T) {
 		rw.Write([]byte(`{"test":"respo"`))
 	}))
 	defer server.Close()
-	hw, _ := NewHTTWrap(server.URL)
+	hw, _ := NewHTTPWrap(server.URL)
 	var tt testType
 	err := hw.InvokeText("olia", &tt)
 	assert.NotNil(t, err)
@@ -89,7 +89,7 @@ func TestTimeout(t *testing.T) {
 		rw.Write([]byte(`{"test":"respo"}`))
 	}))
 	defer server.Close()
-	hw, _ := NewHTTWrap(server.URL)
+	hw, _ := NewHTTPWrap(server.URL)
 	hw.Timeout = time.Millisecond * 50
 	var tt testType
 	err := hw.InvokeText("olia", &tt)
@@ -104,7 +104,7 @@ func TestTimeout_Fail(t *testing.T) {
 		time.Sleep(time.Second)
 	}))
 	defer server.Close()
-	hw, _ := NewHTTWrap(server.URL)
+	hw, _ := NewHTTPWrap(server.URL)
 	hw.Timeout = time.Millisecond * 50
 	var tt testType
 	err := hw.InvokeText("olia", &tt)

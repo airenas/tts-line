@@ -18,7 +18,7 @@ type transcriber struct {
 func NewTranscriber(urlStr string) (synthesizer.PartProcessor, error) {
 	res := &transcriber{}
 	var err error
-	res.httpWrap, err = utils.NewHTTWrap(urlStr)
+	res.httpWrap, err = utils.NewHTTPWrap(urlStr)
 	if err != nil {
 		return nil, errors.Wrap(err, "Can't init http client")
 	}

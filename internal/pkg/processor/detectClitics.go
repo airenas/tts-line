@@ -19,7 +19,7 @@ type cliticDetector struct {
 func NewClitics(urlStr string) (synthesizer.PartProcessor, error) {
 	res := &cliticDetector{}
 	var err error
-	res.httpWrap, err = utils.NewHTTWrapT(urlStr, time.Second*10)
+	res.httpWrap, err = utils.NewHTTPWrapT(urlStr, time.Second*10)
 	if err != nil {
 		return nil, errors.Wrap(err, "can't init http client")
 	}

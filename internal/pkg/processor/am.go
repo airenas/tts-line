@@ -43,7 +43,7 @@ func NewAcousticModel(config *viper.Viper) (synthesizer.PartProcessor, error) {
 
 	res := &amodel{}
 	res.url = config.GetString("url")
-	am, err := utils.NewHTTWrapT(getVoiceURL(res.url, "testVoice"), time.Second*45)
+	am, err := utils.NewHTTPWrapT(getVoiceURL(res.url, "testVoice"), time.Second*45)
 	if err != nil {
 		return nil, errors.Wrap(err, "can't init AM client")
 	}

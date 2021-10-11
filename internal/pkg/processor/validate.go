@@ -23,7 +23,7 @@ func NewValidator(config *viper.Viper) (synthesizer.Processor, error) {
 	}
 	res := &validator{}
 	var err error
-	res.httpWrap, err = utils.NewHTTWrap(config.GetString("url"))
+	res.httpWrap, err = utils.NewHTTPWrap(config.GetString("url"))
 	if err != nil {
 		return nil, errors.Wrap(err, "Can't init http client")
 	}

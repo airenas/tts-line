@@ -19,7 +19,7 @@ func NewVocoder(urlStr string) (synthesizer.PartProcessor, error) {
 	res := &vocoder{}
 
 	res.url = urlStr
-	voc, err := utils.NewHTTWrapT(getVoiceURL(res.url, "testVoice"), time.Second*45)
+	voc, err := utils.NewHTTPWrapT(getVoiceURL(res.url, "testVoice"), time.Second*45)
 	if err != nil {
 		return nil, errors.Wrap(err, "can't init vocoder client")
 	}

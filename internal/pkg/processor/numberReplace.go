@@ -20,7 +20,7 @@ type numberReplace struct {
 func NewNumberReplace(urlStr string) (synthesizer.Processor, error) {
 	res := &numberReplace{}
 	var err error
-	res.httpWrap, err = utils.NewHTTWrap(urlStr)
+	res.httpWrap, err = utils.NewHTTPWrap(urlStr)
 	if err != nil {
 		return nil, errors.Wrap(err, "Can't init http client")
 	}
