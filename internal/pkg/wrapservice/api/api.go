@@ -5,6 +5,7 @@ type Input struct {
 	Text  string  `json:"text,omitempty"`
 	Speed float32 `json:"speedAlpha,omitempty"`
 	Voice string  `json:"voice,omitempty"`
+	Priority int  `json:"priority,omitempty"`
 }
 
 //Result is synthesis result

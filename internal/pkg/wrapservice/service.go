@@ -20,7 +20,7 @@ import (
 type (
 	//WaveSynthesizer main sythesis processor
 	WaveSynthesizer interface {
-		Work(text string, speed float32, voice string) (string, error)
+		Work(params *api.Params) (string, error)
 	}
 	//Data is service operation data
 	Data struct {
@@ -44,8 +44,7 @@ func StartWebServer(data *Data) error {
 
 	w := goapp.Log.Writer()
 	defer w.Close()
-	l := log.New(w, "", 0)
-	gracehttp.SetLogger(l)
+	gracehttp.SetLogger(log.New(w, "", 0))
 
 	return gracehttp.Serve(e.Server)
 }
@@ -92,7 +91,7 @@ func handleSynthesize(data *Data) func(echo.Context) error {
 			return echo.NewHTTPError(http.StatusBadRequest, "No voice")
 		}
 
-		resp, err := data.Processor.Work(input.Text, input.Speed, input.Voice)
+		resp, err := data.Processor.Work(&api.Params{Text: input.Text, Speed: input.Speed, Voice: input.Voice, Priority: input.Priority})
 		if err != nil {
 			goapp.Log.Error(errors.Wrap(err, "cannot process text"))
 			return echo.NewHTTPError(http.StatusInternalServerError, "Cannot process text")

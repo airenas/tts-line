@@ -15,6 +15,7 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/airenas/tts-line/internal/pkg/test/mocks"
+	"github.com/airenas/tts-line/internal/pkg/test/mocks/matchers"
 	"github.com/airenas/tts-line/internal/pkg/wrapservice/api"
 )
 
@@ -70,21 +71,22 @@ func TestWrongMethod(t *testing.T) {
 
 func Test_Returns(t *testing.T) {
 	initTest(t)
-	pegomock.When(synthesizerMock.Work(pegomock.AnyString(), pegomock.AnyFloat32(), pegomock.AnyString())).ThenReturn("wav", nil)
-	req := httptest.NewRequest("POST", "/synthesize", toReader(api.Input{Text: "olia", Speed: 0.9, Voice: "aa"}))
+	pegomock.When(synthesizerMock.Work(matchers.AnyPtrToApiParams())).ThenReturn("wav", nil)
+	req := httptest.NewRequest("POST", "/synthesize", toReader(api.Input{Text: "olia", Speed: 0.9, Voice: "aa", Priority: 10}))
 	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
 	resp := testCode(t, req, 200)
 	bytes, _ := ioutil.ReadAll(resp.Body)
 	assert.Contains(t, string(bytes), `"data":"wav"`)
-	txt, sp, voice := synthesizerMock.VerifyWasCalled(pegomock.Once()).Work(pegomock.AnyString(), pegomock.AnyFloat32(), pegomock.AnyString()).GetCapturedArguments()
-	assert.Equal(t, "olia", txt)
-	assert.InDelta(t, 0.9, sp, 0.0001)
-	assert.Equal(t, "aa", voice)
+	gPrms := synthesizerMock.VerifyWasCalled(pegomock.Once()).Work(matchers.AnyPtrToApiParams()).GetCapturedArguments()
+	assert.Equal(t, "olia", gPrms.Text)
+	assert.InDelta(t, 0.9, gPrms.Speed, 0.0001)
+	assert.Equal(t, "aa", gPrms.Voice)
+	assert.Equal(t, 10, gPrms.Priority)
 }
 
 func Test_Fail(t *testing.T) {
 	initTest(t)
-	pegomock.When(synthesizerMock.Work(pegomock.AnyString(), pegomock.AnyFloat32(), pegomock.AnyString())).ThenReturn("", errors.New("haha"))
+	pegomock.When(synthesizerMock.Work(matchers.AnyPtrToApiParams())).ThenReturn("", errors.New("haha"))
 	req := httptest.NewRequest("POST", "/synthesize", toReader(api.Input{Text: "olia", Voice: "aa"}))
 	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
 	testCode(t, req, 500)

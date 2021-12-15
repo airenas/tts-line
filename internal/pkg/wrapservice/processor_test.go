@@ -10,6 +10,7 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/airenas/tts-line/internal/pkg/test/mocks"
+	"github.com/airenas/tts-line/internal/pkg/wrapservice/api"
 )
 
 var (
@@ -57,15 +58,15 @@ func TestInvokeProcessor(t *testing.T) {
 			*params[1].(*output) = output{Data: "audio"}
 			return []pegomock.ReturnValue{nil}
 		})
-	text, err := pr.Work("olia", 0.9, "voice")
+	text, err := pr.Work(&api.Params{Text: "olia", Speed: 0.9, Voice: "voice", Priority: 10})
 	assert.Nil(t, err)
 	assert.Equal(t, "audio", text)
 
 	cp1, _ := httpAMMock.VerifyWasCalledOnce().InvokeJSON(pegomock.AnyInterface(), pegomock.AnyInterface()).GetCapturedArguments()
-	assert.Equal(t, &amInput{Text: "olia", Speed: 0.9, Voice: "voice"}, cp1)
+	assert.Equal(t, &amInput{Text: "olia", Speed: 0.9, Voice: "voice", Priority: 10}, cp1)
 
 	cp2, _ := httpVocMock.VerifyWasCalledOnce().InvokeJSON(pegomock.AnyInterface(), pegomock.AnyInterface()).GetCapturedArguments()
-	assert.Equal(t, &vocInput{Data: "specs", Voice: "voice"}, cp2)
+	assert.Equal(t, &vocInput{Data: "specs", Voice: "voice", Priority: 10}, cp2)
 	assert.InDelta(t, 0.0, testutil.ToFloat64(totalFailureMetrics.WithLabelValues("am", "voice")), 0.000001)
 	assert.InDelta(t, 0.0, testutil.ToFloat64(totalFailureMetrics.WithLabelValues("vocoder", "voice")), 0.000001)
 }
@@ -83,7 +84,7 @@ func TestInvokeProcessor_FailAM(t *testing.T) {
 			*params[1].(*output) = output{Data: "audio"}
 			return []pegomock.ReturnValue{nil}
 		})
-	_, err := pr.Work("olia", 1, "voice")
+	_, err := pr.Work(&api.Params{Text: "olia", Speed: 1, Voice: "voice", Priority: 10})
 	assert.NotNil(t, err)
 	assert.InDelta(t, 1.0, testutil.ToFloat64(totalFailureMetrics.WithLabelValues("am", "voice")), 0.000001)
 }
@@ -101,7 +102,7 @@ func TestInvokeProcessor_FailVoc(t *testing.T) {
 			return []pegomock.ReturnValue{nil}
 		})
 	pegomock.When(httpVocMock.InvokeJSON(pegomock.AnyInterface(), pegomock.AnyInterface())).ThenReturn(errors.New("haha"))
-	_, err := pr.Work("olia", 1, "voice")
+	_, err := pr.Work(&api.Params{Text: "olia", Speed: 1, Voice: "voice", Priority: 10})
 	assert.NotNil(t, err)
 	assert.InDelta(t, 1.0, testutil.ToFloat64(totalFailureMetrics.WithLabelValues("vocoder", "voice")), 0.000001)
 }

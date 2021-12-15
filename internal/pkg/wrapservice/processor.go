@@ -6,6 +6,7 @@ import (
 	"github.com/airenas/go-app/pkg/goapp"
 	"github.com/airenas/tts-line/internal/pkg/processor"
 	"github.com/airenas/tts-line/internal/pkg/utils"
+	"github.com/airenas/tts-line/internal/pkg/wrapservice/api"
 	"github.com/cenkalti/backoff/v4"
 	"github.com/pkg/errors"
 )
@@ -56,33 +57,35 @@ func NewProcessor(amURL, vocURL string) (*Processor, error) {
 }
 
 //Work is main method
-func (p *Processor) Work(text string, speed float32, voice string) (string, error) {
-	amIn := amInput{Text: text, Speed: speed, Voice: voice}
+func (p *Processor) Work(params *api.Params) (string, error) {
+	amIn := amInput{Text: params.Text, Speed: params.Speed, Voice: params.Voice, Priority: params.Priority}
 	var amOut output
 	err := p.amWrap.InvokeJSON(&amIn, &amOut)
 	if err != nil {
-		totalFailureMetrics.WithLabelValues("am", voice).Add(1)
+		totalFailureMetrics.WithLabelValues("am", params.Voice).Add(1)
 		return "", errors.Wrap(err, "can't invoke AM")
 	}
-	vocIn := vocInput{Data: amOut.Data, Voice: voice}
+	vocIn := vocInput{Data: amOut.Data, Voice: params.Voice, Priority: params.Priority}
 	var vocOut output
 	err = p.vocWrap.InvokeJSON(&vocIn, &vocOut)
 	if err != nil {
-		totalFailureMetrics.WithLabelValues("vocoder", voice).Add(1)
+		totalFailureMetrics.WithLabelValues("vocoder", params.Voice).Add(1)
 		return "", errors.Wrap(err, "can't invoke Vocoder")
 	}
 	return vocOut.Data, nil
 }
 
 type amInput struct {
-	Text  string  `json:"text"`
-	Speed float32 `json:"speedAlpha,omitempty"`
-	Voice string  `json:"voice,omitempty"`
+	Text     string  `json:"text"`
+	Speed    float32 `json:"speedAlpha,omitempty"`
+	Voice    string  `json:"voice,omitempty"`
+	Priority int     `json:"priority,omitempty"`
 }
 
 type vocInput struct {
-	Data  string `json:"data"`
-	Voice string `json:"voice,omitempty"`
+	Data     string `json:"data"`
+	Voice    string `json:"voice,omitempty"`
+	Priority int    `json:"priority,omitempty"`
 }
 
 type output struct {
