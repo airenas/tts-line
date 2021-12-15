@@ -32,6 +32,7 @@ func TestInvokeVocoder(t *testing.T) {
 	d := newTestTTSDataPart()
 	d.Spectogram = "spectogram"
 	d.Cfg.Input.Voice = "aaa"
+	d.Cfg.Input.Priority = 10
 	pegomock.When(httpJSONMock.InvokeJSONU(pegomock.AnyString(), pegomock.AnyInterface(), pegomock.AnyInterface())).Then(
 		func(params []pegomock.Param) pegomock.ReturnValues {
 			*params[2].(*vocOutput) = vocOutput{Data: "wav"}
@@ -46,6 +47,7 @@ func TestInvokeVocoder(t *testing.T) {
 	ai := inp.(vocInput)
 	assert.Equal(t, "aaa", ai.Voice)
 	assert.Equal(t, "http://aaa.server", url)
+	assert.Equal(t, 10, ai.Priority)
 }
 
 func TestInvokeVocoder_Skip(t *testing.T) {

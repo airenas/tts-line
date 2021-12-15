@@ -68,6 +68,7 @@ func TestInvokeAcousticModel(t *testing.T) {
 	d.Spectogram = "spectogram"
 	d.Cfg.Input.Speed = 0.5
 	d.Cfg.Input.Voice = "aa"
+	d.Cfg.Input.Priority = 10
 	pegomock.When(httpJSONMock.InvokeJSONU(pegomock.AnyString(), pegomock.AnyInterface(), pegomock.AnyInterface())).Then(
 		func(params []pegomock.Param) pegomock.ReturnValues {
 			*params[2].(*amOutput) = amOutput{Data: "spec"}
@@ -82,6 +83,7 @@ func TestInvokeAcousticModel(t *testing.T) {
 	ai := inp.(*amInput)
 	assert.InDelta(t, 0.5, ai.Speed, 0.0001)
 	assert.Equal(t, "aa", ai.Voice)
+	assert.Equal(t, 10, ai.Priority)
 	assert.Equal(t, "http://aa.server", url)
 }
 

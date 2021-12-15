@@ -91,6 +91,10 @@ func (c *TTSConfigutaror) Configure(r *http.Request, inText *api.Input) (*api.TT
 	if err != nil {
 		return nil, err
 	}
+	if (inText.Priority < 0) {
+		return nil, errors.Errorf("wrong priority (>=0) value: %d", inText.Priority)
+	}
+	res.Priority = inText.Priority
 	return res, nil
 }
 

@@ -86,9 +86,10 @@ func (p *amodel) Process(data *synthesizer.TTSDataPart) error {
 }
 
 type amInput struct {
-	Text  string  `json:"text"`
-	Speed float32 `json:"speedAlpha,omitempty"`
-	Voice string  `json:"voice"`
+	Text     string  `json:"text"`
+	Speed    float32 `json:"speedAlpha,omitempty"`
+	Voice    string  `json:"voice"`
+	Priority int     `json:"priority,omitempty"`
 }
 
 type amOutput struct {
@@ -99,6 +100,7 @@ func (p *amodel) mapAMInput(data *synthesizer.TTSDataPart) *amInput {
 	res := &amInput{}
 	res.Speed = data.Cfg.Input.Speed
 	res.Voice = data.Cfg.Input.Voice
+	res.Priority = data.Cfg.Input.Priority
 	if data.Cfg.JustAM {
 		res.Text = data.Text
 		return res

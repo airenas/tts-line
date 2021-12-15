@@ -53,4 +53,5 @@ type TTSRequestConfig struct {
 	SaveTags         []string
 	Speed            float32
 	Voice            string
+	Priority         int
 }

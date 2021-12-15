@@ -176,6 +176,19 @@ func TestConfigure_Voice(t *testing.T) {
 	assert.NotNil(t, err)
 }
 
+func TestConfigure_Priority(t *testing.T) {
+	c, _ := NewTTSConfigurator(test.NewConfig(t, "output:\n  defaultFormat: mp3\n  voices:\n   - aaa1\n  defaultVoice: aaa"))
+	req := httptest.NewRequest("POST", "/synthesize", strings.NewReader("text"))
+	res, err := c.Configure(req, &api.Input{Text: "olia", Priority: 10})
+	assert.Nil(t, err)
+	if assert.NotNil(t, res) {
+		assert.Equal(t, 10, res.Priority)
+	}
+	res, err = c.Configure(req, &api.Input{Text: "olia", Priority: -1})
+	assert.NotNil(t, err)
+	assert.Nil(t, res)
+}
+
 func TestOutputTextFormat(t *testing.T) {
 	tests := []struct {
 		in    string

@@ -36,7 +36,7 @@ func (p *vocoder) Process(data *synthesizer.TTSDataPart) error {
 		return nil
 	}
 
-	inData := vocInput{Data: data.Spectogram, Voice: data.Cfg.Input.Voice}
+	inData := vocInput{Data: data.Spectogram, Voice: data.Cfg.Input.Voice, Priority: data.Cfg.Input.Priority}
 	var output vocOutput
 	err := p.httpWrap.InvokeJSONU(getVoiceURL(p.url, data.Cfg.Input.Voice), inData, &output)
 	if err != nil {
@@ -47,8 +47,9 @@ func (p *vocoder) Process(data *synthesizer.TTSDataPart) error {
 }
 
 type vocInput struct {
-	Data  string `json:"data"`
-	Voice string `json:"voice"`
+	Data     string `json:"data"`
+	Voice    string `json:"voice"`
+	Priority int    `json:"priority,omitempty"`
 }
 
 type vocOutput struct {

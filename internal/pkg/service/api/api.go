@@ -9,6 +9,7 @@ type Input struct {
 	AllowCollectData *bool   `json:"saveRequest,omitempty"`
 	Speed            float32 `json:"speed,omitempty"`
 	Voice            string  `json:"voice,omitempty"`
+	Priority         int     `json:"priority,omitempty"`
 }
 
 //Check is validation check
