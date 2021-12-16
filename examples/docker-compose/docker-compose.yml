@@ -19,7 +19,7 @@ services:
       - COMPARATOR_URL=http://comparator:3000/resynthvalid 
 
   text-clean:
-    image: airenas/tts-text-clean:0.1.123
+    image: airenas/tts-text-clean:0.2.197
     ports:
       - "8011:8000"  
 
