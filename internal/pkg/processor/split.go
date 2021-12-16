@@ -95,7 +95,7 @@ func findSentenceEnd(data []*synthesizer.ProcessedWord, from int, max int, cmp f
 		if chCount > max {
 			return lastI + 1
 		}
-		if cmp(tw, pr) {
+		if cmp(tw, pr) && chCount > 0 {
 			lastI = i
 		}
 		pr = tw
