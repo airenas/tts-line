@@ -29,13 +29,13 @@ func main() {
 	synt.AllowCustomCode = goapp.Config.GetBool("allowCustom")
 	sp, err := mongodb.NewSessionProvider(goapp.Config.GetString("mongo.url"))
 	if err != nil {
-		goapp.Log.Fatal(errors.Wrap(err, "Can't init mongo session provider"))
+		goapp.Log.Fatal(errors.Wrap(err, "can't init mongo session provider"))
 	}
 	defer sp.Close()
 
 	err = addProcessors(synt, sp)
 	if err != nil {
-		goapp.Log.Fatal(errors.Wrap(err, "Can't init processors"))
+		goapp.Log.Fatal(errors.Wrap(err, "can't init processors"))
 	}
 
 	//cache
@@ -43,7 +43,7 @@ func main() {
 	if cc != nil {
 		data.SyntData.Processor, err = cache.NewCacher(synt, cc)
 		if err != nil {
-			goapp.Log.Fatal(errors.Wrap(err, "Can't init cache"))
+			goapp.Log.Fatal(errors.Wrap(err, "can't init cache"))
 		}
 	} else {
 		goapp.Log.Info("No cache will be used")
@@ -53,18 +53,18 @@ func main() {
 	// input configuration
 	data.SyntData.Configurator, err = service.NewTTSConfigurator(goapp.Sub(goapp.Config, "options"))
 	if err != nil {
-		goapp.Log.Fatal(errors.Wrap(err, "Can't init configurator"))
+		goapp.Log.Fatal(errors.Wrap(err, "can't init configurator"))
 	}
 
 	// init custom synthesize method
 	data.SyntCustomData.Configurator, err = service.NewTTSConfigurator(goapp.Sub(goapp.Config, "options"))
 	if err != nil {
-		goapp.Log.Fatal(errors.Wrap(err, "Can't init custom configurator"))
+		goapp.Log.Fatal(errors.Wrap(err, "can't init custom configurator"))
 	}
 	syntC := &synthesizer.MainWorker{}
 	err = addCustomProcessors(syntC, sp, goapp.Config)
 	if err != nil {
-		goapp.Log.Fatal(errors.Wrap(err, "Can't init custom processors"))
+		goapp.Log.Fatal(errors.Wrap(err, "can't init custom processors"))
 	}
 	data.SyntCustomData.Processor = syntC
 
@@ -74,7 +74,7 @@ func main() {
 
 	err = service.StartWebServer(&data)
 	if err != nil {
-		goapp.Log.Fatal(errors.Wrap(err, "Can't start the service"))
+		goapp.Log.Fatal(errors.Wrap(err, "can't start the service"))
 	}
 }
 
@@ -86,47 +86,47 @@ func addProcessors(synt *synthesizer.MainWorker, sp *mongodb.SessionProvider) er
 	synt.Add(pr)
 	ts, err := mongodb.NewTextSaver(sp)
 	if err != nil {
-		return errors.Wrap(err, "Can't init text to DB saver")
+		return errors.Wrap(err, "can't init text to DB saver")
 	}
 	sv, err := processor.NewSaver(ts, utils.RequestOriginal)
 	if err != nil {
-		return errors.Wrap(err, "Can't init text to DB saver")
+		return errors.Wrap(err, "can't init text to DB saver")
 	}
 	synt.Add(sv)
 	// cleaner
 	pr, err = processor.NewCleaner(goapp.Config.GetString("clean.url"))
 	if err != nil {
-		return errors.Wrap(err, "Can't init normalize/clean processor")
+		return errors.Wrap(err, "can't init normalize/clean processor")
 	}
 	synt.Add(pr)
 	//db saver
 	sv, err = processor.NewSaver(ts, utils.RequestCleaned)
 	if err != nil {
-		return errors.Wrap(err, "Can't init text to DB saver")
+		return errors.Wrap(err, "can't init text to DB saver")
 	}
 	synt.Add(sv)
 	//number replacer
 	pr, err = processor.NewNumberReplace(goapp.Config.GetString("numberReplace.url"))
 	if err != nil {
-		return errors.Wrap(err, "Can't init number replace")
+		return errors.Wrap(err, "can't init number replace")
 	}
 	synt.Add(pr)
 	//db saver
 	sv, err = processor.NewSaver(ts, utils.RequestNormalized)
 	if err != nil {
-		return errors.Wrap(err, "Can't init text to DB saver")
+		return errors.Wrap(err, "can't init text to DB saver")
 	}
 	synt.Add(sv)
 
 	pr, err = processor.NewTagger(goapp.Config.GetString("tagger.url"))
 	if err != nil {
-		return errors.Wrap(err, "Can't init tagger")
+		return errors.Wrap(err, "can't init tagger")
 	}
 	synt.Add(pr)
 
 	pr, err = processor.NewValidator(goapp.Sub(goapp.Config, "validator"))
 	if err != nil {
-		return errors.Wrap(err, "Can't init validator")
+		return errors.Wrap(err, "can't init validator")
 	}
 	synt.Add(pr)
 
@@ -139,7 +139,7 @@ func addProcessors(synt *synthesizer.MainWorker, sp *mongodb.SessionProvider) er
 
 	pr, err = processor.NewConverter(goapp.Config.GetString("audioConvert.url"))
 	if err != nil {
-		return errors.Wrap(err, "Can't init mp3 converter")
+		return errors.Wrap(err, "can't init mp3 converter")
 	}
 	synt.Add(pr)
 
@@ -152,7 +152,7 @@ func addProcessors(synt *synthesizer.MainWorker, sp *mongodb.SessionProvider) er
 	if goapp.Config.GetString("filer.dir") != "" {
 		pr, err = processor.NewFiler(goapp.Config.GetString("filer.dir"))
 		if err != nil {
-			return errors.Wrap(err, "Can't init filer")
+			return errors.Wrap(err, "can't init filer")
 		}
 		synt.Add(pr)
 	}
@@ -167,36 +167,36 @@ func addCustomProcessors(synt *synthesizer.MainWorker, sp *mongodb.SessionProvid
 	synt.Add(pr)
 	ts, err := mongodb.NewTextSaver(sp)
 	if err != nil {
-		return errors.Wrap(err, "Can't init text to DB saver")
+		return errors.Wrap(err, "can't init text to DB saver")
 	}
 
 	pr, err = processor.NewLoader(ts)
 	if err != nil {
-		return errors.Wrap(err, "Can't init text from DB loader")
+		return errors.Wrap(err, "can't init text from DB loader")
 	}
 	synt.Add(pr)
 
 	pr, err = processor.NewComparator(cfg.GetString("comparator.url"))
 	if err != nil {
-		return errors.Wrap(err, "Can't init text comparator")
+		return errors.Wrap(err, "can't init text comparator")
 	}
 	synt.Add(pr)
 
 	sv, err := processor.NewSaver(ts, utils.RequestUser)
 	if err != nil {
-		return errors.Wrap(err, "Can't init text to DB saver")
+		return errors.Wrap(err, "can't init text to DB saver")
 	}
 	synt.Add(sv)
 
 	pr, err = processor.NewTaggerAccents(cfg.GetString("tagger.url"))
 	if err != nil {
-		return errors.Wrap(err, "Can't init tagger")
+		return errors.Wrap(err, "can't init tagger")
 	}
 	synt.Add(pr)
 
 	pr, err = processor.NewValidator(goapp.Sub(cfg, "validator"))
 	if err != nil {
-		return errors.Wrap(err, "Can't init validator")
+		return errors.Wrap(err, "can't init validator")
 	}
 	synt.Add(pr)
 
@@ -209,7 +209,7 @@ func addCustomProcessors(synt *synthesizer.MainWorker, sp *mongodb.SessionProvid
 
 	pr, err = processor.NewConverter(cfg.GetString("audioConvert.url"))
 	if err != nil {
-		return errors.Wrap(err, "Can't init audioConvert converter")
+		return errors.Wrap(err, "can't init audioConvert converter")
 	}
 	synt.Add(pr)
 
@@ -222,7 +222,7 @@ func addCustomProcessors(synt *synthesizer.MainWorker, sp *mongodb.SessionProvid
 	if goapp.Config.GetString("filer.dir") != "" {
 		pr, err = processor.NewFiler(cfg.GetString("filer.dir"))
 		if err != nil {
-			return errors.Wrap(err, "Can't init filer")
+			return errors.Wrap(err, "can't init filer")
 		}
 		synt.Add(pr)
 	}
@@ -232,38 +232,38 @@ func addCustomProcessors(synt *synthesizer.MainWorker, sp *mongodb.SessionProvid
 func addPartProcessors(partRunner *synthesizer.PartRunner, cfg *viper.Viper) error {
 	ppr, err := processor.NewAcronyms(cfg.GetString("acronyms.url"))
 	if err != nil {
-		return errors.Wrap(err, "Can't init acronyms service")
+		return errors.Wrap(err, "can't init acronyms service")
 	}
 	partRunner.Add(ppr)
 
 	ppr, err = processor.NewAccentuator(cfg.GetString("accenter.url"))
 	if err != nil {
-		return errors.Wrap(err, "Can't init accenter")
+		return errors.Wrap(err, "can't init accenter")
 	}
 	partRunner.Add(ppr)
 
 	ppr, err = processor.NewClitics(cfg.GetString("clitics.url"))
 	if err != nil {
-		return errors.Wrap(err, "Can't init clitics")
+		return errors.Wrap(err, "can't init clitics")
 	}
 	partRunner.Add(ppr)
 
 	ppr, err = processor.NewTranscriber(cfg.GetString("transcriber.url"))
 	if err != nil {
-		return errors.Wrap(err, "Can't init transcriber")
+		return errors.Wrap(err, "can't init transcriber")
 	}
 	partRunner.Add(ppr)
 
 	ppr, err = processor.NewAcousticModel(goapp.Sub(cfg, "acousticModel"))
 	if err != nil {
-		return errors.Wrap(err, "Can't init acousticModel")
+		return errors.Wrap(err, "can't init acousticModel")
 	}
 	partRunner.Add(ppr)
 
 	if !cfg.GetBool("acousticModel.hasVocoder") {
 		ppr, err = processor.NewVocoder(cfg.GetString("vocoder.url"))
 		if err != nil {
-			return errors.Wrap(err, "Can't init vocoder")
+			return errors.Wrap(err, "can't init vocoder")
 		}
 		partRunner.Add(ppr)
 	}
@@ -278,7 +278,7 @@ func startPerfEndpoint() {
 		portStr := strconv.Itoa(port)
 		err := http.ListenAndServe(":"+portStr, nil)
 		if err != nil {
-			goapp.Log.Error(errors.Wrap(err, "Can't start Debug endpoint at "+portStr))
+			goapp.Log.Error(errors.Wrap(err, "can't start Debug endpoint at "+portStr))
 		}
 	}
 }
