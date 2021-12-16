@@ -49,7 +49,7 @@ transcriber:
 acousticModel:
   # url: http://semspch04.vdu.lt:8000/model
   # url: http://semspch04.vdu.lt:8006/synthesize
-  url: http://localhost:8002/synthesize
+  url: http://localhost:8000/model
   hasVocoder: true
 
 vocoder:
@@ -60,7 +60,10 @@ audioConvert:
   url: http://localhost:8013/convert
 
 clitics:
-  url: http://localhost:8015/clitics    
+  url: http://localhost:8015/clitics 
+  
+clean:
+  url: http://localhost:8011/clean    
 
 filer:
   dir: /home/airenas/projects/tts-line
@@ -70,4 +73,10 @@ cache:
   cleanDuration: 30s
   maxMB: 50
   maxTextLen: 80
+
+splitter:
+  maxChars: 200
+
+partRunner:
+  workers: 1  
 
