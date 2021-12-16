@@ -69,60 +69,6 @@ func TestSplit_Several(t *testing.T) {
 	assert.Equal(t, d.Words[3], r[1].Words[1])
 	assert.Equal(t, d.Words[4], r[1].Words[2])
 }
-func TestSplit_NoSplitl(t *testing.T) {
-	d := synthesizer.TTSData{}
-	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Word: "0123456789"}})
-	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{SentenceEnd: true}})
-	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Word: "0123456789"}})
-	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Separator: "?"}})
-	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{SentenceEnd: true}})
-	r, err := split(d.Words, 20)
-	assert.Nil(t, err)
-	assert.Equal(t, 1, len(r))
-}
-
-func TestSplit_OnSentenceEnd(t *testing.T) {
-	d := synthesizer.TTSData{}
-	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Word: "0123456789"}})
-	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Word: "0123456789"}})
-	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{SentenceEnd: true}})
-	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Word: "0123456789"}})
-	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Separator: "?"}})
-	r, err := split(d.Words, 25)
-	assert.Nil(t, err)
-	assert.Equal(t, 2, len(r))
-	assert.Equal(t, 3, len(r[0].Words))
-}
-
-func TestSplit_OnPunctSpace(t *testing.T) {
-	d := synthesizer.TTSData{}
-	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Word: "0123456789"}})
-	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Separator: ","}})
-	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Space: true}})
-	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Word: "0123456789"}})
-	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Separator: ","}})
-	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Word: "0123456789"}})
-	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Separator: "?"}})
-	r, err := split(d.Words, 25)
-	assert.Nil(t, err)
-	assert.Equal(t, 2, len(r))
-	assert.Equal(t, 3, len(r[0].Words))
-	assert.Equal(t, 4, len(r[1].Words))
-}
-
-func TestSplit_OnPunct(t *testing.T) {
-	d := synthesizer.TTSData{}
-	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Word: "0123456789"}})
-	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Word: "0123456789"}})
-	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Separator: ","}})
-	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Word: "0123456789"}})
-	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Separator: "?"}})
-	r, err := split(d.Words, 25)
-	assert.Nil(t, err)
-	assert.Equal(t, 2, len(r))
-	assert.Equal(t, 3, len(r[0].Words))
-	assert.Equal(t, 2, len(r[1].Words))
-}
 
 func Test_split(t *testing.T) {
 	type args struct {
@@ -135,6 +81,36 @@ func Test_split(t *testing.T) {
 		wantLens []int
 		wantErr  bool
 	}{
+		{name: "NoSplit", args: args{max: 20,
+			data: []synthesizer.TaggedWord{
+				{Word: "0123456789"}, {SentenceEnd: true},
+				{Word: "0123456789"}, {Separator: "?"}, {SentenceEnd: true}}},
+			wantLens: []int{5}, wantErr: false},
+		{name: "Split", args: args{max: 19,
+			data: []synthesizer.TaggedWord{
+				{Word: "0123456789"}, {SentenceEnd: true},
+				{Word: "0123456789"}, {Separator: "?"}, {SentenceEnd: true}}},
+			wantLens: []int{2, 3}, wantErr: false},
+		{name: "Fail", args: args{max: 9,
+			data: []synthesizer.TaggedWord{
+				{Word: "0123456789"}, {SentenceEnd: true}}},
+			wantLens: []int{}, wantErr: true},
+		{name: "OnSentenceEnd", args: args{max: 25,
+			data: []synthesizer.TaggedWord{
+				{Word: "0123456789"}, {Word: "0123456789"}, {SentenceEnd: true},
+				{Word: "0123456789"}, {Separator: "?"}}},
+			wantLens: []int{3, 2}, wantErr: false},
+		{name: "OnPunctSpace", args: args{max: 25,
+			data: []synthesizer.TaggedWord{
+				{Word: "0123456789"}, {Separator: ","}, {Space: true},
+				{Word: "0123456789"}, {Separator: ","},
+				{Word: "0123456789"}, {Separator: "?"}}},
+			wantLens: []int{3, 4}, wantErr: false},
+		{name: "OnPunct", args: args{max: 25,
+			data: []synthesizer.TaggedWord{
+				{Word: "0123456789"}, {Word: "0123456789"}, {Separator: ","},
+				{Word: "0123456789"}, {Separator: "?"}}},
+			wantLens: []int{3, 2}, wantErr: false},
 		{name: "Ignore Empty", args: args{max: 12,
 			data: []synthesizer.TaggedWord{
 				{Word: "0123456789"}, {SentenceEnd: true},
@@ -165,7 +141,7 @@ func Test_split(t *testing.T) {
 			}
 			if assert.Equal(t, len(tt.wantLens), len(got), "fails len") {
 				for i, wl := range tt.wantLens {
-					assert.Equal(t, wl, len(got[i].Words), "word len failing for %d", i)
+					assert.Equal(t, wl, len(got[i].Words), "word len failing for got[%d].Words", i)
 				}
 			}
 		})
