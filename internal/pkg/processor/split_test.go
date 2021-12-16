@@ -3,9 +3,8 @@ package processor
 import (
 	"testing"
 
-	"github.com/stretchr/testify/assert"
-
 	"github.com/airenas/tts-line/internal/pkg/synthesizer"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestNewSplit(t *testing.T) {
@@ -125,33 +124,52 @@ func TestSplit_OnPunct(t *testing.T) {
 	assert.Equal(t, 2, len(r[1].Words))
 }
 
-func TestSplit_OnSpace(t *testing.T) {
-	d := synthesizer.TTSData{}
-	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Word: "0123456789"}})
-	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Word: "0123456789"}})
-	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Space: true}})
-	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Word: "0123456789"}})
-	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Separator: "?"}})
-	r, err := split(d.Words, 25)
-	assert.Nil(t, err)
-	assert.Equal(t, 2, len(r))
-	assert.Equal(t, 3, len(r[0].Words))
-	assert.Equal(t, 2, len(r[1].Words))
-}
-
-func TestSplit_OnSpace2(t *testing.T) {
-	d := synthesizer.TTSData{}
-	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Word: "0123456789"}})
-	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Space: true}})
-	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Word: "0123456789"}})
-	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Space: true}})
-	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Word: "0123456789"}})
-	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Space: true}})
-	r, err := split(d.Words, 25)
-	assert.Nil(t, err)
-	assert.Equal(t, 2, len(r))
-	assert.Equal(t, 4, len(r[0].Words))
-	assert.Equal(t, 2, len(r[1].Words))
+func Test_split(t *testing.T) {
+	type args struct {
+		data []synthesizer.TaggedWord
+		max  int
+	}
+	tests := []struct {
+		name     string
+		args     args
+		wantLens []int
+		wantErr  bool
+	}{
+		{name: "Ignore Empty", args: args{max: 12,
+			data: []synthesizer.TaggedWord{
+				{Word: "0123456789"}, {SentenceEnd: true},
+				{Space: true}, {Separator: ","}, {Space: true}, {Word: "0123456789"}, {Space: true},
+				{Word: "0123456789"}}},
+			wantLens: []int{2, 5, 1}, wantErr: false},
+		{name: "OnSpace", args: args{max: 25,
+			data: []synthesizer.TaggedWord{
+				{Word: "0123456789"}, {Word: "0123456789"}, {Space: true},
+				{Word: "0123456789"}, {Separator: "?"}}},
+			wantLens: []int{3, 2}, wantErr: false},
+		{name: "OnSpace2", args: args{max: 25,
+			data: []synthesizer.TaggedWord{
+				{Word: "0123456789"}, {Space: true}, {Word: "0123456789"}, {Space: true},
+				{Word: "0123456789"}, {Space: true}}},
+			wantLens: []int{4, 2}, wantErr: false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			d := []*synthesizer.ProcessedWord{}
+			for _, t := range tt.args.data {
+				d = append(d, &synthesizer.ProcessedWord{Tagged: t})
+			}
+			got, err := split(d, tt.args.max)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("split() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if assert.Equal(t, len(tt.wantLens), len(got), "fails len") {
+				for i, wl := range tt.wantLens {
+					assert.Equal(t, wl, len(got[i].Words), "word len failing for %d", i)
+				}
+			}
+		})
+	}
 }
 
 func TestSplit_First(t *testing.T) {
