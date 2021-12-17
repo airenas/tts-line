@@ -10,7 +10,7 @@ var replaceableSymbols map[rune][]rune
 
 func init() {
 	replaceableSymbols = make(map[rune][]rune)
-	for _, r := range []rune("\u200b¡\u05c5\u0328\u200d˛\u05a4") { // drop symbols
+	for _, r := range "\u200b¡\u05c5\u0328\u200d˛\u05a4\u0307\u0300" { // drop symbols
 		replaceableSymbols[r] = []rune{}
 	}
 	replaceableSymbols['⎯'] = []rune("_")
@@ -37,22 +37,24 @@ func getMaps() map[rune]rune {
 	addMap(res, "С", 'C')
 	addMap(res, "К", 'K')
 	addMap(res, "\u05a7", ',')
+	addMap(res, "\u0130", 'I')
 
 	addLetterMap(res, "āäâãåàáăа", 'a')
 	addLetterMap(res, "оôõόóőò", 'o')
-	addLetterMap(res, "ç", 'c')
+	addLetterMap(res, "çć", 'c')
 	addLetterMap(res, "еéëèẽəě", 'e')
 	addLetterMap(res, "ê", 'ė')
 	addLetterMap(res, "ð", 'd')
 	addLetterMap(res, "ůùũúû", 'u')
-	addLetterMap(res, "ìĩíі", 'i')
+	addLetterMap(res, "ìĩíіï", 'i')
 	addLetterMap(res, "ýỹ", 'y')
 	addLetterMap(res, "ñ", 'n')
 	addLetterMap(res, "ř", 'r')
 	addLetterMap(res, "şșβ", 's')
 	addLetterMap(res, "ğ", 'g')
 	addLetterMap(res, "đ", 'd')
-
+	addLetterMap(res, "ť", 't')
+	addLetterMap(res, "в", 'b')
 	return res
 }
 
@@ -76,9 +78,8 @@ func ChangeSymbols(line string) string {
 		return line
 	}
 	lineU := norm.NFC.String(line)
-	runes := []rune(lineU)
 	res := make([]rune, 0)
-	for _, r := range runes {
+	for _, r := range lineU {
 		res = append(res, changeSymbol(r)...)
 	}
 	return string(res)

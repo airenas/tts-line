@@ -9,18 +9,6 @@ import (
 	"golang.org/x/text/unicode/norm"
 )
 
-func TestChangeSymbols(t *testing.T) {
-	assert.Equal(t, "", ChangeSymbols(""))
-	assert.Equal(t, "a a", ChangeSymbols("a a"))
-	assert.Equal(t, "a - a -", ChangeSymbols("a – a –"))
-	assert.Equal(t, "a--a", ChangeSymbols("a--a"))
-	assert.Equal(t, "a--a", ChangeSymbols("a——a"))
-	assert.Equal(t, "a--a", ChangeSymbols("a--a"))
-	assert.Equal(t, "a\na", ChangeSymbols("a\na"))
-	assert.Equal(t, "a\n\na\n\n", ChangeSymbols("a\n\ra\r\r"))
-	assert.Equal(t, "a\n a", ChangeSymbols("a\n\ta"))
-}
-
 func TestChangeLetters(t *testing.T) {
 	ts(t, "Janis", "Jānis")
 	ts(t, "Agrastas", "Ägrastas")
@@ -78,14 +66,51 @@ func TestChangeLetters(t *testing.T) {
 	ts(t, "Brulard", "Brûlard")
 	ts(t, "saugios", "saugios֤")
 	ts(t, "saugios\"", "saugios″")
-	ts(t, "pagyvėjo", "pаgyvėjo")
-	ts(t, "Duričić", "Đuričić")
+}
+
+func TestChangeSymbols(t *testing.T) {
+	tests := []struct {
+		name   string
+		args   string
+		want   string
+		up, lw bool
+	}{
+		{name: "Empty", args: "", want: ""},
+		{name: "a a", args: "a a", want: "a a", up: true, lw: true},
+		{name: "a – a –", args: "a – a –", want: "a - a -", up: true, lw: true},
+		{name: "a--a", args: "a--a", want: "a--a", up: true, lw: true},
+		{name: "a——a", args: "a——a", want: "a--a", up: true, lw: true},
+		{name: "a\na", args: "a\na", want: "a\na", up: true, lw: true},
+		{name: "a\n\ra\r\r", args: "a\n\ra\r\r", want: "a\n\na\n\n", up: true, lw: true},
+		{name: "a\n\ta", args: "a\n\ta", want: "a\n a", up: true, lw: true},
+		
+		{name: "Đuričić", args: "Đuričić", want: "Duričic", up: true, lw: true},
+		{name: "pаgyvėjo", args: "pаgyvėjo", want: "pagyvėjo", up: true, lw: true},
+		{name: "Košťal", args: "Košťal", want: "Koštal", up: true, lw: true},
+		{name: "В.vieną", args: "В.vieną", want: "B.vieną", up: true, lw: true},
+		{name: "pi̇̀š", args: "pi̇̀š", want: "piš", up: true, lw: true},
+		{name: "Moïsė", args: "Moïsė", want: "Moisė", up: true, lw: true},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			testChange(t, tt.want, tt.args, tt.up, tt.lw)
+		})
+	}
 }
 
 func ts(t *testing.T, expected, inp string) {
+	testChange(t, expected, inp, true, false)
+}
+
+func testChange(t *testing.T, expected, inp string, up, lw bool) {
 	assert.Equal(t, expected, ChangeSymbols(inp))
-	up := strings.ToUpper(inp)
-	assert.Equal(t, strings.ToUpper(expected), ChangeSymbols(up))
+	if up {
+		assert.Equal(t, strings.ToUpper(expected), ChangeSymbols(strings.ToUpper(inp)))
+	}
+	if lw {
+		assert.Equal(t, strings.ToLower(expected), ChangeSymbols(strings.ToLower(inp)))
+	}
+
 }
 
 func TestDash(t *testing.T) {
@@ -102,11 +127,21 @@ func TestSymbols(t *testing.T) {
 }
 
 func TestSymbols2(t *testing.T) {
-	str := "◌"
+	str := "i̇̀"
+	for i, r := range str {
+		fmt.Printf("%d: %s %d \\u%.4x\n", i, string(r), r, r)
+	}
+	for i, r := range []rune(str) {
+		fmt.Printf("%d: %s %d \\u%.4x\n", i, string(r), r, r)
+	}
 	sn := norm.NFC.String(strings.ToLower(str))
 	fmt.Printf("str = %s (%d)\n", str, len(str))
 	for _, r := range str {
 		fmt.Printf("%s %d \\u%.4x\n", string(r), r, r)
+	}
+	fmt.Printf("str = %s\n", norm.NFC.String(strings.ToUpper(str)))
+	for i, r := range norm.NFC.String(strings.ToUpper(str)) {
+		fmt.Printf("%d: %s %d \\u%.4x\n", i, string(r), r, r)
 	}
 	fmt.Printf("str = %s\n", strings.ToUpper(str))
 	for _, r := range strings.ToUpper(str) {
