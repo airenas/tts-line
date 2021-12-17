@@ -53,15 +53,13 @@ func StartWebServer(data *Data) error {
 	e := initRoutes(data)
 
 	e.Server.Addr = ":" + portStr
-	e.Server.Addr = ":" + portStr
 	e.Server.ReadHeaderTimeout = 15 * time.Second
 	e.Server.ReadTimeout = 60 * time.Second
 	e.Server.WriteTimeout = 900 * time.Second
 
 	w := goapp.Log.Writer()
 	defer w.Close()
-	l := log.New(w, "", 0)
-	gracehttp.SetLogger(l)
+	gracehttp.SetLogger(log.New(w, "", 0))
 
 	return gracehttp.Serve(e.Server)
 }
