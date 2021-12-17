@@ -1,4 +1,4 @@
-FROM iron/base
+FROM iron/base:3.14.0
 
 ARG BUILD_VERSION=0.1
 
@@ -14,7 +14,9 @@ LABEL org.opencontainers.image.version=$BUILD_VERSION \
 
 WORKDIR /app
 
-RUN addgroup app && adduser -S -G app app
+ENV UID=999
+
+RUN addgroup app && adduser -S -G app app --uid $UID app
 
 RUN mkdir -p /app && chown -R app:app /app   
 
