@@ -186,7 +186,7 @@ func TestMapAccOutput_FailError(t *testing.T) {
 
 	err := mapAccentOutput(d, output)
 	if assert.NotNil(t, err) {
-		assert.Equal(t, "Accent error for 'v2'('v2'): error olia", err.Error())
+		assert.Equal(t, "accent error for 'v2'('v2'): error olia", err.Error())
 	}
 }
 
