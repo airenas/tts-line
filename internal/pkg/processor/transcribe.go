@@ -87,7 +87,7 @@ func mapTransInput(data *synthesizer.TTSDataPart) ([]*transInput, error) {
 				ti.Ml = tword
 			} else {
 				if w.AccentVariant == nil {
-					return nil, errors.New("No accent variant for " + tword)
+					return nil, errors.New("no accent variant for " + tword)
 				}
 				ti.Acc = synthesizer.GetTranscriberAccent(w)
 				ti.Syll = w.AccentVariant.Syll
@@ -120,7 +120,7 @@ func mapTransOutput(data *synthesizer.TTSDataPart, out []transOutput) error {
 		tgw := w.Tagged
 		if tgw.IsWord() {
 			if len(out) <= i {
-				return errors.New("Wrong transcribe result")
+				return errors.New("wrong transcribe result")
 			}
 			err := setTrans(w, out[i])
 			if err != nil {
@@ -134,10 +134,10 @@ func mapTransOutput(data *synthesizer.TTSDataPart, out []transOutput) error {
 
 func setTrans(w *synthesizer.ProcessedWord, out transOutput) error {
 	if out.Error != "" {
-		return errors.Errorf("Transcriber error for '%s'('%s'): %s", transWord(w), out.Word, out.Error)
+		return errors.Errorf("transcriber error for '%s'('%s'): %s", transWord(w), out.Word, out.Error)
 	}
 	if transWord(w) != out.Word {
-		return errors.Errorf("Words do not match (transcriber) '%s' vs '%s'", transWord(w), out.Word)
+		return errors.Errorf("words do not match (transcriber) '%s' vs '%s'", transWord(w), out.Word)
 	}
 	for _, t := range out.Transcription {
 		if t.Transcription != "" {

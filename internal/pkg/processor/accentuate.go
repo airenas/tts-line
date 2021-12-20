@@ -77,7 +77,7 @@ func mapAccentOutput(data *synthesizer.TTSDataPart, out []accentOutputElement) e
 		tgw := w.Tagged
 		if tgw.IsWord() && w.UserTranscription == "" {
 			if len(out) <= i {
-				return errors.New("Wrong accent result")
+				return errors.New("wrong accent result")
 			}
 			err := setAccent(w, out[i])
 			if err != nil {
@@ -95,10 +95,10 @@ func setAccent(w *synthesizer.ProcessedWord, out accentOutputElement) error {
 			goapp.Log.Error(out.Error)
 			return utils.NewErrWordTooLong(w.Tagged.Word)
 		}
-		return errors.Errorf("Accent error for '%s'('%s'): %s", w.Tagged.Word, out.Word, out.Error)
+		return errors.Errorf("accent error for '%s'('%s'): %s", w.Tagged.Word, out.Word, out.Error)
 	}
 	if w.Tagged.Word != out.Word {
-		return errors.Errorf("Words do not match '%s' vs '%s'", w.Tagged.Word, out.Word)
+		return errors.Errorf("words do not match '%s' vs '%s'", w.Tagged.Word, out.Word)
 	}
 	w.AccentVariant = findBestAccentVariant(out.Accent, w.Tagged.Mi, w.Tagged.Lemma)
 	return nil

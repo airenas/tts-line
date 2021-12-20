@@ -43,7 +43,7 @@ func NewHTTPWrapT(urlStr string, timeout time.Duration) (*HTTPWrap, error) {
 func (hw *HTTPWrap) InvokeText(dataIn string, dataOut interface{}) error {
 	req, err := http.NewRequest("POST", hw.URL, strings.NewReader(dataIn))
 	if err != nil {
-		return errors.Wrapf(err, "Can't prepare request to '%s'", hw.URL)
+		return errors.Wrapf(err, "can't prepare request to '%s'", hw.URL)
 	}
 	hw.flog("Input : ", dataIn)
 	req.Header.Set("Content-Type", "text/plain")
@@ -67,7 +67,7 @@ func (hw *HTTPWrap) InvokeJSONU(URL string, dataIn interface{}, dataOut interfac
 	hw.flog("Input : ", b.String())
 	req, err := http.NewRequest("POST", URL, b)
 	if err != nil {
-		return errors.Wrapf(err, "Can't prepare request to '%s'", URL)
+		return errors.Wrapf(err, "can't prepare request to '%s'", URL)
 	}
 	req.Header.Set("Content-Type", "application/json")
 	return hw.invoke(req, dataOut)
@@ -82,20 +82,20 @@ func (hw *HTTPWrap) invoke(req *http.Request, dataOut interface{}) error {
 	hw.flog("Call : ", req.URL.String())
 	resp, err := hw.HTTPClient.Do(req)
 	if err != nil {
-		return errors.Wrapf(err, "Can't call '%s'", req.URL.String())
+		return errors.Wrapf(err, "can't call '%s'", req.URL.String())
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode < 200 || resp.StatusCode > 299 {
-		return errors.Errorf("Can't invoke '%s'. Code: '%d'", req.URL.String(), resp.StatusCode)
+		return errors.Errorf("can't invoke '%s'. Code: '%d'", req.URL.String(), resp.StatusCode)
 	}
 	br, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		return errors.Wrap(err, "Can't read body")
+		return errors.Wrap(err, "can't read body")
 	}
 	hw.flog("Output: ", string(br))
 	err = json.Unmarshal(br, dataOut)
 	if err != nil {
-		return errors.Wrap(err, "Can't decode response")
+		return errors.Wrap(err, "can't decode response")
 	}
 	return nil
 }
