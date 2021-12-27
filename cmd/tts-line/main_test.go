@@ -20,10 +20,11 @@ const testCompCfg = "comparator:\n  url: http://server\n"
 const testTaggerCfg = "tagger:\n  url: http://server\n"
 const testValidatorCfg = "validator:\n  url: http://server\n  check:\n    min_words: 1\n"
 const testConvCfg = "audioConvert:\n  url: http://server\n"
+const testObsceneCfg = "obscene:\n  url: http://server\n"
 
 var testAllCfg = testCompCfg +
 	testAccenterCfg + testTransCfg + testAMCfg + testVocCfg + testTaggerCfg + testValidatorCfg +
-	testConvCfg + testAcrCfg + testCliticsCfg
+	testConvCfg + testAcrCfg + testCliticsCfg + testObsceneCfg
 
 var testDBSession *mongodb.SessionProvider
 
@@ -31,47 +32,52 @@ func initTest(t *testing.T) {
 	testDBSession, _ = mongodb.NewSessionProvider("mongo://url")
 }
 
+func TestAddPartProcessors_Custom(t *testing.T) {
+	tests := []struct {
+		name    string
+		trimCfg string
+		wantErr bool
+	}{
+		{name: "OK", trimCfg: "", wantErr: false},
+		{name: "Obscene fail", trimCfg: testObsceneCfg, wantErr: true},
+		{name: "AM fail", trimCfg: testAMCfg, wantErr: true},
+		{name: "Acr fail", trimCfg: testAcrCfg, wantErr: true},
+		{name: "Clitics fail", trimCfg: testCliticsCfg, wantErr: true},
+		{name: "Trans fail", trimCfg: testTransCfg, wantErr: true},
+		{name: "Voc fail", trimCfg: testVocCfg, wantErr: true},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			initTest(t)
+			syntC := &synthesizer.MainWorker{}
+			assert.Equal(t, tt.wantErr,
+				addCustomProcessors(syntC, testDBSession, test.NewConfig(t, trim(testAllCfg, tt.trimCfg))) != nil)
+		})
+	}
+}
+
 func TestAddPartProcessors(t *testing.T) {
-	partRunner := synthesizer.NewPartRunner(1)
-	assert.Nil(t, addPartProcessors(partRunner, test.NewConfig(t, testAllCfg)))
-}
-
-func TestAddPartProcessors_Fail(t *testing.T) {
-	partRunner := synthesizer.NewPartRunner(1)
-	assert.NotNil(t, addPartProcessors(partRunner, test.NewConfig(t, trim(testAllCfg, testAcrCfg))))
-	assert.NotNil(t, addPartProcessors(partRunner, test.NewConfig(t, testAcrCfg+testTransCfg+testAMCfg+testVocCfg+testCliticsCfg)))
-	assert.NotNil(t, addPartProcessors(partRunner, test.NewConfig(t, testAcrCfg+testAccenterCfg+testAMCfg+testVocCfg+testCliticsCfg)))
-	assert.NotNil(t, addPartProcessors(partRunner, test.NewConfig(t, testAcrCfg+testAccenterCfg+testTransCfg+testVocCfg+testCliticsCfg)))
-	assert.NotNil(t, addPartProcessors(partRunner, test.NewConfig(t, testAcrCfg+testAccenterCfg+testTransCfg+testAMCfg+testCliticsCfg)))
-	assert.NotNil(t, addPartProcessors(partRunner, test.NewConfig(t, testAcrCfg+testAccenterCfg+
-		testTransCfg+testAMCfg+testVocCfg)))
-}
-
-func TestAddPartProcessors_NoVoc(t *testing.T) {
-	partRunner := synthesizer.NewPartRunner(1)
-	assert.Nil(t, addPartProcessors(partRunner, test.NewConfig(t, testAllCfg+
-		"acousticModel:\n  url: http://server\n  hasVocoder: true\n")))
-}
-
-func TestAddCustomProcessors(t *testing.T) {
-	initTest(t)
-	syntC := &synthesizer.MainWorker{}
-	assert.Nil(t, addCustomProcessors(syntC, testDBSession, test.NewConfig(t, testAllCfg)))
-}
-
-func TestAddCustomProcessors_Fail(t *testing.T) {
-	initTest(t)
-	syntC := &synthesizer.MainWorker{}
-	assert.NotNil(t, addCustomProcessors(syntC, testDBSession, test.NewConfig(t,
-		trim(testAllCfg, testCompCfg))))
-	assert.NotNil(t, addCustomProcessors(syntC, testDBSession, test.NewConfig(t,
-		trim(testAllCfg, testTaggerCfg))))
-	assert.NotNil(t, addCustomProcessors(syntC, testDBSession, test.NewConfig(t, testCompCfg+
-		trim(testAllCfg, testValidatorCfg))))
-	assert.NotNil(t, addCustomProcessors(syntC, testDBSession, test.NewConfig(t,
-		trim(testAllCfg, testCliticsCfg))))
-	assert.NotNil(t, addCustomProcessors(syntC, testDBSession, test.NewConfig(t,
-		trim(testAllCfg, testAcrCfg))))
+	tests := []struct {
+		name    string
+		trimCfg string
+		wantErr bool
+	}{
+		{name: "OK", trimCfg: "", wantErr: false},
+		{name: "Obscene fail", trimCfg: testObsceneCfg, wantErr: true},
+		{name: "AM fail", trimCfg: testAMCfg, wantErr: true},
+		{name: "Acr fail", trimCfg: testAcrCfg, wantErr: true},
+		{name: "Clitics fail", trimCfg: testCliticsCfg, wantErr: true},
+		{name: "Trans fail", trimCfg: testTransCfg, wantErr: true},
+		{name: "Voc fail", trimCfg: testVocCfg, wantErr: true},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			initTest(t)
+			partRunner := synthesizer.NewPartRunner(1)
+			assert.Equal(t, tt.wantErr,
+				addPartProcessors(partRunner, test.NewConfig(t, trim(testAllCfg, tt.trimCfg))) != nil)
+		})
+	}
 }
 
 func trim(all, what string) string {

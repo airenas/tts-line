@@ -20,7 +20,7 @@ type TTSData struct {
 
 	Audio           string
 	AudioMP3        string
-	AudioLenSeconds float64 
+	AudioLenSeconds float64
 }
 
 //TTSConfig some TTS configuration
@@ -49,6 +49,7 @@ type ProcessedWord struct {
 	UserAccent        int
 	Clitic            Clitic
 	Transcription     string
+	Obscene           bool
 }
 
 type CliticAccentEnum int

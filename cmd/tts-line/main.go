@@ -230,7 +230,13 @@ func addCustomProcessors(synt *synthesizer.MainWorker, sp *mongodb.SessionProvid
 }
 
 func addPartProcessors(partRunner *synthesizer.PartRunner, cfg *viper.Viper) error {
-	ppr, err := processor.NewAcronyms(cfg.GetString("acronyms.url"))
+	ppr, err := processor.NewObsceneFilter(cfg.GetString("obscene.url"))
+	if err != nil {
+		return errors.Wrap(err, "can't init obscene filter service")
+	}
+	partRunner.Add(ppr)
+
+	ppr, err = processor.NewAcronyms(cfg.GetString("acronyms.url"))
 	if err != nil {
 		return errors.Wrap(err, "can't init acronyms service")
 	}
