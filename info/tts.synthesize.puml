@@ -29,7 +29,7 @@ participant "Number\nreplace" as num
 participant "Tagger" as tagger
 participant "Lex" as lex
 participant "Morf" as morf
-participant "Text\nValidator" as validator
+participant "Obscene\nfilter" as obscene
 participant "Acronym" as acronym
 participant "Accenter" as accenter
 participant "Clitic" as clitic
@@ -60,6 +60,8 @@ activate DB #lightblue
 DB -[#blue]-> tts:
 deactivate DB
 
+tts -> tts: check for empty/too large text
+
 tts -> num: 
 activate num
 num --> tts:
@@ -69,7 +71,6 @@ tts -[#blue]> DB: save normalized text
 activate DB #lightblue
 DB -[#blue]-> tts:
 deactivate DB
-
 
 tts -> tagger: 
 activate tagger
@@ -86,14 +87,14 @@ deactivate morf
 tagger --> tts:
 deactivate tagger
 
-tts -> validator: check for no numbers, profanity, max words
-activate validator
-validator --> tts:
-deactivate validator
-
 tts -> tts: Split into batches
 
 par
+
+tts->obscene
+activate obscene
+obscene --> tts:
+deactivate obscene
 
 tts -> acronym: 
 activate acronym
