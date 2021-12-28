@@ -53,20 +53,12 @@ func (mw *MainWorker) processAll(data *TTSData) error {
 		if err != nil {
 			return err
 		}
-		if len(data.ValidationFailures) > 0 {
-			return nil
-		}
 	}
 	return nil
 }
 
 func mapResult(data *TTSData) (*api.Result, error) {
 	res := &api.Result{}
-	if len(data.ValidationFailures) > 0 {
-		res.ValidationFailures = data.ValidationFailures
-		return res, nil
-	}
-
 	res.AudioAsString = data.AudioMP3
 	if data.Input.OutputTextFormat != api.TextNone {
 		if data.Input.AllowCollectData {

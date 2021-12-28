@@ -54,4 +54,5 @@ type TTSRequestConfig struct {
 	Speed            float32
 	Voice            string
 	Priority         int
+	AllowedMaxLen    int
 }

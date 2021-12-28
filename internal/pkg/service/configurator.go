@@ -2,6 +2,7 @@ package service
 
 import (
 	"net/http"
+	"strconv"
 	"strings"
 
 	"github.com/airenas/go-app/pkg/goapp"
@@ -17,6 +18,7 @@ const (
 	headerDefaultFormat = "x-tts-default-output-format"
 	headerCollectData   = "x-tts-collect-data"
 	headerSaveTags      = "x-tts-save-tags"
+	headerMaxTextLen    = "x-tts-max-text-len"
 )
 
 //TTSConfigutaror tts request configuration
@@ -91,10 +93,14 @@ func (c *TTSConfigutaror) Configure(r *http.Request, inText *api.Input) (*api.TT
 	if err != nil {
 		return nil, err
 	}
-	if (inText.Priority < 0) {
+	if inText.Priority < 0 {
 		return nil, errors.Errorf("wrong priority (>=0) value: %d", inText.Priority)
 	}
 	res.Priority = inText.Priority
+	res.AllowedMaxLen, err = getMaxLen(getHeader(r, headerMaxTextLen))
+	if err != nil {
+		return nil, err
+	}
 	return res, nil
 }
 
@@ -190,6 +196,14 @@ func getSpeed(v float32) (float32, error) {
 		}
 	}
 	return v, nil
+}
+
+func getMaxLen(s string) (int, error) {
+	if strings.TrimSpace(s) == "" {
+		return 0, nil
+	}
+	res, err := strconv.ParseInt(s, 10, 32)
+	return int(res), err
 }
 
 func defaultS(s, s1 string) string {

@@ -4,7 +4,6 @@ import (
 	"github.com/airenas/go-app/pkg/goapp"
 	"github.com/pkg/errors"
 
-	"github.com/airenas/tts-line/internal/pkg/service/api"
 	"github.com/airenas/tts-line/internal/pkg/synthesizer"
 	"github.com/airenas/tts-line/internal/pkg/utils"
 )
@@ -40,7 +39,7 @@ func (p *cleaner) Process(data *synthesizer.TTSData) error {
 
 	data.Text = output.Text
 	if data.Text == "" {
-		data.ValidationFailures = []api.ValidateFailure{{Check: api.Check{ID: "no_text"}}}
+		return utils.ErrNoInput
 	}
 	utils.LogData("Output: ", data.Text)
 	return nil

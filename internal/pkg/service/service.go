@@ -53,6 +53,7 @@ func StartWebServer(data *Data) error {
 	e := initRoutes(data)
 
 	e.Server.Addr = ":" + portStr
+	e.Server.IdleTimeout = 3 * time.Minute
 	e.Server.ReadHeaderTimeout = 15 * time.Second
 	e.Server.ReadTimeout = 60 * time.Second
 	e.Server.WriteTimeout = 900 * time.Second
@@ -150,7 +151,7 @@ func synthesizeCustom(data *PrData) func(echo.Context) error {
 			if d, msg := badReqError(err); d {
 				return echo.NewHTTPError(http.StatusBadRequest, msg)
 			}
-			return echo.NewHTTPError(http.StatusInternalServerError, "Service error")
+			return echo.NewHTTPError(http.StatusInternalServerError)
 		}
 		resp.RequestID = ""
 
@@ -172,22 +173,18 @@ func takeInput(c echo.Context) (*api.Input, error) {
 
 func writeResponse(c echo.Context, resp *api.Result) error {
 	c.Response().Header().Set(echo.HeaderContentType, echo.MIMEApplicationJSONCharsetUTF8)
-	c.Response().WriteHeader(getCode(resp))
+	c.Response().WriteHeader(http.StatusOK)
 	enc := json.NewEncoder(c.Response())
 	enc.SetEscapeHTML(false)
 	return enc.Encode(resp)
 }
 
-func getCode(resp *api.Result) int {
-	if len(resp.ValidationFailures) > 0 {
-		return http.StatusBadRequest
-	}
-	return 200
-}
-
 func badReqError(err error) (bool, string) {
 	if errors.Is(err, utils.ErrNoRecord) {
 		return true, "RequestID not found"
+	}
+	if errors.Is(err, utils.ErrNoInput) {
+		return true, "No text"
 	}
 	if errors.Is(err, utils.ErrTextDoesNotMatch) {
 		return true, "Original text does not match the modified"
@@ -196,9 +193,13 @@ func badReqError(err error) (bool, string) {
 	if errors.As(err, &errBA) {
 		return true, fmt.Sprintf("Bad accents: %v", errBA.BadAccents)
 	}
-	var errWTA *utils.ErrWordTooLong
-	if errors.As(err, &errWTA) {
-		return true, fmt.Sprintf("Word too long: '%s'", errWTA.Word)
+	var errWTL *utils.ErrWordTooLong
+	if errors.As(err, &errWTL) {
+		return true, fmt.Sprintf("Word too long: '%s'", errWTL.Word)
+	}
+	var errTTL *utils.ErrTextTooLong
+	if errors.As(err, &errTTL) {
+		return true, fmt.Sprintf("Text too long: passed %d chars, max allowed %d", errTTL.Input, errTTL.Max)
 	}
 	return false, ""
 }

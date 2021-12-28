@@ -6,14 +6,13 @@ import (
 
 //TTSData working data for one request
 type TTSData struct {
-	Input              *api.TTSRequestConfig
-	RequestID          string
-	Cfg                TTSConfig
-	OriginalText       string
-	PreviousText       string // text of previous request loaded by requestID
-	Text               string
-	TextWithNumbers    string
-	ValidationFailures []api.ValidateFailure
+	Input           *api.TTSRequestConfig
+	RequestID       string
+	Cfg             TTSConfig
+	OriginalText    string
+	PreviousText    string // text of previous request loaded by requestID
+	Text            string
+	TextWithNumbers string
 
 	Words []*ProcessedWord
 	Parts []*TTSDataPart
