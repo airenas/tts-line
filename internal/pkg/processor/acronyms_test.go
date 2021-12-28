@@ -1,16 +1,15 @@
 package processor
 
 import (
+	"reflect"
 	"testing"
-
-	"github.com/petergtz/pegomock"
-	"github.com/pkg/errors"
-
-	"github.com/stretchr/testify/assert"
 
 	"github.com/airenas/tts-line/internal/pkg/service/api"
 	"github.com/airenas/tts-line/internal/pkg/synthesizer"
 	"github.com/airenas/tts-line/internal/pkg/test/mocks"
+	"github.com/petergtz/pegomock"
+	"github.com/pkg/errors"
+	"github.com/stretchr/testify/assert"
 )
 
 var (
@@ -131,4 +130,34 @@ func TestIsAbbr(t *testing.T) {
 
 func newTestTTSDataPart() *synthesizer.TTSDataPart {
 	return &synthesizer.TTSDataPart{Cfg: &synthesizer.TTSConfig{Input: &api.TTSRequestConfig{OutputFormat: api.AudioMP3}}}
+}
+
+func Test_mapAbbrInput(t *testing.T) {
+	tests := []struct {
+		name string
+		args []*synthesizer.ProcessedWord
+		want []acrInput
+	}{
+		{name: "One word", args: []*synthesizer.ProcessedWord{{Tagged: synthesizer.TaggedWord{Word: "word", Mi: "Xolia"}}},
+			want: []acrInput{{Word: "word", MI: "Xolia", ID: "0"}}},
+		{name: "No mi", args: []*synthesizer.ProcessedWord{{Tagged: synthesizer.TaggedWord{Word: "word", Mi: ""}}},
+			want: []acrInput{}},
+		{name: "Obscene", args: []*synthesizer.ProcessedWord{{Tagged: synthesizer.TaggedWord{Word: "word", Mi: ""}, Obscene: true}},
+			want: []acrInput{{Word: "word", MI: "", ID: "0"}}},
+		{name: "AllUpper", args: []*synthesizer.ProcessedWord{{Tagged: synthesizer.TaggedWord{Word: "word", Mi: "Naaa",
+			Lemma: "WORD"}, Obscene: false}},
+			want: []acrInput{{Word: "word", MI: "Naaa", ID: "0"}}},
+		{name: "No AllUpper", args: []*synthesizer.ProcessedWord{{Tagged: synthesizer.TaggedWord{Word: "word", Mi: "Naaa",
+			Lemma: "WORd"}, Obscene: false}},
+			want: []acrInput{}},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			d := newTestTTSDataPart()
+			d.Words = append(d.Words, tt.args...)
+			if got := mapAbbrInput(d); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("mapAbbrInput() = %v, want %v", got, tt.want)
+			}
+		})
+	}
 }
