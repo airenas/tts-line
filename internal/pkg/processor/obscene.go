@@ -42,7 +42,7 @@ func (p *obscene) Process(data *synthesizer.TTSDataPart) error {
 			return err
 		}
 	} else {
-		goapp.Log.Debug("Skip onscene filter - no data in")
+		goapp.Log.Debug("Skip obscene filter - no data in")
 	}
 	return nil
 }
