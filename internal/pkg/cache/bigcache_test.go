@@ -102,22 +102,6 @@ func TestWork_NoCache(t *testing.T) {
 	synthesizerMock.VerifyWasCalled(pegomock.Twice()).Work(matchers.AnyPtrToApiTTSRequestConfig())
 }
 
-func TestWork_NoCacheValidation(t *testing.T) {
-	initTest(t)
-	c, _ := NewCacher(synthesizerMock, newTestConfig("duration: 10s"))
-	assert.NotNil(t, c)
-	pegomock.When(synthesizerMock.Work(matchers.AnyPtrToApiTTSRequestConfig())).
-		ThenReturn(&api.Result{
-			ValidationFailures: []api.ValidateFailure{{}}}, nil)
-
-	_, err := c.Work(newtestInput("olia"))
-	assert.Nil(t, err)
-	synthesizerMock.VerifyWasCalledOnce().Work(matchers.AnyPtrToApiTTSRequestConfig())
-	_, err = c.Work(newtestInput("olia"))
-	assert.Nil(t, err)
-	synthesizerMock.VerifyWasCalled(pegomock.Twice()).Work(matchers.AnyPtrToApiTTSRequestConfig())
-}
-
 func TestWork_Key(t *testing.T) {
 	initTest(t)
 	c, _ := NewCacher(synthesizerMock, newTestConfig("duration: 10s"))

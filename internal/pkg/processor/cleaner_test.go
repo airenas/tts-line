@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/airenas/tts-line/internal/pkg/synthesizer"
+	"github.com/airenas/tts-line/internal/pkg/utils"
 	"github.com/petergtz/pegomock"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
@@ -67,8 +68,7 @@ func TestCleanProcess_NoText(t *testing.T) {
 			return []pegomock.ReturnValue{nil}
 		})
 	err := pr.Process(d)
-	assert.Nil(t, err)
-	assert.Equal(t, "no_text", d.ValidationFailures[0].Check.ID)
+	assert.Equal(t, utils.ErrNoInput, err)
 }
 
 func TestClean_Skip(t *testing.T) {

@@ -44,8 +44,8 @@ func validate(text string, maxLen int) error {
 	if strings.TrimSpace(text) == "" {
 		return utils.ErrNoInput
 	}
-	if l := utf8.RuneCountInString(text); l >= maxLen {
-		return utils.NewErrTextTooLong(maxLen, l)
+	if l := utf8.RuneCountInString(text); l > maxLen {
+		return utils.NewErrTextTooLong(l, maxLen)
 	}
 	return nil
 }

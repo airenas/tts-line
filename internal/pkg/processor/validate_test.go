@@ -1,118 +1,122 @@
 package processor
 
 import (
-	"os"
+	"strings"
 	"testing"
-
-	"github.com/petergtz/pegomock"
-	"github.com/pkg/errors"
-
-	"github.com/stretchr/testify/assert"
 
 	"github.com/airenas/tts-line/internal/pkg/service/api"
 	"github.com/airenas/tts-line/internal/pkg/synthesizer"
-	"github.com/airenas/tts-line/internal/pkg/test"
+	"github.com/airenas/tts-line/internal/pkg/utils"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestNewValidator(t *testing.T) {
 	initTestJSON(t)
-	pr, err := NewValidator(test.NewConfig(t, "url: http://server\ncheck:\n  min_words: 1"))
+	pr, err := NewValidator(200)
 	assert.Nil(t, err)
 	assert.NotNil(t, pr)
 }
 
 func TestNewValidator_Fails(t *testing.T) {
 	initTestJSON(t)
-	pr, err := NewValidator(nil)
+	pr, err := NewValidator(10)
 	assert.NotNil(t, err)
 	assert.Nil(t, pr)
 
-	_, err = NewValidator(test.NewConfig(t, ""))
+	_, err = NewValidator(99)
 	assert.NotNil(t, err)
 
-	_, err = NewValidator(test.NewConfig(t, "url: "))
+	_, err = NewValidator(0)
 	assert.NotNil(t, err)
-
-	_, err = NewValidator(test.NewConfig(t, "url: http://server\n"))
-	assert.NotNil(t, err)
-}
-
-func TestInitChecks(t *testing.T) {
-	ch, err := initChecks(test.NewConfig(t, "min_words: 1\nmax_words: 10\nno_numbers: 1\nprofanity: 1"))
-	assert.Nil(t, err)
-	assert.Equal(t, 4, len(ch))
-	assert.Equal(t, 1, ch[0].Value)
-	assert.Equal(t, 10, ch[1].Value)
-	assert.Equal(t, "no_numbers", ch[2].ID)
-	assert.Equal(t, "profanity", ch[3].ID)
-}
-
-func TestInitChecks_Ignore(t *testing.T) {
-	ch, err := initChecks(test.NewConfig(t, "min_words: 0"))
-	assert.Nil(t, err)
-	assert.Equal(t, 0, len(ch))
 }
 
 func TestInvokeValidator(t *testing.T) {
 	initTestJSON(t)
-	pr, _ := NewValidator(test.NewConfig(t, "url: http://server\ncheck:\n  min_words: 1"))
+	pr, _ := NewValidator(100)
 	assert.NotNil(t, pr)
-	pr.(*validator).httpWrap = httpJSONMock
 	d := synthesizer.TTSData{}
-	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Word: "word"}})
-	pegomock.When(httpJSONMock.InvokeJSON(pegomock.AnyInterface(), pegomock.AnyInterface())).Then(
-		func(params []pegomock.Param) pegomock.ReturnValues {
-			assert.Equal(t, "word", params[0].(*valInput).Words.List[0].Word)
-			assert.Equal(t, "min_words", params[0].(*valInput).Checks[0].ID)
-			*params[1].(*valOutput) = valOutput{List: []api.ValidateFailure{{Check: api.Check{ID: "olia"}, FailingPosition: 1}}}
-			return []pegomock.ReturnValue{nil}
-		})
+	d.Input = &api.TTSRequestConfig{Text: "olia"}
 	err := pr.Process(&d)
 	assert.Nil(t, err)
-	assert.Equal(t, "olia", d.ValidationFailures[0].Check.ID)
 }
 
 func TestInvokeValidator_Fail(t *testing.T) {
 	initTestJSON(t)
-	pr, _ := NewValidator(test.NewConfig(t, "url: http://server\ncheck:\n  min_words: 1"))
+	pr, _ := NewValidator(100)
 	assert.NotNil(t, pr)
-	pr.(*validator).httpWrap = httpJSONMock
 	d := synthesizer.TTSData{}
-	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Word: "word"}})
-	pegomock.When(httpJSONMock.InvokeJSON(pegomock.AnyInterface(), pegomock.AnyInterface())).ThenReturn(errors.New("haha"))
+	d.Input = &api.TTSRequestConfig{Text: strings.Repeat("olia ", 100)}
 	err := pr.Process(&d)
-	assert.NotNil(t, err)
+	errTL, ok := err.(*utils.ErrTextTooLong)
+	if assert.True(t, ok) {
+		assert.Equal(t, 100, errTL.Max)
+		assert.Equal(t, 500, errTL.Input)
+	}
 }
 
 func TestInvokeValidator_Skip(t *testing.T) {
 	d := &synthesizer.TTSData{}
 	d.Cfg.JustAM = true
-	pr, _ := NewValidator(test.NewConfig(t, "url: http://server\ncheck:\n  min_words: 1"))
+	pr, _ := NewValidator(100)
 	err := pr.Process(d)
 	assert.Nil(t, err)
 }
 
-func TestMapValInput(t *testing.T) {
-	pr, _ := NewValidator(test.NewConfig(t, "url: http://server\ncheck:\n  min_words: 1"))
-	assert.NotNil(t, pr)
-	prv := pr.(*validator)
-
-	d := synthesizer.TTSData{}
-	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Word: "v1"}})
-	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Separator: "!"}})
-	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Word: "v2"}})
-	inp := prv.mapValidatorInput(&d)
-	assert.Equal(t, "v1", inp.Words.List[0].Word)
-	assert.Equal(t, "v2", inp.Words.List[1].Word)
-	assert.Equal(t, prv.checks, inp.Checks)
+func Test_getMaxLen(t *testing.T) {
+	type args struct {
+		def int
+		req int
+	}
+	tests := []struct {
+		name string
+		args args
+		want int
+	}{
+		{name: "req", args: args{def: 10, req: 10}, want: 10},
+		{name: "req", args: args{def: 10, req: 100}, want: 100},
+		{name: "def", args: args{def: 10, req: 0}, want: 10},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := getMaxLen(tt.args.def, tt.args.req); got != tt.want {
+				t.Errorf("getMaxLen() = %v, want %v", got, tt.want)
+			}
+		})
+	}
 }
 
-func TestMapValInput_FromConfig(t *testing.T) {
-	os.Setenv("VALIDATOR_CHECK_MAX_WORDS", "300")
-	pr, _ := NewValidator(test.NewConfig(t, "url: http://server\ncheck:\n  max_words: 10"))
-	assert.NotNil(t, pr)
-	prv := pr.(*validator)
+func Test_validate(t *testing.T) {
+	fNone := func(_t *testing.T,_err error) { assert.Nil(_t, _err) }
+	fEmpty := func(_t *testing.T,_err error) { assert.Equal(_t, utils.ErrNoInput, _err) }
+	type args struct {
+		text   string
+		maxLen int
+	}
+	tests := []struct {
+		name     string
+		args     args
+		wantErrF func(*testing.T, error)
+	}{
+		{name: "empty", args: args{"", 10}, wantErrF: fEmpty},
+		{name: "empty trim", args: args{"  ", 10}, wantErrF: fEmpty},
+		{name: "too long", args: args{strings.Repeat("a", 11), 10}, wantErrF: testErrTooLong(11, 10)},
+		{name: "too long", args: args{strings.Repeat("a", 11), 10}, wantErrF: testErrTooLong(11, 10)},
+		{name: "OK", args: args{strings.Repeat("a", 11), 11}, wantErrF: fNone},
+		{name: "OK", args: args{strings.Repeat("a", 1000), 500}, wantErrF: testErrTooLong(1000, 500)},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			tt.wantErrF(t, validate(tt.args.text, tt.args.maxLen))
+		})
+	}
+}
 
-	assert.Equal(t, 1, len(prv.checks))
-	assert.Equal(t, 300, prv.checks[0].Value)
+func testErrTooLong(l, max int) func(*testing.T, error) {
+	return func(t *testing.T, _err error) {
+		errTL, ok := _err.(*utils.ErrTextTooLong)
+		if assert.True(t, ok) {
+			assert.Equal(t, max, errTL.Max)
+			assert.Equal(t, l, errTL.Input)
+		}
+	}
 }
