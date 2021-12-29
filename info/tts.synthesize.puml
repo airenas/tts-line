@@ -45,6 +45,8 @@ participant "Mp3/M4a\nconverter" as converter
 User -> tts: synthesize
 activate tts
 
+tts -> tts: check for empty/too large text
+
 tts -[#blue]> DB: save original text
 activate DB #lightblue
 DB -[#blue]-> tts:
@@ -60,7 +62,6 @@ activate DB #lightblue
 DB -[#blue]-> tts:
 deactivate DB
 
-tts -> tts: check for empty/too large text
 
 tts -> num: 
 activate num

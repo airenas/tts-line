@@ -28,7 +28,7 @@ participant "Comparator" as comparator
 participant "Tagger" as tagger
 participant "Lex" as lex
 participant "Morf" as morf
-participant "Text\nValidator" as validator
+participant "Obscene\nfilter" as obscene
 participant "Acronym" as acronym
 participant "Accenter" as accenter
 participant "Clitic" as clitic
@@ -43,6 +43,8 @@ participant "Mp3/M4a\nconverter" as converter
 
 User -> tts: synthesizeCustom(\nrequestID)
 activate tts
+
+tts -> tts: check for empty/too large text
 
 tts -[#blue]> DB: get original text (requestID)
 activate DB #lightblue
@@ -74,14 +76,14 @@ deactivate morf
 tagger --> tts:
 deactivate tagger
 
-tts -> validator: check for no numbers, profanity, max words
-activate validator
-validator --> tts:
-deactivate validator
-
 tts -> tts: split into batches
 
 par
+
+tts->obscene
+activate obscene
+obscene --> tts:
+deactivate obscene
 
 tts -> acronym: 
 activate acronym
