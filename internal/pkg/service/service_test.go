@@ -219,12 +219,6 @@ func TestCustom_FailNoRequest(t *testing.T) {
 	testCode(t, req, 400)
 }
 
-func TestCode(t *testing.T) {
-	assert.Equal(t, 200, getCode(&api.Result{}))
-	assert.Equal(t, 200, getCode(&api.Result{AudioAsString: "olia"}))
-	assert.Equal(t, 400, getCode(&api.Result{ValidationFailures: []api.ValidateFailure{{}}}))
-}
-
 func TestBadReqError(t *testing.T) {
 	tests := []struct {
 		v  error
@@ -238,12 +232,16 @@ func TestBadReqError(t *testing.T) {
 		{v: errors.Wrap(utils.NewErrBadAccent([]string{"olia"}), "test"), e: true, es: "Bad accents: [olia]"},
 		{v: utils.NewErrWordTooLong("oliaaa"), e: true, es: "Word too long: 'oliaaa'"},
 		{v: errors.Wrap(utils.NewErrWordTooLong("oliaaa"), "err"), e: true, es: "Word too long: 'oliaaa'"},
+		{v: errors.Wrap(utils.ErrNoInput, "err"), e: true, es: "No text"},
+		{v: errors.Wrap(utils.NewErrTextTooLong(300, 200), "err"), e: true, es: "Text too long: passed 300 chars, max allowed 200"},
 	}
 
 	for i, tc := range tests {
-		v, str := badReqError(tc.v)
-		assert.Equal(t, tc.e, v, "Fail %d", i)
-		assert.Equal(t, tc.es, str, "Fail %d", i)
+		t.Run("", func(t *testing.T) {
+			v, str := badReqError(tc.v)
+			assert.Equal(t, tc.e, v, "Fail %d", i)
+			assert.Equal(t, tc.es, str, "Fail %d", i)
+		})
 	}
 }
 

@@ -18,7 +18,7 @@ const testAMCfg = "acousticModel:\n  url: http://server\n"
 const testVocCfg = "vocoder:\n  url: http://server\n"
 const testCompCfg = "comparator:\n  url: http://server\n"
 const testTaggerCfg = "tagger:\n  url: http://server\n"
-const testValidatorCfg = "validator:\n  url: http://server\n  check:\n    min_words: 1\n"
+const testValidatorCfg = "validator:\n  maxChars: 100\n"
 const testConvCfg = "audioConvert:\n  url: http://server\n"
 const testObsceneCfg = "obscene:\n  url: http://server\n"
 
@@ -45,6 +45,7 @@ func TestAddPartProcessors_Custom(t *testing.T) {
 		{name: "Clitics fail", trimCfg: testCliticsCfg, wantErr: true},
 		{name: "Trans fail", trimCfg: testTransCfg, wantErr: true},
 		{name: "Voc fail", trimCfg: testVocCfg, wantErr: true},
+		{name: "Validator fail", trimCfg: testValidatorCfg, wantErr: true},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

@@ -45,19 +45,6 @@ func TestWork_Fails(t *testing.T) {
 	assert.Nil(t, res)
 }
 
-func TestWork_ValidationFailure(t *testing.T) {
-	initTest(t)
-	processorMock.f = func(d *TTSData) error {
-		d.ValidationFailures = append(d.ValidationFailures, api.ValidateFailure{FailingPosition: 10})
-		return nil
-	}
-	res, err := worker.Work(&api.TTSRequestConfig{Text: "olia"})
-	assert.Nil(t, err)
-	assert.NotNil(t, res)
-	assert.Equal(t, "", res.AudioAsString)
-	assert.Equal(t, 10, res.ValidationFailures[0].FailingPosition)
-}
-
 func TestWork_Several(t *testing.T) {
 	initTest(t)
 	processorMock.f = func(d *TTSData) error {
@@ -71,22 +58,6 @@ func TestWork_Several(t *testing.T) {
 	worker.Add(processorMock1)
 	res, _ := worker.Work(&api.TTSRequestConfig{Text: "olia"})
 	assert.Equal(t, "wavmp3", res.AudioAsString)
-}
-
-func TestWork_StopProcess(t *testing.T) {
-	initTest(t)
-	processorMock.f = func(d *TTSData) error {
-		d.ValidationFailures = append(d.ValidationFailures, api.ValidateFailure{FailingPosition: 10})
-		return nil
-	}
-	processorMock1 := &procMock{f: func(d *TTSData) error {
-		assert.Fail(t, "Unexpected call")
-		return nil
-	}}
-	worker.Add(processorMock1)
-	res, err := worker.Work(&api.TTSRequestConfig{Text: "olia"})
-	assert.Nil(t, err)
-	assert.NotNil(t, res)
 }
 
 func TestWork_HasUUID(t *testing.T) {

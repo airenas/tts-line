@@ -176,7 +176,7 @@ func addCustomProcessors(synt *synthesizer.MainWorker, sp *mongodb.SessionProvid
 	}
 	synt.Add(pr)
 
-	pr, err = processor.NewValidator(goapp.Config.GetInt("validator.maxChars"))
+	pr, err = processor.NewValidator(cfg.GetInt("validator.maxChars"))
 	if err != nil {
 		return errors.Wrap(err, "can't init validator")
 	}
