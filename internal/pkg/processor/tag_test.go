@@ -1,15 +1,13 @@
 package processor
 
 import (
-	"errors"
 	"testing"
-
-	"github.com/petergtz/pegomock"
-
-	"github.com/stretchr/testify/assert"
 
 	"github.com/airenas/tts-line/internal/pkg/synthesizer"
 	"github.com/airenas/tts-line/internal/pkg/utils"
+	"github.com/petergtz/pegomock"
+	"github.com/pkg/errors"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestCreateTagger(t *testing.T) {
@@ -57,6 +55,21 @@ func TestInvokeTagger(t *testing.T) {
 
 	assert.True(t, d.Words[3].Tagged.SentenceEnd)
 	assert.False(t, d.Words[3].Tagged.IsWord())
+}
+
+func TestInvoke_NoWords(t *testing.T) {
+	initTest(t)
+	pr, _ := NewTagger("http://server")
+	assert.NotNil(t, pr)
+	pr.(*tagger).httpWrap = httpInvokerMock
+	d := synthesizer.TTSData{}
+	pegomock.When(httpInvokerMock.InvokeText(pegomock.AnyString(), pegomock.AnyInterface())).Then(
+		func(params []pegomock.Param) pegomock.ReturnValues {
+			*params[1].(*[]*TaggedWord) = []*TaggedWord{{Type: "SPACE", String: " "}}
+			return []pegomock.ReturnValue{nil}
+		})
+	err := pr.Process(&d)
+	assert.Equal(t, utils.ErrNoInput, err)
 }
 
 func TestInvokeTagger_Fail(t *testing.T) {
@@ -174,8 +187,10 @@ func TestClearAccents(t *testing.T) {
 	}
 
 	for i, tc := range tests {
-		v := clearAccents(tc.v)
-		assert.Equal(t, tc.e, v, "Fail %d", i)
+		t.Run(tc.v, func(t *testing.T) {
+			v := clearAccents(tc.v)
+			assert.Equal(t, tc.e, v, "Fail %d", i)
+		})
 	}
 }
 
@@ -247,7 +262,36 @@ func TestMapTag(t *testing.T) {
 	}
 
 	for _, tc := range tests {
-		v := mapTag(&tc.v)
-		assert.Equal(t, tc.e, v)
+		t.Run("", func(t *testing.T) {
+			v := mapTag(&tc.v)
+			assert.Equal(t, tc.e, v)
+		})
+	}
+}
+
+func Test_hasWords(t *testing.T) {
+	type args struct {
+		processedWord []*synthesizer.ProcessedWord
+	}
+	tests := []struct {
+		name string
+		args args
+		want bool
+	}{
+		{name: "Has", args: args{processedWord: []*synthesizer.ProcessedWord{
+			{Tagged: synthesizer.TaggedWord{Word: "word"}}}}, want: true},
+		{name: "Has", args: args{processedWord: []*synthesizer.ProcessedWord{
+			{Tagged: synthesizer.TaggedWord{Space: true}},
+			{Tagged: synthesizer.TaggedWord{Word: "word"}},
+			{Tagged: synthesizer.TaggedWord{Space: true}}}}, want: true},
+		{name: "Has not", args: args{processedWord: []*synthesizer.ProcessedWord{
+			{Tagged: synthesizer.TaggedWord{Space: true}}}}, want: false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := hasWords(tt.args.processedWord); got != tt.want {
+				t.Errorf("hasWords() = %v, want %v", got, tt.want)
+			}
+		})
 	}
 }
