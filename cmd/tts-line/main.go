@@ -105,6 +105,12 @@ func addProcessors(synt *synthesizer.MainWorker, sp *mongodb.SessionProvider) er
 		return errors.Wrap(err, "can't init text to DB saver")
 	}
 	synt.Add(sv)
+	//validator
+	pr, err = processor.NewValidator(goapp.Config.GetInt("validator.maxChars"))
+	if err != nil {
+		return errors.Wrap(err, "can't init validator")
+	}
+	synt.Add(pr)
 	//number replacer
 	pr, err = processor.NewNumberReplace(goapp.Config.GetString("numberReplace.url"))
 	if err != nil {
@@ -121,12 +127,6 @@ func addProcessors(synt *synthesizer.MainWorker, sp *mongodb.SessionProvider) er
 	pr, err = processor.NewTagger(goapp.Config.GetString("tagger.url"))
 	if err != nil {
 		return errors.Wrap(err, "can't init tagger")
-	}
-	synt.Add(pr)
-
-	pr, err = processor.NewValidator(goapp.Config.GetInt("validator.maxChars"))
-	if err != nil {
-		return errors.Wrap(err, "can't init validator")
 	}
 	synt.Add(pr)
 
@@ -176,6 +176,12 @@ func addCustomProcessors(synt *synthesizer.MainWorker, sp *mongodb.SessionProvid
 	}
 	synt.Add(pr)
 
+	pr, err = processor.NewValidator(goapp.Config.GetInt("validator.maxChars"))
+	if err != nil {
+		return errors.Wrap(err, "can't init validator")
+	}
+	synt.Add(pr)
+
 	pr, err = processor.NewComparator(cfg.GetString("comparator.url"))
 	if err != nil {
 		return errors.Wrap(err, "can't init text comparator")
@@ -191,12 +197,6 @@ func addCustomProcessors(synt *synthesizer.MainWorker, sp *mongodb.SessionProvid
 	pr, err = processor.NewTaggerAccents(cfg.GetString("tagger.url"))
 	if err != nil {
 		return errors.Wrap(err, "can't init tagger")
-	}
-	synt.Add(pr)
-
-	pr, err = processor.NewValidator(goapp.Config.GetInt("validator.maxChars"))
-	if err != nil {
-		return errors.Wrap(err, "can't init validator")
 	}
 	synt.Add(pr)
 

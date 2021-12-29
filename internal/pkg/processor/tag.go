@@ -37,7 +37,20 @@ func (p *tagger) Process(data *synthesizer.TTSData) error {
 		return err
 	}
 	data.Words = mapTagResult(output)
+	
+	if (!hasWords(data.Words)){
+		return utils.ErrNoInput
+	}
 	return nil
+}
+
+func hasWords(processedWord []*synthesizer.ProcessedWord) bool {
+	for _, w := range processedWord {
+		if (w.Tagged.IsWord()) {
+			return true
+		}
+	}
+	return false
 }
 
 //TaggedWord - tagger's result
