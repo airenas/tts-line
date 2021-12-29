@@ -14,16 +14,16 @@ var ErrTextDoesNotMatch = errors.New("wrong text")
 
 //ErrTextTooLong indicates too long input
 type ErrTextTooLong struct {
-	Max, Input int
+	Max, Len int
 }
 
 //NewErrBadAccent creates new error
-func NewErrTextTooLong(inp, max int) *ErrTextTooLong {
-	return &ErrTextTooLong{Max: max, Input: inp}
+func NewErrTextTooLong(len, max int) *ErrTextTooLong {
+	return &ErrTextTooLong{Max: max, Len: len}
 }
 
 func (r *ErrTextTooLong) Error() string {
-	return fmt.Sprintf("text size too long. Passed %d chars. Max %d", r.Input, r.Max)
+	return fmt.Sprintf("text size too long, passed %d chars, max %d", r.Len, r.Max)
 }
 
 //ErrNoInput indicates no text input

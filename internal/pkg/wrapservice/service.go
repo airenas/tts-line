@@ -38,6 +38,7 @@ func StartWebServer(data *Data) error {
 	e := initRoutes(data)
 
 	e.Server.Addr = ":" + portStr
+	e.Server.IdleTimeout = time.Minute * 3
 	e.Server.ReadHeaderTimeout = 15 * time.Second
 	e.Server.ReadTimeout = 60 * time.Second
 	e.Server.WriteTimeout = 180 * time.Second

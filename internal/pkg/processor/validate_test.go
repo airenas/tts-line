@@ -50,7 +50,7 @@ func TestInvokeValidator_Fail(t *testing.T) {
 	errTL, ok := err.(*utils.ErrTextTooLong)
 	if assert.True(t, ok) {
 		assert.Equal(t, 100, errTL.Max)
-		assert.Equal(t, 500, errTL.Input)
+		assert.Equal(t, 500, errTL.Len)
 	}
 }
 
@@ -116,7 +116,7 @@ func testErrTooLong(l, max int) func(*testing.T, error) {
 		errTL, ok := _err.(*utils.ErrTextTooLong)
 		if assert.True(t, ok) {
 			assert.Equal(t, max, errTL.Max)
-			assert.Equal(t, l, errTL.Input)
+			assert.Equal(t, l, errTL.Len)
 		}
 	}
 }

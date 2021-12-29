@@ -199,7 +199,7 @@ func badReqError(err error) (bool, string) {
 	}
 	var errTTL *utils.ErrTextTooLong
 	if errors.As(err, &errTTL) {
-		return true, fmt.Sprintf("Text too long: passed %d chars, max allowed %d", errTTL.Input, errTTL.Max)
+		return true, fmt.Sprintf("Text too long: passed %d chars, max allowed %d", errTTL.Len, errTTL.Max)
 	}
 	return false, ""
 }
