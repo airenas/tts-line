@@ -1,6 +1,7 @@
 package service
 
 import (
+	"fmt"
 	"net/http/httptest"
 	"strings"
 	"testing"
@@ -66,6 +67,7 @@ func TestConfigure_Text(t *testing.T) {
 		assert.Equal(t, "olia", res.Text)
 		assert.Equal(t, "mp3", res.OutputFormat.String())
 		assert.Equal(t, []string{"r=a"}, res.OutputMetadata)
+		assert.Equal(t, 0, res.AllowedMaxLen)
 	}
 }
 
@@ -88,6 +90,25 @@ func TestConfigure_FormatHeader(t *testing.T) {
 	if assert.NotNil(t, res) {
 		assert.Equal(t, "m4a", res.OutputFormat.String())
 	}
+}
+
+func TestConfigure_MaxTextLen(t *testing.T) {
+	c, _ := NewTTSConfigurator(test.NewConfig(t, "output:\n  defaultFormat: mp3\n  metadata:\n   - r=a\n  defaultVoice: aaa"))
+	req := httptest.NewRequest("POST", "/synthesize", strings.NewReader("text"))
+	req.Header.Add(headerMaxTextLen, "102")
+	res, err := c.Configure(req, &api.Input{Text: "olia"})
+	assert.Nil(t, err)
+	if assert.NotNil(t, res) {
+		assert.Equal(t, 102, res.AllowedMaxLen)
+	}
+}
+
+func TestConfigure_MaxTextLenFail(t *testing.T) {
+	c, _ := NewTTSConfigurator(test.NewConfig(t, "output:\n  defaultFormat: mp3\n  metadata:\n   - r=a\n  defaultVoice: aaa"))
+	req := httptest.NewRequest("POST", "/synthesize", strings.NewReader("text"))
+	req.Header.Add(headerMaxTextLen, "a102")
+	_, err := c.Configure(req, &api.Input{Text: "olia"})
+	assert.NotNil(t, err)
 }
 
 func TestConfigure_Tags(t *testing.T) {
@@ -249,10 +270,12 @@ func TestAllowCollect(t *testing.T) {
 		{v: &bt, h: "never", res: false, isErr: true},
 	}
 
-	for i, tc := range tests {
-		v, err := getAllowCollect(tc.v, tc.h)
-		assert.Equal(t, tc.res, v, "fail %d", i)
-		assert.Equal(t, tc.isErr, err != nil, "fail %d", i)
+	for i, tt := range tests {
+		t.Run(tt.h, func(t *testing.T) {
+			v, err := getAllowCollect(tt.v, tt.h)
+			assert.Equal(t, tt.res, v, "fail %d", i)
+			assert.Equal(t, tt.isErr, err != nil, "fail %d", i)
+		})
 	}
 }
 
@@ -271,10 +294,12 @@ func TestSpeedValue(t *testing.T) {
 		{v: 1, e: 1, isErr: false},
 	}
 
-	for i, tc := range tests {
-		v, err := getSpeed(tc.v)
-		assert.InDelta(t, tc.e, v, 0.0001, "fail %d", i)
-		assert.Equal(t, tc.isErr, err != nil, "fail %d  - %v", i, err)
+	for i, tt := range tests {
+		t.Run(fmt.Sprintf("%f", tt.v), func(t *testing.T) {
+			v, err := getSpeed(tt.v)
+			assert.InDelta(t, tt.e, v, 0.0001, "fail %d", i)
+			assert.Equal(t, tt.isErr, err != nil, "fail %d  - %v", i, err)
+		})
 	}
 }
 
@@ -294,11 +319,38 @@ func TestVoices(t *testing.T) {
 		{v: "aaa2", av: []string{"aaa"}, e: "", isErr: true},
 	}
 
-	for i, tc := range tests {
-		c := TTSConfigutaror{}
-		c.defaultVoice, c.availableVoices, _ = initVoices(tc.av[0], tc.av[1:])
-		v, err := c.getVoice(tc.v)
-		assert.Equal(t, tc.e, v, "fail %d", i)
-		assert.Equal(t, tc.isErr, err != nil, "fail %d  - %v", i, err)
+	for i, tt := range tests {
+		t.Run(tt.v, func(t *testing.T) {
+			c := TTSConfigutaror{}
+			c.defaultVoice, c.availableVoices, _ = initVoices(tt.av[0], tt.av[1:])
+			v, err := c.getVoice(tt.v)
+			assert.Equal(t, tt.e, v, "fail %d", i)
+			assert.Equal(t, tt.isErr, err != nil, "fail %d  - %v", i, err)
+		})
+	}
+}
+
+func Test_getMaxLen(t *testing.T) {
+	tests := []struct {
+		name    string
+		args    string
+		want    int
+		wantErr bool
+	}{
+		{name: "OK", args: "10", want: 10, wantErr: false},
+		{name: "OK", args: "10234", want: 10234, wantErr: false},
+		{name: "Fail", args: "a10", want: 0, wantErr: true},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := getMaxLen(tt.args)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("getMaxLen() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if got != tt.want {
+				t.Errorf("getMaxLen() = %v, want %v", got, tt.want)
+			}
+		})
 	}
 }
