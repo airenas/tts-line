@@ -53,7 +53,7 @@ func NewCacher(rw service.Synthesizer, config *viper.Viper) (*BigCacher, error) 
 	return res, nil
 }
 
-//Work try find in cache or invoke real worker
+//Work try find data in the cache or invoke a real worker
 func (c *BigCacher) Work(inp *api.TTSRequestConfig) (*api.Result, error) {
 	if c.cache == nil || !c.isOK(inp) {
 		return c.realSynt.Work(inp)
@@ -66,7 +66,7 @@ func (c *BigCacher) Work(inp *api.TTSRequestConfig) (*api.Result, error) {
 	}
 	goapp.Log.Debug("Not found in cache")
 	res, err := c.realSynt.Work(inp)
-	if res != nil && err == nil && len(res.ValidationFailures) == 0 {
+	if res != nil && err == nil {
 		c.cache.Set(key(inp), []byte(res.AudioAsString))
 	}
 	return res, err
