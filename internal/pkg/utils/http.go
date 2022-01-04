@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/airenas/go-app/pkg/goapp"
 	"github.com/pkg/errors"
 )
 
@@ -41,7 +42,7 @@ func NewHTTPWrapT(urlStr string, timeout time.Duration) (*HTTPWrap, error) {
 
 //InvokeText makes http call with text
 func (hw *HTTPWrap) InvokeText(dataIn string, dataOut interface{}) error {
-	req, err := http.NewRequest("POST", hw.URL, strings.NewReader(dataIn))
+	req, err := http.NewRequest(http.MethodPost, hw.URL, strings.NewReader(dataIn))
 	if err != nil {
 		return errors.Wrapf(err, "can't prepare request to '%s'", hw.URL)
 	}
@@ -65,7 +66,7 @@ func (hw *HTTPWrap) InvokeJSONU(URL string, dataIn interface{}, dataOut interfac
 		return err
 	}
 	hw.flog("Input : ", b.String())
-	req, err := http.NewRequest("POST", URL, b)
+	req, err := http.NewRequest(http.MethodPost, URL, b)
 	if err != nil {
 		return errors.Wrapf(err, "can't prepare request to '%s'", URL)
 	}
@@ -85,8 +86,8 @@ func (hw *HTTPWrap) invoke(req *http.Request, dataOut interface{}) error {
 		return errors.Wrapf(err, "can't call '%s'", req.URL.String())
 	}
 	defer resp.Body.Close()
-	if resp.StatusCode < 200 || resp.StatusCode > 299 {
-		return errors.Errorf("can't invoke '%s'. Code: '%d'", req.URL.String(), resp.StatusCode)
+	if err := goapp.ValidateHTTPResp(resp, 100); err != nil {
+		return errors.Wrapf(err, "can't invoke '%s'", req.URL.String())
 	}
 	br, err := ioutil.ReadAll(resp.Body)
 	if err != nil {

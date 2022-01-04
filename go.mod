@@ -3,7 +3,7 @@ module github.com/airenas/tts-line
 go 1.15
 
 require (
-	github.com/airenas/go-app v0.2.2
+	github.com/airenas/go-app v0.3.0
 	github.com/allegro/bigcache v1.2.1
 	github.com/cenkalti/backoff/v4 v4.1.1
 	github.com/facebookgo/clock v0.0.0-20150410010913-600d898af40a // indirect

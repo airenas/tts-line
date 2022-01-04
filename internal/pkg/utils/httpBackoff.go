@@ -3,6 +3,7 @@ package utils
 import (
 	"github.com/airenas/go-app/pkg/goapp"
 	"github.com/cenkalti/backoff/v4"
+	"github.com/pkg/errors"
 )
 
 type HTTPInvokerJSON interface {
@@ -47,8 +48,8 @@ func (hw *HTTPBackoff) invoke(f func() error, dataIn interface{}) error {
 		}
 		err := f()
 		if err != nil {
-			goapp.Log.Error(err)
 			failC++
+			goapp.Log.Error(errors.Wrapf(err, "failed %d time(s)", failC))
 			return err
 		}
 		return nil
