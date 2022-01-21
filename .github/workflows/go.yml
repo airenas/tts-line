@@ -43,7 +43,7 @@ jobs:
         golint ./...
         
     - name: Go report
-      uses: creekorful/goreportcard-action@v1.0
+      run: curl -X POST -F "repo=github.com/${{github.repository}}" https://goreportcard.com/checks
 
     - name: Calc coverage
       run: |
