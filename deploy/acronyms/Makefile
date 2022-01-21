@@ -21,7 +21,7 @@ build: $(dist_dir)/$(executable_name) $(dist_dir)/acronyms.txt
 tag=$(service):$(version).$(commit_count)
 
 dbuild: build
-	docker build -t $(tag) --build-arg SECRET=$(secret) ./
+	docker build -t $(tag) --build-arg SECRET=$(secret) --build-arg BUILD_VERSION=$(version).$(commit_count) ./
 
 dpush: dbuild
 	docker push $(tag)
