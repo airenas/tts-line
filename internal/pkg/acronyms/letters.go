@@ -22,10 +22,10 @@ func (s *Letters) Process(word, mi string) ([]api.ResultWord, error) {
 	wl := strings.ToLower(word)
 	wl = strings.TrimRight(wl, ".")
 	wr := []rune(wl)
-	cwr := []rune{}
+	var cwr []*ldata
 	ad := allowDot(wl)
 	for _, l := range wr {
-		d, ok := letters[l]
+		d, ok := letters[string(l)]
 		if !ok {
 			goapp.Log.Warnf("Unknown letter: '%s'", string(l))
 			continue
@@ -37,10 +37,10 @@ func (s *Letters) Process(word, mi string) ([]api.ResultWord, error) {
 			if len(cwr) > 0 {
 				result = append(result, *makeResultWord(cwr))
 			}
-			result = append(result, *makeResultWord([]rune{l}))
-			cwr = []rune{}
+			result = append(result, *makeResultWord([]*ldata{d}))
+			cwr = nil
 		} else {
-			cwr = append(cwr, l)
+			cwr = append(cwr, d)
 		}
 	}
 	if len(cwr) > 0 {
@@ -49,20 +49,21 @@ func (s *Letters) Process(word, mi string) ([]api.ResultWord, error) {
 	return result, nil
 }
 
-func makeResultWord(lr []rune) *api.ResultWord {
+func makeResultWord(wr []*ldata) *api.ResultWord {
 	var r api.ResultWord
 	ssp := ""
 	tr := ""
-	for i, l := range lr {
-		d, _ := letters[l]
-		if i == len(lr)-1 {
+	lr := ""
+	for i, d := range wr {
+		if i == len(wr)-1 {
 			tr = tr + ssp + d.chAccent
 		} else {
 			tr = tr + ssp + d.ch
 		}
 		ssp = "-"
+		lr = lr + d.letter
 	}
-	r.Word = string(lr)
+	r.Word = lr
 	if r.Word == "." {
 		r.Word = "taškas"
 	}
