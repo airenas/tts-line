@@ -21,6 +21,7 @@ type (
 		Delete(ID string) (int, error)
 	}
 
+	//Params - export tool params
 	Params struct {
 		To       time.Time
 		Delete   bool

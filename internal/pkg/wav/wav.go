@@ -37,7 +37,7 @@ func GetSampleRate(data []byte) uint32 {
 	return binary.LittleEndian.Uint32(data[24:28])
 }
 
-//GetSampleRate return sample rate from header
+//GetBitsPerSample return bits per sample
 func GetBitsPerSample(data []byte) uint16 {
 	return binary.LittleEndian.Uint16(data[34:36])
 }

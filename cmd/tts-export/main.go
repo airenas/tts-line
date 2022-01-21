@@ -94,10 +94,10 @@ func (v timeValue) String() string {
 }
 
 func (v timeValue) Set(s string) error {
-	if u, err := time.Parse("2006-01-02", s); err != nil {
+	t, err := time.Parse("2006-01-02", s)
+	if err != nil {
 		return err
-	} else {
-		*v.to = u
 	}
+	*v.to = t
 	return nil
 }

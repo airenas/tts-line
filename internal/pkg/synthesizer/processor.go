@@ -109,6 +109,7 @@ func mapAccentedText(data *TTSData) (string, error) {
 	return res.String(), nil
 }
 
+//GetTranscriberAccent return accent from ProcessedWord
 func GetTranscriberAccent(w *ProcessedWord) int {
 	if w.AccentVariant != nil {
 		res := w.AccentVariant.Accent

@@ -22,6 +22,7 @@ func checkURL(urlStr string) (string, error) {
 }
 
 const eps float32 = 0.00000001
+//FloatEquals compares two floats
 func FloatEquals(a, b float32) bool {
 	return (a - b) < eps && (b - a) < eps
 }

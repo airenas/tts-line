@@ -1,5 +1,6 @@
 package api
 
+//Params synthesis configuration params
 type Params struct {
 	Text     string
 	Speed    float32

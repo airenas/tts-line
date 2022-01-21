@@ -51,14 +51,21 @@ type ProcessedWord struct {
 	Obscene           bool
 }
 
+//CliticAccentEnum contains types of possible clitics
 type CliticAccentEnum int
 
 const (
+	//CliticsUnused - clitics does not apply for the word 
 	CliticsUnused CliticAccentEnum = iota
+	
+	//CliticsNone - not a clitic
 	CliticsNone
+
+	//CliticsCustom - custom clitic type
 	CliticsCustom
 )
 
+//Clitic structure
 type Clitic struct {
 	Type   CliticAccentEnum
 	Accent int

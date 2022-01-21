@@ -17,10 +17,12 @@ type phrase struct {
 	accent  int
 }
 
+//Phrases processor
 type Phrases struct {
 	wordMap map[string][][]*phrase
 }
 
+//ReadPhrases from a file
 func ReadPhrases(fStr string) (*Phrases, error) {
 	file, err := os.Open(fStr)
 	if err != nil {

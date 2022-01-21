@@ -17,7 +17,7 @@ type ErrTextTooLong struct {
 	Max, Len int
 }
 
-//NewErrBadAccent creates new error
+//NewErrTextTooLong creates new error
 func NewErrTextTooLong(len, max int) *ErrTextTooLong {
 	return &ErrTextTooLong{Max: max, Len: len}
 }
@@ -48,7 +48,7 @@ type ErrWordTooLong struct {
 	Word string
 }
 
-//NewErrBadAccent creates new error
+//NewErrWordTooLong creates new error
 func NewErrWordTooLong(word string) *ErrWordTooLong {
 	return &ErrWordTooLong{Word: word}
 }

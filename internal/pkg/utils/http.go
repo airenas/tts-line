@@ -56,7 +56,7 @@ func (hw *HTTPWrap) InvokeJSON(dataIn interface{}, dataOut interface{}) error {
 	return hw.InvokeJSONU(hw.URL, dataIn, dataOut)
 }
 
-//InvokeJSONU makes http call with json
+//InvokeJSONU makes http call to URL with JSON
 func (hw *HTTPWrap) InvokeJSONU(URL string, dataIn interface{}, dataOut interface{}) error {
 	b := new(bytes.Buffer)
 	enc := json.NewEncoder(b)

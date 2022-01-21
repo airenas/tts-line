@@ -6,12 +6,13 @@ import (
 	"github.com/pkg/errors"
 )
 
+//HTTPInvokerJSON http POST invoker with JSON in, out params
 type HTTPInvokerJSON interface {
 	InvokeJSONU(string, interface{}, interface{}) error
 	InvokeJSON(interface{}, interface{}) error
 }
 
-//HTTPBackof http call with backoff
+//HTTPBackoff http call with backoff
 type HTTPBackoff struct {
 	HTTPClient          HTTPInvokerJSON
 	backoffF            func() backoff.BackOff
@@ -31,6 +32,7 @@ func (hw *HTTPBackoff) InvokeJSON(dataIn interface{}, dataOut interface{}) error
 	}, dataIn)
 }
 
+//InvokeJSONU makes call to URL wits JSON
 func (hw *HTTPBackoff) InvokeJSONU(URL string, dataIn interface{}, dataOut interface{}) error {
 	return hw.invoke(func() error {
 		return hw.HTTPClient.InvokeJSONU(URL, dataIn, dataOut)

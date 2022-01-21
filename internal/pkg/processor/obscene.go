@@ -13,7 +13,7 @@ type obscene struct {
 	httpWrap HTTPInvokerJSON
 }
 
-//NewAccentuator creates new processor
+//NewObsceneFilter creates new processor
 func NewObsceneFilter(urlStr string) (synthesizer.PartProcessor, error) {
 	res := &obscene{}
 	var err error
