@@ -4,7 +4,7 @@ ARG BUILD_VERSION=0.1
 
 LABEL org.opencontainers.image.version=$BUILD_VERSION \
       org.opencontainers.image.authors="airenass@gmail.com" \
-      name="big-tts-upload" \
+      name="tts-text-clean" \
       maintainer="airenass@gmail.com" \
       vendor="airenass@gmail.com" \
       version=$BUILD_VERSION \
