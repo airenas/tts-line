@@ -48,9 +48,15 @@ func init() {
 	letters["x"] = makeLD("i4ks")
 	letters["z"] = makeLD("zė3")
 	letters["ž"] = makeLD("žė3")
+
+	letters["ch"] = makeLD("chą3")
+	letters["dz"] = makeLD("dzė3")
+	letters["dž"] = makeLD("džė3")
+	
 	wl = makeLD("ta3-škas")
 	wl.newWord = true
 	letters["."] = wl
+
 	for k, v := range letters {
 		v.letter = k
 	}

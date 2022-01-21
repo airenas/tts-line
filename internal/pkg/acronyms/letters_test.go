@@ -138,6 +138,16 @@ func TestLetters_Process(t *testing.T) {
 		{name: "Several words", args: args{word: "'.A.W>", mi: "1"}, wantErr: false,
 			want: []api.ResultWord{{Word: "a", WordTrans: "ą", Syll: "ą", UserTrans: "ą3"},
 				{Word: "w", WordTrans: "dablvė", Syll: "dabl-vė", UserTrans: "da4blvė"}}},
+		{name: "Dž", args: args{word: "Dž", mi: "1"}, wantErr: false,
+			want: []api.ResultWord{{Word: "dž", WordTrans: "džė", Syll: "džė", UserTrans: "džė3"}}},
+		{name: "Several Dž", args: args{word: "ADŽDZ", mi: "1"}, wantErr: false,
+			want: []api.ResultWord{{Word: "adždz", WordTrans: "ądžėdzė", Syll: "ą-džė-dzė", UserTrans: "ądžėdzė3"}}},
+		{name: "No Dž", args: args{word: "D`Ž", mi: "1"}, wantErr: false,
+			want: []api.ResultWord{{Word: "dž", WordTrans: "dėžė", Syll: "dė-žė", UserTrans: "dėžė3"}}},
+		{name: "No Dž", args: args{word: "D.Ž", mi: "1"}, wantErr: false,
+			want: []api.ResultWord{{Word: "dž", WordTrans: "dėžė", Syll: "dė-žė", UserTrans: "dėžė3"}}},
+		{name: "Ch", args: args{word: "Ch", mi: "1"}, wantErr: false,
+			want: []api.ResultWord{{Word: "ch", WordTrans: "chą", Syll: "chą", UserTrans: "chą3"}}},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

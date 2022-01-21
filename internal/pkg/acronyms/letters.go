@@ -24,13 +24,25 @@ func (s *Letters) Process(word, mi string) ([]api.ResultWord, error) {
 	wr := []rune(wl)
 	var cwr []*ldata
 	ad := allowDot(wl)
-	for _, l := range wr {
-		d, ok := letters[string(l)]
+	wLen := len(wr)
+	step :=1
+	for i := 0; i < wLen; i = i + step {
+		var d *ldata
+		ok := false
+		step = 1
+		if i < wLen-1 {
+			d, ok = letters[string(wr[i:i+2])]
+		}
 		if !ok {
-			goapp.Log.Warnf("Unknown letter: '%s'", string(l))
+			d, ok = letters[string(wr[i])]
+		} else {
+			step = 2
+		}
+		if !ok {
+			goapp.Log.Warnf("Unknown letter: '%s'", string(wr[i]))
 			continue
 		}
-		if l == '.' && !ad {
+		if wr[i] == '.' && !ad {
 			continue
 		}
 		if d.newWord {
