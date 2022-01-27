@@ -93,23 +93,24 @@ func synthesizeText(data *PrData) func(echo.Context) error {
 
 		inp, err := takeInput(c)
 		if err != nil {
-			goapp.Log.Error(err)
+			goapp.Log.Warn(err)
 			return err
 		}
 
 		cfg, err := data.Configurator.Configure(c.Request(), inp)
 		if err != nil {
-			goapp.Log.Error("Cannot prepare request config " + err.Error())
+			goapp.Log.Warn("Cannot prepare request config " + err.Error())
 			return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 		}
 
 		resp, err := data.Processor.Work(cfg)
 		if err != nil {
-			goapp.Log.Error("Can't process. ", err)
 			if d, msg := badReqError(err); d {
+				goapp.Log.Warn("Can't process. ", err)
 				return echo.NewHTTPError(http.StatusBadRequest, msg)
 			}
-			return echo.NewHTTPError(http.StatusInternalServerError, "Service error")
+			goapp.Log.Error("Can't process. ", err)
+			return echo.NewHTTPError(http.StatusInternalServerError)
 		}
 
 		return writeResponse(c, resp)
@@ -122,24 +123,24 @@ func synthesizeCustom(data *PrData) func(echo.Context) error {
 
 		rID := c.QueryParam("requestID")
 		if rID == "" {
-			goapp.Log.Error("No requestID")
+			goapp.Log.Warn("No requestID")
 			return echo.NewHTTPError(http.StatusBadRequest, "No requestID")
 		}
 
 		inp, err := takeInput(c)
 		if err != nil {
-			goapp.Log.Error(err)
+			goapp.Log.Warn(err)
 			return err
 		}
 
 		if inp.AllowCollectData != nil && !*inp.AllowCollectData {
-			goapp.Log.Error("Can call with inp.AllowCollectData=false")
+			goapp.Log.Warn("Can call with inp.AllowCollectData=false")
 			return echo.NewHTTPError(http.StatusBadRequest, "Method does not allow 'allowCollectData=false'")
 		}
 
 		cfg, err := data.Configurator.Configure(c.Request(), inp)
 		if err != nil {
-			goapp.Log.Error("Cannot prepare request config " + err.Error())
+			goapp.Log.Warn("Cannot prepare request config " + err.Error())
 			return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 		}
 		cfg.RequestID = rID
@@ -147,10 +148,11 @@ func synthesizeCustom(data *PrData) func(echo.Context) error {
 
 		resp, err := data.Processor.Work(cfg)
 		if err != nil {
-			goapp.Log.Error("Can't process. ", err)
 			if d, msg := badReqError(err); d {
+				goapp.Log.Warn("Can't process. ", err)
 				return echo.NewHTTPError(http.StatusBadRequest, msg)
 			}
+			goapp.Log.Error("Can't process. ", err)
 			return echo.NewHTTPError(http.StatusInternalServerError)
 		}
 		resp.RequestID = ""
