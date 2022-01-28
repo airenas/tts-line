@@ -106,6 +106,8 @@ func addProcessors(synt *synthesizer.MainWorker, sp *mongodb.SessionProvider) er
 		return errors.Wrap(err, "can't init normalize/clean processor")
 	}
 	synt.Add(pr)
+	
+	synt.Add(processor.NewURLReplacer())
 	//db saver
 	sv, err = processor.NewSaver(ts, utils.RequestCleaned)
 	if err != nil {

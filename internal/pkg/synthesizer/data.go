@@ -11,7 +11,8 @@ type TTSData struct {
 	Cfg             TTSConfig
 	OriginalText    string
 	PreviousText    string // text of previous request loaded by requestID
-	Text            string
+	CleanedText     string
+	Text            string // text after cleaning and URL replacement
 	TextWithNumbers string
 
 	Words []*ProcessedWord
@@ -55,9 +56,9 @@ type ProcessedWord struct {
 type CliticAccentEnum int
 
 const (
-	//CliticsUnused - clitics does not apply for the word 
+	//CliticsUnused - clitics does not apply for the word
 	CliticsUnused CliticAccentEnum = iota
-	
+
 	//CliticsNone - not a clitic
 	CliticsNone
 

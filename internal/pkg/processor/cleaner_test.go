@@ -40,7 +40,7 @@ func TestCleanProcess(t *testing.T) {
 	assert.Nil(t, err)
 	cp1, _ := httpJSONMock.VerifyWasCalledOnce().InvokeJSON(pegomock.AnyInterface(), pegomock.AnyInterface()).GetCapturedArguments()
 	assert.Equal(t, &normData{Text: " a a"}, cp1)
-	assert.Equal(t, "clean text", d.Text)
+	assert.Equal(t, "clean text", d.CleanedText)
 }
 
 func TestCleanProcess_Fail(t *testing.T) {

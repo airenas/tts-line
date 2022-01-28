@@ -37,11 +37,11 @@ func (p *cleaner) Process(data *synthesizer.TTSData) error {
 		return err
 	}
 
-	data.Text = output.Text
-	if data.Text == "" {
+	data.CleanedText = output.Text
+	if data.CleanedText == "" {
 		return utils.ErrNoInput
 	}
-	utils.LogData("Output: ", data.Text)
+	utils.LogData("Output: ", data.CleanedText)
 	return nil
 }
 
