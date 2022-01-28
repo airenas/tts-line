@@ -126,7 +126,7 @@ func TestPRProcess_StopSeveralProcessors2(t *testing.T) {
 	d.Parts = append(d.Parts, &TTSDataPart{})
 	err := runner.Process(d)
 	assert.NotNil(t, err)
-	assert.Equal(t, int32(2), c)
+	assert.Equal(t, int32(2), atomic.LoadInt32(&c))
 }
 
 type partProcMock struct {
