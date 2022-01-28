@@ -23,21 +23,23 @@ generate:
 	go get github.com/petergtz/pegomock/...
 	go generate ./...
 
-build:
-	cd cmd/tts-line/ && go build .
-
-run:
-	cd cmd/tts-line/ && go run . -c config.yml	
-
-build-docker:
-	cd deploy/tts-line && $(MAKE) dbuild	
-
-push-docker:
-	cd deploy/tts-line && $(MAKE) dpush
+#####################################################################################
+## build tts-line docker image
+build/tts-line:
+	cd deploy/tts-line && $(MAKE) clean dbuild	
+.PHONY: build/tts-line
+#####################################################################################
+## build and push tts-line docker image
+docker/tts-line/push:
+	cd deploy/tts-line && $(MAKE) clean dpush
+.PHONY: docker/tts-line/push
 
 generate-diagram:
 	cd info && $(MAKE) generate
-
+#####################################################################################
+## cleans prepared data for dockeriimage generation
 clean:
 	cd deploy/tts-line && $(MAKE) clean
-
+	cd deploy/acronyms && $(MAKE) clean
+	cd deploy/clitics && $(MAKE) clean
+	cd deploy/tts-clean-text && $(MAKE) clean
