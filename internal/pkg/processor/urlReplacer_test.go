@@ -56,6 +56,10 @@ func Test_replaceURLs(t *testing.T) {
 			want: "Olia lrt.lt, lrt.lt, lrt.lt, Internetinis adresas"},
 		{name: "Leave vdu.lt", args: "Olia vdu.lt, https://vdu.lt/",
 			want: "Olia vdu.lt, vdu.lt"},
+		{name: "Leave lrs.lt", args: "Olia lrs.lt, https://lrs.lt/",
+			want: "Olia lrs.lt, lrs.lt"},
+		{name: "Leave email", args: "Olia aaa@vdu.lt, aaa.tttt.www@lrt.lt",
+			want: "Olia aaa@vdu.lt, aaa.tttt.www@lrt.lt"},
 	}
 	pr := NewURLReplacer().(*urlReplacer)
 	for _, tt := range tests {
