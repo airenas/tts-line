@@ -44,7 +44,7 @@ func TestWrongPath(t *testing.T) {
 func TestLive(t *testing.T) {
 	initTest(t)
 	req := httptest.NewRequest("GET", "/live", nil)
-	testCode(t, req, 200)
+	testCode(t, req, http.StatusOK)
 }
 
 func TestLive503(t *testing.T) {
@@ -114,6 +114,7 @@ func toReader(inData api.Input) io.Reader {
 }
 
 func testCode(t *testing.T, req *http.Request, code int) *httptest.ResponseRecorder {
+	t.Helper()
 	tRec = httptest.NewRecorder()
 	tEcho.ServeHTTP(tRec, req)
 	assert.Equal(t, code, tRec.Code)

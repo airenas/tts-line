@@ -34,13 +34,10 @@ jobs:
         go get -t ./...
 
     - name: Test
-      run: go test -v ./...
+      run: make test/unit
 
     - name: Run vet & lint
-      run: |
-        go vet ./...
-        go get -u golang.org/x/lint/golint
-        golint -set_exit_status ./...
+      run: make test/lint
         
     - name: Go report
       run: curl -X POST -F "repo=github.com/${{github.repository}}" https://goreportcard.com/checks
