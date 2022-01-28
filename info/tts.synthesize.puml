@@ -57,6 +57,8 @@ activate Clean
 Clean --> tts:
 deactivate Clean
 
+tts -> tts: Replace URLs
+
 tts -[#blue]> DB: save cleaned text
 activate DB #lightblue
 DB -[#blue]-> tts:
