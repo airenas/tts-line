@@ -2,6 +2,7 @@ package processor
 
 import (
 	"regexp"
+	"strings"
 
 	"github.com/airenas/go-app/pkg/goapp"
 	"mvdan.cc/xurls/v2"
@@ -13,6 +14,7 @@ import (
 type urlReplacer struct {
 	phrase    string
 	urlRegexp *regexp.Regexp
+	skipURLs  map[string]bool
 }
 
 //NewURLReplacer creates new URL replacer processor
@@ -20,6 +22,7 @@ func NewURLReplacer() synthesizer.Processor {
 	res := &urlReplacer{}
 	res.phrase = "Internetinis adresas"
 	res.urlRegexp = xurls.Relaxed()
+	res.skipURLs = map[string]bool{"lrt.lt": true, "vdu.lt": true}
 	return res
 }
 
@@ -30,13 +33,30 @@ func (p *urlReplacer) Process(data *synthesizer.TTSData) error {
 	}
 	defer goapp.Estimate("URL replace")()
 	utils.LogData("Input: ", data.CleanedText)
-	data.Text = replaceURLs(data.CleanedText, p.urlRegexp, p.phrase)
+	data.Text = p.replaceURLs(data.CleanedText)
 	utils.LogData("Output: ", data.Text)
 	return nil
 }
 
-func replaceURLs(s string, urlRegexp *regexp.Regexp, phrase string) string {
-	return urlRegexp.ReplaceAllString(s, phrase)
+func (p *urlReplacer) replaceURLs(s string) string {
+	return p.urlRegexp.ReplaceAllStringFunc(s, func(in string) string {
+		fixed := baseURL(in)
+		if p.skipURLs[strings.ToLower(fixed)] {
+			return fixed
+		}
+		return p.phrase
+	})
+}
+
+//baseURL removes http, https, www, and / at the end
+func baseURL(s string) string {
+	res := s
+	for _, p := range [...]string{"https://", "http://", "www."} {
+		if strings.HasPrefix(strings.ToLower(res), p) {
+			res = res[len(p):]
+		}
+	}
+	return strings.TrimSuffix(res, "/")
 }
 
 func (p *urlReplacer) skip(data *synthesizer.TTSData) bool {
