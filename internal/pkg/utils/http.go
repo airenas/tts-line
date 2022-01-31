@@ -34,10 +34,19 @@ func NewHTTPWrapT(urlStr string, timeout time.Duration) (*HTTPWrap, error) {
 	if err != nil {
 		return nil, errors.Wrapf(err, "Can't parse url '%s'", urlStr)
 	}
-	res.HTTPClient = &http.Client{}
+	res.HTTPClient = &http.Client{Transport: newTransport()}
 	res.Timeout = timeout
 	res.flog = func(st, data string) { LogData(st, data) }
 	return res, nil
+}
+
+func newTransport() http.RoundTripper {
+	res := http.DefaultTransport.(*http.Transport).Clone()
+	res.MaxIdleConns = 40
+	res.MaxConnsPerHost = 100
+	res.IdleConnTimeout = 90 * time.Second
+	res.MaxIdleConnsPerHost = 20
+	return res
 }
 
 //InvokeText makes http call with text
