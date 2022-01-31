@@ -12,16 +12,18 @@ import (
 )
 
 type urlReplacer struct {
-	phrase     string
-	urlRegexp  *regexp.Regexp
-	emaiRegexp *regexp.Regexp
-	skipURLs   map[string]bool
+	urlPhrase   string
+	emailPhrase string
+	urlRegexp   *regexp.Regexp
+	emaiRegexp  *regexp.Regexp
+	skipURLs    map[string]bool
 }
 
 //NewURLReplacer creates new URL replacer processor
 func NewURLReplacer() synthesizer.Processor {
 	res := &urlReplacer{}
-	res.phrase = "Internetinis adresas"
+	res.urlPhrase = "Internetinis adresas"
+	res.emailPhrase = "Elektroninio pašto adresas"
 	res.urlRegexp = xurls.Relaxed()
 	// from https://html.spec.whatwg.org/#valid-e-mail-address
 	res.emaiRegexp = regexp.MustCompile("^[a-zA-Z0-9.!#$%&'*+\\/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$")
@@ -45,14 +47,14 @@ func (p *urlReplacer) replaceURLs(s string) string {
 	return p.urlRegexp.ReplaceAllStringFunc(s, func(in string) string {
 		// leave emails
 		if p.emaiRegexp.MatchString(in) {
-			return in
+			return p.emailPhrase
 		}
 		// leave some URL
 		fixed := baseURL(in)
 		if p.skipURLs[strings.ToLower(fixed)] {
 			return fixed
 		}
-		return p.phrase
+		return p.urlPhrase
 	})
 }
 

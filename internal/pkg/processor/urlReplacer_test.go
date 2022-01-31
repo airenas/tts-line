@@ -11,7 +11,8 @@ import (
 func TestNewReplacer(t *testing.T) {
 	pr := NewURLReplacer().(*urlReplacer)
 	require.NotNil(t, pr)
-	assert.Equal(t, "Internetinis adresas", pr.phrase)
+	assert.Equal(t, "Internetinis adresas", pr.urlPhrase)
+	assert.Equal(t, "Elektroninio pašto adresas", pr.emailPhrase)
 }
 
 func TestReplacerProcess(t *testing.T) {
@@ -58,8 +59,10 @@ func Test_replaceURLs(t *testing.T) {
 			want: "Olia vdu.lt, vdu.lt"},
 		{name: "Leave lrs.lt", args: "Olia lrs.lt, https://lrs.lt/",
 			want: "Olia lrs.lt, lrs.lt"},
-		{name: "Leave email", args: "Olia aaa@vdu.lt, aaa.tttt.www@lrt.lt",
-			want: "Olia aaa@vdu.lt, aaa.tttt.www@lrt.lt"},
+		{name: "Email", args: "Olia aaa@vdu.lt, aaa.tttt.www@lrt.lt",
+			want: "Olia Elektroninio pašto adresas, Elektroninio pašto adresas"},
+		{name: "Email & URL", args: "Olia aaa@vdu.lt, aaa.tttt.lt",
+			want: "Olia Elektroninio pašto adresas, Internetinis adresas"},
 	}
 	pr := NewURLReplacer().(*urlReplacer)
 	for _, tt := range tests {
