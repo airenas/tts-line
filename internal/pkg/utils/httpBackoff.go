@@ -51,7 +51,7 @@ func (hw *HTTPBackoff) invoke(f func() error, dataIn interface{}) error {
 		err := f()
 		if err != nil {
 			failC++
-			goapp.Log.Error(errors.Wrapf(err, "failed %d time(s)", failC))
+			goapp.Log.Warn(errors.Wrapf(err, "failed %d time(s)", failC))
 			return err
 		}
 		return nil
