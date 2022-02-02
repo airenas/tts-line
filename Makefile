@@ -33,6 +33,10 @@ build/tts-line:
 docker/tts-line/push:
 	cd deploy/tts-line && $(MAKE) clean dpush
 .PHONY: docker/tts-line/push
+## build and push tts-clean-text docker image
+docker/tts-clean/push:
+	cd deploy/tts-clean-text && $(MAKE) clean dpush
+.PHONY: docker/tts-clean/push
 
 generate-diagram:
 	cd info && $(MAKE) generate

@@ -1,11 +1,11 @@
+-include ../../version 
 #####################################################################################
 dist_dir=$(CURDIR)/data
 executable_name=tts-text-clean
 main_dir=../../cmd
 service=airenas/tts-text-clean
-version=0.2
-commit_count=$(shell git rev-list --count HEAD)
-go_build_cmd=CGO_ENABLED=0 go build -installsuffix -cgo -ldflags "-X main.version=$(version).$(commit_count)" 
+version=$(clean-version)
+go_build_cmd=CGO_ENABLED=0 go build -installsuffix -cgo -ldflags "-X main.version=$(version)" 
 #####################################################################################
 $(dist_dir):
 	mkdir -p $@
@@ -14,10 +14,10 @@ $(dist_dir)/$(executable_name): | $(dist_dir)
 #####################################################################################
 build: $(dist_dir)/$(executable_name)
 ########### DOCKER ##################################################################
-tag=$(service):$(version).$(commit_count)
+tag=$(service):$(version)
 
 dbuild: $(dist_dir)/$(executable_name)
-	docker build -t $(tag) --build-arg BUILD_VERSION=$(version).$(commit_count) ./
+	docker build -t $(tag) --build-arg BUILD_VERSION=$(version) ./
 
 dpush: dbuild
 	docker push $(tag)
