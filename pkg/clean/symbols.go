@@ -1,12 +1,14 @@
 package clean
 
 import (
+	"regexp"
 	"unicode"
 
 	"golang.org/x/text/unicode/norm"
 )
 
 var replaceableSymbols map[rune][]rune
+var oneQuoteBetweenLetters *regexp.Regexp
 
 func init() {
 	replaceableSymbols = make(map[rune][]rune)
@@ -23,6 +25,7 @@ func init() {
 	for k, v := range getMaps() {
 		replaceableSymbols[k] = []rune{v}
 	}
+	oneQuoteBetweenLetters = regexp.MustCompile(`(\p{L})'(\p{L})`)
 }
 
 func getMaps() map[rune]rune {
@@ -82,7 +85,7 @@ func ChangeSymbols(line string) string {
 	for _, r := range lineU {
 		res = append(res, changeSymbol(r)...)
 	}
-	return string(res)
+	return dropOneQuote(string(res))
 }
 
 func changeSymbol(r rune) []rune {
@@ -91,4 +94,8 @@ func changeSymbol(r rune) []rune {
 		return s
 	}
 	return []rune{r}
+}
+
+func dropOneQuote(in string) string {
+	return oneQuoteBetweenLetters.ReplaceAllString(in, "$1$2")
 }

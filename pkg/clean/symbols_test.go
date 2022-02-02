@@ -51,12 +51,10 @@ func TestChangeLetters(t *testing.T) {
 	ts(t, "Nasdaq\"", "Nasdaq¨")
 	ts(t, "Hustiu", "Huștiu")
 	ts(t, "Katerina", "Kateřina")
-	ts(t, "Tony'is", "Tonyʼis")
 	ts(t, "COVID", "СOVID")
 	ts(t, "Erdoganas", "Erdoğanas")
 	ts(t, "Zdenekas", "Zdeněkas")
 	ts(t, "mokesčiai,", "mokesčiai֧")
-	ts(t, "aštuoniasdešimt's", "aštuoniasdešimt′s")
 	ts(t, "Kaune", "Кaune")
 	ts(t, "acuza", "acuză")
 	ts(t, "Vojtech", "Vojtěch")
@@ -66,6 +64,20 @@ func TestChangeLetters(t *testing.T) {
 	ts(t, "Brulard", "Brûlard")
 	ts(t, "saugios", "saugios֤")
 	ts(t, "saugios\"", "saugios″")
+	tests := []struct {
+		in   string
+		want string
+	}{
+		{in: "Tonyʼis", want: "Tonyis"},
+		{in: "Tonyʼ is", want: "Tony' is"},
+		{in: "aštuoniasdešimt′s", want: "aštuoniasdešimts"},
+		{in: "aštuoniasdešimt′", want: "aštuoniasdešimt'"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.in, func(t *testing.T) {
+			ts(t, tt.want, tt.in)
+		})
+	}
 }
 
 func TestChangeSymbols(t *testing.T) {
@@ -83,7 +95,7 @@ func TestChangeSymbols(t *testing.T) {
 		{name: "a\na", args: "a\na", want: "a\na", up: true, lw: true},
 		{name: "a\n\ra\r\r", args: "a\n\ra\r\r", want: "a\n\na\n\n", up: true, lw: true},
 		{name: "a\n\ta", args: "a\n\ta", want: "a\n a", up: true, lw: true},
-		
+
 		{name: "Đuričić", args: "Đuričić", want: "Duričic", up: true, lw: true},
 		{name: "pаgyvėjo", args: "pаgyvėjo", want: "pagyvėjo", up: true, lw: true},
 		{name: "Košťal", args: "Košťal", want: "Koštal", up: true, lw: true},
@@ -99,10 +111,12 @@ func TestChangeSymbols(t *testing.T) {
 }
 
 func ts(t *testing.T, expected, inp string) {
+	t.Helper()
 	testChange(t, expected, inp, true, false)
 }
 
 func testChange(t *testing.T, expected, inp string, up, lw bool) {
+	t.Helper()
 	assert.Equal(t, expected, ChangeSymbols(inp))
 	if up {
 		assert.Equal(t, strings.ToUpper(expected), ChangeSymbols(strings.ToUpper(inp)))
@@ -151,5 +165,32 @@ func TestSymbols2(t *testing.T) {
 	fmt.Printf("sn  = %s\n", sn)
 	for _, r := range sn {
 		fmt.Printf("%s %d \\u%.4x\n", string(r), r, r)
+	}
+}
+
+func Test_dropOneQuote(t *testing.T) {
+	tests := []struct {
+		name string
+		args string
+		want string
+	}{
+		{name: "Empty", args: "", want: ""},
+		{name: "Quote", args: "Ąaewe'as", want: "Ąaeweas"},
+		{name: "Several quotes", args: "Ąaewe'as\n aaaa'bbb", want: "Ąaeweas\n aaaabbb"},
+		{name: "Lt", args: "Ą'č", want: "Ąč"},
+		{name: "Leave", args: "`aaa", want: "`aaa"},
+		{name: "Leave", args: "`aaa'", want: "`aaa'"},
+		{name: "Leave", args: "aaa'", want: "aaa'"},
+		{name: "Leave", args: " `aaa", want: " `aaa"},
+		{name: "Leave", args: "aa' a", want: "aa' a"},
+		{name: "Leave", args: "aa\"a", want: "aa\"a"},
+		{name: "Leave", args: "aa`a", want: "aa`a"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := dropOneQuote(tt.args); got != tt.want {
+				t.Errorf("dropOneQuote() = %v, want %v", got, tt.want)
+			}
+		})
 	}
 }
