@@ -31,7 +31,7 @@ func init() {
 func getMaps() map[rune]rune {
 	res := make(map[rune]rune)
 
-	addMap(res, "'ˈ‚ʼ′", '\'')
+	addMap(res, "'ˈ‚ʼ′´", '\'')
 	addMap(res, "”‟¨″", '"')
 	addMap(res, "\u2028\uFEFF\u001e\x00\u007f\t•·­˚\u200c", ' ')
 	addMap(res, "–—―‐‑‒", '-')
@@ -56,8 +56,9 @@ func getMaps() map[rune]rune {
 	addLetterMap(res, "şșβ", 's')
 	addLetterMap(res, "ğ", 'g')
 	addLetterMap(res, "đ", 'd')
-	addLetterMap(res, "ť", 't')
+	addLetterMap(res, "ťţ", 't')
 	addLetterMap(res, "в", 'b')
+	addLetterMap(res, "ⱡ", 'l')
 	return res
 }
 

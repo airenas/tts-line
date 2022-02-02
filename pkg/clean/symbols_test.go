@@ -64,20 +64,6 @@ func TestChangeLetters(t *testing.T) {
 	ts(t, "Brulard", "Brûlard")
 	ts(t, "saugios", "saugios֤")
 	ts(t, "saugios\"", "saugios″")
-	tests := []struct {
-		in   string
-		want string
-	}{
-		{in: "Tonyʼis", want: "Tonyis"},
-		{in: "Tonyʼ is", want: "Tony' is"},
-		{in: "aštuoniasdešimt′s", want: "aštuoniasdešimts"},
-		{in: "aštuoniasdešimt′", want: "aštuoniasdešimt'"},
-	}
-	for _, tt := range tests {
-		t.Run(tt.in, func(t *testing.T) {
-			ts(t, tt.want, tt.in)
-		})
-	}
 }
 
 func TestChangeSymbols(t *testing.T) {
@@ -102,9 +88,20 @@ func TestChangeSymbols(t *testing.T) {
 		{name: "В.vieną", args: "В.vieną", want: "B.vieną", up: true, lw: true},
 		{name: "pi̇̀š", args: "pi̇̀š", want: "piš", up: true, lw: true},
 		{name: "Moïsė", args: "Moïsė", want: "Moisė", up: true, lw: true},
+		{args: "Tonyʼis", want: "Tonyis", up: true, lw: true},
+		{args: "Tonyʼ is", want: "Tony' is", up: true, lw: true},
+		{args: "aštuoniasdešimt′s", want: "aštuoniasdešimts", up: true, lw: true},
+		{args: "aštuoniasdešimt′", want: "aštuoniasdešimt'", up: true, lw: true},
+		{args: "Goethe´s", want: "Goethes", up: true, lw: true},
+		{args: "Czesⱡawo", want: "Czeslawo", up: true, lw: true},
+		{args: "Trenuleţul", want: "Trenuletul", up: true, lw: true},
 	}
 	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+		n := tt.name
+		if n == "" {
+			n = tt.args
+		}
+		t.Run(n, func(t *testing.T) {
 			testChange(t, tt.want, tt.args, tt.up, tt.lw)
 		})
 	}
