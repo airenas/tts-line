@@ -7,7 +7,6 @@ import (
 	"github.com/airenas/go-app/pkg/goapp"
 	"github.com/airenas/tts-line/internal/pkg/clitics/service/api"
 	"github.com/airenas/tts-line/internal/pkg/synthesizer"
-	"github.com/airenas/tts-line/internal/pkg/utils"
 	"github.com/pkg/errors"
 )
 
@@ -19,7 +18,7 @@ type cliticDetector struct {
 func NewClitics(urlStr string) (synthesizer.PartProcessor, error) {
 	res := &cliticDetector{}
 	var err error
-	res.httpWrap, err = utils.NewHTTPWrapT(urlStr, time.Second*10)
+	res.httpWrap, err = newHTTPWrapBackoff(urlStr, time.Second*10)
 	if err != nil {
 		return nil, errors.Wrap(err, "can't init http client")
 	}

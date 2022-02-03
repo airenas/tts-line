@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"strings"
@@ -32,7 +33,7 @@ func NewHTTPWrapT(urlStr string, timeout time.Duration) (*HTTPWrap, error) {
 	var err error
 	res.URL, err = checkURL(urlStr)
 	if err != nil {
-		return nil, errors.Wrapf(err, "Can't parse url '%s'", urlStr)
+		return nil, errors.Wrapf(err, "can't parse url '%s'", urlStr)
 	}
 	res.HTTPClient = &http.Client{Transport: newTransport()}
 	res.Timeout = timeout
@@ -94,7 +95,11 @@ func (hw *HTTPWrap) invoke(req *http.Request, dataOut interface{}) error {
 	if err != nil {
 		return errors.Wrapf(err, "can't call '%s'", req.URL.String())
 	}
-	defer resp.Body.Close()
+	defer func() {
+		_, _ = io.Copy(ioutil.Discard, resp.Body)
+		_ = resp.Body.Close()
+	}()
+
 	if err := goapp.ValidateHTTPResp(resp, 100); err != nil {
 		return errors.Wrapf(err, "can't invoke '%s'", req.URL.String())
 	}

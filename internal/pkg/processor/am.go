@@ -47,7 +47,7 @@ func NewAcousticModel(config *viper.Viper) (synthesizer.PartProcessor, error) {
 	if err != nil {
 		return nil, errors.Wrap(err, "can't init AM client")
 	}
-	res.httpWrap, err = utils.NewHTTPBackoff(am, newGPUBackoff)
+	res.httpWrap, err = utils.NewHTTPBackoff(am, newGPUBackoff, utils.RetryAll)
 	if err != nil {
 		return nil, errors.Wrap(err, "can't init AM client")
 	}

@@ -25,7 +25,7 @@ func NewProcessor(amURL, vocURL string) (*Processor, error) {
 	if err != nil {
 		return nil, errors.Wrap(err, "can't init AM client")
 	}
-	amService, err := utils.NewHTTPBackoff(am, newBackoff)
+	amService, err := utils.NewHTTPBackoff(am, newBackoff, utils.RetryAll)
 	if err != nil {
 		return nil, errors.Wrap(err, "can't init AM client")
 	}
@@ -42,7 +42,7 @@ func NewProcessor(amURL, vocURL string) (*Processor, error) {
 	if err != nil {
 		return nil, errors.Wrap(err, "can't init Vocoder client")
 	}
-	vocService, err := utils.NewHTTPBackoff(voc, newBackoff)
+	vocService, err := utils.NewHTTPBackoff(voc, newBackoff, utils.RetryAll)
 	if err != nil {
 		return nil, errors.Wrap(err, "can't init Vocoder client")
 	}

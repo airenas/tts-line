@@ -5,7 +5,6 @@ import (
 
 	"github.com/airenas/go-app/pkg/goapp"
 	"github.com/airenas/tts-line/internal/pkg/synthesizer"
-	"github.com/airenas/tts-line/internal/pkg/utils"
 	"github.com/pkg/errors"
 )
 
@@ -17,7 +16,8 @@ type obscene struct {
 func NewObsceneFilter(urlStr string) (synthesizer.PartProcessor, error) {
 	res := &obscene{}
 	var err error
-	res.httpWrap, err = utils.NewHTTPWrapT(urlStr, time.Second*20)
+	res.httpWrap, err = newHTTPWrapBackoff(urlStr, time.Second*20)
+
 	if err != nil {
 		return nil, errors.Wrap(err, "can't init http client")
 	}

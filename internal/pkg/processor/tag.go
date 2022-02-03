@@ -2,6 +2,7 @@ package processor
 
 import (
 	"strings"
+	"time"
 	"unicode"
 
 	"github.com/airenas/go-app/pkg/goapp"
@@ -19,9 +20,10 @@ type tagger struct {
 func NewTagger(urlStr string) (synthesizer.Processor, error) {
 	res := &tagger{}
 	var err error
-	res.httpWrap, err = utils.NewHTTPWrap(urlStr)
+	res.httpWrap, err = newHTTPWrapBackoff(urlStr, time.Second*20)
+
 	if err != nil {
-		return nil, errors.Wrap(err, "Can't init http client")
+		return nil, errors.Wrap(err, "can't init http client")
 	}
 	return res, nil
 }
@@ -37,8 +39,8 @@ func (p *tagger) Process(data *synthesizer.TTSData) error {
 		return err
 	}
 	data.Words = mapTagResult(output)
-	
-	if (!hasWords(data.Words)){
+
+	if !hasWords(data.Words) {
 		return utils.ErrNoInput
 	}
 	return nil
@@ -46,7 +48,7 @@ func (p *tagger) Process(data *synthesizer.TTSData) error {
 
 func hasWords(processedWord []*synthesizer.ProcessedWord) bool {
 	for _, w := range processedWord {
-		if (w.Tagged.IsWord()) {
+		if w.Tagged.IsWord() {
 			return true
 		}
 	}

@@ -24,14 +24,14 @@ func initTestJSON(t *testing.T) {
 
 func TestNewHTTPBackoff(t *testing.T) {
 	initTestJSON(t)
-	pr, err := utils.NewHTTPBackoff(testHTTPWrap, func() backoff.BackOff { return backoff.NewExponentialBackOff() })
+	pr, err := utils.NewHTTPBackoff(testHTTPWrap, func() backoff.BackOff { return backoff.NewExponentialBackOff() }, utils.RetryAll)
 	assert.Nil(t, err)
 	assert.NotNil(t, pr)
 }
 
 func TestInvokeJSON(t *testing.T) {
 	initTestJSON(t)
-	pr, _ := utils.NewHTTPBackoff(testHTTPWrap, func() backoff.BackOff { return backoff.NewExponentialBackOff() })
+	pr, _ := utils.NewHTTPBackoff(testHTTPWrap, func() backoff.BackOff { return backoff.NewExponentialBackOff() }, utils.RetryAll)
 	pegomock.When(testHTTPWrap.InvokeJSON(pegomock.AnyInterface(), pegomock.AnyInterface())).ThenReturn(nil)
 
 	err := pr.InvokeJSON("olia", "")
@@ -43,7 +43,7 @@ func TestInvokeRetry(t *testing.T) {
 	initTestJSON(t)
 	pr, _ := utils.NewHTTPBackoff(testHTTPWrap, func() backoff.BackOff {
 		return backoff.WithMaxRetries(&backoff.ZeroBackOff{}, 3)
-	})
+	}, utils.RetryAll)
 	pegomock.When(testHTTPWrap.InvokeJSON(pegomock.AnyInterface(), pegomock.AnyInterface())).ThenReturn(errors.New("olia"))
 
 	err := pr.InvokeJSON("olia", "")
@@ -55,7 +55,7 @@ func TestCallbacks(t *testing.T) {
 	initTestJSON(t)
 	pr, _ := utils.NewHTTPBackoff(testHTTPWrap, func() backoff.BackOff {
 		return backoff.WithMaxRetries(&backoff.ZeroBackOff{}, 3)
-	})
+	}, utils.RetryAll)
 	ic := 0
 	rc := 0
 	pr.InvokeIndicatorFunc = func(d interface{}) {

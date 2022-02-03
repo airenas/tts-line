@@ -23,7 +23,7 @@ func NewVocoder(urlStr string) (synthesizer.PartProcessor, error) {
 	if err != nil {
 		return nil, errors.Wrap(err, "can't init vocoder client")
 	}
-	res.httpWrap, err = utils.NewHTTPBackoff(voc, newGPUBackoff)
+	res.httpWrap, err = utils.NewHTTPBackoff(voc, newGPUBackoff, utils.RetryAll)
 	if err != nil {
 		return nil, errors.Wrap(err, "can't init vocoder client")
 	}

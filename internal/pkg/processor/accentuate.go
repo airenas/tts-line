@@ -1,9 +1,12 @@
 package processor
 
 import (
+	"time"
+
 	"github.com/airenas/go-app/pkg/goapp"
 	"github.com/airenas/tts-line/internal/pkg/synthesizer"
 	"github.com/airenas/tts-line/internal/pkg/utils"
+	"github.com/cenkalti/backoff/v4"
 	"github.com/pkg/errors"
 )
 
@@ -15,9 +18,9 @@ type accentuator struct {
 func NewAccentuator(urlStr string) (synthesizer.PartProcessor, error) {
 	res := &accentuator{}
 	var err error
-	res.httpWrap, err = utils.NewHTTPWrap(urlStr)
+	res.httpWrap, err = newHTTPWrapBackoff(urlStr, time.Second*10)
 	if err != nil {
-		return nil, errors.Wrap(err, "Can't init http client")
+		return nil, errors.Wrap(err, "can't init http client")
 	}
 	return res, nil
 }
@@ -136,4 +139,21 @@ func findBestAccentVariant(acc []accent, mi string, lema string) *synthesizer.Ac
 
 func (p *accentuator) skip(data *synthesizer.TTSDataPart) bool {
 	return data.Cfg.JustAM
+}
+
+func newHTTPWrapBackoff(urlStr string, timeout time.Duration) (HTTPInvokerJSON, error) {
+	real, err := utils.NewHTTPWrapT(urlStr, timeout)
+	if err != nil {
+		return nil, errors.Wrap(err, "can't init http wrap")
+	}
+	res, err := utils.NewHTTPBackoff(real, newSimpleBackoff, utils.RetryEOF)
+	if err != nil {
+		return nil, errors.Wrap(err, "can't init backoff http client")
+	}
+	return res, nil
+}
+
+func newSimpleBackoff() backoff.BackOff {
+	res := backoff.NewExponentialBackOff()
+	return backoff.WithMaxRetries(res, 4)
 }
