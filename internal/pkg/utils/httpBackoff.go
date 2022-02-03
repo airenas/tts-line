@@ -76,12 +76,12 @@ func (hw *HTTPBackoff) invoke(f func() error, dataIn interface{}) error {
 	return err
 }
 
-//RetryAll: error map function for NewHTTPBackoff to retry all errors
+//RetryAll - error map function for NewHTTPBackoff to retry all errors
 func RetryAll(err error) error {
 	return err
 }
 
-//RetryEOF: error map function for NewHTTPBackoff to retry io.EOF and timeout errors
+//RetryEOF - error map function for NewHTTPBackoff to retry io.EOF and timeout errors
 func RetryEOF(err error) error {
 	if errors.Is(err, io.EOF) || errors.Is(err, context.DeadlineExceeded) {
 		return err
