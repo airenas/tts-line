@@ -9,7 +9,7 @@ help:
 #####################################################################################
 ## call units tests
 test/unit: 
-	go test -v -race ./...
+	go test -v -race -count 1 ./...
 .PHONY: test/unit
 #####################################################################################
 ## code vet and lint
@@ -25,9 +25,9 @@ generate:
 
 #####################################################################################
 ## build tts-line docker image
-build/tts-line:
+docker/tts-line/build:
 	cd deploy/tts-line && $(MAKE) clean dbuild	
-.PHONY: build/tts-line
+.PHONY: docker/tts-line/build
 #####################################################################################
 ## build and push tts-line docker image
 docker/tts-line/push:
