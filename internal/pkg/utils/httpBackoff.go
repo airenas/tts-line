@@ -20,15 +20,15 @@ type HTTPInvokerJSON interface {
 type HTTPBackoff struct {
 	HTTPClient          HTTPInvokerJSON
 	backoffF            func() backoff.BackOff
-	errF                func(error) error
+	retryF              func(error) bool
 	InvokeIndicatorFunc func(interface{})
 	RetryIndicatorFunc  func(interface{})
 }
 
 //NewHTTPBackoff creates new wrapper with backoff
 //errF must return same error or wrap to backoff.PermanentError to stop backoff
-func NewHTTPBackoff(realWrapper HTTPInvokerJSON, backoffF func() backoff.BackOff, errF func(error) error) (*HTTPBackoff, error) {
-	return &HTTPBackoff{HTTPClient: realWrapper, backoffF: backoffF, errF: errF}, nil
+func NewHTTPBackoff(realWrapper HTTPInvokerJSON, backoffF func() backoff.BackOff, retryF func(error) bool) (*HTTPBackoff, error) {
+	return &HTTPBackoff{HTTPClient: realWrapper, backoffF: backoffF, retryF: retryF}, nil
 }
 
 //InvokeJSON makes http call with json
@@ -64,8 +64,11 @@ func (hw *HTTPBackoff) invoke(f func() error, dataIn interface{}) error {
 		err := f()
 		if err != nil {
 			failC++
+			if !hw.retryF(err) {
+				return backoff.Permanent(err)
+			}
 			goapp.Log.Warn(errors.Wrapf(err, "failed %d time(s)", failC))
-			return hw.errF(err)
+			return err
 		}
 		return nil
 	}
@@ -76,15 +79,12 @@ func (hw *HTTPBackoff) invoke(f func() error, dataIn interface{}) error {
 	return err
 }
 
-//RetryAll - error map function for NewHTTPBackoff to retry all errors
-func RetryAll(err error) error {
-	return err
+//RetryAll - retries all errors
+func RetryAll(err error) bool {
+	return err != nil
 }
 
-//RetryEOF - error map function for NewHTTPBackoff to retry io.EOF and timeout errors
-func RetryEOF(err error) error {
-	if errors.Is(err, io.EOF) || errors.Is(err, context.DeadlineExceeded) {
-		return err
-	}
-	return &backoff.PermanentError{Err: err}
+//IsEOF - check if error io.EOF or timeout
+func IsEOF(err error) bool {
+	return errors.Is(err, io.EOF) || errors.Is(err, context.DeadlineExceeded)
 }

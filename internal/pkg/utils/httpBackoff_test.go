@@ -105,7 +105,7 @@ func TestRetry_StopsNonEOF(t *testing.T) {
 	initTestJSON(t)
 	pr, _ := utils.NewHTTPBackoff(testHTTPWrap, func() backoff.BackOff {
 		return backoff.WithMaxRetries(&backoff.ZeroBackOff{}, 4)
-	}, utils.RetryEOF)
+	}, utils.IsEOF)
 	pegomock.When(testHTTPWrap.InvokeJSON(pegomock.AnyInterface(), pegomock.AnyInterface())).ThenReturn(errors.New("olia"))
 	err := pr.InvokeJSON("olia", "")
 	require.NotNil(t, err)
@@ -116,36 +116,32 @@ func TestRetry_ContinueEOF(t *testing.T) {
 	initTestJSON(t)
 	pr, _ := utils.NewHTTPBackoff(testHTTPWrap, func() backoff.BackOff {
 		return backoff.WithMaxRetries(&backoff.ZeroBackOff{}, 4)
-	}, utils.RetryEOF)
+	}, utils.IsEOF)
 	pegomock.When(testHTTPWrap.InvokeJSON(pegomock.AnyInterface(), pegomock.AnyInterface())).ThenReturn(io.EOF)
 	err := pr.InvokeJSON("olia", "")
 	require.NotNil(t, err)
 	testHTTPWrap.VerifyWasCalled(pegomock.Times(5)).InvokeJSON(pegomock.AnyInterface(), pegomock.AnyInterface())
 }
 
-func TestRetryEOF(t *testing.T) {
+func TestIsEOF(t *testing.T) {
 	type args struct {
 		err error
 	}
 	sErr := errors.Errorf("olia")
 	tests := []struct {
-		name        string
-		args        args
-		wantPermErr bool
+		name      string
+		args      args
+		wantRetry bool
 	}{
-		{name: "simple", args: args{err: sErr}, wantPermErr: true},
-		{name: "EOF", args: args{err: io.EOF}, wantPermErr: false},
-		{name: "Timeout", args: args{err: context.DeadlineExceeded}, wantPermErr: false},
-		{name: "Wrapped EOF", args: args{err: errors.Wrap(io.EOF, "err")}, wantPermErr: false},
+		{name: "simple", args: args{err: sErr}, wantRetry: false},
+		{name: "EOF", args: args{err: io.EOF}, wantRetry: true},
+		{name: "Timeout", args: args{err: context.DeadlineExceeded}, wantRetry: true},
+		{name: "Wrapped EOF", args: args{err: errors.Wrap(io.EOF, "err")}, wantRetry: true},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			err := utils.RetryEOF(tt.args.err)
-			pErr := &backoff.PermanentError{}
-			isPErr := errors.As(err, &pErr)
-
-			if isPErr != tt.wantPermErr {
-				t.Errorf("RetryEOF() error = %v, wantErr %v", isPErr, tt.wantPermErr)
+			if got := utils.IsEOF(tt.args.err); tt.wantRetry != got {
+				t.Errorf("RetryEOF() error = %v, wantErr %v", got, tt.wantRetry)
 			}
 		})
 	}
