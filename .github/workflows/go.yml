@@ -20,7 +20,7 @@ jobs:
       uses: actions/checkout@v2
 
     - name: Test docker build
-      run: make docker/tts-line/build clean  
+      run: make docker/tts-line/build  
 
     - name: Get dependencies
       run: |
