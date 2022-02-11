@@ -76,7 +76,9 @@ func mapTransInput(data *synthesizer.TTSDataPart) ([]*transInput, error) {
 	for _, w := range data.Words {
 		tgw := w.Tagged
 		if !tgw.IsWord() {
-			pr = nil
+			if !tgw.Space {
+				pr = nil
+			}
 		} else {
 			ti := &transInput{}
 			tword := transWord(w)

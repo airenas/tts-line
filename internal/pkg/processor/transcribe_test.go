@@ -7,6 +7,7 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/airenas/tts-line/internal/pkg/service/api"
 	"github.com/airenas/tts-line/internal/pkg/synthesizer"
@@ -145,13 +146,16 @@ func TestMapTransInput_RC(t *testing.T) {
 		AccentVariant: &synthesizer.AccentVariant{Accent: 103, Syll: "o-lia"}})
 	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Word: "word"},
 		AccentVariant: &synthesizer.AccentVariant{Accent: 103}})
+	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Space: true}})
+	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Space: true}})	
 	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Word: "word1"},
 		AccentVariant: &synthesizer.AccentVariant{Accent: 103}})
 	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Separator: ","}})
 	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Word: "word2"},
 		AccentVariant: &synthesizer.AccentVariant{Accent: 103}})
 	inp, err := mapTransInput(d)
-	assert.Nil(t, err)
+	require.Nil(t, err)
+	require.Equal(t, 4, len(inp))
 	assert.Equal(t, "word", inp[0].Rc)
 	assert.Equal(t, "word1", inp[1].Rc)
 	assert.Equal(t, "", inp[2].Rc)
