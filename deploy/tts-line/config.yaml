@@ -14,12 +14,7 @@ options:
 #   url:   
 
 validator:
-  # url: 
-  check:
-    min_words: 1
-    max_words: 50
-    no_numbers: 1
-    profanity: 1
+  maxChars: 10000 
 
 # abbreviator:
 #   url:       

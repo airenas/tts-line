@@ -26,12 +26,12 @@ generate:
 #####################################################################################
 ## build tts-line docker image
 docker/tts-line/build:
-	cd deploy/tts-line && $(MAKE) clean dbuild	
+	cd deploy/tts-line && $(MAKE) dbuild	
 .PHONY: docker/tts-line/build
 #####################################################################################
 ## build and push tts-line docker image
 docker/tts-line/push:
-	cd deploy/tts-line && $(MAKE) clean dpush
+	cd deploy/tts-line && $(MAKE) dpush
 .PHONY: docker/tts-line/push
 ## build and push tts-clean-text docker image
 docker/tts-clean/push:
@@ -43,7 +43,8 @@ generate-diagram:
 #####################################################################################
 ## cleans prepared data for dockeriimage generation
 clean:
-	cd deploy/tts-line && $(MAKE) clean
+	go mod tidy
+	go clean
 	cd deploy/acronyms && $(MAKE) clean
 	cd deploy/clitics && $(MAKE) clean
 	cd deploy/tts-clean-text && $(MAKE) clean

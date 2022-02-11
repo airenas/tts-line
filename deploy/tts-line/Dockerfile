@@ -1,3 +1,17 @@
+#########################################################################################
+## docker will invoke this file from ../.. dir in order to access code
+#########################################################################################
+FROM golang:1.17-alpine as builder
+
+ARG BUILD_VERSION=0.1
+
+WORKDIR /go/src/
+ENV CGO_ENABLED=0
+
+COPY . /go/src
+RUN CGO_ENABLED=0 go build -o /go/bin/tts-line -ldflags "-X main.version=$BUILD_VERSION" cmd/tts-line/main.go
+RUN CGO_ENABLED=0 go build -o /go/bin/tts-export -ldflags "-X main.version=$BUILD_VERSION" cmd/tts-export/main.go
+#####################################################################################
 FROM iron/base:3.14.0
 
 ARG BUILD_VERSION=0.1
@@ -20,9 +34,9 @@ RUN addgroup app && adduser -S -G app app --uid $UID app
 
 RUN mkdir -p /app && chown -R app:app /app   
 
-COPY data/tts-line /app/
-COPY data/tts-export /app/
-COPY config.yaml /app/
+COPY --from=builder /go/bin/tts-line /app/
+COPY --from=builder /go/bin/tts-export /app/
+COPY deploy/tts-line/config.yaml /app/
 
 RUN chown app:app /app/* /app
  
