@@ -96,7 +96,7 @@ func (hw *HTTPWrap) invoke(req *http.Request, dataOut interface{}) error {
 		return errors.Wrapf(err, "can't call '%s'", req.URL.String())
 	}
 	defer func() {
-		_, _ = io.Copy(ioutil.Discard, resp.Body)
+		_, _ = io.Copy(ioutil.Discard, io.LimitReader(resp.Body, 10000))
 		_ = resp.Body.Close()
 	}()
 
