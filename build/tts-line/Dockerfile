@@ -37,7 +37,7 @@ RUN mkdir -p /app && chown -R app:app /app
 
 COPY --from=builder /go/bin/tts-line /app/
 COPY --from=builder /go/bin/tts-export /app/
-COPY deploy/tts-line/config.yaml /app/
+COPY build/tts-line/config.yaml /app/
 
 RUN chown app:app /app/* /app
  

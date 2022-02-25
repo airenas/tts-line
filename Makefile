@@ -15,40 +15,42 @@ test/unit:
 ## code vet and lint
 test/lint: 
 	go vet ./...
-	go get -u golang.org/x/lint/golint
+	go install golang.org/x/lint/golint@latest
 	golint -set_exit_status ./...
 .PHONY: test/lint
 #####################################################################################
-generate: 
-	go get github.com/petergtz/pegomock/...
+## generate mock objects for test
+generate/mocks: 
+	go install github.com/petergtz/pegomock/...@latest
 	go generate ./...
-
+.PHONY: generate/mocks	
 #####################################################################################
 ## build tts-line docker image
 docker/tts-line/build:
-	cd deploy/tts-line && $(MAKE) dbuild	
+	cd build/tts-line && $(MAKE) dbuild	
 .PHONY: docker/tts-line/build
 ## build tts-line docker image
 docker/tts-clean/build:
-	cd deploy/tts-clean-text && $(MAKE) dbuild	
+	cd build/tts-clean-text && $(MAKE) dbuild	
 .PHONY: docker/tts-clean/build
 #####################################################################################
 ## build and push tts-line docker image
 docker/tts-line/push:
-	cd deploy/tts-line && $(MAKE) dpush
+	cd build/tts-line && $(MAKE) dpush
 .PHONY: docker/tts-line/push
 ## build and push tts-clean-text docker image
 docker/tts-clean/push:
-	cd deploy/tts-clean-text && $(MAKE) clean dpush
+	cd build/tts-clean-text && $(MAKE) clean dpush
 .PHONY: docker/tts-clean/push
-
-generate-diagram:
+#####################################################################################
+## generate diagrams
+generate/diagram:
 	cd info && $(MAKE) generate
+.PHONY: generate/diagram
 #####################################################################################
 ## cleans prepared data for dockeriimage generation
 clean:
 	go mod tidy
 	go clean
-	cd deploy/acronyms && $(MAKE) clean
-	cd deploy/clitics && $(MAKE) clean
-	cd deploy/tts-clean-text && $(MAKE) clean
+	cd build/acronyms && $(MAKE) clean
+	cd build/clitics && $(MAKE) clean
