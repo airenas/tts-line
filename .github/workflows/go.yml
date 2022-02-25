@@ -20,7 +20,7 @@ jobs:
       uses: actions/checkout@v2
 
     - name: Test docker build
-      run: make docker/tts-line/build  
+      run: make docker/tts-line/build docker/tts-clean/build   
 
     - name: Get dependencies
       run: |
@@ -30,10 +30,7 @@ jobs:
       run: make generate/mocks
 
     - name: Build
-      run: go build -v ./...
-
-    - name: Try build containers
-      run: make docker/tts-line/build docker/tts-clean/build    
+      run: go build -v ./...  
 
     - name: Get test dependencies
       run: |
