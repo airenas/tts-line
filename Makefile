@@ -21,7 +21,7 @@ test/lint:
 #####################################################################################
 ## generate mock objects for test
 generate/mocks: 
-	go get github.com/petergtz/pegomock/...
+	go install github.com/petergtz/pegomock/...@latest
 	go generate ./...
 .PHONY: generate/mocks	
 #####################################################################################
