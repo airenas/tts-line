@@ -27,10 +27,13 @@ jobs:
         go get -a ./...
 
     - name: Generate mocks
-      run: make generate
+      run: make generate/mocks
 
     - name: Build
       run: go build -v ./...
+
+    - name: Try build containers
+      run: make docker/tts-line/build docker/tts-clean/build    
 
     - name: Get test dependencies
       run: |
