@@ -95,6 +95,9 @@ func TestChangeSymbols(t *testing.T) {
 		{args: "Goethe´s", want: "Goethes", up: true, lw: true},
 		{args: "Czesⱡawo", want: "Czeslawo", up: true, lw: true},
 		{args: "Trenuleţul", want: "Trenuletul", up: true, lw: true},
+		{args: "rugpjū́čio", want: "rugpjūčio", up: true, lw: true},
+		{args: "į̃kvepia", want: "įkvepia", up: true, lw: true},
+		{args: "kū́nas", want: "kūnas", up: true, lw: true},
 	}
 	for _, tt := range tests {
 		n := tt.name
@@ -138,7 +141,7 @@ func TestSymbols(t *testing.T) {
 }
 
 func TestSymbols2(t *testing.T) {
-	str := "i̇̀"
+	str := "į̃kvepia"
 	for i, r := range str {
 		fmt.Printf("%d: %s %d \\u%.4x\n", i, string(r), r, r)
 	}
