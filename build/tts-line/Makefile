@@ -6,7 +6,7 @@ version=$(tts_version)
 tag=$(service):$(version)
 
 dbuild:
-	cd ../../ && docker build -t $(tag) --build-arg BUILD_VERSION=$(version) -f deploy/tts-line/Dockerfile .
+	cd ../../ && docker build -t $(tag) --build-arg BUILD_VERSION=$(version) -f build/tts-line/Dockerfile .
 
 dpush: dbuild
 	docker push $(tag)
