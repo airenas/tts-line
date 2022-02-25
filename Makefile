@@ -28,6 +28,10 @@ generate:
 docker/tts-line/build:
 	cd deploy/tts-line && $(MAKE) dbuild	
 .PHONY: docker/tts-line/build
+## build tts-line docker image
+docker/tts-clean/build:
+	cd deploy/tts-clean-text && $(MAKE) dbuild	
+.PHONY: docker/tts-clean/build
 #####################################################################################
 ## build and push tts-line docker image
 docker/tts-line/push:
