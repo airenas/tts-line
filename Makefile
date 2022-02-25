@@ -40,7 +40,7 @@ docker/tts-line/push:
 .PHONY: docker/tts-line/push
 ## build and push tts-clean-text docker image
 docker/tts-clean/push:
-	cd build/tts-clean-text && $(MAKE) clean dpush
+	cd build/tts-clean-text && $(MAKE) dpush
 .PHONY: docker/tts-clean/push
 #####################################################################################
 ## generate diagrams

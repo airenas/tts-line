@@ -8,7 +8,14 @@ ARG BUILD_VERSION=0.1
 WORKDIR /go/src/
 ENV CGO_ENABLED=0
 
+# precache go.mod dependencies
+COPY go.mod /go/src/
+COPY go.sum /go/src/
+RUN go mod download
+
+# copy src
 COPY . /go/src
+
 RUN CGO_ENABLED=0 go build -o /go/bin/tts-line -ldflags "-X main.version=$BUILD_VERSION" cmd/tts-line/main.go
 RUN CGO_ENABLED=0 go build -o /go/bin/tts-export -ldflags "-X main.version=$BUILD_VERSION" cmd/tts-export/main.go
 #####################################################################################

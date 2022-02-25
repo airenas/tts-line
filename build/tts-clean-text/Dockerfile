@@ -8,6 +8,11 @@ ARG BUILD_VERSION=0.1
 WORKDIR /go/src/
 ENV CGO_ENABLED=0
 
+# precache go.mod dependencies
+COPY go.mod /go/src/
+COPY go.sum /go/src/
+RUN go mod download
+
 COPY . /go/src
 RUN CGO_ENABLED=0 go build -o /go/bin/tts-text-clean -ldflags "-X main.version=$BUILD_VERSION" cmd/tts-text-clean/main.go
 #####################################################################################
@@ -33,7 +38,7 @@ EXPOSE 8000
 RUN addgroup app && adduser -S -G app --uid $UID app
 RUN mkdir -p /app && chown -R app:app /app   
 
-COPY -from=builder d/go/bin/tts-text-clean /app/
+COPY --from=builder /go/bin/tts-text-clean /app/
 COPY build/tts-clean-text/config.yaml /app/
 
 RUN chown app:app /app/* /app
