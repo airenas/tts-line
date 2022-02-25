@@ -29,6 +29,7 @@ LABEL org.opencontainers.image.version=$BUILD_VERSION \
 WORKDIR /app
 
 ENV UID=999
+EXPOSE 8000
 
 RUN addgroup app && adduser -S -G app app --uid $UID app
 
