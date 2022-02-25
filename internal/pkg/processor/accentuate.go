@@ -146,7 +146,7 @@ func newHTTPWrapBackoff(urlStr string, timeout time.Duration) (HTTPInvokerJSON, 
 	if err != nil {
 		return nil, errors.Wrap(err, "can't init http wrap")
 	}
-	res, err := utils.NewHTTPBackoff(real, newSimpleBackoff, utils.IsEOF)
+	res, err := utils.NewHTTPBackoff(real, newSimpleBackoff, utils.IsRetryable)
 	if err != nil {
 		return nil, errors.Wrap(err, "can't init backoff http client")
 	}

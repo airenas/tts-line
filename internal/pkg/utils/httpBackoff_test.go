@@ -3,6 +3,7 @@ package utils_test
 import (
 	"context"
 	"io"
+	"syscall"
 	"testing"
 
 	"github.com/airenas/tts-line/internal/pkg/test/mocks"
@@ -105,7 +106,7 @@ func TestRetry_StopsNonEOF(t *testing.T) {
 	initTestJSON(t)
 	pr, _ := utils.NewHTTPBackoff(testHTTPWrap, func() backoff.BackOff {
 		return backoff.WithMaxRetries(&backoff.ZeroBackOff{}, 4)
-	}, utils.IsEOF)
+	}, utils.IsRetryable)
 	pegomock.When(testHTTPWrap.InvokeJSON(pegomock.AnyInterface(), pegomock.AnyInterface())).ThenReturn(errors.New("olia"))
 	err := pr.InvokeJSON("olia", "")
 	require.NotNil(t, err)
@@ -116,7 +117,7 @@ func TestRetry_ContinueEOF(t *testing.T) {
 	initTestJSON(t)
 	pr, _ := utils.NewHTTPBackoff(testHTTPWrap, func() backoff.BackOff {
 		return backoff.WithMaxRetries(&backoff.ZeroBackOff{}, 4)
-	}, utils.IsEOF)
+	}, utils.IsRetryable)
 	pegomock.When(testHTTPWrap.InvokeJSON(pegomock.AnyInterface(), pegomock.AnyInterface())).ThenReturn(io.EOF)
 	err := pr.InvokeJSON("olia", "")
 	require.NotNil(t, err)
@@ -136,13 +137,34 @@ func TestIsEOF(t *testing.T) {
 		{name: "simple", args: args{err: sErr}, wantRetry: false},
 		{name: "EOF", args: args{err: io.EOF}, wantRetry: true},
 		{name: "Timeout", args: args{err: context.DeadlineExceeded}, wantRetry: true},
+		{name: "Timeout 2", args: args{err: testTmErr{timeout: true}}, wantRetry: true},
+		{name: "Temporary", args: args{err: testTmErr{temp: true}}, wantRetry: true},
+		{name: "No Timeout", args: args{err: testTmErr{}}, wantRetry: false},
+		{name: "Broken pipe", args: args{err: syscall.EPIPE}, wantRetry: true},
+		{name: "Reset by peer", args: args{err: syscall.ECONNRESET}, wantRetry: true},
 		{name: "Wrapped EOF", args: args{err: errors.Wrap(io.EOF, "err")}, wantRetry: true},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := utils.IsEOF(tt.args.err); tt.wantRetry != got {
+			if got := utils.IsRetryable(tt.args.err); tt.wantRetry != got {
 				t.Errorf("RetryEOF() error = %v, wantErr %v", got, tt.wantRetry)
 			}
 		})
 	}
+}
+
+type testTmErr struct {
+	timeout, temp bool
+}
+
+func (e testTmErr) Error() string {
+	return "test err"
+}
+
+func (e testTmErr) Timeout() bool {
+	return e.timeout
+}
+
+func (e testTmErr) Temporary() bool {
+	return e.temp
 }

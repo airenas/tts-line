@@ -3,6 +3,8 @@ package utils
 import (
 	"context"
 	"io"
+	"net"
+	"syscall"
 
 	"github.com/airenas/go-app/pkg/goapp"
 	"github.com/cenkalti/backoff/v4"
@@ -84,7 +86,14 @@ func RetryAll(err error) bool {
 	return err != nil
 }
 
-//IsEOF - check if error io.EOF or timeout
-func IsEOF(err error) bool {
-	return errors.Is(err, io.EOF) || errors.Is(err, context.DeadlineExceeded)
+//IsRetryable - check if error is retryable io.EOF or timeout
+func IsRetryable(err error) bool {
+	return errors.Is(err, io.EOF) || errors.Is(err, context.DeadlineExceeded) ||
+		errors.Is(err, syscall.EPIPE) || errors.Is(err, syscall.ECONNRESET) ||
+		isTimeout(err)
+}
+
+func isTimeout(err error) bool {
+	e, ok := err.(net.Error)
+	return ok && (e.Timeout() || e.Temporary())
 }
