@@ -14,23 +14,22 @@
 # Dependency directories (remove the comment below to include it)
 # vendor/
 .vscode/**
-deploy/tts-line/data/**
+build/tts-line/data/**
 Makefile.option
 internal/pkg/test/mocks/**
 cmd/tts-line/__debug_bin
 out.mp3
 deploy/am-voc-wrapper/bin/am-voc-wrapper
-deploy/tts-clean-text/data/**
 cmd/acronyms/acronyms.txt
-deploy/acronyms/Makefile.options
-deploy/acronyms/data/**
+build/acronyms/Makefile.options
+build/acronyms/data/**
 cmd/acronyms/acronyms
 examples/docker-compose/.mongo/**
 examples/docker-compose/Makefile.options
 examples/docker-compose/.env
 cmd/clitics/phrases.txt
-deploy/clitics/Makefile.options
-deploy/clitics/data/**
-deploy/am-voc-wrapper/bin/**
-deploy/am-voc-wrapper/Makefile.options
+build/clitics/Makefile.options
+build/clitics/data/**
+build/am-voc-wrapper/bin/**
+build/am-voc-wrapper/Makefile.options
 examples/docker-compose/sample.json
