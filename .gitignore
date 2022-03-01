@@ -30,6 +30,7 @@ examples/docker-compose/.env
 cmd/clitics/phrases.txt
 build/clitics/Makefile.options
 build/clitics/data/**
-build/am-voc-wrapper/bin/**
+deploy/am-voc-wrapper/bin/**
 build/am-voc-wrapper/Makefile.options
 examples/docker-compose/sample.json
+deploy/am-voc-wrapper/Makefile.options
