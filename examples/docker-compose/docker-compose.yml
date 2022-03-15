@@ -40,6 +40,12 @@ services:
     ports:
       - "8015:8000"      
 
+  obscene:
+    container_name: obscene
+    image: intelektikalt/obscene-filter:0.1.8 
+    ports:
+      - "8016:3000"        
+
   mongo:
     image: mongo:4.4.1
     environment:

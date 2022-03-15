@@ -27,12 +27,7 @@ tagger:
   url: https://sinteze.intelektika.lt/tagger/tag  
 
 validator:
-  url: http://192.168.1.71:8206/text_validator
-  check:
-    min_words: 1
-    max_words: 1000
-    no_numbers: 1
-    profanity: 1
+  maxChars: 10000 
 
 acronyms:
   url: http://192.168.1.71:8210/abbreviations      
@@ -49,7 +44,8 @@ transcriber:
 acousticModel:
   # url: http://semspch04.vdu.lt:8000/model
   # url: http://semspch04.vdu.lt:8006/synthesize
-  url: http://localhost:8000/model
+  # url: http://localhost:8000/model
+  url: http://18.184.234.119:8006/synthesize
   hasVocoder: true
 
 vocoder:
@@ -67,6 +63,9 @@ clean:
 
 filer:
   dir: /home/airenas/projects/tts-line
+
+obscene:
+  url: http://localhost:8016/obscene-filter    
 
 cache:
   duration: 30s
