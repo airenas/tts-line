@@ -74,7 +74,9 @@ func mapAbbrInput(data *synthesizer.TTSDataPart) []acrInput {
 	res := []acrInput{}
 	for i, w := range data.Words {
 		tgw := w.Tagged
-		if tgw.IsWord() && (w.Obscene || isAbbr(tgw.Mi, tgw.Lemma)) {
+		if tgw.IsWord() &&
+			w.UserAccent == 0 && // do not do acronyms change if user has provided accent
+			(w.Obscene || isAbbr(tgw.Mi, tgw.Lemma)) {
 			res = append(res, acrInput{Word: tgw.Word, MI: tgw.Mi, ID: strconv.Itoa(i)})
 		}
 	}

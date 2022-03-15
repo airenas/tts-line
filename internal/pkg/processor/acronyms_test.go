@@ -150,6 +150,9 @@ func Test_mapAbbrInput(t *testing.T) {
 		{name: "No AllUpper", args: []*synthesizer.ProcessedWord{{Tagged: synthesizer.TaggedWord{Word: "word", Mi: "Naaa",
 			Lemma: "WORd"}, Obscene: false}},
 			want: []acrInput{}},
+		{name: "Skip user accent", args: []*synthesizer.ProcessedWord{{Tagged: synthesizer.TaggedWord{Word: "word", Mi: "X-",
+			Lemma: "Looong"}, UserAccent: 101}},
+			want: []acrInput{}},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
