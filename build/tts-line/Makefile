@@ -10,5 +10,8 @@ dbuild:
 
 dpush: dbuild
 	docker push $(tag)
+
+dscan: dbuild
+	docker scan --accept-license $(tag)	
 #####################################################################################
 .PHONY: dbuild dpush

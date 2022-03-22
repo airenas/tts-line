@@ -19,7 +19,7 @@ COPY . /go/src
 RUN CGO_ENABLED=0 go build -o /go/bin/tts-line -ldflags "-X main.version=$BUILD_VERSION" cmd/tts-line/main.go
 RUN CGO_ENABLED=0 go build -o /go/bin/tts-export -ldflags "-X main.version=$BUILD_VERSION" cmd/tts-export/main.go
 #####################################################################################
-FROM iron/base:3.14.0
+FROM iron/base:3.14
 
 ARG BUILD_VERSION=0.1
 
