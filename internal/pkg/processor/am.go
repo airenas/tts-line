@@ -108,9 +108,7 @@ func (p *amodel) mapAMInput(data *synthesizer.TTSDataPart) *amInput {
 	sb := make([]string, 0)
 	//sb := &strings.Builder{}
 	pause := p.spaceSymbol
-	if data.First {
-		sb = append(sb, pause)
-	}
+	sb = append(sb, pause)
 	lastSep := ""
 	for i, w := range data.Words {
 		tgw := w.Tagged

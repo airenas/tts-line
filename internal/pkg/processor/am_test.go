@@ -156,17 +156,17 @@ func TestMapAMInput(t *testing.T) {
 	assert.Equal(t, "<space> v a o l i a , v a <space>", inp.Text)
 }
 
-func TestMapAMInput_NoSilAtStart(t *testing.T) {
-	pr := newTestAM(t, "http://server", "sil")
-	d := newTestTTSDataPart()
-	d.First = false
+// func TestMapAMInput_NoSilAtStart(t *testing.T) {
+// 	pr := newTestAM(t, "http://server", "sil")
+// 	d := newTestTTSDataPart()
+// 	d.First = false
 
-	d.Words = append(d.Words, &synthesizer.ProcessedWord{Transcription: "v a - o l i a", Tagged: synthesizer.TaggedWord{Word: "v1"}})
-	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Separator: ","}})
-	d.Words = append(d.Words, &synthesizer.ProcessedWord{Transcription: "v a", Tagged: synthesizer.TaggedWord{Word: "v1"}})
-	inp := pr.mapAMInput(d)
-	assert.Equal(t, "v a o l i a , v a sil", inp.Text)
-}
+// 	d.Words = append(d.Words, &synthesizer.ProcessedWord{Transcription: "v a - o l i a", Tagged: synthesizer.TaggedWord{Word: "v1"}})
+// 	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Separator: ","}})
+// 	d.Words = append(d.Words, &synthesizer.ProcessedWord{Transcription: "v a", Tagged: synthesizer.TaggedWord{Word: "v1"}})
+// 	inp := pr.mapAMInput(d)
+// 	assert.Equal(t, "v a o l i a , v a sil", inp.Text)
+// }
 
 func TestMapAMInput_SpaceDot(t *testing.T) {
 	pr := newTestAM(t, "http://server", "<space>")
@@ -208,7 +208,7 @@ func TestMapAMInput_ChangePhone(t *testing.T) {
 
 	d.Words = append(d.Words, &synthesizer.ProcessedWord{Transcription: "v a - \"oi \"iui", Tagged: synthesizer.TaggedWord{Word: "v1"}})
 	inp := pr.mapAMInput(d)
-	assert.Equal(t, "v a \"o: i \"iu i <space>", inp.Text)
+	assert.Equal(t, "<space> v a \"o: i \"iu i <space>", inp.Text)
 }
 
 func TestMapAMInput_SpaceEnd(t *testing.T) {
@@ -227,7 +227,7 @@ func TestMapAMInput_AddDotOnSentenceEnd(t *testing.T) {
 	d.Words = append(d.Words, &synthesizer.ProcessedWord{Transcription: "v a", Tagged: synthesizer.TaggedWord{Word: "v1"}})
 	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{SentenceEnd: true}})
 	inp := pr.mapAMInput(d)
-	assert.Equal(t, "v a . sil", inp.Text)
+	assert.Equal(t, "sil v a . sil", inp.Text)
 }
 
 func TestMapAMInput_NoDotOnSentenceEnd(t *testing.T) {
@@ -237,7 +237,7 @@ func TestMapAMInput_NoDotOnSentenceEnd(t *testing.T) {
 	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Separator: "."}})
 	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{SentenceEnd: true}})
 	inp := pr.mapAMInput(d)
-	assert.Equal(t, "v a . sil", inp.Text)
+	assert.Equal(t, "sil v a . sil", inp.Text)
 }
 
 func TestMapAMInput_NoDotOnSentenceEnd2(t *testing.T) {
@@ -247,7 +247,7 @@ func TestMapAMInput_NoDotOnSentenceEnd2(t *testing.T) {
 	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Separator: "?"}})
 	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{SentenceEnd: true}})
 	inp := pr.mapAMInput(d)
-	assert.Equal(t, "v a ? sil", inp.Text)
+	assert.Equal(t, "sil v a ? sil", inp.Text)
 }
 
 func TestMapAMInput_SeveralSentenceEnd(t *testing.T) {
@@ -259,7 +259,7 @@ func TestMapAMInput_SeveralSentenceEnd(t *testing.T) {
 	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Separator: "?"}})
 	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{SentenceEnd: true}})
 	inp := pr.mapAMInput(d)
-	assert.Equal(t, "v a . sil v a ? sil", inp.Text)
+	assert.Equal(t, "sil v a . sil v a ? sil", inp.Text)
 }
 
 func TestMapAMInput_CustomEnd(t *testing.T) {
@@ -269,7 +269,7 @@ func TestMapAMInput_CustomEnd(t *testing.T) {
 	d.Words = append(d.Words, &synthesizer.ProcessedWord{Transcription: "v a", Tagged: synthesizer.TaggedWord{Word: "v1"}})
 	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{SentenceEnd: true}})
 	inp := pr.mapAMInput(d)
-	assert.Equal(t, "v a . sp sil", inp.Text)
+	assert.Equal(t, "sil v a . sp sil", inp.Text)
 }
 
 func TestMapAMInput_CustomEnd_Dot(t *testing.T) {
@@ -280,7 +280,7 @@ func TestMapAMInput_CustomEnd_Dot(t *testing.T) {
 	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Separator: "."}})
 	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{SentenceEnd: true}})
 	inp := pr.mapAMInput(d)
-	assert.Equal(t, "v a . sp sil", inp.Text)
+	assert.Equal(t, "sil v a . sp sil", inp.Text)
 }
 
 func TestMapAMInput_CustomEnd_SeveralSentenceEnd(t *testing.T) {
@@ -293,7 +293,7 @@ func TestMapAMInput_CustomEnd_SeveralSentenceEnd(t *testing.T) {
 	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Separator: "."}})
 	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{SentenceEnd: true}})
 	inp := pr.mapAMInput(d)
-	assert.Equal(t, "v a . sil v a . sp sil", inp.Text)
+	assert.Equal(t, "sil v a . sil v a . sp sil", inp.Text)
 }
 
 func TestMapAMInput_DropDash(t *testing.T) {
@@ -325,7 +325,7 @@ func TestMapAMInput_SkipSpaces(t *testing.T) {
 	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Space: true}})
 	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{SentenceEnd: true}})
 	inp := pr.mapAMInput(d)
-	assert.Equal(t, "v a . sil v a v a . sp sil", inp.Text)
+	assert.Equal(t, "sil v a . sil v a v a . sp sil", inp.Text)
 }
 
 func TestAddPause(t *testing.T) {
