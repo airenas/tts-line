@@ -16,7 +16,7 @@ RUN go mod download
 COPY . /go/src
 RUN CGO_ENABLED=0 go build -o /go/bin/tts-text-clean -ldflags "-X main.version=$BUILD_VERSION" cmd/tts-text-clean/main.go
 #####################################################################################
-FROM iron/base:3.14.0
+FROM alpine:3.15 as runner
 
 ARG BUILD_VERSION=0.1
 
