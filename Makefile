@@ -36,7 +36,7 @@ docker/tts-clean/build:
 ## scan tts-line for vulnerabilities
 docker/tts-line/scan:
 	cd build/tts-line && $(MAKE) dscan	
-.PHONY: docker/tts-line/build
+.PHONY: docker/tts-line/scan
 #####################################################################################
 ## build and push tts-line docker image
 docker/tts-line/push:

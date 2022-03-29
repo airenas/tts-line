@@ -36,9 +36,6 @@ jobs:
 
     - name: Test
       run: make test/unit
-    
-    - name: Test docker build
-      run: make docker/tts-line/build docker/tts-clean/build clean-version=latest tts_version=latest   
 
     - name: Run vet & lint
       run: make test/lint
@@ -57,16 +54,3 @@ jobs:
           github-token: ${{ secrets.github_token }}
           path-to-lcov: coverage.lcov    
   
-    - name: Run Snyk to check Docker image for vulnerabilities
-      continue-on-error: true
-      uses: snyk/actions/docker@master
-      env:
-        SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-      with:
-        image: airenas/tts-line:latest
-        args: --file=build/tts-line/Dockerfile
-
-    - name: Upload snyk result to GitHub Code Scanning
-      uses: github/codeql-action/upload-sarif@v1
-      with:
-        sarif_file: snyk.sarif

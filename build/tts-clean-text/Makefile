@@ -1,7 +1,7 @@
 -include ../../version 
 #####################################################################################
 service=airenas/tts-text-clean
-version=$(clean-version)
+version=$(clean_version)
 ########### DOCKER ##################################################################
 tag=$(service):$(version)
 
