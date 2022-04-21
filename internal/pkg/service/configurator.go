@@ -19,14 +19,15 @@ const (
 	headerCollectData   = "x-tts-collect-data"
 	headerSaveTags      = "x-tts-save-tags"
 	headerMaxTextLen    = "x-tts-max-text-len"
+
+	defaultVoiceKey = "default"
 )
 
 //TTSConfigutaror tts request configuration
 type TTSConfigutaror struct {
 	defaultOutputFormat api.AudioFormatEnum
 	outputMetadata      []string
-	defaultVoice        string
-	availableVoices     map[string]bool
+	availableVoices     map[string]string
 }
 
 //NewTTSConfigurator creates the initial request configuration
@@ -53,11 +54,36 @@ func NewTTSConfigurator(cfg *viper.Viper) (*TTSConfigutaror, error) {
 	}
 	goapp.Log.Infof("Metadata: %v", res.outputMetadata)
 
-	res.defaultVoice, res.availableVoices, err = initVoices(cfg.GetString("output.defaultVoice"), cfg.GetStringSlice("output.voices"))
+	res.availableVoices, err = initVoices(cfg.GetStringSlice("output.voices"))
 	if err != nil {
 		return nil, errors.Wrap(err, "can't init voices")
 	}
-	goapp.Log.Infof("Voices. Default: %s, all: %v", res.defaultVoice, res.availableVoices)
+	dVoice, err := getVoice(res.availableVoices, defaultVoiceKey)
+	if err != nil {
+		return nil, errors.Wrap(err, "no default voice")
+	}
+	goapp.Log.Infof("Voices. Default: %s, all: %v", dVoice, res.availableVoices)
+	return res, nil
+}
+
+func getVoice(voices map[string]string, voiceKey string) (string, error) {
+	key := voiceKey
+	if key == "" {
+		key = defaultVoiceKey
+	}
+	res, ok := voices[key]
+	if !ok {
+		return "", errors.Errorf("unknown voice '%s'", key)
+	}
+	//try go deeper
+	// allow mapping default:astra.latest, astra.latest:astra.v02
+	for i := 0; i < 3; i++ {
+       resN, ok := voices[res]
+	   if !ok {
+			break
+	   }
+	   res = resN
+	}
 	return res, nil
 }
 
@@ -89,10 +115,11 @@ func (c *TTSConfigutaror) Configure(r *http.Request, inText *api.Input) (*api.TT
 	if err != nil {
 		return nil, err
 	}
-	res.Voice, err = c.getVoice(inText.Voice)
+	res.Voice, err = getVoice(c.availableVoices, inText.Voice)
 	if err != nil {
 		return nil, err
 	}
+	goapp.Log.Infof("Voice '%s' -> '%s'", inText.Voice, res.Voice)
 	if inText.Priority < 0 {
 		return nil, errors.Errorf("wrong priority (>=0) value: %d", inText.Priority)
 	}
@@ -152,30 +179,21 @@ func getOutputAudioFormat(s string) (api.AudioFormatEnum, error) {
 	return api.AudioNone, errors.New("Unknown audio format " + s)
 }
 
-func initVoices(def string, all []string) (string, map[string]bool, error) {
-	resVoice := strings.TrimSpace(def)
-	if resVoice == "" {
-		return "", nil, errors.New("no default voice")
-	}
-	resAll := make(map[string]bool)
-	resAll[resVoice] = true
+func initVoices(all []string) (map[string]string, error) {
+	res := make(map[string]string)
 	for _, s := range all {
 		s = strings.TrimSpace(s)
-		if s != "" {
-			resAll[s] = true
+		strs := strings.Split(s, ":")
+		if (len(strs) != 2) {
+			return nil, errors.Errorf("wrong voice value '%s'", s)
 		}
+		strs[0], strs[1] = strings.TrimSpace(strs[0]), strings.TrimSpace(strs[1]) 
+		if (strs[0] == "" || strs[1] == "") {
+			return nil, errors.Errorf("wrong voice value '%s'", s)	
+		}
+		res[strs[0]] = strs[1]
 	}
-	return resVoice, resAll, nil
-}
-
-func (c *TTSConfigutaror) getVoice(voice string) (string, error) {
-	if voice == "" {
-		return c.defaultVoice, nil
-	}
-	if c.availableVoices[voice] {
-		return voice, nil
-	}
-	return "", errors.Errorf("unknown voice '%s'", voice)
+	return res, nil
 }
 
 func getHeader(r *http.Request, key string) string {

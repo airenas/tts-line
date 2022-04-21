@@ -12,7 +12,7 @@ import (
 )
 
 func TestNewTTSConfigurator(t *testing.T) {
-	c, err := NewTTSConfigurator(test.NewConfig(t, "output:\n  defaultFormat: mp3\n  metadata:\n   - r=aaa\n  defaultVoice: aaa"))
+	c, err := NewTTSConfigurator(test.NewConfig(t, "output:\n  defaultFormat: mp3\n  metadata:\n   - r=aaa\n  voices:\n   - default:astra"))
 	assert.Nil(t, err)
 	if assert.NotNil(t, c) {
 		assert.Equal(t, "mp3", c.defaultOutputFormat.String())
@@ -21,7 +21,7 @@ func TestNewTTSConfigurator(t *testing.T) {
 }
 
 func TestNewTTSConfigurator_SeveralMetadata(t *testing.T) {
-	c, err := NewTTSConfigurator(test.NewConfig(t, "output:\n  defaultFormat: mp3\n  metadata:\n   - r=aaa\n   - b=aaa\n  defaultVoice: aaa"))
+	c, err := NewTTSConfigurator(test.NewConfig(t, "output:\n  defaultFormat: mp3\n  metadata:\n   - r=aaa\n   - b=aaa\n  voices:\n   - default:astra"))
 	assert.Nil(t, err)
 	if assert.NotNil(t, c) {
 		assert.Equal(t, []string{"r=aaa", "b=aaa"}, c.outputMetadata)
@@ -29,13 +29,12 @@ func TestNewTTSConfigurator_SeveralMetadata(t *testing.T) {
 }
 
 func TestNewTTSConfigurator_SeveralVoices(t *testing.T) {
-	c, err := NewTTSConfigurator(test.NewConfig(t, "output:\n  defaultFormat: mp3\n  defaultVoice: aaa\n  voices:\n   - v1\n   - v2"))
+	c, err := NewTTSConfigurator(test.NewConfig(t, "output:\n  defaultFormat: mp3\n  voices:\n   - default:v1\n   - v1:v1\n   - v2:v2"))
 	assert.Nil(t, err)
 	if assert.NotNil(t, c) {
-		assert.Equal(t, "aaa", c.defaultVoice)
-		assert.True(t, c.availableVoices["aaa"])
-		assert.True(t, c.availableVoices["v1"])
-		assert.True(t, c.availableVoices["v2"])
+		assert.Equal(t, "v1", c.availableVoices["default"])
+		assert.Equal(t, "v1", c.availableVoices["v1"])
+		assert.Equal(t, "v2", c.availableVoices["v2"])
 	}
 }
 
@@ -44,22 +43,22 @@ func TestNewTTSConfigurator_Fail(t *testing.T) {
 	assert.NotNil(t, err)
 	_, err = NewTTSConfigurator(nil)
 	assert.NotNil(t, err)
-	_, err = NewTTSConfigurator(test.NewConfig(t, "output:\n  defaultFormat: \n  metadata:\n   - r=aaa\n  defaultVoice: aaa"))
+	_, err = NewTTSConfigurator(test.NewConfig(t, "output:\n  defaultFormat: \n  metadata:\n   - r=aaa\n  voices:\n   - default:aaa"))
 	assert.NotNil(t, err)
-	_, err = NewTTSConfigurator(test.NewConfig(t, "output:\n  defaultFormat: default\n  metadata:\n   - r=aaa\n  defaultVoice: aaa"))
+	_, err = NewTTSConfigurator(test.NewConfig(t, "output:\n  defaultFormat: default\n  metadata:\n   - r=aaa\n  voices:\n   - default:aaa"))
 	assert.NotNil(t, err)
-	_, err = NewTTSConfigurator(test.NewConfig(t, "output:\n  defaultFormat: none\n  metadata:\n   - r=aaa\n  defaultVoice: aaa"))
+	_, err = NewTTSConfigurator(test.NewConfig(t, "output:\n  defaultFormat: none\n  metadata:\n   - r=aaa\n  voices:\n   - default:aaa"))
 	assert.NotNil(t, err)
-	_, err = NewTTSConfigurator(test.NewConfig(t, "output:\n  defaultFormat: mp4\n  metadata:\n   - r=aaa\n  defaultVoice: aaa"))
+	_, err = NewTTSConfigurator(test.NewConfig(t, "output:\n  defaultFormat: mp4\n  metadata:\n   - r=aaa\n  voices:\n   - default:aaa"))
 	assert.NotNil(t, err)
-	_, err = NewTTSConfigurator(test.NewConfig(t, "output:\n  defaultFormat: mp3\n  metadata:\n   - raaa\n  defaultVoice: aaa"))
+	_, err = NewTTSConfigurator(test.NewConfig(t, "output:\n  defaultFormat: mp3\n  metadata:\n   - raaa\n  voices:\n   - default:aaa"))
 	assert.NotNil(t, err)
 	_, err = NewTTSConfigurator(test.NewConfig(t, "output:\n  defaultFormat: mp3\n  voices:\n   - v1\n   - v2"))
 	assert.NotNil(t, err)
 }
 
 func TestConfigure_Text(t *testing.T) {
-	c, _ := NewTTSConfigurator(test.NewConfig(t, "output:\n  defaultFormat: mp3\n  metadata:\n   - r=a\n  defaultVoice: aaa"))
+	c, _ := NewTTSConfigurator(test.NewConfig(t, "output:\n  defaultFormat: mp3\n  metadata:\n   - r=a\n  voices:\n   - default:aaa"))
 	req := httptest.NewRequest("POST", "/synthesize", strings.NewReader("text"))
 	res, err := c.Configure(req, &api.Input{Text: "olia"})
 	assert.Nil(t, err)
@@ -72,7 +71,7 @@ func TestConfigure_Text(t *testing.T) {
 }
 
 func TestConfigure_Format(t *testing.T) {
-	c, _ := NewTTSConfigurator(test.NewConfig(t, "output:\n  defaultFormat: mp3\n  metadata:\n   - r=a\n  defaultVoice: aaa"))
+	c, _ := NewTTSConfigurator(test.NewConfig(t, "output:\n  defaultFormat: mp3\n  metadata:\n   - r=a\n  voices:\n   - default:aaa"))
 	req := httptest.NewRequest("POST", "/synthesize", strings.NewReader("text"))
 	res, err := c.Configure(req, &api.Input{Text: "olia", OutputFormat: "m4a"})
 	assert.Nil(t, err)
@@ -82,7 +81,7 @@ func TestConfigure_Format(t *testing.T) {
 }
 
 func TestConfigure_FormatHeader(t *testing.T) {
-	c, _ := NewTTSConfigurator(test.NewConfig(t, "output:\n  defaultFormat: mp3\n  metadata:\n   - r=a\n  defaultVoice: aaa"))
+	c, _ := NewTTSConfigurator(test.NewConfig(t, "output:\n  defaultFormat: mp3\n  metadata:\n   - r=a\n  voices:\n   - default:aaa"))
 	req := httptest.NewRequest("POST", "/synthesize", strings.NewReader("text"))
 	req.Header.Add(headerDefaultFormat, "m4a")
 	res, err := c.Configure(req, &api.Input{Text: "olia"})
@@ -93,7 +92,7 @@ func TestConfigure_FormatHeader(t *testing.T) {
 }
 
 func TestConfigure_MaxTextLen(t *testing.T) {
-	c, _ := NewTTSConfigurator(test.NewConfig(t, "output:\n  defaultFormat: mp3\n  metadata:\n   - r=a\n  defaultVoice: aaa"))
+	c, _ := NewTTSConfigurator(test.NewConfig(t, "output:\n  defaultFormat: mp3\n  metadata:\n   - r=a\n  voices:\n   - default:aaa"))
 	req := httptest.NewRequest("POST", "/synthesize", strings.NewReader("text"))
 	req.Header.Add(headerMaxTextLen, "102")
 	res, err := c.Configure(req, &api.Input{Text: "olia"})
@@ -104,7 +103,7 @@ func TestConfigure_MaxTextLen(t *testing.T) {
 }
 
 func TestConfigure_MaxTextLenFail(t *testing.T) {
-	c, _ := NewTTSConfigurator(test.NewConfig(t, "output:\n  defaultFormat: mp3\n  metadata:\n   - r=a\n  defaultVoice: aaa"))
+	c, _ := NewTTSConfigurator(test.NewConfig(t, "output:\n  defaultFormat: mp3\n  metadata:\n   - r=a\n  voices:\n   - default:aaa"))
 	req := httptest.NewRequest("POST", "/synthesize", strings.NewReader("text"))
 	req.Header.Add(headerMaxTextLen, "a102")
 	_, err := c.Configure(req, &api.Input{Text: "olia"})
@@ -112,7 +111,7 @@ func TestConfigure_MaxTextLenFail(t *testing.T) {
 }
 
 func TestConfigure_Tags(t *testing.T) {
-	c, _ := NewTTSConfigurator(test.NewConfig(t, "output:\n  defaultFormat: mp3\n  defaultVoice: aaa"))
+	c, _ := NewTTSConfigurator(test.NewConfig(t, "output:\n  defaultFormat: mp3\n  voices:\n   - default:aaa"))
 	req := httptest.NewRequest("POST", "/synthesize", strings.NewReader("text"))
 	req.Header.Add(headerSaveTags, "olia,hola")
 	res, err := c.Configure(req, &api.Input{Text: "olia"})
@@ -123,7 +122,7 @@ func TestConfigure_Tags(t *testing.T) {
 }
 
 func TestConfigure_NoTags(t *testing.T) {
-	c, _ := NewTTSConfigurator(test.NewConfig(t, "output:\n  defaultFormat: mp3\n  defaultVoice: aaa"))
+	c, _ := NewTTSConfigurator(test.NewConfig(t, "output:\n  defaultFormat: mp3\n  voices:\n   - default:aaa"))
 	req := httptest.NewRequest("POST", "/synthesize", strings.NewReader("text"))
 	res, err := c.Configure(req, &api.Input{Text: "olia"})
 	assert.Nil(t, err)
@@ -133,7 +132,7 @@ func TestConfigure_NoTags(t *testing.T) {
 }
 
 func TestConfigure_FailFormat(t *testing.T) {
-	c, _ := NewTTSConfigurator(test.NewConfig(t, "output:\n  defaultFormat: mp3\n  metadata:\n   - r=a\n  defaultVoice: aaa"))
+	c, _ := NewTTSConfigurator(test.NewConfig(t, "output:\n  defaultFormat: mp3\n  metadata:\n   - r=a\n  voices:\n   - default:aaa"))
 	req := httptest.NewRequest("POST", "/synthesize", strings.NewReader("text"))
 	_, err := c.Configure(req, &api.Input{Text: "olia", OutputFormat: "m4aa"})
 	assert.NotNil(t, err)
@@ -143,7 +142,7 @@ func TestConfigure_FailFormat(t *testing.T) {
 }
 
 func TestConfigure_NoneFormat(t *testing.T) {
-	c, _ := NewTTSConfigurator(test.NewConfig(t, "output:\n  defaultFormat: mp3\n  metadata:\n   - r=a\n  defaultVoice: aaa"))
+	c, _ := NewTTSConfigurator(test.NewConfig(t, "output:\n  defaultFormat: mp3\n  metadata:\n   - r=a\n  voices:\n   - default:aaa"))
 	req := httptest.NewRequest("POST", "/synthesize", strings.NewReader("text"))
 	res, err := c.Configure(req, &api.Input{Text: "olia", OutputFormat: "none"})
 	assert.Nil(t, err)
@@ -151,7 +150,7 @@ func TestConfigure_NoneFormat(t *testing.T) {
 }
 
 func TestConfigure_FailCollect(t *testing.T) {
-	c, _ := NewTTSConfigurator(test.NewConfig(t, "output:\n  defaultFormat: mp3\n\n  defaultVoice: aaa"))
+	c, _ := NewTTSConfigurator(test.NewConfig(t, "output:\n  defaultFormat: mp3\n\n  voices:\n   - default:aaa"))
 	req := httptest.NewRequest("POST", "/synthesize", strings.NewReader("text"))
 	b := true
 	_, err := c.Configure(req, &api.Input{Text: "olia", AllowCollectData: &b})
@@ -162,21 +161,21 @@ func TestConfigure_FailCollect(t *testing.T) {
 }
 
 func TestConfigure_FailTextFormat(t *testing.T) {
-	c, _ := NewTTSConfigurator(test.NewConfig(t, "output:\n  defaultFormat: mp3\n\n  defaultVoice: aaa"))
+	c, _ := NewTTSConfigurator(test.NewConfig(t, "output:\n  defaultFormat: mp3\n\n  voices:\n   - default:aaa"))
 	req := httptest.NewRequest("POST", "/synthesize", strings.NewReader("text"))
 	_, err := c.Configure(req, &api.Input{Text: "olia", OutputFormat: "m4a", OutputTextFormat: "ooo"})
 	assert.NotNil(t, err)
 }
 
 func TestConfigure_FailSpeed(t *testing.T) {
-	c, _ := NewTTSConfigurator(test.NewConfig(t, "output:\n  defaultFormat: mp3\n\n  defaultVoice: mp3"))
+	c, _ := NewTTSConfigurator(test.NewConfig(t, "output:\n  defaultFormat: mp3\n\n  voices:\n   - default:aaa"))
 	req := httptest.NewRequest("POST", "/synthesize", strings.NewReader("text"))
 	_, err := c.Configure(req, &api.Input{Text: "olia", Speed: 0.4})
 	assert.NotNil(t, err)
 }
 
 func TestConfigure_Voice(t *testing.T) {
-	c, _ := NewTTSConfigurator(test.NewConfig(t, "output:\n  defaultFormat: mp3\n  voices:\n   - aaa1\n  defaultVoice: aaa"))
+	c, _ := NewTTSConfigurator(test.NewConfig(t, "output:\n  defaultFormat: mp3\n  voices:\n   - aaa1:aaa1\n   - aaa:aaa\n   - default:aaa"))
 	req := httptest.NewRequest("POST", "/synthesize", strings.NewReader("text"))
 	res, err := c.Configure(req, &api.Input{Text: "olia"})
 	assert.Nil(t, err)
@@ -198,7 +197,7 @@ func TestConfigure_Voice(t *testing.T) {
 }
 
 func TestConfigure_Priority(t *testing.T) {
-	c, _ := NewTTSConfigurator(test.NewConfig(t, "output:\n  defaultFormat: mp3\n  voices:\n   - aaa1\n  defaultVoice: aaa"))
+	c, _ := NewTTSConfigurator(test.NewConfig(t, "output:\n  defaultFormat: mp3\n  voices:\n   - aaa1\n  voices:\n   - default:aaa"))
 	req := httptest.NewRequest("POST", "/synthesize", strings.NewReader("text"))
 	res, err := c.Configure(req, &api.Input{Text: "olia", Priority: 10})
 	assert.Nil(t, err)
@@ -306,24 +305,23 @@ func TestSpeedValue(t *testing.T) {
 func TestVoices(t *testing.T) {
 	tests := []struct {
 		v     string
-		av    []string
+		av    map[string]string
 		e     string
 		isErr bool
 	}{
-		{v: "aaa", av: []string{"aaa", "aaa1"}, e: "aaa", isErr: false},
-		{v: "aaa2", av: []string{"aaa", "aaa1"}, e: "", isErr: true},
-		{v: "aaa2", av: []string{"aaa", "aaa2"}, e: "aaa2", isErr: false},
-		{v: "", av: []string{"aaa", "aaa1"}, e: "aaa", isErr: false},
-		{v: "", av: []string{"aaa"}, e: "aaa", isErr: false},
-		{v: "aaa", av: []string{"aaa"}, e: "aaa", isErr: false},
-		{v: "aaa2", av: []string{"aaa"}, e: "", isErr: true},
+		{v: "aaa", av: map[string]string{"aaa": "aaa", "aaa1": "aaa1"}, e: "aaa", isErr: false},
+		{v: "aaa2", av: map[string]string{"aaa": "aaa", "aaa1": "aaa1"}, e: "", isErr: true},
+		{v: "aaa2", av: map[string]string{"aaa": "aaa", "aaa2": "aaa2"}, e: "aaa2", isErr: false},
+		{v: "", av: map[string]string{"default": "aaa", "aaa2": "aaa2"}, e: "aaa", isErr: false},
+		{v: "", av: map[string]string{"default": "aaa", "aaa": "aaa2"}, e: "aaa2", isErr: false},
+		{v: "in", av: map[string]string{"in": "aaa.latest", "aaa.latest": "aaa2", "aaa2": "aaa"}, e: "aaa", isErr: false},
+		{v: "a", av: map[string]string{"aa": "aa", "aaa2": "a"}, e: "", isErr: true},
+		{v: "rec", av: map[string]string{"rec": "rec1", "rec1": "rec2", "rec2": "rec"}, e: "rec1", isErr: false},
 	}
 
 	for i, tt := range tests {
 		t.Run(tt.v, func(t *testing.T) {
-			c := TTSConfigutaror{}
-			c.defaultVoice, c.availableVoices, _ = initVoices(tt.av[0], tt.av[1:])
-			v, err := c.getVoice(tt.v)
+			v, err := getVoice(tt.av, tt.v)
 			assert.Equal(t, tt.e, v, "fail %d", i)
 			assert.Equal(t, tt.isErr, err != nil, "fail %d  - %v", i, err)
 		})
