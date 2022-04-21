@@ -175,7 +175,7 @@ func TestConfigure_FailSpeed(t *testing.T) {
 }
 
 func TestConfigure_Voice(t *testing.T) {
-	c, _ := NewTTSConfigurator(test.NewConfig(t, "output:\n  defaultFormat: mp3\n  voices:\n   - aaa1:aaa1\n   - aaa:aaa\n   - default:aaa"))
+	c, _ := NewTTSConfigurator(test.NewConfig(t, "output:\n  defaultFormat: mp3\n  voices:\n   - aaa1:aaa2\n   - aaa:aaa\n   - default:aaa"))
 	req := httptest.NewRequest("POST", "/synthesize", strings.NewReader("text"))
 	res, err := c.Configure(req, &api.Input{Text: "olia"})
 	assert.Nil(t, err)
@@ -190,9 +190,14 @@ func TestConfigure_Voice(t *testing.T) {
 	res, err = c.Configure(req, &api.Input{Text: "olia", Voice: "aaa1"})
 	assert.Nil(t, err)
 	if assert.NotNil(t, res) {
-		assert.Equal(t, "aaa1", res.Voice)
+		assert.Equal(t, "aaa2", res.Voice)
 	}
-	_, err = c.Configure(req, &api.Input{Text: "olia", Voice: "aaa2"})
+	res, err = c.Configure(req, &api.Input{Text: "olia", Voice: "aaa2"})
+	assert.Nil(t, err)
+	if assert.NotNil(t, res) {
+		assert.Equal(t, "aaa2", res.Voice)
+	}
+	_, err = c.Configure(req, &api.Input{Text: "olia", Voice: "aaa3"})
 	assert.NotNil(t, err)
 }
 

@@ -78,11 +78,11 @@ func getVoice(voices map[string]string, voiceKey string) (string, error) {
 	//try go deeper
 	// allow mapping default:astra.latest, astra.latest:astra.v02
 	for i := 0; i < 3; i++ {
-       resN, ok := voices[res]
-	   if !ok {
+		resN, ok := voices[res]
+		if !ok {
 			break
-	   }
-	   res = resN
+		}
+		res = resN
 	}
 	return res, nil
 }
@@ -184,14 +184,20 @@ func initVoices(all []string) (map[string]string, error) {
 	for _, s := range all {
 		s = strings.TrimSpace(s)
 		strs := strings.Split(s, ":")
-		if (len(strs) != 2) {
+		if len(strs) != 2 {
 			return nil, errors.Errorf("wrong voice value '%s'", s)
 		}
-		strs[0], strs[1] = strings.TrimSpace(strs[0]), strings.TrimSpace(strs[1]) 
-		if (strs[0] == "" || strs[1] == "") {
-			return nil, errors.Errorf("wrong voice value '%s'", s)	
+		strs[0], strs[1] = strings.TrimSpace(strs[0]), strings.TrimSpace(strs[1])
+		if strs[0] == "" || strs[1] == "" {
+			return nil, errors.Errorf("wrong voice value '%s'", s)
 		}
 		res[strs[0]] = strs[1]
+	}
+	// add values as keys if not exists
+	for _, v := range res {
+		if _, ok := res[v]; !ok {
+			res[v] = v
+		}
 	}
 	return res, nil
 }
