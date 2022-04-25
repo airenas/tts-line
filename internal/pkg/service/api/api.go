@@ -19,3 +19,8 @@ type Result struct {
 	Text          string `json:"text,omitempty"`
 	RequestID     string `json:"requestID,omitempty"`
 }
+
+//InfoResult is a responce for /synthesizeInfo request
+type InfoResult struct {
+	Count int64 `json:"count,omitempty"`
+}

@@ -119,6 +119,31 @@ func (ss *TextSaver) LoadText(requestID string, reqType utils.RequestTypeEnum) (
 	return res.Text, nil
 }
 
+// GetCount by ID and type
+func (ss *TextSaver) GetCount(requestID string, reqType utils.RequestTypeEnum) (int64, error) {
+	ctx, cancel := mongoContext()
+	defer cancel()
+
+	session, err := ss.SessionProvider.NewSession()
+	if err != nil {
+		return 0, err
+	}
+	defer session.EndSession(context.Background())
+	c := session.Client().Database(textTable).Collection(textTable)
+	res, err := c.CountDocuments(ctx, bson.M{
+		"$and": []bson.M{
+			{"id": sanitize(requestID)},
+			{"type": int(reqType)},
+		}})
+	if err != nil {
+		if err == mongo.ErrNoDocuments {
+			return 0, utils.ErrNoRecord
+		}
+		return 0, errors.Wrap(err, "can't get count")
+	}
+	return res, nil
+}
+
 func toRecord(req, text string, reqType utils.RequestTypeEnum, tags []string) *TextRecord {
 	res := &TextRecord{}
 	res.ID = req

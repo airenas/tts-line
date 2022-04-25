@@ -31,6 +31,11 @@ type (
 	Synthesizer interface {
 		Work(*api.TTSRequestConfig) (*api.Result, error)
 	}
+	//InfoGetter main sythesis processor
+	InfoGetter interface {
+		Provide(ID string) (*api.InfoResult, error)
+	}
+
 	//PrData is method process data
 	PrData struct {
 		Processor    Synthesizer
@@ -42,12 +47,18 @@ type (
 		Port           int
 		SyntData       PrData
 		SyntCustomData PrData
+		InfoGetterData InfoGetter
 	}
 )
 
 //StartWebServer starts the HTTP service and listens for the admin requests
 func StartWebServer(data *Data) error {
 	goapp.Log.Infof("Starting HTTP TTS Line service at %d", data.Port)
+
+	if err := validate(data); err != nil {
+		return err
+	}
+
 	portStr := strconv.Itoa(data.Port)
 
 	e := initRoutes(data)
@@ -65,6 +76,19 @@ func StartWebServer(data *Data) error {
 	return gracehttp.Serve(e.Server)
 }
 
+func validate(data *Data) error {
+	if data.InfoGetterData == nil {
+		return errors.New("no infoGetter")
+	}
+	if data.SyntData.Processor == nil {
+		return errors.New("no synt data")
+	}
+	if data.SyntCustomData.Processor == nil {
+		return errors.New("no custom synt data")
+	}
+	return nil
+}
+
 var promMdlw *prometheus.Prometheus
 
 func init() {
@@ -78,6 +102,7 @@ func initRoutes(data *Data) *echo.Echo {
 
 	e.POST("/synthesize", synthesizeText(&data.SyntData))
 	e.POST("/synthesizeCustom", synthesizeCustom(&data.SyntCustomData))
+	e.GET("/request/:requestID", synthesizeInfo(data.InfoGetterData))
 	e.GET("/live", live(data))
 
 	goapp.Log.Info("Routes:")
@@ -161,6 +186,29 @@ func synthesizeCustom(data *PrData) func(echo.Context) error {
 	}
 }
 
+func synthesizeInfo(data InfoGetter) func(echo.Context) error {
+	return func(c echo.Context) error {
+		defer goapp.Estimate("Service request info method")()
+
+		rID := c.Param("requestID")
+		if rID == "" {
+			goapp.Log.Warn("No requestID")
+			return echo.NewHTTPError(http.StatusBadRequest, "No requestID")
+		}
+
+		resp, err := data.Provide(rID)
+		if err != nil {
+			if d, msg := badReqError(err); d {
+				goapp.Log.Warn("can't process. ", err)
+				return echo.NewHTTPError(http.StatusBadRequest, msg)
+			}
+			goapp.Log.Error("can't process. ", err)
+			return echo.NewHTTPError(http.StatusInternalServerError)
+		}
+		return writeResponse(c, resp)
+	}
+}
+
 func takeInput(c echo.Context) (*api.Input, error) {
 	ctype := c.Request().Header.Get(echo.HeaderContentType)
 	if !strings.HasPrefix(ctype, echo.MIMEApplicationJSON) {
@@ -173,7 +221,7 @@ func takeInput(c echo.Context) (*api.Input, error) {
 	return inp, nil
 }
 
-func writeResponse(c echo.Context, resp *api.Result) error {
+func writeResponse(c echo.Context, resp interface{}) error {
 	c.Response().Header().Set(echo.HeaderContentType, echo.MIMEApplicationJSONCharsetUTF8)
 	c.Response().WriteHeader(http.StatusOK)
 	enc := json.NewEncoder(c.Response())

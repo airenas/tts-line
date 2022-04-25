@@ -8,6 +8,7 @@ import (
 	"github.com/airenas/tts-line/internal/pkg/mongodb"
 	"github.com/airenas/tts-line/internal/pkg/processor"
 	"github.com/airenas/tts-line/internal/pkg/service"
+	sapi "github.com/airenas/tts-line/internal/pkg/service/api"
 	"github.com/airenas/tts-line/internal/pkg/synthesizer"
 	"github.com/airenas/tts-line/internal/pkg/utils"
 	"github.com/labstack/gommon/color"
@@ -67,7 +68,10 @@ func main() {
 		goapp.Log.Fatal(errors.Wrap(err, "can't init custom processors"))
 	}
 	data.SyntCustomData.Processor = syntC
-
+	data.InfoGetterData, err = prepareInfoGetter(sp)
+	if err != nil {
+		goapp.Log.Fatal(errors.Wrap(err, "can't init info getter"))
+	}
 	printBanner()
 
 	go startPerfEndpoint()
@@ -90,7 +94,7 @@ func addProcessors(synt *synthesizer.MainWorker, sp *mongodb.SessionProvider) er
 		return errors.Wrap(err, "can't init validator")
 	}
 	synt.Add(pr)
-	
+
 	ts, err := mongodb.NewTextSaver(sp)
 	if err != nil {
 		return errors.Wrap(err, "can't init text to DB saver")
@@ -106,7 +110,7 @@ func addProcessors(synt *synthesizer.MainWorker, sp *mongodb.SessionProvider) er
 		return errors.Wrap(err, "can't init normalize/clean processor")
 	}
 	synt.Add(pr)
-	
+
 	synt.Add(processor.NewURLReplacer())
 	//db saver
 	sv, err = processor.NewSaver(ts, utils.RequestCleaned)
@@ -185,7 +189,6 @@ func addCustomProcessors(synt *synthesizer.MainWorker, sp *mongodb.SessionProvid
 		return errors.Wrap(err, "can't init text from DB loader")
 	}
 	synt.Add(pr)
-
 
 	pr, err = processor.NewComparator(cfg.GetString("comparator.url"))
 	if err != nil {
@@ -282,10 +285,29 @@ func addPartProcessors(partRunner *synthesizer.PartRunner, cfg *viper.Viper) err
 	return nil
 }
 
+type infoGetter struct {
+	ts *mongodb.TextSaver
+}
+
+func (ig *infoGetter) Provide(rID string) (*sapi.InfoResult, error) {
+	res := sapi.InfoResult{}
+	var err error
+	res.Count, err = ig.ts.GetCount(rID, utils.RequestUser)
+	return &res, err
+}
+
+func prepareInfoGetter(sp *mongodb.SessionProvider) (*infoGetter, error) {
+	ts, err := mongodb.NewTextSaver(sp)
+	if err != nil {
+		return nil, errors.Wrap(err, "can't init text to DB saver")
+	}
+	return &infoGetter{ts: ts}, nil
+}
+
 func startPerfEndpoint() {
 	port := goapp.Config.GetInt("debug.port")
 	if port > 0 {
-		goapp.Log.Infof("Starting Debug http endpoit at [::]:%d", port)
+		goapp.Log.Infof("Starting Debug http endpoint at [::]:%d", port)
 		portStr := strconv.Itoa(port)
 		err := http.ListenAndServe(":"+portStr, nil)
 		if err != nil {

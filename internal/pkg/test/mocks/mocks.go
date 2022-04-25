@@ -8,6 +8,8 @@ import (
 
 //go:generate pegomock generate --package=mocks --output=synthesizer.go -m github.com/airenas/tts-line/internal/pkg/service Synthesizer
 
+//go:generate pegomock generate --package=mocks --output=infoGetter.go -m github.com/airenas/tts-line/internal/pkg/service InfoGetter
+
 //go:generate pegomock generate --package=mocks --output=configurator.go -m github.com/airenas/tts-line/internal/pkg/service Configurator
 
 //go:generate pegomock generate --package=mocks --output=httpInvoker.go -m github.com/airenas/tts-line/internal/pkg/processor HTTPInvoker

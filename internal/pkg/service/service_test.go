@@ -9,20 +9,20 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/petergtz/pegomock"
-	"github.com/pkg/errors"
-	"github.com/stretchr/testify/assert"
-
 	"github.com/airenas/tts-line/internal/pkg/service/api"
 	"github.com/airenas/tts-line/internal/pkg/test/mocks"
 	"github.com/airenas/tts-line/internal/pkg/test/mocks/matchers"
 	"github.com/airenas/tts-line/internal/pkg/utils"
 	"github.com/labstack/echo/v4"
+	"github.com/petergtz/pegomock"
+	"github.com/pkg/errors"
+	"github.com/stretchr/testify/assert"
 )
 
 var (
 	synthesizerMock *mocks.MockSynthesizer
 	cnfMock         *mocks.MockConfigurator
+	igMock          *mocks.MockInfoGetter
 )
 
 var (
@@ -32,9 +32,11 @@ var (
 )
 
 func initTest(t *testing.T) {
+	t.Helper()
 	mocks.AttachMockToTest(t)
 	synthesizerMock = mocks.NewMockSynthesizer()
 	cnfMock = mocks.NewMockConfigurator()
+	igMock = mocks.NewMockInfoGetter()
 	tData = newTestData()
 	tEcho = initRoutes(tData)
 	tResp = httptest.NewRecorder()
@@ -245,6 +247,34 @@ func TestBadReqError(t *testing.T) {
 	}
 }
 
+func TestInfo_Returns(t *testing.T) {
+	initTest(t)
+	req := httptest.NewRequest(http.MethodGet, "/request/olia1", nil)
+	pegomock.When(igMock.Provide(pegomock.AnyString())).
+		ThenReturn(&api.InfoResult{Count: 123}, nil)
+	resp := testCode(t, req, 200)
+	bytes, _ := ioutil.ReadAll(resp.Body)
+	assert.Contains(t, string(bytes), `"count":123`)
+	txt := igMock.VerifyWasCalled(pegomock.Once()).Provide(pegomock.AnyString()).GetCapturedArguments()
+	assert.Equal(t, "olia1", txt)
+}
+
+func TestInfo_Fail(t *testing.T) {
+	initTest(t)
+	req := httptest.NewRequest(http.MethodGet, "/request/olia1", nil)
+	pegomock.When(igMock.Provide(pegomock.AnyString())).
+		ThenReturn(nil, errors.New("olia"))
+	testCode(t, req, 500)
+}
+
+func TestInfo_Fail400(t *testing.T) {
+	initTest(t)
+	req := httptest.NewRequest(http.MethodGet, "/request/olia1", nil)
+	pegomock.When(igMock.Provide(pegomock.AnyString())).
+		ThenReturn(nil, utils.ErrNoRecord)
+	testCode(t, req, 400)
+}
+
 func toReader(inData api.Input) io.Reader {
 	bytes, _ := json.Marshal(inData)
 	return strings.NewReader(string(bytes))
@@ -252,12 +282,42 @@ func toReader(inData api.Input) io.Reader {
 
 func newTestData() *Data {
 	res := &Data{SyntData: PrData{Processor: synthesizerMock, Configurator: cnfMock},
-		SyntCustomData: PrData{Processor: synthesizerMock, Configurator: cnfMock}}
+		SyntCustomData: PrData{Processor: synthesizerMock, Configurator: cnfMock},
+		InfoGetterData: igMock,
+	}
 	return res
 }
 
 func testCode(t *testing.T, req *http.Request, code int) *httptest.ResponseRecorder {
+	t.Helper()
 	tEcho.ServeHTTP(tResp, req)
 	assert.Equal(t, code, tResp.Code)
 	return tResp
+}
+
+func Test_validate(t *testing.T) {
+	initTest(t)
+	type args struct {
+		data *Data
+	}
+	tests := []struct {
+		name    string
+		args    args
+		wantErr bool
+	}{
+		{name: "OK", args: args{data: newTestData()}, wantErr: false},
+		{name: "Fail", args: args{data: &Data{SyntData: PrData{Processor: synthesizerMock},
+			SyntCustomData: PrData{Processor: synthesizerMock}}}, wantErr: true},
+		{name: "Fail", args: args{data: &Data{SyntCustomData: PrData{Processor: synthesizerMock},
+			InfoGetterData: igMock}}, wantErr: true},
+		{name: "Fail", args: args{data: &Data{SyntData: PrData{Processor: synthesizerMock},
+			InfoGetterData: igMock}}, wantErr: true},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if err := validate(tt.args.data); (err != nil) != tt.wantErr {
+				t.Errorf("validate() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
 }
