@@ -22,5 +22,5 @@ type Result struct {
 
 //InfoResult is a responce for /synthesizeInfo request
 type InfoResult struct {
-	Count int64 `json:"count,omitempty"`
+	Count int64 `json:"count"`
 }
