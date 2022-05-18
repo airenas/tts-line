@@ -44,6 +44,7 @@ func init() {
 	pDuration = durationStrs["x-strong"]
 }
 
+// Parse parses xml into synthesis structure
 func Parse(r io.Reader, def *Text) ([]Part, error) {
 	wrk := &wrkData{res: make([]Part, 0), cValues: []*Text{def}}
 	d := xml.NewDecoder(r)

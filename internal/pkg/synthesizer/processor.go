@@ -87,12 +87,12 @@ func (mw *MainWorker) makeSSMLParts(input *api.TTSRequestConfig) ([]*TTSData, er
 	return res, nil
 }
 
-//Add adds a processor to the end
+// Add adds a processor to the end
 func (mw *MainWorker) Add(pr Processor) {
 	mw.processors = append(mw.processors, pr)
 }
 
-//Add adds a SSML processor to the end
+// AddSSML adds a SSML processor to the end
 func (mw *MainWorker) AddSSML(pr Processor) {
 	mw.ssmlProcessors = append(mw.ssmlProcessors, pr)
 }

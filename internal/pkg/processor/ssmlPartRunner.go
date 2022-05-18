@@ -4,15 +4,17 @@ import (
 	"github.com/airenas/tts-line/internal/pkg/synthesizer"
 )
 
+// SSMLPartRunner runs all processors for Text part
 type SSMLPartRunner struct {
 	processors []synthesizer.Processor
 }
 
-//NewJoinAudio joins results into one audio
+// NewSSMLPartRunner creates runner for SSML parts representing Text
 func NewSSMLPartRunner(processors []synthesizer.Processor) *SSMLPartRunner {
 	return &SSMLPartRunner{processors: processors}
 }
 
+// Process main method
 func (p *SSMLPartRunner) Process(data *synthesizer.TTSData) error {
 	for _, part := range data.SSMLParts {
 		switch part.Cfg.Type {
