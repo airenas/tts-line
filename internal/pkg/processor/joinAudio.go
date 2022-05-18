@@ -100,7 +100,8 @@ func joinSSML(data *synthesizer.TTSData) (string, float64, error) {
 	var bufHeader []byte
 	size := uint32(0)
 	pause := time.Duration(0)
-	bitsRate := uint32(0)
+	sampleRate := uint32(0)
+	bitsPerSample := uint16(0)
 
 	for _, dp := range data.SSMLParts {
 		switch dp.Cfg.Type {
@@ -117,11 +118,12 @@ func joinSSML(data *synthesizer.TTSData) (string, float64, error) {
 				}
 				if bufHeader == nil {
 					bufHeader = wav.TakeHeader(decoded)
-					bitsRate = wav.GetBitsRateCalc(bufHeader)
+					sampleRate = wav.GetSampleRate(bufHeader)
+					bitsPerSample = wav.GetBitsPerSample(bufHeader)
 				}
 
 				if pause > 0 {
-					s, err := writePause(buf, bitsRate, pause)
+					s, err := writePause(&buf, sampleRate, bitsPerSample, pause)
 					if err != nil {
 						return "", 0, err
 					}
@@ -136,12 +138,12 @@ func joinSSML(data *synthesizer.TTSData) (string, float64, error) {
 			}
 		}
 	}
-	if bitsRate == 0 {
+	if sampleRate == 0 || bitsPerSample == 0 {
 		return "", 0, errors.Errorf("no audio")
 	}
 
 	if pause > 0 {
-		s, err := writePause(buf, bitsRate, pause)
+		s, err := writePause(&buf, sampleRate, bitsPerSample, pause)
 		if err != nil {
 			return "", 0, err
 		}
@@ -157,10 +159,14 @@ func joinSSML(data *synthesizer.TTSData) (string, float64, error) {
 	if err != nil {
 		return "", 0, err
 	}
+	bitsRate := wav.GetBitsRateCalc(bufHeader)
+	if bitsRate == 0 {
+		return "", 0, errors.New("can't extract bits rate from header")
+	}
 	return bufRes.String(), float64(size) / float64(bitsRate), nil
 }
 
-func writePause(buf bytes.Buffer, bitsRate uint32, pause time.Duration) (uint32, error) {
+func writePause(buf *bytes.Buffer, sampleRate uint32, bitsPerSample uint16, pause time.Duration) (uint32, error) {
 	if pause > time.Second*10 {
 		goapp.Log.Warnf("Too long pause %v", pause)
 		pause = time.Second * 10
@@ -168,7 +174,7 @@ func writePause(buf bytes.Buffer, bitsRate uint32, pause time.Duration) (uint32,
 	if pause < 0 {
 		pause = 0
 	}
-	c := uint32(pause.Milliseconds() * int64(bitsRate) / 1000)
+	c := uint32(pause.Milliseconds()*int64(sampleRate)/1000) * uint32(bitsPerSample/8)
 	for i := uint32(0); i < c; i++ {
 		if err := buf.WriteByte(0); err != nil {
 			return 0, err
