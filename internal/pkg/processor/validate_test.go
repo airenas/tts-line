@@ -45,7 +45,7 @@ func TestInvokeValidator_Fail(t *testing.T) {
 	pr, _ := NewValidator(100)
 	assert.NotNil(t, pr)
 	d := synthesizer.TTSData{}
-	d.Input = &api.TTSRequestConfig{Text: strings.Repeat("olia ", 100)}
+	d.Input = &api.TTSRequestConfig{Text: strings.Repeat("olia-", 100)}
 	err := pr.Process(&d)
 	errTL, ok := err.(*utils.ErrTextTooLong)
 	if assert.True(t, ok) {

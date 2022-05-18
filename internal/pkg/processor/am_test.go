@@ -66,8 +66,8 @@ func TestInvokeAcousticModel(t *testing.T) {
 	pr.(*amodel).httpWrap = httpJSONMock
 	d := newTestTTSDataPart()
 	d.Spectogram = "spectogram"
-	d.Cfg.Input.Speed = 0.5
-	d.Cfg.Input.Voice = "aa"
+	d.Cfg.Speed = 0.5
+	d.Cfg.Voice = "aa"
 	d.Cfg.Input.Priority = 10
 	pegomock.When(httpJSONMock.InvokeJSONU(pegomock.AnyString(), pegomock.AnyInterface(), pegomock.AnyInterface())).Then(
 		func(params []pegomock.Param) pegomock.ReturnValues {
