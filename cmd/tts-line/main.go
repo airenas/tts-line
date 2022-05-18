@@ -34,9 +34,12 @@ func main() {
 	}
 	defer sp.Close()
 
-	err = addProcessors(synt, sp)
-	if err != nil {
+	if err = addProcessors(synt, sp); err != nil {
 		goapp.Log.Fatal(errors.Wrap(err, "can't init processors"))
+	}
+
+	if err = addSSMLProcessors(synt, sp); err != nil {
+		goapp.Log.Fatal(errors.Wrap(err, "can't init SSML processors"))
 	}
 
 	//cache
@@ -162,6 +165,80 @@ func addProcessors(synt *synthesizer.MainWorker, sp *mongodb.SessionProvider) er
 			return errors.Wrap(err, "can't init filer")
 		}
 		synt.Add(pr)
+	}
+	return addPartProcessors(partRunner, goapp.Config)
+}
+
+func addSSMLProcessors(synt *synthesizer.MainWorker, sp *mongodb.SessionProvider) error {
+	pr, err := processor.NewAddMetrics(processor.NewMetricsCharsFunc("/synthesize"))
+	if err != nil {
+		return errors.Wrap(err, "can't init metrics processor")
+	}
+	synt.AddSSML(pr)
+	//validator
+	pr, err = processor.NewSSMLValidator(goapp.Config.GetInt("validator.maxChars"))
+	if err != nil {
+		return errors.Wrap(err, "can't init validator")
+	}
+	synt.AddSSML(pr)
+
+	ts, err := mongodb.NewTextSaver(sp)
+	if err != nil {
+		return errors.Wrap(err, "can't init text to DB saver")
+	}
+	sv, err := processor.NewSaver(ts, utils.RequestOriginalSSML)
+	if err != nil {
+		return errors.Wrap(err, "can't init text to DB saver")
+	}
+	synt.AddSSML(sv)
+
+	var processors []synthesizer.Processor
+
+	// cleaner
+	pr, err = processor.NewCleaner(goapp.Config.GetString("clean.url"))
+	if err != nil {
+		return errors.Wrap(err, "can't init normalize/clean processor")
+	}
+	processors = append(processors, pr)
+	processors = append(processors, processor.NewURLReplacer())
+	//number replacer
+	pr, err = processor.NewNumberReplace(goapp.Config.GetString("numberReplace.url"))
+	if err != nil {
+		return errors.Wrap(err, "can't init number replace")
+	}
+	processors = append(processors, pr)
+	pr, err = processor.NewTagger(goapp.Config.GetString("tagger.url"))
+	if err != nil {
+		return errors.Wrap(err, "can't init tagger")
+	}
+	processors = append(processors, pr)
+	processors = append(processors, processor.NewSplitter(goapp.Config.GetInt("splitter.maxChars")))
+
+	partRunner := synthesizer.NewPartRunner(goapp.Config.GetInt("partRunner.workers"))
+	processors = append(processors, partRunner)
+
+	synt.AddSSML(processor.NewSSMLPartRunner(processors))
+
+	synt.AddSSML(processor.NewJoinSSMLAudio())
+
+	pr, err = processor.NewConverter(goapp.Config.GetString("audioConvert.url"))
+	if err != nil {
+		return errors.Wrap(err, "can't init mp3 converter")
+	}
+	synt.AddSSML(pr)
+
+	pr, err = processor.NewAddMetrics(processor.NewMetricsWaveLenFunc("/synthesize"))
+	if err != nil {
+		return errors.Wrap(err, "can't init metrics processor")
+	}
+	synt.AddSSML(pr)
+
+	if goapp.Config.GetString("filer.dir") != "" {
+		pr, err = processor.NewFiler(goapp.Config.GetString("filer.dir"))
+		if err != nil {
+			return errors.Wrap(err, "can't init filer")
+		}
+		synt.AddSSML(pr)
 	}
 	return addPartProcessors(partRunner, goapp.Config)
 }

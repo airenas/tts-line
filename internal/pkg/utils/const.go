@@ -14,11 +14,14 @@ const (
 	RequestCleaned
 	//RequestUser value - data normalized by user
 	RequestUser
+	//RequestOriginalSSML value
+	RequestOriginalSSML
+	
 )
 
 func (e RequestTypeEnum) String() string {
-	if e < RequestOriginal || e > RequestUser {
+	if e < RequestOriginal || e > RequestOriginalSSML {
 		return "RequestType:" + strconv.Itoa(int(e))
 	}
-	return [...]string{"", "original", "normalized", "cleaned", "user"}[e]
+	return [...]string{"", "original", "normalized", "cleaned", "user", "originalSSML"}[e]
 }

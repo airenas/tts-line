@@ -26,11 +26,15 @@ func NewValidator(defaultMaxLen int) (synthesizer.Processor, error) {
 }
 
 func (p *validator) Process(data *synthesizer.TTSData) error {
-	if p.skip(data) {
+	if skip(data) {
 		goapp.Log.Info("Skip validator")
 		return nil
 	}
-	return validate(data.Input.Text, getMaxLen(p.defaultMax, data.Input.AllowedMaxLen))
+	return validate(getLen(data.Input.Text), getMaxLen(p.defaultMax, data.Input.AllowedMaxLen))
+}
+
+func getLen(s string) int {
+	return utf8.RuneCountInString(strings.TrimSpace(s))
 }
 
 func getMaxLen(def, req int) int {
@@ -40,16 +44,47 @@ func getMaxLen(def, req int) int {
 	return def
 }
 
-func validate(text string, maxLen int) error {
-	if strings.TrimSpace(text) == "" {
+func validate(l, maxLen int) error {
+	if l == 0 {
 		return utils.ErrNoInput
 	}
-	if l := utf8.RuneCountInString(text); l > maxLen {
+	if l > maxLen {
 		return utils.NewErrTextTooLong(l, maxLen)
 	}
 	return nil
 }
 
-func (p *validator) skip(data *synthesizer.TTSData) bool {
+func skip(data *synthesizer.TTSData) bool {
 	return data.Cfg.JustAM
 }
+
+type ssmlValidator struct {
+	defaultMax int
+}
+
+//NewValidator creates new processor
+func NewSSMLValidator(defaultMaxLen int) (synthesizer.Processor, error) {
+	res := &ssmlValidator{}
+	if defaultMaxLen < 100 {
+		return nil, errors.Errorf("wrong max input len %d. (>= 100)", defaultMaxLen)
+	}
+	res.defaultMax = defaultMaxLen
+	return res, nil
+}
+
+func (p *ssmlValidator) Process(data *synthesizer.TTSData) error {
+	if skip(data) {
+		goapp.Log.Info("Skip validator")
+		return nil
+	}
+	return validate(getSSMLTextLen(data), getMaxLen(p.defaultMax, data.Input.AllowedMaxLen))
+}
+
+func getSSMLTextLen(data *synthesizer.TTSData) int {
+	res := 0
+	for _, p := range data.SSMLParts {
+		res += getLen(p.OriginalText)
+	} 
+	return res
+}
+

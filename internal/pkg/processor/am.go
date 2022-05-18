@@ -98,8 +98,8 @@ type amOutput struct {
 
 func (p *amodel) mapAMInput(data *synthesizer.TTSDataPart) *amInput {
 	res := &amInput{}
-	res.Speed = data.Cfg.Input.Speed
-	res.Voice = data.Cfg.Input.Voice
+	res.Speed = data.Cfg.Speed
+	res.Voice = data.Cfg.Voice
 	res.Priority = data.Cfg.Input.Priority
 	if data.Cfg.JustAM {
 		res.Text = data.Text

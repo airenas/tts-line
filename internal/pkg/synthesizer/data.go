@@ -1,6 +1,8 @@
 package synthesizer
 
 import (
+	"time"
+
 	"github.com/airenas/tts-line/internal/pkg/service/api"
 )
 
@@ -21,12 +23,20 @@ type TTSData struct {
 	Audio           string
 	AudioMP3        string
 	AudioLenSeconds float64
+
+	SSMLParts []*TTSData
 }
 
 //TTSConfig some TTS configuration
 type TTSConfig struct {
 	JustAM bool
 	Input  *api.TTSRequestConfig
+
+	Type  SSMLTypeEnum
+	Voice string
+	Speed float32
+
+	PauseDuration time.Duration
 }
 
 //TTSDataPart partial tts data
@@ -90,6 +100,17 @@ type AccentVariant struct {
 	Syll     string  `json:"syll"`
 	Usage    float64 `json:"usage"`
 }
+
+// SSMLTypeEnum indicates part type: text, pause
+type SSMLTypeEnum int
+
+const (
+	//SSMLNone - not ssml part
+	SSMLNone SSMLTypeEnum = iota
+	SSMLMain
+	SSMLText
+	SSMLPause
+)
 
 //IsWord returns true if object indicates word
 func (tw TaggedWord) IsWord() bool {

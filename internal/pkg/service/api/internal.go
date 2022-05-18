@@ -1,6 +1,10 @@
 package api
 
-import "strconv"
+import (
+	"strconv"
+
+	"github.com/airenas/tts-line/pkg/ssml"
+)
 
 //TextFormatEnum represent possible output text types
 type TextFormatEnum int
@@ -42,7 +46,7 @@ func (e AudioFormatEnum) String() string {
 	return [...]string{"", "default", "mp3", "m4a"}[e]
 }
 
-//TTSRequestConfig config for request`
+//TTSRequestConfig config for request
 type TTSRequestConfig struct {
 	Text             string
 	RequestID        string
@@ -55,4 +59,5 @@ type TTSRequestConfig struct {
 	Voice            string
 	Priority         int
 	AllowedMaxLen    int
+	SSMLParts        []ssml.Part
 }
