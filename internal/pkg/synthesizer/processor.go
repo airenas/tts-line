@@ -9,6 +9,7 @@ import (
 
 	"github.com/airenas/tts-line/internal/pkg/accent"
 	"github.com/airenas/tts-line/internal/pkg/service/api"
+	"github.com/airenas/tts-line/pkg/ssml"
 )
 
 //Processor interface
@@ -19,6 +20,7 @@ type Processor interface {
 //MainWorker does synthesis work
 type MainWorker struct {
 	processors      []Processor
+	ssmlProcessors  []Processor
 	AllowCustomCode bool
 }
 
@@ -28,6 +30,9 @@ func (mw *MainWorker) Work(input *api.TTSRequestConfig) (*api.Result, error) {
 	data.OriginalText = input.Text
 	data.Input = input
 	data.Cfg.Input = input
+	data.Cfg.Type = SSMLNone
+	data.Cfg.Speed = input.Speed
+	data.Cfg.Voice = input.Voice
 	data.RequestID = input.RequestID
 	if input.RequestID == "" {
 		data.RequestID = uuid.NewString()
@@ -35,11 +40,51 @@ func (mw *MainWorker) Work(input *api.TTSRequestConfig) (*api.Result, error) {
 	if mw.AllowCustomCode {
 		tryCustomCode(data)
 	}
-	err := mw.processAll(data)
-	if err != nil {
-		return nil, err
+	if len(input.SSMLParts) > 0 {
+		data.Cfg.Type = SSMLMain
+		var err error
+		data.SSMLParts, err = mw.makeSSMLParts(input)
+		if err != nil {
+			return nil, err
+		}
+		if err := mw.processAll(mw.ssmlProcessors, data); err != nil {
+			return nil, err
+		}
+	} else {
+		if err := mw.processAll(mw.processors, data); err != nil {
+			return nil, err
+		}
 	}
 	return mapResult(data)
+}
+
+func (mw *MainWorker) makeSSMLParts(input *api.TTSRequestConfig) ([]*TTSData, error) {
+	var res []*TTSData
+	for _, p := range input.SSMLParts {
+		switch pc := p.(type) {
+		case *ssml.Text:
+			data := &TTSData{}
+			data.OriginalText = pc.Text
+			data.Input = input
+			data.Cfg.Input = input
+			data.Cfg.Speed = pc.Speed
+			data.Cfg.Voice = pc.Voice
+			data.Cfg.Type = SSMLText
+			data.RequestID = input.RequestID
+			if input.RequestID == "" {
+				data.RequestID = uuid.NewString()
+			}
+			res = append(res, data)
+		case *ssml.Pause:
+			data := &TTSData{}
+			data.Cfg.PauseDuration = pc.Duration
+			data.Cfg.Type = SSMLPause
+			res = append(res, data)
+		default:
+			return nil, errors.Errorf("unknown SSML part type %T", pc)
+		}
+	}
+	return res, nil
 }
 
 //Add adds a processor to the end
@@ -47,8 +92,13 @@ func (mw *MainWorker) Add(pr Processor) {
 	mw.processors = append(mw.processors, pr)
 }
 
-func (mw *MainWorker) processAll(data *TTSData) error {
-	for _, pr := range mw.processors {
+//Add adds a SSML processor to the end
+func (mw *MainWorker) AddSSML(pr Processor) {
+	mw.ssmlProcessors = append(mw.ssmlProcessors, pr)
+}
+
+func (mw *MainWorker) processAll(processors []Processor, data *TTSData) error {
+	for _, pr := range processors {
 		err := pr.Process(data)
 		if err != nil {
 			return err
@@ -74,7 +124,7 @@ func mapResult(data *TTSData) (*api.Result, error) {
 			}
 		} else if data.Input.OutputTextFormat == api.TextNone {
 		} else {
-			return nil, errors.Errorf("Can't process OutputTextFormat %s", data.Input.OutputTextFormat.String())
+			return nil, errors.Errorf("can't process OutputTextFormat %s", data.Input.OutputTextFormat.String())
 		}
 	}
 	return res, nil

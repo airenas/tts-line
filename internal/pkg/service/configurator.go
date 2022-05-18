@@ -9,6 +9,7 @@ import (
 
 	"github.com/airenas/tts-line/internal/pkg/service/api"
 	"github.com/airenas/tts-line/internal/pkg/utils"
+	"github.com/airenas/tts-line/pkg/ssml"
 	"github.com/spf13/viper"
 
 	"github.com/pkg/errors"
@@ -127,6 +128,13 @@ func (c *TTSConfigutaror) Configure(r *http.Request, inText *api.Input) (*api.TT
 	res.AllowedMaxLen, err = getMaxLen(getHeader(r, headerMaxTextLen))
 	if err != nil {
 		return nil, err
+	}
+	if strings.HasPrefix(res.Text, "<speak") || inText.TextType == "ssml" {
+		res.SSMLParts, err = ssml.Parse(strings.NewReader(res.Text),
+			&ssml.Text{Voice: res.Voice, Speed: inText.Speed})
+		if err != nil {
+			return nil, err
+		}
 	}
 	return res, nil
 }
