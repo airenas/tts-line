@@ -12,12 +12,13 @@ type Text struct {
 	Voice string
 }
 
-// Text represents Pause directive
+// Pause represents Pause directive
 type Pause struct {
 	IsBreak  bool
 	Duration time.Duration
 }
 
+// IsPause checks if part is a Pause
 func IsPause(p Part) bool {
 	_, res := p.(*Pause)
 	return res

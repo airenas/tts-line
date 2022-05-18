@@ -15,7 +15,7 @@ type validator struct {
 	defaultMax int
 }
 
-//NewValidator creates new processor
+// NewValidator creates new processor
 func NewValidator(defaultMaxLen int) (synthesizer.Processor, error) {
 	res := &validator{}
 	if defaultMaxLen < 100 {
@@ -62,7 +62,7 @@ type ssmlValidator struct {
 	defaultMax int
 }
 
-//NewValidator creates new processor
+// NewSSMLValidator creates new processor
 func NewSSMLValidator(defaultMaxLen int) (synthesizer.Processor, error) {
 	res := &ssmlValidator{}
 	if defaultMaxLen < 100 {

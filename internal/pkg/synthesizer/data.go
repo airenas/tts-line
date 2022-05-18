@@ -105,10 +105,13 @@ type AccentVariant struct {
 type SSMLTypeEnum int
 
 const (
-	//SSMLNone - not ssml part
+	// SSMLNone - not ssml part
 	SSMLNone SSMLTypeEnum = iota
+	// SSMLMain - main part
 	SSMLMain
+	// SSMLText - text part for synthesis
 	SSMLText
+	// SSMLPause - <p>, <break> part for synthesis
 	SSMLPause
 )
 

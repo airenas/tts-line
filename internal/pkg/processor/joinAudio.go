@@ -17,7 +17,7 @@ import (
 type joinAudio struct {
 }
 
-//NewJoinAudio joins results into one audio
+// NewJoinAudio joins results into one audio
 func NewJoinAudio() synthesizer.Processor {
 	return &joinAudio{}
 }
@@ -77,7 +77,7 @@ func join(parts []*synthesizer.TTSDataPart) (string, float64, error) {
 type joinSSMLAudio struct {
 }
 
-//NewJoinAudio joins results into one audio
+//NewJoinSSMLAudio joins results into one audio from many ssml parts
 func NewJoinSSMLAudio() synthesizer.Processor {
 	return &joinSSMLAudio{}
 }

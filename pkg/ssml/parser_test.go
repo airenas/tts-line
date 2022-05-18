@@ -72,7 +72,7 @@ func TestParse(t *testing.T) {
 				t.Errorf("Parse() = %v, want %v", len(got), len(tt.want))
 				return
 			}
-			for i, _ := range got {
+			for i := range got {
 				if !reflect.DeepEqual(got[i], tt.want[i]) {
 					t.Errorf("Parse() = %v, want %v", got[i], tt.want[i])
 				}
