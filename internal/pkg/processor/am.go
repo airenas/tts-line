@@ -73,7 +73,7 @@ func (p *amodel) Process(data *synthesizer.TTSDataPart) error {
 
 	inData := p.mapAMInput(data)
 	var output amOutput
-	err := p.httpWrap.InvokeJSONU(getVoiceURL(p.url, data.Cfg.Input.Voice), inData, &output)
+	err := p.httpWrap.InvokeJSONU(getVoiceURL(p.url, data.Cfg.Voice), inData, &output)
 	if err != nil {
 		return err
 	}
