@@ -12,4 +12,9 @@ jobs:
       - name: Build containers
         run: make docker/build
       - name: Run integration tests
-        run: make test/integration
+        env:
+          ACRONYMS_SECRET: ${{ secrets.ACRONYMS_SECRET }}
+          ACCENTER_SECRET: ${{ secrets.ACCENTER_SECRET }}
+          TRANSCRIBER_SECRET: ${{ secrets.TRANSCRIBER_SECRET }}
+          CLITICS_SECRET: ${{ secrets.CLITICS_SECRET }}
+        run: make test/integration 
