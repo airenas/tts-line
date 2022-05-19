@@ -5,22 +5,26 @@ services:
   tts-line:
     image: airenas/tts-line:${tts_version}
     environment:
-      - NUMBERREPLACE_URL=http://prn509.vdu.lt:9080/api/
-      - TAGGER_URL=http://tagger:8000/tag
-      - VALIDATOR_URL=http://192.168.1.71:8206/text_validator
-      - ACRONYMS_URL=http://192.168.1.71:8210/abbreviations
-      - ACCENTER_URL=http://192.168.1.71:7021/accent?human=true&roe=true
-      - TRANSCRIBER_URL=http://192.168.1.71:7027/transcription?gem=gem1&joinatsi=true
-      - ACOUSTICMODEL_URL=http://192.168.1.77:8000/model
-      - VOCODER_URL=http://192.168.1.77:8001/model    
-      - AUDIOCONVERT_URL=http://audioconverter:8000/convert
+      - LOGGER_LEVEL=DEBUG
       - CLEAN_URL=http://text-clean:8000/clean
+      - NUMBERREPLACE_URL=http://integration-tests:9876/mock-number-replace
+      - OBSCENE_URL=http://integration-tests:9876/mock-obscene-filter
+      - TAGGER_URL=http://tagger:8000/tag
+      - ACCENTER_URL=http://accenter:8000/accent?human=true&roe=true
+      - ACRONYMS_URL=http://acronyms:8000/acronyms
+      - TRANSCRIBER_URL=http://transcriber:8000/transcription?gem=gem1&joinatsi=true
+      - CLITICS_URL=http://clitics:8000/clitics
+      - AUDIOCONVERT_URL=http://audioconverter:8000/convert
+      - ACOUSTICMODEL_URL=http://integration-tests:9876/mock-am
+      - VOCODER_URL=http://192.168.1.77:8001/model    
       - COMPARATOR_URL=http://comparator:3000/resynthvalid 
       - MONGO_URL=mongodb://tts:Ui3Ic5Meej8Ki8tohxawe7jei3iaci@mongo:27017"
-      - OBSCENE_URL=http://localhost:8016/obscene-filter
-      - CLITICS_URL=http://localhost:8015/clitics
     volumes:
-      - ./config.yaml:/app/config.yaml:ro  
+      - ./config.yaml:/app/config.yaml:ro
+    restart: on-failure     
+
+  text-clean:
+    image: airenas/tts-text-clean:${clean_version}
 
   tagger:
     image: airenas/tagger:0.6.61
@@ -38,7 +42,46 @@ services:
 
   lex:
     image: semantikadocker.vdu.lt/lex:latest
-    restart: on-failure   
+    restart: on-failure 
+
+  clitics:
+    container_name: clitics
+    image: airenas/clitics:0.1.206
+    environment:
+      - SECRET=${CLITICS_SECRET} 
+    restart: on-failure 
+
+  audioconverter:
+    container_name: audioconverter
+    image: airenas/audio-convert-service:0.2.21
+    restart: on-failure 
+    shm_size: 200mb
+    environment:
+      - TEMPDIR=/dev/shm
+      - GODEBUG=madvdontneed=1  
+
+  transcriber:
+    container_name: transcriber
+    image: airenas/transcriber:1.3.1209
+    environment:
+      - SECRET=${TRANSCRIBER_SECRET} 
+    restart: on-failure  
+
+  accenter:
+    container_name: accenter
+    image: airenas/accenter:1.3.1209
+    restart: on-failure
+    environment:
+      - lema.type=hunspell_lema
+      - LEMA_HUNSPELL_SKIP_OFFENSIVE=false
+      - SECRET=${ACCENTER_SECRET}
+  
+  acronyms:
+    container_name: acronyms
+    image: airenas/acronyms:0.1.303
+    restart: on-failure 
+    environment:
+     - SECRET=${ACRONYMS_SECRET}      
 
   integration-tests:
     build:
