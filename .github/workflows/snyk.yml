@@ -1,51 +1,36 @@
 name: Snyk vulnerabilities Tests
 on:
   push:
-    branches: [ main, tts ]
+    branches: [ main ]
   pull_request:
     branches: [ main ]
 jobs:
-  test:
+  analyze:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        container: [tts-line, tts-clean-text]
     steps:
       - uses: actions/checkout@v2
-      - name: Build containers
-        run: make docker/tts-line/build docker/tts-clean/build clean_version=latest tts_version=latest   
 
+      - name: Build containers ${{ matrix.container }} clean_version=latest tts_version=latest
+        run: make docker/${{ matrix.container }}/build 
 
-      - name: Run Snyk to check Docker image for vulnerabilities
+      - name: Run Snyk to check ${{ matrix.container }} Docker image for vulnerabilities
         continue-on-error: true
         uses: snyk/actions/docker@master
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
         with:
-          image: airenas/tts-line:latest
-          args: --file=build/tts-line/Dockerfile
+          image: airenas/${{ matrix.container }}:latest
+          args: --file=build/${{ matrix.container }}/Dockerfile
 
       - name: Make sarif file copy
-        run: mv snyk.sarif snyk-tts-line.sarif
+        run: mv snyk.sarif snyk-${{ matrix.container }}.sarif
 
-      - name: Run Snyk to check tts-clean Docker image for vulnerabilities
-        continue-on-error: true
-        uses: snyk/actions/docker@master
-        env:
-          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-        with:
-          image: airenas/tts-text-clean:latest
-          args: --file=build/tts-clean-text/Dockerfile
-
-      - name: Make sarif file copy
-        run: mv snyk.sarif snyk-clean.sarif
-
-      - name: Upload snyk result to GitHub Code Scanning
+      - name: Upload snyk ${{ matrix.container }} result to GitHub Code Scanning
         uses: github/codeql-action/upload-sarif@v1
         with:
-          sarif_file: snyk-tts-line.sarif
-          category: tts-analysis  
-
-      - name: Upload snyk admin result to GitHub Code Scanning
-        uses: github/codeql-action/upload-sarif@v1
-        with:
-          sarif_file: snyk-clean.sarif
-          category: clean-analysis  
-
+          sarif_file: snyk-${{ matrix.container }}.sarif
+          category: ${{ matrix.container }}-analysis
+          

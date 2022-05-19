@@ -25,27 +25,16 @@ generate/mocks:
 	go generate ./...
 .PHONY: generate/mocks	
 #####################################################################################
-## build tts-line docker image
-docker/tts-line/build:
-	cd build/tts-line && $(MAKE) dbuild	
-.PHONY: docker/tts-line/build
-## build tts-line docker image
-docker/tts-clean/build:
-	cd build/tts-clean-text && $(MAKE) dbuild	
-.PHONY: docker/tts-clean/build
-## scan tts-line for vulnerabilities
-docker/tts-line/scan:
-	cd build/tts-line && $(MAKE) dscan	
-.PHONY: docker/tts-line/scan
+## build docker image
+docker/%/build:
+	cd build/$* && $(MAKE) dbuild	
+## scan docker image for vulnerabilities
+docker/%/scan:
+	cd build/$* && $(MAKE) dscan	
 #####################################################################################
-## build and push tts-line docker image
-docker/tts-line/push:
-	cd build/tts-line && $(MAKE) dpush
-.PHONY: docker/tts-line/push
-## build and push tts-clean-text docker image
-docker/tts-clean/push:
-	cd build/tts-clean-text && $(MAKE) dpush
-.PHONY: docker/tts-clean/push
+## build and push docker image
+docker/%/push:
+	cd build/$* && $(MAKE) dpush
 #####################################################################################
 ## generate diagrams
 generate/diagram:
