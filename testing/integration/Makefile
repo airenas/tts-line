@@ -1,4 +1,5 @@
 -include ../../version
+-include Makefile.options.local
 #####################################################################################
 ## print usage information
 help:
@@ -9,7 +10,8 @@ help:
 #####################################################################################
 ## start all containers
 start: 
-	docker-compose up -d --build tagger lex semantika tts-line
+	docker-compose up -d --build tagger lex semantika tts-line text-clean \
+		acronyms accenter clitics transcriber audioconverter
 .PHONY: start
 ## invoke integration tests
 test/integration: start 
@@ -21,7 +23,7 @@ test/unit:
 .PHONY: test/unit
 ## invoke tests with compose up 
 test/up:  
-	docker-compose up tts-line
+	docker-compose up tts-line integration-tests
 .PHONY: test/unit
 ## clean everything, stops docker containers and removes them
 clean:

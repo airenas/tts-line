@@ -5,16 +5,22 @@ package integration
 
 import (
 	"context"
+	"encoding/base64"
+	"encoding/json"
+	"fmt"
+	"io"
 	"io/ioutil"
 	"log"
 	"net"
 	"net/http"
+	"net/http/httptest"
 	"net/url"
 	"os"
 	"strings"
 	"testing"
 	"time"
 
+	"github.com/airenas/tts-line/internal/pkg/service/api"
 	"github.com/labstack/echo/v4"
 	"github.com/stretchr/testify/require"
 )
@@ -30,12 +36,17 @@ var cfg config
 func TestMain(m *testing.M) {
 	cfg.url = getEnvOrFail("TTS_URL")
 	cfg.semantikaURL = getEnvOrFail("MORPHOLOGY_URL")
-	cfg.httpclient = &http.Client{Timeout: time.Second}
+	cfg.httpclient = &http.Client{Timeout: time.Second * 20}
 
 	tCtx, cf := context.WithTimeout(context.Background(), time.Second*20)
 	defer cf()
 	waitForOpenOrFail(tCtx, cfg.url)
 	waitForOpenOrFail(tCtx, cfg.semantikaURL)
+
+	//start mocks service for private services - not in this docker compose
+	l, ts := startMockService(9876)
+	defer ts.Close()
+	defer l.Close()
 
 	os.Exit(m.Run())
 }
@@ -79,59 +90,78 @@ func listen(urlStr string) error {
 
 func TestLive(t *testing.T) {
 	t.Parallel()
-	checkCode(t, invoke(t, newRequest(t, http.MethodGet, "/live", "")), http.StatusOK)
+	checkCode(t, invoke(t, newRequest(t, http.MethodGet, cfg.url, "/live", nil)), http.StatusOK)
 }
 
-// func TestPost_Success(t *testing.T) {
-// 	t.Parallel()
-// 	resp := invoke(t, newRequest(t, http.MethodPost, "/tag", "Olia"))
-// 	checkCode(t, resp, http.StatusOK)
-// 	res := []service.ResultWord{}
-// 	decode(t, resp, &res)
-// 	require.NotEmpty(t, res)
-// 	require.Equal(t, 2, len(res))
-// 	assert.Equal(t, service.ResultWord{Type: "WORD", String: "Olia", Mi: "Ig", Lemma: "olia"}, res[0])
-// 	assert.Equal(t, service.ResultWord{Type: "SENTENCE_END"}, res[1])
-// }
+func TestSynthesize_FailVoice(t *testing.T) {
+	t.Parallel()
+	resp := invoke(t, newRequest(t, http.MethodPost, cfg.url, "/synthesize",
+		api.Input{Text: "Olia", Voice: "xxx"}))
+	checkCode(t, resp, http.StatusBadRequest)
+}
 
-// func TestPost_Number(t *testing.T) {
-// 	t.Parallel()
-// 	resp := invoke(t, newRequest(t, http.MethodPost, "/tag", "12"))
-// 	checkCode(t, resp, http.StatusOK)
-// 	res := []service.ResultWord{}
-// 	decode(t, resp, &res)
-// 	require.NotEmpty(t, res)
-// 	require.Equal(t, 2, len(res))
-// 	assert.Equal(t, service.ResultWord{Type: "NUMBER", String: "12", Mi: "M----d-", Lemma: ""}, res[0])
-// 	assert.Equal(t, service.ResultWord{Type: "SENTENCE_END"}, res[1])
-// }
+func TestSynthesize_Success(t *testing.T) {
+	t.Parallel()
+	resp := invoke(t, newRequest(t, http.MethodPost, cfg.url, "/synthesize",
+		api.Input{Text: "Olia", Voice: "astra"}))
+	checkCode(t, resp, http.StatusOK)
+	res := api.Result{}
+	decode(t, resp, &res)
+	require.NotEmpty(t, res.AudioAsString)
+}
 
-// func TestPost_FixSegments(t *testing.T) {
-// 	t.Parallel()
-// 	resp := invoke(t, newRequest(t, http.MethodPost, "/tag", "olia-olia"))
-// 	checkCode(t, resp, http.StatusOK)
-// 	res := []service.ResultWord{}
-// 	decode(t, resp, &res)
-// 	require.NotEmpty(t, res)
-// 	require.Equal(t, 4, len(res))
-// 	assert.Equal(t, service.ResultWord{Type: "WORD", String: "olia", Mi: "Ig", Lemma: "olia"}, res[0])
-// 	assert.Equal(t, service.ResultWord{Type: "SEPARATOR", String: "-", Mi: "Th", Lemma: ""}, res[1])
-// 	assert.Equal(t, service.ResultWord{Type: "WORD", String: "olia", Mi: "Ig", Lemma: "olia"}, res[2])
-// 	assert.Equal(t, service.ResultWord{Type: "SENTENCE_END"}, res[3])
-// }
+func TestSynthesize_SSMLFail_NoSSML(t *testing.T) {
+	t.Parallel()
+	testSSML(t, "olia", http.StatusBadRequest)
+}
 
-// func TestPost_Empty(t *testing.T) {
-// 	t.Parallel()
-// 	resp := invoke(t, newRequest(t, http.MethodPost, "/tag", ""))
-// 	checkCode(t, resp, http.StatusBadRequest)
-// }
+func TestSynthesize_SSMLFail_WrongSSML(t *testing.T) {
+	t.Parallel()
+	testSSML(t, "<speak>Olia</speak>olia", http.StatusBadRequest)
+}
 
-func newRequest(t *testing.T, method string, urlSuffix string, body string) *http.Request {
+func TestSynthesize_SSMLFail_NoText(t *testing.T) {
+	t.Parallel()
+	testSSML(t, `<speak><p/><voice name="astra"></voice></speak>`, http.StatusBadRequest)
+}
+
+func TestSynthesize_SSMLOK_Voice(t *testing.T) {
+	t.Parallel()
+	testSSML(t, `<speak><p/><voice name="astra">Olia</voice></speak>`, http.StatusOK)
+}
+
+func TestSynthesize_SSMLOK_Several(t *testing.T) {
+	t.Parallel()
+	testSSML(t, `<speak><p/><voice name="astra">Olia</voice><p/><voice name="linas">Olia</voice></speak>`,
+		http.StatusOK)
+}
+
+
+func testSSML(t *testing.T, in string, exp int) {
 	t.Helper()
-	req, err := http.NewRequest(method, cfg.url+urlSuffix, strings.NewReader(body))
+	resp := invoke(t, newRequest(t, http.MethodPost, cfg.url, "/synthesize",
+		api.Input{Text: in, Voice: "astra", TextType: "ssml"}))
+	checkCode(t, resp, exp)
+	if exp == http.StatusOK {
+		res := api.Result{}
+		decode(t, resp, &res)
+		require.NotEmpty(t, res.AudioAsString)
+	}
+}
+
+func newRequest(t *testing.T, method string, srv, urlSuffix string, body interface{}) *http.Request {
+	t.Helper()
+	req, err := http.NewRequest(method, srv+urlSuffix, toReader(body))
 	require.Nil(t, err, "not nil error = %v", err)
-	req.Header.Add(echo.HeaderContentType, echo.MIMEApplicationJSON)
+	if body != nil {
+		req.Header.Add(echo.HeaderContentType, echo.MIMEApplicationJSON)
+	}
 	return req
+}
+
+func toReader(data interface{}) io.Reader {
+	bytes, _ := json.Marshal(data)
+	return strings.NewReader(string(bytes))
 }
 
 func invoke(t *testing.T, r *http.Request) *http.Response {
@@ -150,7 +180,38 @@ func checkCode(t *testing.T, resp *http.Response, expected int) {
 	}
 }
 
-// func decode(t *testing.T, resp *http.Response, to interface{}) {
-// 	t.Helper()
-// 	require.Nil(t, json.NewDecoder(resp.Body).Decode(to))
-// }
+func startMockService(port int) (net.Listener, *httptest.Server) {
+	// create a listener with the desired port.
+	l, err := net.Listen("tcp", fmt.Sprintf(":%d", port))
+	if err != nil {
+		log.Fatalf("can't start mock service: %v", err)
+	}
+	ts := httptest.NewUnstartedServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		log.Printf("request to: " + r.URL.String())
+		switch r.URL.String() {
+		case "/mock-number-replace":
+			io.Copy(w, strings.NewReader(`"Olia"`))
+		case "/mock-obscene-filter":
+			io.Copy(w, strings.NewReader(`[{"token":"Olia","obscene":0}]`))
+		case "/mock-am":
+			b, err := ioutil.ReadFile("data/test.wav")
+			if err != nil {
+				log.Printf(err.Error())
+			}
+			io.Copy(w, strings.NewReader(fmt.Sprintf(`{"data":"%s"}`, base64.StdEncoding.EncodeToString(b))))
+		}
+	}))
+
+	ts.Listener.Close()
+	ts.Listener = l
+
+	// Start the server.
+	ts.Start()
+	log.Printf("started mock srv on port: %d", port)
+	return l, ts
+}
+
+func decode(t *testing.T, resp *http.Response, to interface{}) {
+	t.Helper()
+	require.Nil(t, json.NewDecoder(resp.Body).Decode(to))
+}
