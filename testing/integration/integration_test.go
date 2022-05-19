@@ -136,6 +136,57 @@ func TestSynthesize_SSMLOK_Several(t *testing.T) {
 		http.StatusOK)
 }
 
+func TestSynthesizeCustom_Success(t *testing.T) {
+	t.Parallel()
+	resp := invoke(t, newRequest(t, http.MethodPost, cfg.url, "/synthesize",
+		api.Input{Text: "Olia", Voice: "astra", AllowCollectData: &[]bool{true}[0], OutputTextFormat: "accented"}))
+	checkCode(t, resp, http.StatusOK)
+	res := api.Result{}
+	decode(t, resp, &res)
+	require.NotEmpty(t, res.AudioAsString)
+	require.NotEmpty(t, res.RequestID)
+
+	resp = invoke(t, newRequest(t, http.MethodPost, cfg.url,
+		fmt.Sprintf("/synthesizeCustom?requestID=%s", res.RequestID),
+		api.Input{Text: "Olia", Voice: "astra"}))
+	checkCode(t, resp, http.StatusOK)
+	res = api.Result{}
+	decode(t, resp, &res)
+	require.NotEmpty(t, res.AudioAsString)
+}
+
+func TestSynthesizeCustom_FailNoID(t *testing.T) {
+	t.Parallel()
+	resp := invoke(t, newRequest(t, http.MethodPost, cfg.url,
+		fmt.Sprintf("/synthesizeCustom?requestID=%s", "xxx"),
+		api.Input{Text: "Olia", Voice: "astra"}))
+	checkCode(t, resp, http.StatusBadRequest)
+}
+
+func TestRequest_Success(t *testing.T) {
+	t.Parallel()
+	resp := invoke(t, newRequest(t, http.MethodPost, cfg.url, "/synthesize",
+		api.Input{Text: "Olia", Voice: "astra", AllowCollectData: &[]bool{true}[0], OutputTextFormat: "accented"}))
+	checkCode(t, resp, http.StatusOK)
+	res := api.Result{}
+	decode(t, resp, &res)
+	require.NotEmpty(t, res.AudioAsString)
+	require.NotEmpty(t, res.RequestID)
+
+	for i := int64(0); i < 10; i++ {
+		resp = invoke(t, newRequest(t, http.MethodGet, cfg.url,
+			fmt.Sprintf("/request/%s", res.RequestID), nil))
+		checkCode(t, resp, http.StatusOK)
+		resI := api.InfoResult{}
+		decode(t, resp, &resI)
+		require.Equal(t, i, resI.Count, "count is not increased") 
+		
+		resp = invoke(t, newRequest(t, http.MethodPost, cfg.url,
+			fmt.Sprintf("/synthesizeCustom?requestID=%s", res.RequestID),
+			api.Input{Text: "Olia", Voice: "astra"}))
+		checkCode(t, resp, http.StatusOK)
+	}
+}
 
 func testSSML(t *testing.T, in string, exp int) {
 	t.Helper()
@@ -187,12 +238,14 @@ func startMockService(port int) (net.Listener, *httptest.Server) {
 		log.Fatalf("can't start mock service: %v", err)
 	}
 	ts := httptest.NewUnstartedServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		log.Printf("request to: " + r.URL.String())
+		// log.Printf("request to: " + r.URL.String())
 		switch r.URL.String() {
 		case "/mock-number-replace":
 			io.Copy(w, strings.NewReader(`"Olia"`))
 		case "/mock-obscene-filter":
 			io.Copy(w, strings.NewReader(`[{"token":"Olia","obscene":0}]`))
+		case "/mock-compare":
+			io.Copy(w, strings.NewReader(`{"rc":1,"badacc":[]}`))	
 		case "/mock-am":
 			b, err := ioutil.ReadFile("data/test.wav")
 			if err != nil {
