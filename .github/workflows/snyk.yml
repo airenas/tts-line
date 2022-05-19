@@ -9,7 +9,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        container: [tts-line, tts-clean-text]
+        container: [tts-line, tts-text-clean]
     steps:
       - uses: actions/checkout@v2
 
