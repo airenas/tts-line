@@ -103,15 +103,15 @@ func makeTextPart(se xml.CharData, wrk *wrkData) error {
 	if wrk.speakTagCount != 1 {
 		return fmt.Errorf("no <speak>")
 	}
+	if len(wrk.lastTag) == 0 {
+		return fmt.Errorf("data after </speak>")
+	}
 	lt := wrk.lastTag[len(wrk.lastTag)-1]
 	if lt == "break" {
 		return fmt.Errorf("data in <break>")
 	}
 	s := strings.TrimSpace(string(se))
 	if s != "" {
-		if wrk.speakTagEndCount > 0 {
-			return fmt.Errorf("data after </speak>")
-		}
 		def := wrk.cValues[len(wrk.cValues)-1]
 		wrk.res = append(wrk.res, &Text{Text: s, Voice: def.Voice, Speed: def.Speed})
 	}

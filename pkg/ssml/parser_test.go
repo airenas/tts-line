@@ -24,6 +24,8 @@ func TestParse(t *testing.T) {
 			wantErr: true},
 		{name: "speak fail", xml: "<speak>olia<speak>", want: []Part{},
 			wantErr: true},
+		{name: "speak fail", xml: "<speak>olia</speak>olia", want: []Part{},
+			wantErr: true},
 		{name: "speak fail", xml: "<b>olia</b>", want: []Part{},
 			wantErr: true},
 		{name: "empty", wantErr: true},
@@ -43,6 +45,8 @@ func TestParse(t *testing.T) {
 		{name: "<break> strength", xml: `<speak><break strength="x-weak"/></speak>`, want: []Part{
 			&Pause{Duration: time.Millisecond * 250, IsBreak: true},
 		}, wantErr: false},
+		{name: "<break> with text", xml: `<speak><break strength="x-weak">olia</break></speak>`,
+			want: []Part{}, wantErr: true},
 		{name: "<voice> strength", xml: `<speak><voice name="ooo">aaa</voice></speak>`,
 			want: []Part{
 				&Text{Text: "aaa", Voice: "ooo", Speed: 1},
@@ -76,6 +80,45 @@ func TestParse(t *testing.T) {
 				if !reflect.DeepEqual(got[i], tt.want[i]) {
 					t.Errorf("Parse() = %v, want %v", got[i], tt.want[i])
 				}
+			}
+		})
+	}
+}
+
+func Test_getDuration(t *testing.T) {
+	type args struct {
+		tm  string
+		str string
+	}
+	tests := []struct {
+		name    string
+		args    args
+		want    time.Duration
+		wantErr bool
+	}{
+		{name: "time", args: args{tm: "10s", str: ""}, want: time.Second * 10, wantErr: false},
+		{name: "time", args: args{tm: "10ms", str: ""}, want: time.Millisecond * 10, wantErr: false},
+		{name: "time", args: args{tm: "1s250ms", str: ""}, want: time.Millisecond * 1250, wantErr: false},
+		{name: "strength", args: args{tm: "", str: "none"}, want: time.Millisecond * 0, wantErr: false},
+		{name: "strength", args: args{tm: "", str: "x-weak"}, want: time.Millisecond * 250, wantErr: false},
+		{name: "strength", args: args{tm: "", str: "weak"}, want: time.Millisecond * 500, wantErr: false},
+		{name: "strength", args: args{tm: "", str: "medium"}, want: time.Millisecond * 750, wantErr: false},
+		{name: "strength", args: args{tm: "", str: "strong"}, want: time.Millisecond * 1000, wantErr: false},
+		{name: "strength", args: args{tm: "", str: "x-strong"}, want: time.Millisecond * 1250, wantErr: false},
+		{name: "strength fail", args: args{tm: "", str: "aaa"}, want: time.Millisecond * 0, wantErr: true},
+		{name: "none", args: args{tm: "", str: ""}, want: time.Millisecond * 0, wantErr: true},
+		{name: "time fail", args: args{tm: "xxx", str: ""}, want: time.Millisecond * 0, wantErr: true},
+		{name: "both fail", args: args{tm: "xxx", str: "aaa"}, want: time.Millisecond * 0, wantErr: true},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := getDuration(tt.args.tm, tt.args.str)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("getDuration() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if got != tt.want {
+				t.Errorf("getDuration() = %v, want %v", got, tt.want)
 			}
 		})
 	}
