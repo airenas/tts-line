@@ -12,7 +12,8 @@ options:
       - description=encoded by UAB Intelektika
     defaultVoice: astra 
     voices: 
-      - vytautas.v01  
+      - default:astra
+      - astra:astra.v04
 
 mongo:
    url: 
@@ -20,8 +21,8 @@ mongo:
 clean:
   url: http://localhost:8011/clean   
 
-# numberReplace:
-#   url: http://prn509.vdu.lt:9080/api/ 
+numberReplace:
+  url: http://localhost:8017/api/ 
 
 tagger:
   url: https://sinteze.intelektika.lt/tagger/tag  
@@ -45,7 +46,7 @@ acousticModel:
   # url: http://semspch04.vdu.lt:8000/model
   # url: http://semspch04.vdu.lt:8006/synthesize
   # url: http://localhost:8000/model
-  url: http://18.184.234.119:8006/synthesize
+  url: http://18.184.111.46:8006/synthesize
   hasVocoder: true
 
 vocoder:

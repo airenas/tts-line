@@ -23,6 +23,14 @@ services:
     ports:
       - "8011:8000"  
 
+  hnum2txt:
+    container_name: hnum2txt
+    image: intelektikalt/hnum2txt:0.2.0
+    environment:
+      - "ConnectionStrings:Url=${TAGGER_URL}" 
+    ports:
+      - "8017:80"     
+
   audioconverter:
     image: airenas/audio-convert-service:0.1.8
     ports:
@@ -42,7 +50,7 @@ services:
 
   obscene:
     container_name: obscene
-    image: intelektikalt/obscene-filter:0.1.8 
+    image: intelektikalt/obscene-filter:0.1.12 
     ports:
       - "8016:3000"        
 
