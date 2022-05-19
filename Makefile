@@ -36,7 +36,7 @@ docker/%/build:
 docker/%/scan:
 	cd build/$* && $(MAKE) dscan	
 ## builds all docker containers
-docker/build: docker/tts-line/build docker/tts-clean-text/build	
+docker/build: docker/tts-line/build docker/tts-text-clean/build	
 .PHONY: docker/build	
 #####################################################################################
 ## build and push docker image

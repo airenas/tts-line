@@ -39,7 +39,7 @@ RUN addgroup app && adduser -S -G app --uid $UID app
 RUN mkdir -p /app && chown -R app:app /app   
 
 COPY --from=builder /go/bin/tts-text-clean /app/
-COPY build/tts-clean-text/config.yaml /app/
+COPY build/tts-text-clean/config.yaml /app/
 
 RUN chown app:app /app/* /app
  
