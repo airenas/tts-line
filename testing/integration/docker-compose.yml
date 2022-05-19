@@ -92,7 +92,8 @@ services:
       - tts-line
     environment:
       TTS_URL: http://tts-line:8000  
-      MORPHOLOGY_URL: http://semantika:8090  
+      MORPHOLOGY_URL: http://semantika:8090
+      CLEAN_URL: http://text-clean:8000    
     volumes:
       - ../../:/go/src/
     command: -tags integration -v -count=1 ./testing/integration/...
