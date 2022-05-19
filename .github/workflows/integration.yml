@@ -1,0 +1,15 @@
+name: Integration Tests
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Build containers
+        run: make docker/build
+      - name: Run integration tests
+        run: make test/integration

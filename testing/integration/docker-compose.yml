@@ -1,0 +1,72 @@
+version: '3.7'
+
+services:
+
+  tts-line:
+    image: airenas/tts-line:${tts_version}
+    environment:
+      - NUMBERREPLACE_URL=http://prn509.vdu.lt:9080/api/
+      - TAGGER_URL=http://tagger:8000/tag
+      - VALIDATOR_URL=http://192.168.1.71:8206/text_validator
+      - ACRONYMS_URL=http://192.168.1.71:8210/abbreviations
+      - ACCENTER_URL=http://192.168.1.71:7021/accent?human=true&roe=true
+      - TRANSCRIBER_URL=http://192.168.1.71:7027/transcription?gem=gem1&joinatsi=true
+      - ACOUSTICMODEL_URL=http://192.168.1.77:8000/model
+      - VOCODER_URL=http://192.168.1.77:8001/model    
+      - AUDIOCONVERT_URL=http://audioconverter:8000/convert
+      - CLEAN_URL=http://text-clean:8000/clean
+      - COMPARATOR_URL=http://comparator:3000/resynthvalid 
+      - MONGO_URL=mongodb://tts:Ui3Ic5Meej8Ki8tohxawe7jei3iaci@mongo:27017"
+      - OBSCENE_URL=http://localhost:8016/obscene-filter
+      - CLITICS_URL=http://localhost:8015/clitics
+    volumes:
+      - ./config.yaml:/app/config.yaml:ro  
+
+  tagger:
+    image: airenas/tagger:0.6.61
+    environment:
+      - MORPHOLOGY_URL=http://semantika:8090/morphology
+      - SEGMENTATION_URL=http://lex:8080/
+    restart: on-failure
+    depends_on:
+      - semantika
+      - lex 
+
+  semantika:
+    image: semantikadocker.vdu.lt/v2/morph:0.2
+    restart: on-failure   
+
+  lex:
+    image: semantikadocker.vdu.lt/lex:latest
+    restart: on-failure   
+
+  integration-tests:
+    build:
+      context: .
+      dockerfile: ./Dockerfile.test
+    depends_on:
+      - tagger
+      - tts-line
+    environment:
+      TTS_URL: http://tts-line:8000  
+      MORPHOLOGY_URL: http://semantika:8090  
+    volumes:
+      - ../../:/go/src/
+    command: -tags integration -v -count=1 ./testing/integration/...
+
+  # unit-tests:
+  #   build:
+  #     context: .
+  #     dockerfile: ./Dockerfile.test
+  #   volumes:
+  #     - ../../:/go/src/
+  #   command: -v -count=1 ./...
+
+  mongo:
+    image: mongo:4.4.1
+    environment:
+      MONGO_DATA_DIR: "/data/db"
+      MONGO_LOG_DIR: "/dev/null"
+      MONGO_INITDB_ROOT_USERNAME: tts
+      MONGO_INITDB_ROOT_PASSWORD: Ui3Ic5Meej8Ki8tohxawe7jei3iaci
+    command: mongod --logpath=/dev/null # --quiet
