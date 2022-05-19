@@ -11,6 +11,10 @@ help:
 test/unit: 
 	go test -v -race -count 1 ./...
 .PHONY: test/unit
+## run integration tests - start services, do tests, clean services
+test/integration:
+	cd testing/integration && $(MAKE) start test/integration clean || ( $(MAKE) clean; exit 1; ) 	
+.PHONY: test/integration
 #####################################################################################
 ## code vet and lint
 test/lint: 
@@ -31,6 +35,9 @@ docker/%/build:
 ## scan docker image for vulnerabilities
 docker/%/scan:
 	cd build/$* && $(MAKE) dscan	
+## builds all docker containers
+docker/build: docker/tts-line/build docker/tts-clean-text/build	
+.PHONY: docker/build	
 #####################################################################################
 ## build and push docker image
 docker/%/push:
