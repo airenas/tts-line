@@ -13,8 +13,8 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
-      - name: Build containers ${{ matrix.container }} clean_version=latest tts_version=latest
-        run: make docker/${{ matrix.container }}/build 
+      - name: Build containers ${{ matrix.container }}
+        run: make docker/${{ matrix.container }}/build clean_version=latest tts_version=latest
 
       - name: Run Snyk to check ${{ matrix.container }} Docker image for vulnerabilities
         continue-on-error: true
