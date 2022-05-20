@@ -86,8 +86,8 @@ func Test_getMaxLen(t *testing.T) {
 }
 
 func Test_validate(t *testing.T) {
-	fNone := func(_t *testing.T,_err error) { assert.Nil(_t, _err) }
-	fEmpty := func(_t *testing.T,_err error) { assert.Equal(_t, utils.ErrNoInput, _err) }
+	fNone := func(_t *testing.T, _err error) { assert.Nil(_t, _err) }
+	fEmpty := func(_t *testing.T, _err error) { assert.Equal(_t, utils.ErrNoInput, _err) }
 	type args struct {
 		text   string
 		maxLen int
@@ -118,5 +118,51 @@ func testErrTooLong(l, max int) func(*testing.T, error) {
 			assert.Equal(t, max, errTL.Max)
 			assert.Equal(t, l, errTL.Len)
 		}
+	}
+}
+
+func TestInvokeSSMLValidator(t *testing.T) {
+	pr, _ := NewSSMLValidator(100)
+	assert.NotNil(t, pr)
+	d := synthesizer.TTSData{SSMLParts: []*synthesizer.TTSData{{OriginalText: "olia"}}}
+	d.Input = &api.TTSRequestConfig{Text: "olia"}
+	err := pr.Process(&d)
+	assert.Nil(t, err)
+}
+
+func TestInvokeSSMLValidator_Fail(t *testing.T) {
+	initTestJSON(t)
+	pr, _ := NewSSMLValidator(100)
+	assert.NotNil(t, pr)
+	d := synthesizer.TTSData{SSMLParts: []*synthesizer.TTSData{{OriginalText: strings.Repeat("olia-", 100)}}}
+	d.Input = &api.TTSRequestConfig{Text: "olia"}
+	err := pr.Process(&d)
+	errTL, ok := err.(*utils.ErrTextTooLong)
+	if assert.True(t, ok) {
+		assert.Equal(t, 100, errTL.Max)
+		assert.Equal(t, 500, errTL.Len)
+	}
+}
+
+func Test_getSSMLTextLen(t *testing.T) {
+	tests := []struct {
+		name  string
+		parts []*synthesizer.TTSData
+		want  int
+	}{
+		{name: "empty", parts: []*synthesizer.TTSData{}, want: 0},
+		{name: "one", parts: []*synthesizer.TTSData{{OriginalText: "olia",
+			Cfg: synthesizer.TTSConfig{Type: synthesizer.SSMLText}}}, want: 4},
+		{name: "several", parts: []*synthesizer.TTSData{{OriginalText: "olia",
+			Cfg: synthesizer.TTSConfig{Type: synthesizer.SSMLText}},
+			{OriginalText: "olia2",
+				Cfg: synthesizer.TTSConfig{Type: synthesizer.SSMLText}}}, want: 9},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := getSSMLTextLen(&synthesizer.TTSData{SSMLParts: tt.parts}); got != tt.want {
+				t.Errorf("getSSMLTextLen() = %v, want %v", got, tt.want)
+			}
+		})
 	}
 }
