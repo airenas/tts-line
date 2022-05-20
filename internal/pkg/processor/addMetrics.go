@@ -47,6 +47,11 @@ func (p *addMetrics) Process(data *synthesizer.TTSData) error {
 	return nil
 }
 
+// Info return info about processor
+func (p *addMetrics) Info() string {
+	return "addMetrics"
+}
+
 func getChars(data *synthesizer.TTSData) float64 {
 	return float64(utf8.RuneCountInString(data.OriginalText))
 }

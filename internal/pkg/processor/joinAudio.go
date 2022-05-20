@@ -182,3 +182,8 @@ func writePause(buf *bytes.Buffer, sampleRate uint32, bitsPerSample uint16, paus
 	}
 	return c, nil
 }
+
+// Info return info about processor
+func (p *joinSSMLAudio) Info() string {
+	return "joinSSMLAudio"
+}

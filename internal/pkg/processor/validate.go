@@ -1,6 +1,7 @@
 package processor
 
 import (
+	"fmt"
 	"strings"
 	"unicode/utf8"
 
@@ -88,3 +89,7 @@ func getSSMLTextLen(data *synthesizer.TTSData) int {
 	return res
 }
 
+// Info return info about processor
+func (p *ssmlValidator) Info() string {
+	return fmt.Sprintf("ssmlValidator(%d)", p.defaultMax)
+}

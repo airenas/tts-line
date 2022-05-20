@@ -17,7 +17,7 @@ type audioConverter struct {
 func NewConverter(urlStr string) (synthesizer.Processor, error) {
 	res := &audioConverter{}
 	var err error
-	res.httpWrap, err = utils.NewHTTPWrapT(urlStr, time.Minute * 5)
+	res.httpWrap, err = utils.NewHTTPWrapT(urlStr, time.Minute*5)
 	if err != nil {
 		return nil, errors.Wrap(err, "Can't init http client")
 	}
@@ -37,6 +37,11 @@ func (p *audioConverter) Process(data *synthesizer.TTSData) error {
 	}
 	data.AudioMP3 = output.Data
 	return nil
+}
+
+// Info return info about processor
+func (p *audioConverter) Info() string {
+	return "audioConverter"
 }
 
 type audioConvertInput struct {

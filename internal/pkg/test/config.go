@@ -10,6 +10,7 @@ import (
 
 //NewConfig creates new config from yaml
 func NewConfig(t *testing.T, yaml string) *viper.Viper {
+	t.Helper()
 	res := viper.New()
 	res.SetConfigType("yaml")
 	err := res.ReadConfig(strings.NewReader(yaml))
