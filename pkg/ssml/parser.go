@@ -70,7 +70,7 @@ func Parse(r io.Reader, def *Text, voiceFunc func(string) (string, error)) ([]Pa
 				return nil, fmt.Errorf("unknown tag <%s> at %d", se.Name.Local, d.InputOffset())
 			}
 			if err := f(se, wrk); err != nil {
-				return nil, fmt.Errorf("error at %d: %v", d.InputOffset(), err)
+				return nil, fmt.Errorf("at %d: %v", d.InputOffset(), err)
 			}
 			wrk.lastTag = append(wrk.lastTag, se.Name.Local)
 		case xml.EndElement:
@@ -79,13 +79,13 @@ func Parse(r io.Reader, def *Text, voiceFunc func(string) (string, error)) ([]Pa
 				return nil, fmt.Errorf("unknown tag </%s> at %d", se.Name.Local, d.InputOffset())
 			}
 			if err := f(se, wrk); err != nil {
-				return nil, fmt.Errorf("error at %d: %v", d.InputOffset(), err)
+				return nil, fmt.Errorf("at %d: %v", d.InputOffset(), err)
 			}
 			wrk.lastTag = wrk.lastTag[:len(wrk.lastTag)-1]
 		case xml.CharData:
 			err := makeTextPart(se, wrk)
 			if err != nil {
-				return nil, fmt.Errorf("error at %d: %v", d.InputOffset(), err)
+				return nil, fmt.Errorf("at %d: %v", d.InputOffset(), err)
 			}
 		case xml.Comment:
 		case xml.ProcInst:
