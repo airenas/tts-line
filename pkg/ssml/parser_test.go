@@ -1,6 +1,7 @@
 package ssml
 
 import (
+	"errors"
 	"reflect"
 	"strings"
 	"testing"
@@ -8,9 +9,13 @@ import (
 )
 
 func TestParse(t *testing.T) {
+	vf := func(s string) (string, error) {
+		return s, nil
+	}
 	tests := []struct {
 		name    string
 		xml     string
+		vf      func(string) (string, error)
 		want    []Part
 		wantErr bool
 	}{
@@ -63,11 +68,23 @@ func TestParse(t *testing.T) {
 				&Text{Text: "end", Voice: "ooo", Speed: 1},
 				&Text{Text: "end def", Voice: "aa", Speed: 1},
 			}, wantErr: false},
+		{name: "<voice> map", xml: `<speak><voice name="ooo">aaa</voice></speak>`,
+			vf: func(s string) (string, error) { return "ooo.v1", nil },
+			want: []Part{
+				&Text{Text: "aaa", Voice: "ooo.v1", Speed: 1},
+			}, wantErr: false},
+		{name: "<voice> map fail", xml: `<speak><voice name="ooo">aaa</voice></speak>`,
+			vf:   func(s string) (string, error) { return "", errors.New("no voice") },
+			want: []Part{}, wantErr: true},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			def := &Text{Voice: "aa", Speed: 1}
-			got, err := Parse(strings.NewReader(tt.xml), def)
+			vf := vf
+			if tt.vf != nil {
+				vf = tt.vf
+			}
+			got, err := Parse(strings.NewReader(tt.xml), def, vf)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Parse() error = %v, wantErr %v", err, tt.wantErr)
 				return

@@ -131,7 +131,10 @@ func (c *TTSConfigutaror) Configure(r *http.Request, inText *api.Input) (*api.TT
 	}
 	if strings.HasPrefix(res.Text, "<speak") || inText.TextType == "ssml" {
 		res.SSMLParts, err = ssml.Parse(strings.NewReader(res.Text),
-			&ssml.Text{Voice: res.Voice, Speed: inText.Speed})
+			&ssml.Text{Voice: res.Voice, Speed: inText.Speed},
+			func(s string) (string, error) {
+				return getVoice(c.availableVoices, s)
+			})
 		if err != nil {
 			return nil, err
 		}
