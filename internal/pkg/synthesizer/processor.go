@@ -43,7 +43,7 @@ func (mw *MainWorker) Work(input *api.TTSRequestConfig) (*api.Result, error) {
 	if len(input.SSMLParts) > 0 {
 		data.Cfg.Type = SSMLMain
 		var err error
-		data.SSMLParts, err = mw.makeSSMLParts(input)
+		data.SSMLParts, err = makeSSMLParts(input)
 		if err != nil {
 			return nil, err
 		}
@@ -58,7 +58,7 @@ func (mw *MainWorker) Work(input *api.TTSRequestConfig) (*api.Result, error) {
 	return mapResult(data)
 }
 
-func (mw *MainWorker) makeSSMLParts(input *api.TTSRequestConfig) ([]*TTSData, error) {
+func makeSSMLParts(input *api.TTSRequestConfig) ([]*TTSData, error) {
 	var res []*TTSData
 	for _, p := range input.SSMLParts {
 		switch pc := p.(type) {
