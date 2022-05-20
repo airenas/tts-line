@@ -15,6 +15,7 @@ type wrkData struct {
 	speakTagCount    int
 	speakTagEndCount int
 	lastTag          []string
+	voiceFunc        func(string) (string, error)
 
 	res     []Part
 	cValues []*Text
@@ -45,8 +46,8 @@ func init() {
 }
 
 // Parse parses xml into synthesis structure
-func Parse(r io.Reader, def *Text) ([]Part, error) {
-	wrk := &wrkData{res: make([]Part, 0), cValues: []*Text{def}}
+func Parse(r io.Reader, def *Text, voiceFunc func(string) (string, error)) ([]Part, error) {
+	wrk := &wrkData{res: make([]Part, 0), cValues: []*Text{def}, voiceFunc: voiceFunc}
 	d := xml.NewDecoder(r)
 
 	for {
@@ -201,6 +202,11 @@ func startVoice(se xml.StartElement, wrk *wrkData) error {
 	v := getAttr(se, "name")
 	if v == "" {
 		return fmt.Errorf("no voice name")
+	}
+	var err error
+	v, err = wrk.voiceFunc(v)
+	if err != nil {
+		return err
 	}
 	def := wrk.cValues[len(wrk.cValues)-1]
 	wrk.cValues = append(wrk.cValues, &Text{Voice: v, Speed: def.Speed})
