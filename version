@@ -2,4 +2,4 @@ commit_count=$(shell git rev-list --count HEAD)
 rev_id=$(shell git rev-parse --short HEAD)
 
 clean_version?=0.2.$(commit_count)-$(rev_id)
-tts_version?=0.16.$(commit_count)-$(rev_id)
+tts_version?=0.17.$(commit_count)-$(rev_id)
