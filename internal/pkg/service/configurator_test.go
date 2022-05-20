@@ -214,6 +214,37 @@ func TestConfigure_Priority(t *testing.T) {
 	assert.Nil(t, res)
 }
 
+func TestConfigure_SSML(t *testing.T) {
+	c, _ := NewTTSConfigurator(test.NewConfig(t, "output:\n  defaultFormat: mp3\n  voices:\n   - default:aaa"))
+	req := httptest.NewRequest("POST", "/synthesize", strings.NewReader("text"))
+	res, err := c.Configure(req, &api.Input{Text: "<speak>olia</speak>"})
+	assert.Nil(t, err)
+	if assert.NotNil(t, res) {
+		assert.Equal(t, 1, len(res.SSMLParts))
+	}
+}
+
+func TestConfigure_SSML_Fail_NoSSML(t *testing.T) {
+	c, _ := NewTTSConfigurator(test.NewConfig(t, "output:\n  defaultFormat: mp3\n  voices:\n   - default:aaa"))
+	req := httptest.NewRequest("POST", "/synthesize", strings.NewReader("text"))
+	_, err := c.Configure(req, &api.Input{Text: "olia", TextType: "ssml"})
+	assert.NotNil(t, err)
+}
+
+func TestConfigure_SSML_Fail_BadSSML(t *testing.T) {
+	c, _ := NewTTSConfigurator(test.NewConfig(t, "output:\n  defaultFormat: mp3\n  voices:\n   - default:aaa"))
+	req := httptest.NewRequest("POST", "/synthesize", strings.NewReader("text"))
+	_, err := c.Configure(req, &api.Input{Text: "<speak><k></k></speak>", TextType: "ssml"})
+	assert.NotNil(t, err)
+}
+
+func TestConfigure_SSML_NoAllowed(t *testing.T) {
+	c, _ := NewTTSConfiguratorNoSSML(test.NewConfig(t, "output:\n  defaultFormat: mp3\n  voices:\n   - default:aaa"))
+	req := httptest.NewRequest("POST", "/synthesize", strings.NewReader("text"))
+	_, err := c.Configure(req, &api.Input{Text: "<speak>olia</speak>", TextType: "ssml"})
+	assert.NotNil(t, err)
+}
+
 func TestOutputTextFormat(t *testing.T) {
 	tests := []struct {
 		in    string
