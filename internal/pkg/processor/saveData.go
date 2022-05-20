@@ -1,6 +1,8 @@
 package processor
 
 import (
+	"fmt"
+
 	"github.com/airenas/go-app/pkg/goapp"
 	"github.com/pkg/errors"
 
@@ -55,4 +57,9 @@ func getTags(cfg *api.TTSRequestConfig) []string {
 		return nil
 	}
 	return cfg.SaveTags
+}
+
+// Info return info about processor
+func (p *saver) Info() string {
+	return fmt.Sprintf("saver(%s)", p.tType.String())
 }

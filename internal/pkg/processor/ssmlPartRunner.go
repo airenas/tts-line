@@ -1,6 +1,8 @@
 package processor
 
 import (
+	"fmt"
+
 	"github.com/airenas/tts-line/internal/pkg/synthesizer"
 )
 
@@ -27,4 +29,9 @@ func (p *SSMLPartRunner) Process(data *synthesizer.TTSData) error {
 		}
 	}
 	return nil
+}
+
+// Info return info about processor
+func (p *SSMLPartRunner) Info() string {
+	return fmt.Sprintf("SSMLPartRunner(%d)", len(p.processors))
 }

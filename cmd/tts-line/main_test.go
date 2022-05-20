@@ -8,6 +8,7 @@ import (
 	"github.com/airenas/tts-line/internal/pkg/synthesizer"
 	"github.com/airenas/tts-line/internal/pkg/test"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 const testAcrCfg = "acronyms:\n  url: http://server\n"
@@ -21,10 +22,13 @@ const testTaggerCfg = "tagger:\n  url: http://server\n"
 const testValidatorCfg = "validator:\n  maxChars: 100\n"
 const testConvCfg = "audioConvert:\n  url: http://server\n"
 const testObsceneCfg = "obscene:\n  url: http://server\n"
+const testCleanCfg = "clean:\n  url: http://server\n"
+const testNumberReplaceCfg = "numberReplace:\n  url: http://server\n"
 
 var testAllCfg = testCompCfg +
 	testAccenterCfg + testTransCfg + testAMCfg + testVocCfg + testTaggerCfg + testValidatorCfg +
-	testConvCfg + testAcrCfg + testCliticsCfg + testObsceneCfg
+	testConvCfg + testAcrCfg + testCliticsCfg + testObsceneCfg + testCleanCfg +
+	testNumberReplaceCfg
 
 var testDBSession *mongodb.SessionProvider
 
@@ -78,6 +82,27 @@ func TestAddPartProcessors(t *testing.T) {
 			assert.Equal(t, tt.wantErr,
 				addPartProcessors(partRunner, test.NewConfig(t, trim(testAllCfg, tt.trimCfg))) != nil)
 		})
+	}
+}
+
+func TestAddSSMLProcessors(t *testing.T) {
+	mw := synthesizer.MainWorker{}
+	err := addSSMLProcessors(&mw, &mongodb.SessionProvider{}, test.NewConfig(t, testAllCfg))
+	assert.Nil(t, err)
+	info := mw.GetSSMLProcessorsInfo()
+	req := []string{"addMetrics", "ssmlValidator", "saver", "SSMLPartRunner", "joinSSMLAudio",
+		"audioConverter", "addMetrics"}
+	infos := strings.Split(info, "\n")
+	pos := 0
+	for _, rs := range req {
+		was := false
+		for ; pos < len(infos); pos++ {
+			if strings.Contains(infos[pos], rs) {
+				was = true
+				break
+			}
+		}
+		require.True(t, was, "no `%s` in [%s]", rs, strings.Join(infos, ">"))
 	}
 }
 
