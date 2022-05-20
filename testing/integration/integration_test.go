@@ -123,6 +123,22 @@ func TestSynthesizeCustom_FailNoID(t *testing.T) {
 	CheckCode(t, resp, http.StatusBadRequest)
 }
 
+func TestSynthesizeCustom_FailSSML(t *testing.T) {
+	t.Parallel()
+	resp := Invoke(t, cfg.httpclient, NewRequest(t, http.MethodPost, cfg.url, "/synthesize",
+		api.Input{Text: "Olia", Voice: "astra", AllowCollectData: &[]bool{true}[0], OutputTextFormat: "accented"}))
+	CheckCode(t, resp, http.StatusOK)
+	res := api.Result{}
+	Decode(t, resp, &res)
+	require.NotEmpty(t, res.AudioAsString)
+	require.NotEmpty(t, res.RequestID)
+
+	resp = Invoke(t, cfg.httpclient, NewRequest(t, http.MethodPost, cfg.url,
+		fmt.Sprintf("/synthesizeCustom?requestID=%s", res.RequestID),
+		api.Input{Text: "<speak>aaa</speak>", Voice: "astra"}))
+	CheckCode(t, resp, http.StatusBadRequest)
+}
+
 func TestRequest_Success(t *testing.T) {
 	t.Parallel()
 	resp := Invoke(t, cfg.httpclient, NewRequest(t, http.MethodPost, cfg.url, "/synthesize",

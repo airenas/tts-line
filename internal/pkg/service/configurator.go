@@ -29,6 +29,7 @@ type TTSConfigutaror struct {
 	defaultOutputFormat api.AudioFormatEnum
 	outputMetadata      []string
 	availableVoices     map[string]string
+	noSSML              bool
 }
 
 //NewTTSConfigurator creates the initial request configuration
@@ -64,6 +65,16 @@ func NewTTSConfigurator(cfg *viper.Viper) (*TTSConfigutaror, error) {
 		return nil, errors.Wrap(err, "no default voice")
 	}
 	goapp.Log.Infof("Voices. Default: %s, all: %v", dVoice, res.availableVoices)
+	return res, nil
+}
+
+//NewTTSConfiguratorNoSSML creates the initial request configuration with no SSML allowed
+func NewTTSConfiguratorNoSSML(cfg *viper.Viper) (*TTSConfigutaror, error) {
+	res, err := NewTTSConfigurator(cfg)
+	if err != nil {
+		return nil, err
+	}
+	res.noSSML = true
 	return res, nil
 }
 
@@ -130,6 +141,9 @@ func (c *TTSConfigutaror) Configure(r *http.Request, inText *api.Input) (*api.TT
 		return nil, err
 	}
 	if strings.HasPrefix(res.Text, "<speak") || inText.TextType == "ssml" {
+		if c.noSSML {
+			return nil, errors.New("SSML not allowed")
+		}
 		res.SSMLParts, err = ssml.Parse(strings.NewReader(res.Text),
 			&ssml.Text{Voice: res.Voice, Speed: inText.Speed},
 			func(s string) (string, error) {

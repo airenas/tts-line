@@ -61,7 +61,7 @@ func main() {
 	}
 
 	// init custom synthesize method
-	data.SyntCustomData.Configurator, err = service.NewTTSConfigurator(goapp.Sub(goapp.Config, "options"))
+	data.SyntCustomData.Configurator, err = service.NewTTSConfiguratorNoSSML(goapp.Sub(goapp.Config, "options"))
 	if err != nil {
 		goapp.Log.Fatal(errors.Wrap(err, "can't init custom configurator"))
 	}
