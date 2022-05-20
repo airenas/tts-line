@@ -1,13 +1,15 @@
 package synthesizer
 
 import (
-	"errors"
 	"testing"
-
-	"github.com/stretchr/testify/assert"
+	"time"
 
 	"github.com/airenas/tts-line/internal/pkg/service/api"
 	"github.com/airenas/tts-line/internal/pkg/test/mocks"
+	"github.com/airenas/tts-line/pkg/ssml"
+	"github.com/pkg/errors"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 var (
@@ -82,6 +84,33 @@ func TestWork_ReturnText(t *testing.T) {
 	assert.Equal(t, "", res.Text)
 }
 
+func TestWork_SSML(t *testing.T) {
+	initTest(t)
+	processorMock.f = func(d *TTSData) error {
+		d.TextWithNumbers = "olia lia"
+		assert.Equal(t, 3, len(d.SSMLParts))
+		return nil
+	}
+	worker.processors = nil
+	worker.AddSSML(processorMock)
+	res, _ := worker.Work(&api.TTSRequestConfig{Text: "<speak>olia</speak>", OutputTextFormat: api.TextNormalized,
+		SSMLParts: []ssml.Part{&ssml.Text{Text: "Olia"}, &ssml.Text{Text: "Olia"},
+			&ssml.Pause{Duration: 10 * time.Second}}})
+	assert.Equal(t, "olia lia", res.Text)
+}
+
+func TestWork_SSML_Fail(t *testing.T) {
+	initTest(t)
+	processorMock.f = func(d *TTSData) error {
+		return errors.New("fail")
+	}
+	worker.processors = nil
+	worker.AddSSML(processorMock)
+	_, err := worker.Work(&api.TTSRequestConfig{Text: "<speak>olia</speak>", OutputTextFormat: api.TextNormalized,
+		SSMLParts: []ssml.Part{&ssml.Text{Text: "Olia"}}})
+	assert.NotNil(t, err)
+}
+
 func TestMapResult_Accented(t *testing.T) {
 	d := &TTSData{}
 	d.Input = &api.TTSRequestConfig{OutputTextFormat: api.TextAccented}
@@ -138,4 +167,44 @@ type procMock struct {
 
 func (pr *procMock) Process(d *TTSData) error {
 	return pr.f(d)
+}
+
+func Test_makeSSMLParts(t *testing.T) {
+	tests := []struct {
+		name    string
+		args    *api.TTSRequestConfig
+		want    []*TTSData
+		wantErr bool
+	}{
+		{name: "text", args: &api.TTSRequestConfig{SSMLParts: []ssml.Part{&ssml.Text{Voice: "aa", Text: "oo", Speed: 0.6}}},
+			want:    []*TTSData{{OriginalText: "oo", Cfg: TTSConfig{Type: SSMLText, Voice: "aa", Speed: 0.6}}},
+			wantErr: false},
+		{name: "pause", args: &api.TTSRequestConfig{SSMLParts: []ssml.Part{&ssml.Pause{Duration: time.Second, IsBreak: true}}},
+			want:    []*TTSData{{OriginalText: "", Cfg: TTSConfig{Type: SSMLPause, PauseDuration: time.Second}}},
+			wantErr: false},
+		{name: "pause", args: &api.TTSRequestConfig{SSMLParts: []ssml.Part{&ssml.Pause{Duration: time.Second, IsBreak: true},
+			&ssml.Text{Voice: "aa", Text: "oo", Speed: 0.6}}},
+			want: []*TTSData{{OriginalText: "", Cfg: TTSConfig{Type: SSMLPause, PauseDuration: time.Second}},
+				{OriginalText: "oo", Cfg: TTSConfig{Type: SSMLText, Voice: "aa", Speed: 0.6}}},
+			wantErr: false},
+		{name: "fail", args: &api.TTSRequestConfig{SSMLParts: []ssml.Part{struct{}{}}},
+			want:    []*TTSData{},
+			wantErr: true},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := makeSSMLParts(tt.args)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("makeSSMLParts() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			require.Equal(t, len(tt.want), len(got))
+			for i := range tt.want {
+				assert.Equal(t, tt.want[i].OriginalText, got[i].OriginalText)
+				assert.Equal(t, tt.want[i].Cfg.Voice, got[i].Cfg.Voice)
+				assert.Equal(t, tt.want[i].Cfg.Speed, got[i].Cfg.Speed)
+				assert.Equal(t, tt.want[i].Cfg.Type, got[i].Cfg.Type)
+			}
+		})
+	}
 }
