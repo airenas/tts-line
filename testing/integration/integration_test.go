@@ -92,7 +92,7 @@ func TestSynthesize_SSMLOK_Voice(t *testing.T) {
 
 func TestSynthesize_SSMLOK_Several(t *testing.T) {
 	t.Parallel()
-	testSSML(t, `<speak><p/><voice name="astra">Olia</voice><p/><voice name="linas">Olia</voice></speak>`,
+	testSSML(t, `<speak><p/><voice name="astra">Olia</voice><p/><voice name="laimis">Olia</voice></speak>`,
 		http.StatusOK)
 }
 
