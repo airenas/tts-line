@@ -76,6 +76,8 @@ func TestParse(t *testing.T) {
 		{name: "<voice> map fail", xml: `<speak><voice name="ooo">aaa</voice></speak>`,
 			vf:   func(s string) (string, error) { return "", errors.New("no voice") },
 			want: []Part{}, wantErr: true},
+		{name: "syntax error", xml: "<speak>olia</sss>", want: []Part{},
+			wantErr: true},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

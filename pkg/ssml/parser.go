@@ -57,7 +57,7 @@ func Parse(r io.Reader, def *Text, voiceFunc func(string) (string, error)) ([]Pa
 			break
 		}
 		if err != nil {
-			return nil, fmt.Errorf("can't parse ssml %v", err)
+			return nil, fmt.Errorf("ssml: %v", err)
 		}
 		if t == nil {
 			break
@@ -67,35 +67,35 @@ func Parse(r io.Reader, def *Text, voiceFunc func(string) (string, error)) ([]Pa
 		case xml.StartElement:
 			f, ok := startFunctions[se.Name.Local]
 			if !ok {
-				return nil, fmt.Errorf("unknown tag <%s> at %d", se.Name.Local, d.InputOffset())
+				return nil, &ErrParse{Pos: d.InputOffset(), Msg: fmt.Sprintf("unknown tag <%s>", se.Name.Local)}
 			}
 			if err := f(se, wrk); err != nil {
-				return nil, fmt.Errorf("at %d: %v", d.InputOffset(), err)
+				return nil, &ErrParse{Pos: d.InputOffset(), Msg: err.Error()}
 			}
 			wrk.lastTag = append(wrk.lastTag, se.Name.Local)
 		case xml.EndElement:
 			f, ok := endFunctions[se.Name.Local]
 			if !ok {
-				return nil, fmt.Errorf("unknown tag </%s> at %d", se.Name.Local, d.InputOffset())
+				return nil, &ErrParse{Pos: d.InputOffset(), Msg: fmt.Sprintf("unknown tag </%s>", se.Name.Local)}
 			}
 			if err := f(se, wrk); err != nil {
-				return nil, fmt.Errorf("at %d: %v", d.InputOffset(), err)
+				return nil, &ErrParse{Pos: d.InputOffset(), Msg: err.Error()}
 			}
 			wrk.lastTag = wrk.lastTag[:len(wrk.lastTag)-1]
 		case xml.CharData:
 			err := makeTextPart(se, wrk)
 			if err != nil {
-				return nil, fmt.Errorf("at %d: %v", d.InputOffset(), err)
+				return nil, &ErrParse{Pos: d.InputOffset(), Msg: err.Error()}
 			}
 		case xml.Comment:
 		case xml.ProcInst:
 		case xml.Directive:
 		default:
-			return nil, fmt.Errorf("unknown element type %s", se)
+			return nil, &ErrParse{Pos: d.InputOffset(), Msg: fmt.Sprintf("unknown element %v", se)}
 		}
 	}
 	if wrk.speakTagEndCount != 1 {
-		return nil, fmt.Errorf("no </speak>")
+		return nil, &ErrParse{Pos: d.InputOffset(), Msg: "no </speak>"}
 	}
 	return wrk.res, nil
 }
@@ -172,7 +172,7 @@ func getDuration(tm, str string) (time.Duration, error) {
 	} else if str != "" {
 		res, ok := durationStrs[str]
 		if !ok {
-			return 0, fmt.Errorf("unsupported duration value '%s'", str)
+			return 0, fmt.Errorf("wrong duration '%s'", str)
 		}
 		return res, nil
 	}
@@ -201,7 +201,7 @@ func startVoice(se xml.StartElement, wrk *wrkData) error {
 	}
 	v := getAttr(se, "name")
 	if v == "" {
-		return fmt.Errorf("no voice name")
+		return fmt.Errorf("no <voice> name")
 	}
 	var err error
 	v, err = wrk.voiceFunc(v)

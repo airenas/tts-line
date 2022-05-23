@@ -13,6 +13,7 @@ import (
 	"github.com/airenas/tts-line/internal/pkg/test/mocks"
 	"github.com/airenas/tts-line/internal/pkg/test/mocks/matchers"
 	"github.com/airenas/tts-line/internal/pkg/utils"
+	"github.com/airenas/tts-line/pkg/ssml"
 	"github.com/labstack/echo/v4"
 	"github.com/petergtz/pegomock"
 	"github.com/pkg/errors"
@@ -98,13 +99,20 @@ func Test_FailConfigure(t *testing.T) {
 	initTest(t)
 	pegomock.When(cnfMock.Configure(matchers.AnyPtrToHttpRequest(), matchers.AnyPtrToApiInput())).
 		ThenReturn(nil, errors.New("No format mmp"))
-	pegomock.When(synthesizerMock.Work(matchers.AnyPtrToApiTTSRequestConfig())).
-		ThenReturn(&api.Result{AudioAsString: "wav"}, nil)
-
 	req := httptest.NewRequest("POST", "/synthesize", toReader(api.Input{Text: "olia"}))
 	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
 	resp := testCode(t, req, 400)
 	assert.Equal(t, `{"message":"No format mmp"}`+"\n", resp.Body.String())
+}
+
+func Test_SSMLError(t *testing.T) {
+	initTest(t)
+	pegomock.When(cnfMock.Configure(matchers.AnyPtrToHttpRequest(), matchers.AnyPtrToApiInput())).
+		ThenReturn(nil, &ssml.ErrParse{Pos: 10, Msg: "multiple <speak>"})
+	req := httptest.NewRequest("POST", "/synthesize", toReader(api.Input{Text: "<speak>olia</speak><speak>"}))
+	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+	resp := testCode(t, req, 400)
+	assert.Equal(t, `{"message":"ssml: 10: multiple \u003cspeak\u003e"}`+"\n", resp.Body.String())
 }
 
 func Test_FailOnWrongInput(t *testing.T) {
