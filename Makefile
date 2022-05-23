@@ -1,4 +1,5 @@
 -include Makefile.options
+-include version
 #####################################################################################
 ## print usage information
 help:
@@ -42,6 +43,12 @@ docker/build: docker/tts-line/build docker/tts-text-clean/build
 ## build and push docker image
 docker/%/push:
 	cd build/$* && $(MAKE) dpush
+#####################################################################################
+## creates new git tag and pushes to github 
+git/create/version:
+	git tag $(version)
+	git push origin $(version)
+.PHONY: git/create/version	
 #####################################################################################
 ## generate diagrams
 generate/diagram:
