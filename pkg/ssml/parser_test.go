@@ -68,6 +68,22 @@ func TestParse(t *testing.T) {
 				&Text{Text: "end", Voice: "ooo", Speed: 1},
 				&Text{Text: "end def", Voice: "aa", Speed: 1},
 			}, wantErr: false},
+		{name: "<prosody> rate", xml: `<speak><prosody rate="50%">aaa</prosody></speak>`,
+			want: []Part{
+				&Text{Text: "aaa", Voice: "aa", Speed: 2},
+			}, wantErr: false},
+		{name: "<prosody> inner", xml: `<speak><prosody rate="200%">
+		<voice name="ooo">aaa
+		<voice name="ooo1"><prosody rate="slow">aaa1</prosody></voice>
+		end
+		</voice></prosody>
+		end def</speak>`,
+			want: []Part{
+				&Text{Text: "aaa", Voice: "ooo", Speed: 0.5},
+				&Text{Text: "aaa1", Voice: "ooo1", Speed: 1.5},
+				&Text{Text: "end", Voice: "ooo", Speed: 0.5},
+				&Text{Text: "end def", Voice: "aa", Speed: 1},
+			}, wantErr: false},
 		{name: "<voice> map", xml: `<speak><voice name="ooo">aaa</voice></speak>`,
 			vf: func(s string) (string, error) { return "ooo.v1", nil },
 			want: []Part{
@@ -138,6 +154,47 @@ func Test_getDuration(t *testing.T) {
 			}
 			if got != tt.want {
 				t.Errorf("getDuration() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func Test_getSpeed(t *testing.T) {
+	tests := []struct {
+		name    string
+		args    string
+		want    float32
+		wantErr bool
+	}{
+		{name: "percent", args: "10%", want: 2, wantErr: false},
+		{name: "percent", args: "-40%", want: 2, wantErr: false},
+		{name: "percent", args: "50%", want: 2, wantErr: false},
+		{name: "percent", args: "75%", want: 1.5, wantErr: false},
+		{name: "percent", args: "100%", want: 1, wantErr: false},
+		{name: "percent", args: "120%", want: .9, wantErr: false},
+		{name: "percent", args: "150%", want: .75, wantErr: false},
+		{name: "percent", args: "200%", want: .5, wantErr: false},
+		{name: "percent", args: "300%", want: .5, wantErr: false},
+		{name: "percent fail", args: "300", want: 0, wantErr: true},
+		{name: "percent fail", args: "aa%", want: 0, wantErr: true},
+		{name: "rate", args: "x-slow", want: 2, wantErr: false},
+		{name: "rate", args: "slow", want: 1.5, wantErr: false},
+		{name: "rate", args: "medium", want: 1, wantErr: false},
+		{name: "rate", args: "default", want: 1, wantErr: false},
+		{name: "rate", args: "fast", want: .75, wantErr: false},
+		{name: "rate", args: "x-fast", want: .5, wantErr: false},
+		{name: "rate fail", args: "aaa x-slow", want: 0, wantErr: true},
+		{name: "empty fail", args: "", want: 0, wantErr: true},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := getSpeed(tt.args)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("getSpeed() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if got != tt.want {
+				t.Errorf("getSpeed() = %v, want %v", got, tt.want)
 			}
 		})
 	}

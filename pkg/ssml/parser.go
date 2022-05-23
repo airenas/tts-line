@@ -4,6 +4,7 @@ import (
 	"encoding/xml"
 	"fmt"
 	"io"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -24,6 +25,7 @@ type wrkData struct {
 var startFunctions map[string]startFunc
 var endFunctions map[string]endFunc
 var durationStrs map[string]time.Duration
+var rateStrs map[string]float32
 var pDuration time.Duration
 
 func init() {
@@ -38,11 +40,15 @@ func init() {
 	endFunctions["break"] = endBreak
 	startFunctions["voice"] = startVoice
 	endFunctions["voice"] = endVoice
+	startFunctions["prosody"] = startProsody
+	endFunctions["prosody"] = endVoice
 
 	durationStrs = map[string]time.Duration{"none": 0, "x-weak": 250 * time.Millisecond,
 		"weak": 500 * time.Millisecond, "medium": 750 * time.Millisecond,
 		"strong": 1000 * time.Millisecond, "x-strong": 1250 * time.Millisecond}
 	pDuration = durationStrs["x-strong"]
+
+	rateStrs = map[string]float32{"x-slow": 2, "slow": 1.5, "medium": 1, "fast": .75, "x-fast": .5, "default": 1}
 }
 
 // Parse parses xml into synthesis structure
@@ -217,6 +223,56 @@ func endVoice(se xml.EndElement, wrk *wrkData) error {
 	if wrk.speakTagCount != 1 {
 		return fmt.Errorf("no </speak>")
 	}
-	wrk.cValues = wrk.cValues[:len(wrk.cValues)-1]
+	l := len(wrk.cValues) - 1
+	wrk.cValues[l] = nil
+	wrk.cValues = wrk.cValues[:l]
 	return nil
+}
+
+func startProsody(se xml.StartElement, wrk *wrkData) error {
+	if wrk.speakTagCount != 1 {
+		return fmt.Errorf("no <speak>")
+	}
+	r := getAttr(se, "rate")
+	if r == "" {
+		return fmt.Errorf("no <prosody> rate")
+	}
+	sp, err := getSpeed(r)
+	if err != nil {
+		return err
+	}
+
+	def := wrk.cValues[len(wrk.cValues)-1]
+	wrk.cValues = append(wrk.cValues, &Text{Voice: def.Voice, Speed: sp})
+	return nil
+}
+
+func getSpeed(str string) (float32, error) {
+	if str == "" {
+		return 0, fmt.Errorf("no rate")
+	}
+	if strings.HasSuffix(str, "%") {
+		v, err := strconv.ParseFloat(str[:len(str)-1], 32)
+		if err != nil {
+			return 0, fmt.Errorf("wrong value '%s': %v", str, err)
+		}
+		return parseRatePercents(float32(v)), nil
+	}
+	res, ok := rateStrs[str]
+	if !ok {
+		return 0, fmt.Errorf("wrong value '%s'", str)
+	}
+	return res, nil
+}
+
+func parseRatePercents(v float32) float32 {
+	if v > 200 {
+		v = 200
+	} else if v < 50 {
+		v = 50
+	}
+	if v < 100 {
+		return 1 + (100-v)/50
+	}
+	return 1 - (v-100)/200
 }
