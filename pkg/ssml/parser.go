@@ -107,19 +107,19 @@ func Parse(r io.Reader, def *Text, voiceFunc func(string) (string, error)) ([]Pa
 }
 
 func makeTextPart(se xml.CharData, wrk *wrkData) error {
-	if wrk.speakTagCount != 1 {
-		return fmt.Errorf("no <speak>")
-	}
-	if len(wrk.lastTag) == 0 {
-		return fmt.Errorf("data after </speak>")
-	}
-	lt := wrk.lastTag[len(wrk.lastTag)-1]
-	if lt == "break" {
-		return fmt.Errorf("data in <break>")
-	}
 	s := strings.TrimSpace(string(se))
 	if s != "" {
 		def := wrk.cValues[len(wrk.cValues)-1]
+		if wrk.speakTagCount != 1 {
+			return fmt.Errorf("no <speak>")
+		}
+		if len(wrk.lastTag) == 0 {
+			return fmt.Errorf("data after </speak>")
+		}
+		lt := wrk.lastTag[len(wrk.lastTag)-1]
+		if lt == "break" {
+			return fmt.Errorf("data in <break>")
+		}
 		wrk.res = append(wrk.res, &Text{Text: s, Voice: def.Voice, Speed: def.Speed})
 	}
 	return nil
@@ -127,7 +127,7 @@ func makeTextPart(se xml.CharData, wrk *wrkData) error {
 
 func startSpeak(se xml.StartElement, wrk *wrkData) error {
 	if wrk.speakTagCount != 0 {
-		return fmt.Errorf("multiple <speak>")
+		return fmt.Errorf("wrong <speak>")
 	}
 	wrk.speakTagCount++
 	return nil
@@ -178,11 +178,11 @@ func getDuration(tm, str string) (time.Duration, error) {
 	} else if str != "" {
 		res, ok := durationStrs[str]
 		if !ok {
-			return 0, fmt.Errorf("wrong duration '%s'", str)
+			return 0, fmt.Errorf("wrong <break>:strength '%s'", str)
 		}
 		return res, nil
 	}
-	return 0, fmt.Errorf("no duration")
+	return 0, fmt.Errorf("no <break>:time|strength")
 }
 
 func getAttr(se xml.StartElement, s string) string {
@@ -207,7 +207,7 @@ func startVoice(se xml.StartElement, wrk *wrkData) error {
 	}
 	v := getAttr(se, "name")
 	if v == "" {
-		return fmt.Errorf("no <voice> name")
+		return fmt.Errorf("no <voice>:name")
 	}
 	var err error
 	v, err = wrk.voiceFunc(v)
@@ -235,7 +235,7 @@ func startProsody(se xml.StartElement, wrk *wrkData) error {
 	}
 	r := getAttr(se, "rate")
 	if r == "" {
-		return fmt.Errorf("no <prosody> rate")
+		return fmt.Errorf("no <prosody>:rate")
 	}
 	sp, err := getSpeed(r)
 	if err != nil {
