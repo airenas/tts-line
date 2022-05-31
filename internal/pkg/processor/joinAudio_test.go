@@ -3,6 +3,7 @@ package processor
 import (
 	"bytes"
 	"encoding/base64"
+	"errors"
 	"io/ioutil"
 	"testing"
 	"time"
@@ -11,6 +12,7 @@ import (
 	"github.com/airenas/tts-line/internal/pkg/synthesizer"
 	"github.com/airenas/tts-line/internal/pkg/test/mocks"
 	"github.com/airenas/tts-line/internal/pkg/wav"
+	"github.com/petergtz/pegomock"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -87,6 +89,29 @@ func TestJoinAudio_EmptyFail(t *testing.T) {
 	d.Parts = []*synthesizer.TTSDataPart{{Audio: strA}, {Audio: ""}}
 	err := pr.Process(&d)
 	assert.NotNil(t, err)
+}
+
+func TestJoinAudio_SuffixFail(t *testing.T) {
+	initTestJoiner(t)
+	pr := NewJoinAudio(loaderMock)
+	d := synthesizer.TTSData{Input: &api.TTSRequestConfig{OutputFormat: api.AudioMP3}, SuffixName: "test.wav"}
+	strA := getTestEncAudio(t)
+	d.Parts = []*synthesizer.TTSDataPart{{Audio: strA}}
+	pegomock.When(loaderMock.TakeWav(pegomock.AnyString())).ThenReturn(nil, errors.New("fail"))
+	err := pr.Process(&d)
+	assert.NotNil(t, err)
+}
+
+func TestJoinAudio_Suffix(t *testing.T) {
+	initTestJoiner(t)
+	pr := NewJoinAudio(loaderMock)
+	d := synthesizer.TTSData{Input: &api.TTSRequestConfig{OutputFormat: api.AudioMP3}, SuffixName: "test.wav"}
+	strA := getTestEncAudio(t)
+	d.Parts = []*synthesizer.TTSDataPart{{Audio: strA}}
+	pegomock.When(loaderMock.TakeWav(pegomock.AnyString())).ThenReturn(getWaveData(t), nil)
+	err := pr.Process(&d)
+	assert.Nil(t, err)
+	assert.InDelta(t, 0.5572*2, d.AudioLenSeconds, 0.001)
 }
 
 func TestJoinSSMLAudio(t *testing.T) {
@@ -197,7 +222,35 @@ func TestJoinSSMLAudio_AddPause(t *testing.T) {
 
 }
 
+func TestJoinSSMLAudio_Suffix(t *testing.T) {
+	initTestJoiner(t)
+	pr := NewJoinSSMLAudio(loaderMock)
+	d := synthesizer.TTSData{Input: &api.TTSRequestConfig{OutputFormat: api.AudioMP3}}
+	strA := getTestEncAudio(t)
+	d.Parts = []*synthesizer.TTSDataPart{{Audio: strA}}
+	d.Cfg.Type = synthesizer.SSMLText
+	da := &synthesizer.TTSData{Input: d.Input, SSMLParts: []*synthesizer.TTSData{&d}, SuffixName: "oo.wav"}
+	pegomock.When(loaderMock.TakeWav(pegomock.AnyString())).ThenReturn(getWaveData(t), nil)
+	err := pr.Process(da)
+	assert.Nil(t, err)
+	assert.InDelta(t, 0.5572 * 2, da.AudioLenSeconds, 0.001)
+}
+
+func TestJoinSSMLAudio_SuffixFail(t *testing.T) {
+	initTestJoiner(t)
+	pr := NewJoinSSMLAudio(loaderMock)
+	d := synthesizer.TTSData{Input: &api.TTSRequestConfig{OutputFormat: api.AudioMP3}}
+	strA := getTestEncAudio(t)
+	d.Parts = []*synthesizer.TTSDataPart{{Audio: strA}}
+	d.Cfg.Type = synthesizer.SSMLText
+	da := &synthesizer.TTSData{Input: d.Input, SSMLParts: []*synthesizer.TTSData{&d}, SuffixName: "oo.wav"}
+	pegomock.When(loaderMock.TakeWav(pegomock.AnyString())).ThenReturn(nil, errors.New("fail"))
+	err := pr.Process(da)
+	assert.NotNil(t, err)
+}
+
 func getTestEncAudio(t *testing.T) string {
+	t.Helper()
 	return base64.StdEncoding.EncodeToString(getWaveData(t))
 }
 
@@ -214,6 +267,7 @@ func getTestPauseSize(as string, dur time.Duration) uint32 {
 }
 
 func getWaveData(t *testing.T) []byte {
+	t.Helper()
 	res, err := ioutil.ReadFile("../wav/_testdata/test.wav")
 	assert.Nil(t, err)
 	return res
@@ -235,7 +289,7 @@ func Test_writePause(t *testing.T) {
 		{name: "24 bits", args: args{sampleRate: 22050, bitsPerSample: 24, pause: time.Second}, want: 22050 * 3},
 		{name: "9s", args: args{sampleRate: 22050, bitsPerSample: 16, pause: time.Second * 9}, want: 22050 * 2 * 9},
 		{name: "15s", args: args{sampleRate: 22050, bitsPerSample: 16, pause: time.Second * 15}, want: 22050 * 2 * 10},
-		{name: "-1s", args: args{sampleRate: 22050, bitsPerSample: 16, pause: - time.Second * 9}, want: 0},
+		{name: "-1s", args: args{sampleRate: 22050, bitsPerSample: 16, pause: -time.Second * 9}, want: 0},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
