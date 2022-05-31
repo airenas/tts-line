@@ -24,11 +24,12 @@ const testConvCfg = "audioConvert:\n  url: http://server\n"
 const testObsceneCfg = "obscene:\n  url: http://server\n"
 const testCleanCfg = "clean:\n  url: http://server\n"
 const testNumberReplaceCfg = "numberReplace:\n  url: http://server\n"
+const testSuffixLoaderCfg = "suffixLoader:\n  path: ./\n"
 
 var testAllCfg = testCompCfg +
 	testAccenterCfg + testTransCfg + testAMCfg + testVocCfg + testTaggerCfg + testValidatorCfg +
 	testConvCfg + testAcrCfg + testCliticsCfg + testObsceneCfg + testCleanCfg +
-	testNumberReplaceCfg
+	testNumberReplaceCfg + testSuffixLoaderCfg
 
 var testDBSession *mongodb.SessionProvider
 
@@ -90,7 +91,28 @@ func TestAddSSMLProcessors(t *testing.T) {
 	err := addSSMLProcessors(&mw, &mongodb.SessionProvider{}, test.NewConfig(t, testAllCfg))
 	assert.Nil(t, err)
 	info := mw.GetSSMLProcessorsInfo()
-	req := []string{"addMetrics", "ssmlValidator", "saver", "SSMLPartRunner", "joinSSMLAudio",
+	req := []string{"addMetrics", "ssmlValidator", "saver", "SSMLPartRunner", "joinSSMLAudio(audioLoader(./))",
+		"audioConverter", "addMetrics"}
+	infos := strings.Split(info, "\n")
+	pos := 0
+	for _, rs := range req {
+		was := false
+		for ; pos < len(infos); pos++ {
+			if strings.Contains(infos[pos], rs) {
+				was = true
+				break
+			}
+		}
+		require.True(t, was, "no `%s` in [%s]", rs, strings.Join(infos, ">"))
+	}
+}
+
+func TestAddProcessors(t *testing.T) {
+	mw := synthesizer.MainWorker{}
+	err := addProcessors(&mw, &mongodb.SessionProvider{}, test.NewConfig(t, testAllCfg))
+	assert.Nil(t, err)
+	info := mw.GetProcessorsInfo()
+	req := []string{"addMetrics", "saver", "joinAudio(audioLoader(./))",
 		"audioConverter", "addMetrics"}
 	infos := strings.Split(info, "\n")
 	pos := 0

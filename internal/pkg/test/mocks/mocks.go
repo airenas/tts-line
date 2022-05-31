@@ -22,6 +22,8 @@ import (
 
 //go:generate pegomock generate --package=mocks --output=loadDB.go -m github.com/airenas/tts-line/internal/pkg/processor LoadDB
 
+//go:generate pegomock generate --package=mocks --output=audioLoader.go -m github.com/airenas/tts-line/internal/pkg/processor AudioLoader
+
 //go:generate pegomock generate --package=mocks --output=exporter.go -m github.com/airenas/tts-line/internal/pkg/exporter Exporter
 
 //go:generate pegomock generate --package=mocks --output=acrWorker.go -m github.com/airenas/tts-line/internal/pkg/acronyms/service Worker

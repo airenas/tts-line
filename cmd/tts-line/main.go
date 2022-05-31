@@ -5,6 +5,7 @@ import (
 
 	"github.com/airenas/go-app/pkg/goapp"
 	"github.com/airenas/tts-line/internal/pkg/cache"
+	"github.com/airenas/tts-line/internal/pkg/file"
 	"github.com/airenas/tts-line/internal/pkg/mongodb"
 	"github.com/airenas/tts-line/internal/pkg/processor"
 	"github.com/airenas/tts-line/internal/pkg/service"
@@ -34,7 +35,7 @@ func main() {
 	}
 	defer sp.Close()
 
-	if err = addProcessors(synt, sp); err != nil {
+	if err = addProcessors(synt, sp, goapp.Config); err != nil {
 		goapp.Log.Fatal(errors.Wrap(err, "can't init processors"))
 	}
 
@@ -85,14 +86,14 @@ func main() {
 	}
 }
 
-func addProcessors(synt *synthesizer.MainWorker, sp *mongodb.SessionProvider) error {
+func addProcessors(synt *synthesizer.MainWorker, sp *mongodb.SessionProvider, cfg *viper.Viper) error {
 	pr, err := processor.NewAddMetrics(processor.NewMetricsCharsFunc("/synthesize"))
 	if err != nil {
 		return errors.Wrap(err, "can't init metrics processor")
 	}
 	synt.Add(pr)
 	//validator
-	pr, err = processor.NewValidator(goapp.Config.GetInt("validator.maxChars"))
+	pr, err = processor.NewValidator(cfg.GetInt("validator.maxChars"))
 	if err != nil {
 		return errors.Wrap(err, "can't init validator")
 	}
@@ -108,7 +109,7 @@ func addProcessors(synt *synthesizer.MainWorker, sp *mongodb.SessionProvider) er
 	}
 	synt.Add(sv)
 	// cleaner
-	pr, err = processor.NewCleaner(goapp.Config.GetString("clean.url"))
+	pr, err = processor.NewCleaner(cfg.GetString("clean.url"))
 	if err != nil {
 		return errors.Wrap(err, "can't init normalize/clean processor")
 	}
@@ -122,7 +123,7 @@ func addProcessors(synt *synthesizer.MainWorker, sp *mongodb.SessionProvider) er
 	}
 	synt.Add(sv)
 	//number replacer
-	pr, err = processor.NewNumberReplace(goapp.Config.GetString("numberReplace.url"))
+	pr, err = processor.NewNumberReplace(cfg.GetString("numberReplace.url"))
 	if err != nil {
 		return errors.Wrap(err, "can't init number replace")
 	}
@@ -134,20 +135,24 @@ func addProcessors(synt *synthesizer.MainWorker, sp *mongodb.SessionProvider) er
 	}
 	synt.Add(sv)
 
-	pr, err = processor.NewTagger(goapp.Config.GetString("tagger.url"))
+	pr, err = processor.NewTagger(cfg.GetString("tagger.url"))
 	if err != nil {
 		return errors.Wrap(err, "can't init tagger")
 	}
 	synt.Add(pr)
 
-	synt.Add(processor.NewSplitter(goapp.Config.GetInt("splitter.maxChars")))
+	synt.Add(processor.NewSplitter(cfg.GetInt("splitter.maxChars")))
 
-	partRunner := synthesizer.NewPartRunner(goapp.Config.GetInt("partRunner.workers"))
+	partRunner := synthesizer.NewPartRunner(cfg.GetInt("partRunner.workers"))
 	synt.Add(partRunner)
 
-	synt.Add(processor.NewJoinAudio())
+	suffixLoader, err := file.NewLoader(cfg.GetString("suffixLoader.path"))
+	if err != nil {
+		return errors.Wrap(err, "can't init suffix Loader")
+	}
+	synt.Add(processor.NewJoinAudio(suffixLoader))
 
-	pr, err = processor.NewConverter(goapp.Config.GetString("audioConvert.url"))
+	pr, err = processor.NewConverter(cfg.GetString("audioConvert.url"))
 	if err != nil {
 		return errors.Wrap(err, "can't init mp3 converter")
 	}
@@ -159,14 +164,14 @@ func addProcessors(synt *synthesizer.MainWorker, sp *mongodb.SessionProvider) er
 	}
 	synt.Add(pr)
 
-	if goapp.Config.GetString("filer.dir") != "" {
-		pr, err = processor.NewFiler(goapp.Config.GetString("filer.dir"))
+	if cfg.GetString("filer.dir") != "" {
+		pr, err = processor.NewFiler(cfg.GetString("filer.dir"))
 		if err != nil {
 			return errors.Wrap(err, "can't init filer")
 		}
 		synt.Add(pr)
 	}
-	return addPartProcessors(partRunner, goapp.Config)
+	return addPartProcessors(partRunner, cfg)
 }
 
 func addSSMLProcessors(synt *synthesizer.MainWorker, sp *mongodb.SessionProvider, cfg *viper.Viper) error {
@@ -219,7 +224,11 @@ func addSSMLProcessors(synt *synthesizer.MainWorker, sp *mongodb.SessionProvider
 
 	synt.AddSSML(processor.NewSSMLPartRunner(processors))
 
-	synt.AddSSML(processor.NewJoinSSMLAudio())
+	suffixLoader, err := file.NewLoader(cfg.GetString("suffixLoader.path"))
+	if err != nil {
+		return errors.Wrap(err, "can't init suffix Loader")
+	}
+	synt.AddSSML(processor.NewJoinSSMLAudio(suffixLoader))
 
 	pr, err = processor.NewConverter(cfg.GetString("audioConvert.url"))
 	if err != nil {
@@ -290,7 +299,11 @@ func addCustomProcessors(synt *synthesizer.MainWorker, sp *mongodb.SessionProvid
 	partRunner := synthesizer.NewPartRunner(cfg.GetInt("partRunner.workers"))
 	synt.Add(partRunner)
 
-	synt.Add(processor.NewJoinAudio())
+	suffixLoader, err := file.NewLoader(cfg.GetString("suffixLoader.path"))
+	if err != nil {
+		return errors.Wrap(err, "can't init suffix Loader")
+	}
+	synt.Add(processor.NewJoinAudio(suffixLoader))
 
 	pr, err = processor.NewConverter(cfg.GetString("audioConvert.url"))
 	if err != nil {

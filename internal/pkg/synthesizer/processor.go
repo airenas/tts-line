@@ -175,6 +175,11 @@ func GetTranscriberAccent(w *ProcessedWord) int {
 	return 0
 }
 
+// GetProcessorsInfo return info about processors for testing
+func (mw *MainWorker) GetProcessorsInfo() string {
+	return getInfo(mw.processors)
+}
+
 // GetSSMLProcessorsInfo return info about processors for testing
 func (mw *MainWorker) GetSSMLProcessorsInfo() string {
 	return getInfo(mw.ssmlProcessors)

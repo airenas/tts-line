@@ -9,19 +9,30 @@ import (
 
 	"github.com/airenas/tts-line/internal/pkg/service/api"
 	"github.com/airenas/tts-line/internal/pkg/synthesizer"
+	"github.com/airenas/tts-line/internal/pkg/test/mocks"
 	"github.com/airenas/tts-line/internal/pkg/wav"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
+var (
+	loaderMock *mocks.MockAudioLoader
+)
+
+func initTestJoiner(t *testing.T) {
+	t.Helper()
+	mocks.AttachMockToTest(t)
+	loaderMock = mocks.NewMockAudioLoader()
+}
+
 func TestNewJoinAudio(t *testing.T) {
-	initTestJSON(t)
-	pr := NewJoinAudio()
+	initTestJoiner(t)
+	pr := NewJoinAudio(loaderMock)
 	assert.NotNil(t, pr)
 }
 
 func TestJoinAudio(t *testing.T) {
-	pr := NewJoinAudio()
+	pr := NewJoinAudio(loaderMock)
 	d := synthesizer.TTSData{Input: &api.TTSRequestConfig{OutputFormat: api.AudioMP3}}
 	strA := getTestEncAudio(t)
 	d.Parts = []*synthesizer.TTSDataPart{{Audio: strA}}
@@ -32,7 +43,7 @@ func TestJoinAudio(t *testing.T) {
 }
 
 func TestJoinAudio_Skip(t *testing.T) {
-	pr := NewJoinAudio()
+	pr := NewJoinAudio(loaderMock)
 	d := synthesizer.TTSData{Input: &api.TTSRequestConfig{OutputFormat: api.AudioNone}}
 	strA := getTestEncAudio(t)
 	d.Parts = []*synthesizer.TTSDataPart{{Audio: strA}}
@@ -44,7 +55,7 @@ func TestJoinAudio_Skip(t *testing.T) {
 
 func TestJoinAudio_Several(t *testing.T) {
 	initTestJSON(t)
-	pr := NewJoinAudio()
+	pr := NewJoinAudio(loaderMock)
 	d := synthesizer.TTSData{Input: &api.TTSRequestConfig{OutputFormat: api.AudioMP3}}
 	strA := getTestEncAudio(t)
 	d.Parts = []*synthesizer.TTSDataPart{{Audio: strA}, {Audio: strA},
@@ -60,7 +71,7 @@ func TestJoinAudio_Several(t *testing.T) {
 
 func TestJoinAudio_DecodeFail(t *testing.T) {
 	initTestJSON(t)
-	pr := NewJoinAudio()
+	pr := NewJoinAudio(loaderMock)
 	d := synthesizer.TTSData{Input: &api.TTSRequestConfig{OutputFormat: api.AudioMP3}}
 	strA := getTestEncAudio(t)
 	d.Parts = []*synthesizer.TTSDataPart{{Audio: strA}, {Audio: "aaa"}}
@@ -70,7 +81,7 @@ func TestJoinAudio_DecodeFail(t *testing.T) {
 
 func TestJoinAudio_EmptyFail(t *testing.T) {
 	initTestJSON(t)
-	pr := NewJoinAudio()
+	pr := NewJoinAudio(loaderMock)
 	d := synthesizer.TTSData{Input: &api.TTSRequestConfig{OutputFormat: api.AudioMP3}}
 	strA := getTestEncAudio(t)
 	d.Parts = []*synthesizer.TTSDataPart{{Audio: strA}, {Audio: ""}}
@@ -79,7 +90,7 @@ func TestJoinAudio_EmptyFail(t *testing.T) {
 }
 
 func TestJoinSSMLAudio(t *testing.T) {
-	pr := NewJoinSSMLAudio()
+	pr := NewJoinSSMLAudio(loaderMock)
 	d := synthesizer.TTSData{Input: &api.TTSRequestConfig{OutputFormat: api.AudioMP3}}
 	strA := getTestEncAudio(t)
 	d.Parts = []*synthesizer.TTSDataPart{{Audio: strA}}
@@ -92,7 +103,7 @@ func TestJoinSSMLAudio(t *testing.T) {
 }
 
 func TestJoinSSMLAudio_Skip(t *testing.T) {
-	pr := NewJoinSSMLAudio()
+	pr := NewJoinSSMLAudio(loaderMock)
 	d := synthesizer.TTSData{Input: &api.TTSRequestConfig{OutputFormat: api.AudioNone}}
 	strA := getTestEncAudio(t)
 	d.Parts = []*synthesizer.TTSDataPart{{Audio: strA}}
@@ -106,7 +117,7 @@ func TestJoinSSMLAudio_Skip(t *testing.T) {
 
 func TestJoinSSMLAudio_Several(t *testing.T) {
 	initTestJSON(t)
-	pr := NewJoinSSMLAudio()
+	pr := NewJoinSSMLAudio(loaderMock)
 	d := synthesizer.TTSData{Input: &api.TTSRequestConfig{OutputFormat: api.AudioMP3}}
 	strA := getTestEncAudio(t)
 	d.Parts = []*synthesizer.TTSDataPart{{Audio: strA}, {Audio: strA},
@@ -124,7 +135,7 @@ func TestJoinSSMLAudio_Several(t *testing.T) {
 
 func TestJoinSSMLAudio_DecodeFail(t *testing.T) {
 	initTestJSON(t)
-	pr := NewJoinSSMLAudio()
+	pr := NewJoinSSMLAudio(loaderMock)
 	d := synthesizer.TTSData{Input: &api.TTSRequestConfig{OutputFormat: api.AudioMP3}}
 	strA := getTestEncAudio(t)
 	d.Parts = []*synthesizer.TTSDataPart{{Audio: strA}, {Audio: "aaa"}}
@@ -135,7 +146,7 @@ func TestJoinSSMLAudio_DecodeFail(t *testing.T) {
 
 func TestJoinSSMLAudio_EmptyFail(t *testing.T) {
 	initTestJSON(t)
-	pr := NewJoinSSMLAudio()
+	pr := NewJoinSSMLAudio(loaderMock)
 	d := synthesizer.TTSData{Input: &api.TTSRequestConfig{OutputFormat: api.AudioMP3}}
 	strA := getTestEncAudio(t)
 	d.Parts = []*synthesizer.TTSDataPart{{Audio: strA}, {Audio: ""}}
@@ -145,7 +156,7 @@ func TestJoinSSMLAudio_EmptyFail(t *testing.T) {
 }
 
 func TestJoinSSMLAudio_AddPause(t *testing.T) {
-	pr := NewJoinSSMLAudio()
+	pr := NewJoinSSMLAudio(loaderMock)
 	d := &synthesizer.TTSData{Input: &api.TTSRequestConfig{OutputFormat: api.AudioMP3}}
 	strA := getTestEncAudio(t)
 	d.Parts = []*synthesizer.TTSDataPart{{Audio: strA}}
