@@ -214,6 +214,17 @@ func TestConfigure_Priority(t *testing.T) {
 	assert.Nil(t, res)
 }
 
+func TestConfigure_AudioSuffix(t *testing.T) {
+	c, _ := NewTTSConfigurator(test.NewConfig(t, "output:\n  defaultFormat: mp3\n  voices:\n   - default:aaa"))
+	req := httptest.NewRequest("POST", "/synthesize", strings.NewReader("text"))
+	req.Header.Add(headerAudioSuffix, "olia.wav")
+	res, err := c.Configure(req, &api.Input{Text: "olia"})
+	assert.Nil(t, err)
+	if assert.NotNil(t, res) {
+		assert.Equal(t, "olia.wav", res.AudioSuffix)
+	}
+}
+
 func TestConfigure_SSML(t *testing.T) {
 	c, _ := NewTTSConfigurator(test.NewConfig(t, "output:\n  defaultFormat: mp3\n  voices:\n   - default:aaa"))
 	req := httptest.NewRequest("POST", "/synthesize", strings.NewReader("text"))

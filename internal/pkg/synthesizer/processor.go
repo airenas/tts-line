@@ -34,6 +34,7 @@ func (mw *MainWorker) Work(input *api.TTSRequestConfig) (*api.Result, error) {
 	data.Cfg.Speed = input.Speed
 	data.Cfg.Voice = input.Voice
 	data.RequestID = input.RequestID
+	data.AudioSuffix = input.AudioSuffix
 	if input.RequestID == "" {
 		data.RequestID = uuid.NewString()
 	}

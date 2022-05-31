@@ -20,6 +20,7 @@ const (
 	headerCollectData   = "x-tts-collect-data"
 	headerSaveTags      = "x-tts-save-tags"
 	headerMaxTextLen    = "x-tts-max-text-len"
+	headerAudioSuffix   = "x-tts-audio-suffix"
 
 	defaultVoiceKey = "default"
 )
@@ -122,6 +123,8 @@ func (c *TTSConfigutaror) Configure(r *http.Request, inText *api.Input) (*api.TT
 		return nil, err
 	}
 	res.SaveTags = getSaveTags(getHeader(r, headerSaveTags))
+
+	res.AudioSuffix = getHeader(r, headerAudioSuffix)
 
 	res.Speed, err = getSpeed(inText.Speed)
 	if err != nil {

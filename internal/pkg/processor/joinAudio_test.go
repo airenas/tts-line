@@ -94,7 +94,7 @@ func TestJoinAudio_EmptyFail(t *testing.T) {
 func TestJoinAudio_SuffixFail(t *testing.T) {
 	initTestJoiner(t)
 	pr := NewJoinAudio(loaderMock)
-	d := synthesizer.TTSData{Input: &api.TTSRequestConfig{OutputFormat: api.AudioMP3}, SuffixName: "test.wav"}
+	d := synthesizer.TTSData{Input: &api.TTSRequestConfig{OutputFormat: api.AudioMP3}, AudioSuffix: "test.wav"}
 	strA := getTestEncAudio(t)
 	d.Parts = []*synthesizer.TTSDataPart{{Audio: strA}}
 	pegomock.When(loaderMock.TakeWav(pegomock.AnyString())).ThenReturn(nil, errors.New("fail"))
@@ -105,7 +105,7 @@ func TestJoinAudio_SuffixFail(t *testing.T) {
 func TestJoinAudio_Suffix(t *testing.T) {
 	initTestJoiner(t)
 	pr := NewJoinAudio(loaderMock)
-	d := synthesizer.TTSData{Input: &api.TTSRequestConfig{OutputFormat: api.AudioMP3}, SuffixName: "test.wav"}
+	d := synthesizer.TTSData{Input: &api.TTSRequestConfig{OutputFormat: api.AudioMP3}, AudioSuffix: "test.wav"}
 	strA := getTestEncAudio(t)
 	d.Parts = []*synthesizer.TTSDataPart{{Audio: strA}}
 	pegomock.When(loaderMock.TakeWav(pegomock.AnyString())).ThenReturn(getWaveData(t), nil)
@@ -229,7 +229,7 @@ func TestJoinSSMLAudio_Suffix(t *testing.T) {
 	strA := getTestEncAudio(t)
 	d.Parts = []*synthesizer.TTSDataPart{{Audio: strA}}
 	d.Cfg.Type = synthesizer.SSMLText
-	da := &synthesizer.TTSData{Input: d.Input, SSMLParts: []*synthesizer.TTSData{&d}, SuffixName: "oo.wav"}
+	da := &synthesizer.TTSData{Input: d.Input, SSMLParts: []*synthesizer.TTSData{&d}, AudioSuffix: "oo.wav"}
 	pegomock.When(loaderMock.TakeWav(pegomock.AnyString())).ThenReturn(getWaveData(t), nil)
 	err := pr.Process(da)
 	assert.Nil(t, err)
@@ -243,7 +243,7 @@ func TestJoinSSMLAudio_SuffixFail(t *testing.T) {
 	strA := getTestEncAudio(t)
 	d.Parts = []*synthesizer.TTSDataPart{{Audio: strA}}
 	d.Cfg.Type = synthesizer.SSMLText
-	da := &synthesizer.TTSData{Input: d.Input, SSMLParts: []*synthesizer.TTSData{&d}, SuffixName: "oo.wav"}
+	da := &synthesizer.TTSData{Input: d.Input, SSMLParts: []*synthesizer.TTSData{&d}, AudioSuffix: "oo.wav"}
 	pegomock.When(loaderMock.TakeWav(pegomock.AnyString())).ThenReturn(nil, errors.New("fail"))
 	err := pr.Process(da)
 	assert.NotNil(t, err)

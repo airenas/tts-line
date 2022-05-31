@@ -60,4 +60,5 @@ type TTSRequestConfig struct {
 	Priority         int
 	AllowedMaxLen    int
 	SSMLParts        []ssml.Part
+	AudioSuffix      string
 }

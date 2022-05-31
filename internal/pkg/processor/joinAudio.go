@@ -34,9 +34,9 @@ func (p *joinAudio) Process(data *synthesizer.TTSData) error {
 	}
 	var suffix []byte
 	var err error
-	if data.SuffixName != "" {
-		if suffix, err = p.suffixProvider.TakeWav(data.SuffixName); err != nil {
-			return errors.Wrapf(err, "can't take suffix %s", data.SuffixName)
+	if data.AudioSuffix != "" {
+		if suffix, err = p.suffixProvider.TakeWav(data.AudioSuffix); err != nil {
+			return errors.Wrapf(err, "can't take suffix %s", data.AudioSuffix)
 		}
 	}
 	data.Audio, data.AudioLenSeconds, err = join(data.Parts, suffix)
@@ -128,9 +128,9 @@ func (p *joinSSMLAudio) Process(data *synthesizer.TTSData) error {
 	}
 	var suffix []byte
 	var err error
-	if data.SuffixName != "" {
-		if suffix, err = p.suffixProvider.TakeWav(data.SuffixName); err != nil {
-			return errors.Wrapf(err, "can't take suffix %s", data.SuffixName)
+	if data.AudioSuffix != "" {
+		if suffix, err = p.suffixProvider.TakeWav(data.AudioSuffix); err != nil {
+			return errors.Wrapf(err, "can't take suffix %s", data.AudioSuffix)
 		}
 	}
 	data.Audio, data.AudioLenSeconds, err = joinSSML(data, suffix)

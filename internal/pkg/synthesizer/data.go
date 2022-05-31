@@ -17,7 +17,7 @@ type TTSData struct {
 	Text            string // text after cleaning and URL replacement
 	TextWithNumbers string
 
-	SuffixName string // add audio suffix if var is set
+	AudioSuffix string // add audio suffix if var is set
 
 	Words []*ProcessedWord
 	Parts []*TTSDataPart
