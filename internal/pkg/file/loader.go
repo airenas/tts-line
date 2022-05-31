@@ -29,7 +29,7 @@ func NewLoader(path string) (*Loader, error) {
 // TakeWav loads file from path using the provided name
 func (l *Loader) TakeWav(key string) ([]byte, error) {
 	fn := getFileName(l.baseDir, key)
-	goapp.Log.Info("Loading suffix %s", fn)
+	goapp.Log.Infof("Loading suffix %s", fn)
 	return ioutil.ReadFile(fn)
 }
 
