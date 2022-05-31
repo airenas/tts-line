@@ -5,6 +5,8 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+
+	"github.com/airenas/go-app/pkg/goapp"
 )
 
 // Loader loads file by key from path
@@ -26,7 +28,9 @@ func NewLoader(path string) (*Loader, error) {
 
 // TakeWav loads file from path using the provided name
 func (l *Loader) TakeWav(key string) ([]byte, error) {
-	return ioutil.ReadFile(getFileName(l.baseDir, key))
+	fn := getFileName(l.baseDir, key)
+	goapp.Log.Info("Loading suffix %s", fn)
+	return ioutil.ReadFile(fn)
 }
 
 func getFileName(b, key string) string {
