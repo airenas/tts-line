@@ -39,3 +39,6 @@ acousticModel:
 
 cache:
   duration: 20m
+
+suffixLoader:
+  path: /suffixes

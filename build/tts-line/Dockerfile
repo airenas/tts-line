@@ -40,7 +40,8 @@ EXPOSE 8000
 
 RUN addgroup app && adduser -S -G app app --uid $UID app
 
-RUN mkdir -p /app && chown -R app:app /app   
+RUN mkdir -p /app && chown -R app:app /app
+RUN mkdir -p /suffixes && chown -R app:app /suffixes      
 
 COPY --from=builder /go/bin/tts-line /app/
 COPY --from=builder /go/bin/tts-export /app/
