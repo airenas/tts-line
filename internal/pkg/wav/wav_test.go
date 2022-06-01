@@ -11,7 +11,7 @@ import (
 
 func TestTakeHeader(t *testing.T) {
 	res := TakeHeader(getWaveData(t))
-	assert.Equal(t, "RIFF$\xc0\x00\x00WAVEfmt \x10\x00\x00\x00\x01\x00\x01\x00D\xac\x00\x00\x10\xb1\x02\x00\x02\x00\x10\x00data", string(res))
+	assert.Equal(t, "RIFF$\xc0\x00\x00WAVEfmt \x10\x00\x00\x00\x01\x00\x01\x00D\xac\x00\x00\x10\xb1\x02\x00\x02\x00\x10\x00", string(res))
 }
 
 func TestIsValid(t *testing.T) {
@@ -20,6 +20,11 @@ func TestIsValid(t *testing.T) {
 	assert.True(t, IsValid(res[:50]))
 	assert.False(t, IsValid(res[:40]))
 	assert.False(t, IsValid(nil))
+	cp := make([]byte, 50)
+	copy(cp, res[:50])
+	assert.True(t, IsValid(cp))
+	cp[36] = 'b'
+	assert.False(t, IsValid(cp))
 }
 
 func TestTakeData(t *testing.T) {

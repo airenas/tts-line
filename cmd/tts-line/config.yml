@@ -80,3 +80,6 @@ splitter:
 partRunner:
   workers: 1  
 
+suffixLoader:
+  path: ./ 
+

@@ -76,6 +76,8 @@ func join(parts []*synthesizer.TTSDataPart, suffix []byte) (string, float64, err
 	var bufRes bytes.Buffer
 	enc := base64.NewEncoder(base64.StdEncoding, &bufRes)
 	enc.Write(res.header)
+	
+	enc.Write([]byte("data"))
 	enc.Write(wav.SizeBytes(res.size))
 	enc.Write(res.buf.Bytes())
 	if err := enc.Close(); err != nil {
@@ -190,6 +192,8 @@ func joinSSML(data *synthesizer.TTSData, suffix []byte) (string, float64, error)
 	var bufRes bytes.Buffer
 	enc := base64.NewEncoder(base64.StdEncoding, &bufRes)
 	enc.Write(res.header)
+
+	enc.Write([]byte("data"))
 	enc.Write(wav.SizeBytes(res.size))
 	enc.Write(res.buf.Bytes())
 
