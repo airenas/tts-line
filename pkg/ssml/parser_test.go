@@ -131,6 +131,14 @@ func TestParse(t *testing.T) {
 			want: []Part{
 				&Text{Voice: "aa", Speed: 1, Texts: []TextPart{{Text: "text1"}, {Text: "text2"}}},
 			}, wantErr: false},
+		{name: "fail <w> in <w>", xml: `<speak><intelektikalt:w acc="g{a/}li"><intelektikalt:w acc="g{a/}li">gali</intelektikalt:w></intelektikalt:w></speak>`,
+			want: nil, wantErr: true},
+		{name: "fail <w> no text", xml: `<speak><intelektikalt:w acc="g{a/}li"></intelektikalt:w></speak>`,
+			want: nil, wantErr: true},
+		{name: "fail <w> no acc", xml: `<speak><intelektikalt:w acc="">gali</intelektikalt:w></speak>`,
+			want: nil, wantErr: true},
+		{name: "fail <w> in <break>", xml: `<speak><break time="10s"><intelektikalt:w acc="g{a/}li">gali</intelektikalt:w></break></speak>`,
+			want: nil, wantErr: true},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
