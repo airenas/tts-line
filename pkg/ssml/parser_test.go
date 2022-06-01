@@ -21,7 +21,7 @@ func TestParse(t *testing.T) {
 	}{
 		{name: "simple empty", xml: "<speak></speak>", want: []Part{}, wantErr: false},
 		{name: "simple", xml: "<speak>olia</speak>", want: []Part{
-			&Text{Text: "olia", Voice: "aa", Speed: 1}},
+			&Text{Voice: "aa", Speed: 1, Texts: []TextPart{{Text: "olia"}}}},
 			wantErr: false},
 		{name: "speak fail", xml: "aa<speak>olia</speak>", want: []Part{},
 			wantErr: true},
@@ -36,12 +36,12 @@ func TestParse(t *testing.T) {
 		{name: "empty", wantErr: true},
 		{name: "<p>", xml: "<speak><p>olia</p></speak>", want: []Part{
 			&Pause{Duration: pDuration},
-			&Text{Text: "olia", Voice: "aa", Speed: 1},
+			&Text{Voice: "aa", Speed: 1, Texts: []TextPart{{Text: "olia"}}},
 			&Pause{Duration: pDuration}},
 			wantErr: false},
 		{name: "<p>", xml: "<speak><p>olia</p></speak>", want: []Part{
 			&Pause{Duration: pDuration},
-			&Text{Text: "olia", Voice: "aa", Speed: 1},
+			&Text{Voice: "aa", Speed: 1, Texts: []TextPart{{Text: "olia"}}},
 			&Pause{Duration: pDuration}},
 			wantErr: false},
 		{name: "<break> time", xml: `<speak><break time="10s"/></speak>`, want: []Part{
@@ -54,7 +54,7 @@ func TestParse(t *testing.T) {
 			want: []Part{}, wantErr: true},
 		{name: "<voice> strength", xml: `<speak><voice name="ooo">aaa</voice></speak>`,
 			want: []Part{
-				&Text{Text: "aaa", Voice: "ooo", Speed: 1},
+				&Text{Voice: "ooo", Speed: 1, Texts: []TextPart{{Text: "aaa"}}},
 			}, wantErr: false},
 		{name: "<voice> inner", xml: `<speak>
 		<voice name="ooo">aaa
@@ -63,14 +63,14 @@ func TestParse(t *testing.T) {
 		</voice>
 		end def</speak>`,
 			want: []Part{
-				&Text{Text: "aaa", Voice: "ooo", Speed: 1},
-				&Text{Text: "aaa1", Voice: "ooo1", Speed: 1},
-				&Text{Text: "end", Voice: "ooo", Speed: 1},
-				&Text{Text: "end def", Voice: "aa", Speed: 1},
+				&Text{Voice: "ooo", Speed: 1, Texts: []TextPart{{Text: "aaa"}}},
+				&Text{Voice: "ooo1", Speed: 1, Texts: []TextPart{{Text: "aaa1"}}},
+				&Text{Voice: "ooo", Speed: 1, Texts: []TextPart{{Text: "end"}}},
+				&Text{Voice: "aa", Speed: 1, Texts: []TextPart{{Text: "end def"}}},
 			}, wantErr: false},
 		{name: "<prosody> rate", xml: `<speak><prosody rate="50%">aaa</prosody></speak>`,
 			want: []Part{
-				&Text{Text: "aaa", Voice: "aa", Speed: 2},
+				&Text{Voice: "aa", Speed: 2, Texts: []TextPart{{Text: "aaa"}}},
 			}, wantErr: false},
 		{name: "<prosody> inner", xml: `<speak><prosody rate="200%">
 		<voice name="ooo">aaa
@@ -79,15 +79,15 @@ func TestParse(t *testing.T) {
 		</voice></prosody>
 		end def</speak>`,
 			want: []Part{
-				&Text{Text: "aaa", Voice: "ooo", Speed: 0.5},
-				&Text{Text: "aaa1", Voice: "ooo1", Speed: 1.5},
-				&Text{Text: "end", Voice: "ooo", Speed: 0.5},
-				&Text{Text: "end def", Voice: "aa", Speed: 1},
+				&Text{Voice: "ooo", Speed: 0.5, Texts: []TextPart{{Text: "aaa"}}},
+				&Text{Voice: "ooo1", Speed: 1.5, Texts: []TextPart{{Text: "aaa1"}}},
+				&Text{Voice: "ooo", Speed: 0.5, Texts: []TextPart{{Text: "end"}}},
+				&Text{Voice: "aa", Speed: 1, Texts: []TextPart{{Text: "end def"}}},
 			}, wantErr: false},
 		{name: "<voice> map", xml: `<speak><voice name="ooo">aaa</voice></speak>`,
 			vf: func(s string) (string, error) { return "ooo.v1", nil },
 			want: []Part{
-				&Text{Text: "aaa", Voice: "ooo.v1", Speed: 1},
+				&Text{Voice: "ooo.v1", Speed: 1, Texts: []TextPart{{Text: "aaa"}}},
 			}, wantErr: false},
 		{name: "<voice> map fail", xml: `<speak><voice name="ooo">aaa</voice></speak>`,
 			vf:   func(s string) (string, error) { return "", errors.New("no voice") },
@@ -98,6 +98,39 @@ func TestParse(t *testing.T) {
 			wantErr: false},
 		{name: "speak empty text", xml: "<speak></speak> \n\n\n  ", want: []Part{},
 			wantErr: false},
+		{name: "<w> ", xml: `<speak><intelektikalt:w acc="g{a/}li">gali</intelektikalt:w></speak>`,
+			want: []Part{
+				&Text{Voice: "aa", Speed: 1, Texts: []TextPart{{Text: "gali", Accented: "g{a/}li"}}},
+			}, wantErr: false},
+		{name: "<w> joins", xml: `<speak>olia<intelektikalt:w acc="g{a/}li">gali</intelektikalt:w></speak>`,
+			want: []Part{
+				&Text{Voice: "aa", Speed: 1, Texts: []TextPart{{Text: "olia"}, {Text: "gali", Accented: "g{a/}li"}}},
+			}, wantErr: false},
+		{name: "<w> several", xml: `<speak><intelektikalt:w acc="g{a/}li">gali</intelektikalt:w>
+		<intelektikalt:w acc="{a/}li">gali</intelektikalt:w>
+		</speak>`,
+			want: []Part{
+				&Text{Voice: "aa", Speed: 1, Texts: []TextPart{{Text: "gali", Accented: "g{a/}li"}, {Text: "gali", Accented: "{a/}li"}}},
+			}, wantErr: false},
+		{name: "<w> splits", xml: `<speak><intelektikalt:w acc="g{a/}li">gali</intelektikalt:w><p/><intelektikalt:w acc="g{a/}li">gali</intelektikalt:w>
+			</speak>`,
+			want: []Part{
+				&Text{Voice: "aa", Speed: 1, Texts: []TextPart{{Text: "gali", Accented: "g{a/}li"}}},
+				&Pause{Duration: pDuration},
+				&Text{Voice: "aa", Speed: 1, Texts: []TextPart{{Text: "gali", Accented: "g{a/}li"}}},
+			}, wantErr: false},
+		{name: "<voice> splits", xml: `<speak>text1<voice name="v1">gali</voice>text2</speak>`,
+			want: []Part{
+				&Text{Voice: "aa", Speed: 1, Texts: []TextPart{{Text: "text1"}}},
+				&Text{Voice: "v1", Speed: 1, Texts: []TextPart{{Text: "gali"}}},
+				&Text{Voice: "aa", Speed: 1, Texts: []TextPart{{Text: "text2"}}},
+			}, wantErr: false},
+		{name: "joins comment", xml: `<speak>text1
+			<!-- comment -->
+			text2</speak>`,
+			want: []Part{
+				&Text{Voice: "aa", Speed: 1, Texts: []TextPart{{Text: "text1"}, {Text: "text2"}}},
+			}, wantErr: false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

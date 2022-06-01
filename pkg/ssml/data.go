@@ -10,6 +10,7 @@ type Text struct {
 	Text  string
 	Speed float32
 	Voice string
+	Texts []TextPart
 }
 
 // Pause represents Pause directive
@@ -22,4 +23,10 @@ type Pause struct {
 func IsPause(p Part) bool {
 	_, res := p.(*Pause)
 	return res
+}
+
+// TextPart represents some part of text
+type TextPart struct {
+	Text     string
+	Accented string
 }

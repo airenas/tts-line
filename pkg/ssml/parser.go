@@ -17,6 +17,8 @@ type wrkData struct {
 	speakTagEndCount int
 	lastTag          []string
 	voiceFunc        func(string) (string, error)
+	lastWAcc         string
+	lastText         *Text
 
 	res     []Part
 	cValues []*Text
@@ -42,6 +44,8 @@ func init() {
 	endFunctions["voice"] = endVoice
 	startFunctions["prosody"] = startProsody
 	endFunctions["prosody"] = endVoice
+	startFunctions["intelektikalt:w"] = startWord
+	endFunctions["intelektikalt:w"] = endWord
 
 	durationStrs = map[string]time.Duration{"none": 0, "x-weak": 250 * time.Millisecond,
 		"weak": 500 * time.Millisecond, "medium": 750 * time.Millisecond,
@@ -71,23 +75,27 @@ func Parse(r io.Reader, def *Text, voiceFunc func(string) (string, error)) ([]Pa
 		// Inspect the type of the token just read.
 		switch se := t.(type) {
 		case xml.StartElement:
-			f, ok := startFunctions[se.Name.Local]
+			key := getXMLKey(se.Name)
+			f, ok := startFunctions[key]
 			if !ok {
-				return nil, &ErrParse{Pos: d.InputOffset(), Msg: fmt.Sprintf("unknown tag <%s>", se.Name.Local)}
+				return nil, &ErrParse{Pos: d.InputOffset(), Msg: fmt.Sprintf("unknown tag <%s>", key)}
 			}
 			if err := f(se, wrk); err != nil {
 				return nil, &ErrParse{Pos: d.InputOffset(), Msg: err.Error()}
 			}
-			wrk.lastTag = append(wrk.lastTag, se.Name.Local)
+			wrk.lastTag = append(wrk.lastTag, key)
 		case xml.EndElement:
-			f, ok := endFunctions[se.Name.Local]
+			key := getXMLKey(se.Name)
+			f, ok := endFunctions[key]
 			if !ok {
-				return nil, &ErrParse{Pos: d.InputOffset(), Msg: fmt.Sprintf("unknown tag </%s>", se.Name.Local)}
+				return nil, &ErrParse{Pos: d.InputOffset(), Msg: fmt.Sprintf("unknown tag </%s>", key)}
 			}
 			if err := f(se, wrk); err != nil {
 				return nil, &ErrParse{Pos: d.InputOffset(), Msg: err.Error()}
 			}
-			wrk.lastTag = wrk.lastTag[:len(wrk.lastTag)-1]
+			l := len(wrk.lastTag) - 1
+			wrk.lastTag[l] = ""
+			wrk.lastTag = wrk.lastTag[:l]
 		case xml.CharData:
 			err := makeTextPart(se, wrk)
 			if err != nil {
@@ -106,6 +114,13 @@ func Parse(r io.Reader, def *Text, voiceFunc func(string) (string, error)) ([]Pa
 	return wrk.res, nil
 }
 
+func getXMLKey(name xml.Name) string {
+	if name.Space != "" {
+		return name.Space + ":" + name.Local
+	}
+	return name.Local
+}
+
 func makeTextPart(se xml.CharData, wrk *wrkData) error {
 	s := strings.TrimSpace(string(se))
 	if s != "" {
@@ -120,7 +135,17 @@ func makeTextPart(se xml.CharData, wrk *wrkData) error {
 		if lt == "break" {
 			return fmt.Errorf("data in <break>")
 		}
-		wrk.res = append(wrk.res, &Text{Text: s, Voice: def.Voice, Speed: def.Speed})
+		tp := TextPart{Text: s}
+		if wrk.lastWAcc != "" {
+			tp.Accented = wrk.lastWAcc
+			wrk.lastWAcc = ""
+		}
+		if wrk.lastText != nil {
+			wrk.lastText.Texts = append(wrk.lastText.Texts, tp)
+		} else {
+			wrk.lastText = &Text{Voice: def.Voice, Speed: def.Speed, Texts: []TextPart{tp}}
+			wrk.res = append(wrk.res, wrk.lastText)
+		}
 	}
 	return nil
 }
@@ -142,6 +167,7 @@ func startP(se xml.StartElement, wrk *wrkData) error {
 	if wrk.speakTagCount != 1 {
 		return fmt.Errorf("no <speak>")
 	}
+	wrk.lastText = nil
 	wrk.res = append(wrk.res, &Pause{Duration: pDuration})
 	return nil
 }
@@ -153,6 +179,7 @@ func endP(se xml.EndElement, wrk *wrkData) error {
 	if len(wrk.res) > 0 && !IsPause(wrk.res[len(wrk.res)-1]) {
 		wrk.res = append(wrk.res, &Pause{Duration: pDuration})
 	}
+	wrk.lastText = nil
 	return nil
 }
 
@@ -164,6 +191,7 @@ func startBreak(se xml.StartElement, wrk *wrkData) error {
 	if err != nil {
 		return err
 	}
+	wrk.lastText = nil
 	wrk.res = append(wrk.res, &Pause{Duration: d, IsBreak: true})
 	return nil
 }
@@ -198,6 +226,7 @@ func endBreak(se xml.EndElement, wrk *wrkData) error {
 	if wrk.speakTagCount != 1 {
 		return fmt.Errorf("no </speak>")
 	}
+	wrk.lastText = nil
 	return nil
 }
 
@@ -214,6 +243,7 @@ func startVoice(se xml.StartElement, wrk *wrkData) error {
 	if err != nil {
 		return err
 	}
+	wrk.lastText = nil
 	def := wrk.cValues[len(wrk.cValues)-1]
 	wrk.cValues = append(wrk.cValues, &Text{Voice: v, Speed: def.Speed})
 	return nil
@@ -226,6 +256,7 @@ func endVoice(se xml.EndElement, wrk *wrkData) error {
 	l := len(wrk.cValues) - 1
 	wrk.cValues[l] = nil
 	wrk.cValues = wrk.cValues[:l]
+	wrk.lastText = nil
 	return nil
 }
 
@@ -241,9 +272,35 @@ func startProsody(se xml.StartElement, wrk *wrkData) error {
 	if err != nil {
 		return err
 	}
-
+	wrk.lastText = nil
 	def := wrk.cValues[len(wrk.cValues)-1]
 	wrk.cValues = append(wrk.cValues, &Text{Voice: def.Voice, Speed: sp})
+	return nil
+}
+
+func startWord(se xml.StartElement, wrk *wrkData) error {
+	if wrk.speakTagCount != 1 {
+		return fmt.Errorf("no <speak>")
+	}
+	lt := wrk.lastTag[len(wrk.lastTag)-1]
+	if lt != "speak" && lt != "p" && lt != "prosody" && lt != "voice" {
+		return fmt.Errorf("<intelektikalt:w> not allowed inside <%s>", lt)
+	}
+	a := getAttr(se, "acc")
+	if a == "" {
+		return fmt.Errorf("no <intelektikalt:w>:acc")
+	}
+	wrk.lastWAcc = a
+	return nil
+}
+
+func endWord(se xml.EndElement, wrk *wrkData) error {
+	if wrk.speakTagCount != 1 {
+		return fmt.Errorf("no </speak>")
+	}
+	if wrk.lastWAcc != "" {
+		return fmt.Errorf("no word in <intelektikalt:w>")
+	}
 	return nil
 }
 
