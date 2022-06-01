@@ -6,7 +6,7 @@ import (
 	"github.com/airenas/tts-line/internal/pkg/service/api"
 )
 
-//TTSData working data for one request
+// TTSData working data for one request
 type TTSData struct {
 	Input           *api.TTSRequestConfig
 	RequestID       string
@@ -26,7 +26,13 @@ type TTSData struct {
 	AudioMP3        string
 	AudioLenSeconds float64
 
+	OriginalTextParts []*TTSTextPart
 	SSMLParts []*TTSData
+}
+
+// TTSTextPart part of the text
+type TTSTextPart struct {
+	Accented, Text    string
 }
 
 //TTSConfig some TTS configuration
@@ -41,7 +47,7 @@ type TTSConfig struct {
 	PauseDuration time.Duration
 }
 
-//TTSDataPart partial tts data
+// TTSDataPart partial tts data
 type TTSDataPart struct {
 	Text       string
 	Cfg        *TTSConfig

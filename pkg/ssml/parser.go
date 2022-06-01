@@ -44,8 +44,8 @@ func init() {
 	endFunctions["voice"] = endVoice
 	startFunctions["prosody"] = startProsody
 	endFunctions["prosody"] = endVoice
-	startFunctions["intelektikalt:w"] = startWord
-	endFunctions["intelektikalt:w"] = endWord
+	startFunctions["intelektika:w"] = startWord
+	endFunctions["intelektika:w"] = endWord
 
 	durationStrs = map[string]time.Duration{"none": 0, "x-weak": 250 * time.Millisecond,
 		"weak": 500 * time.Millisecond, "medium": 750 * time.Millisecond,
@@ -284,11 +284,11 @@ func startWord(se xml.StartElement, wrk *wrkData) error {
 	}
 	lt := wrk.lastTag[len(wrk.lastTag)-1]
 	if lt != "speak" && lt != "p" && lt != "prosody" && lt != "voice" {
-		return fmt.Errorf("<intelektikalt:w> not allowed inside <%s>", lt)
+		return fmt.Errorf("<intelektika:w> not allowed inside <%s>", lt)
 	}
 	a := getAttr(se, "acc")
 	if a == "" {
-		return fmt.Errorf("no <intelektikalt:w>:acc")
+		return fmt.Errorf("no <intelektika:w>:acc")
 	}
 	wrk.lastWAcc = a
 	return nil
@@ -299,7 +299,7 @@ func endWord(se xml.EndElement, wrk *wrkData) error {
 		return fmt.Errorf("no </speak>")
 	}
 	if wrk.lastWAcc != "" {
-		return fmt.Errorf("no word in <intelektikalt:w>")
+		return fmt.Errorf("no word in <intelektika:w>")
 	}
 	return nil
 }

@@ -98,21 +98,21 @@ func TestParse(t *testing.T) {
 			wantErr: false},
 		{name: "speak empty text", xml: "<speak></speak> \n\n\n  ", want: []Part{},
 			wantErr: false},
-		{name: "<w> ", xml: `<speak><intelektikalt:w acc="g{a/}li">gali</intelektikalt:w></speak>`,
+		{name: "<w> ", xml: `<speak><intelektika:w acc="g{a/}li">gali</intelektika:w></speak>`,
 			want: []Part{
 				&Text{Voice: "aa", Speed: 1, Texts: []TextPart{{Text: "gali", Accented: "g{a/}li"}}},
 			}, wantErr: false},
-		{name: "<w> joins", xml: `<speak>olia<intelektikalt:w acc="g{a/}li">gali</intelektikalt:w></speak>`,
+		{name: "<w> joins", xml: `<speak>olia<intelektika:w acc="g{a/}li">gali</intelektika:w></speak>`,
 			want: []Part{
 				&Text{Voice: "aa", Speed: 1, Texts: []TextPart{{Text: "olia"}, {Text: "gali", Accented: "g{a/}li"}}},
 			}, wantErr: false},
-		{name: "<w> several", xml: `<speak><intelektikalt:w acc="g{a/}li">gali</intelektikalt:w>
-		<intelektikalt:w acc="{a/}li">gali</intelektikalt:w>
+		{name: "<w> several", xml: `<speak><intelektika:w acc="g{a/}li">gali</intelektika:w>
+		<intelektika:w acc="{a/}li">gali</intelektika:w>
 		</speak>`,
 			want: []Part{
 				&Text{Voice: "aa", Speed: 1, Texts: []TextPart{{Text: "gali", Accented: "g{a/}li"}, {Text: "gali", Accented: "{a/}li"}}},
 			}, wantErr: false},
-		{name: "<w> splits", xml: `<speak><intelektikalt:w acc="g{a/}li">gali</intelektikalt:w><p/><intelektikalt:w acc="g{a/}li">gali</intelektikalt:w>
+		{name: "<w> splits", xml: `<speak><intelektika:w acc="g{a/}li">gali</intelektika:w><p/><intelektika:w acc="g{a/}li">gali</intelektika:w>
 			</speak>`,
 			want: []Part{
 				&Text{Voice: "aa", Speed: 1, Texts: []TextPart{{Text: "gali", Accented: "g{a/}li"}}},
@@ -131,13 +131,13 @@ func TestParse(t *testing.T) {
 			want: []Part{
 				&Text{Voice: "aa", Speed: 1, Texts: []TextPart{{Text: "text1"}, {Text: "text2"}}},
 			}, wantErr: false},
-		{name: "fail <w> in <w>", xml: `<speak><intelektikalt:w acc="g{a/}li"><intelektikalt:w acc="g{a/}li">gali</intelektikalt:w></intelektikalt:w></speak>`,
+		{name: "fail <w> in <w>", xml: `<speak><intelektika:w acc="g{a/}li"><intelektika:w acc="g{a/}li">gali</intelektika:w></intelektika:w></speak>`,
 			want: nil, wantErr: true},
-		{name: "fail <w> no text", xml: `<speak><intelektikalt:w acc="g{a/}li"></intelektikalt:w></speak>`,
+		{name: "fail <w> no text", xml: `<speak><intelektika:w acc="g{a/}li"></intelektika:w></speak>`,
 			want: nil, wantErr: true},
-		{name: "fail <w> no acc", xml: `<speak><intelektikalt:w acc="">gali</intelektikalt:w></speak>`,
+		{name: "fail <w> no acc", xml: `<speak><intelektika:w acc="">gali</intelektika:w></speak>`,
 			want: nil, wantErr: true},
-		{name: "fail <w> in <break>", xml: `<speak><break time="10s"><intelektikalt:w acc="g{a/}li">gali</intelektikalt:w></break></speak>`,
+		{name: "fail <w> in <break>", xml: `<speak><break time="10s"><intelektika:w acc="g{a/}li">gali</intelektika:w></break></speak>`,
 			want: nil, wantErr: true},
 	}
 	for _, tt := range tests {

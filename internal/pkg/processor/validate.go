@@ -84,8 +84,10 @@ func (p *ssmlValidator) Process(data *synthesizer.TTSData) error {
 func getSSMLTextLen(data *synthesizer.TTSData) int {
 	res := 0
 	for _, p := range data.SSMLParts {
-		res += getLen(p.OriginalText)
-	} 
+		for _, tp := range p.OriginalTextParts {
+			res += getLen(tp.Text)
+		}
+	}
 	return res
 }
 

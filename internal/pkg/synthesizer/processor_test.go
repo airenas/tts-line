@@ -93,9 +93,10 @@ func TestWork_SSML(t *testing.T) {
 	}
 	worker.processors = nil
 	worker.AddSSML(processorMock)
-	res, _ := worker.Work(&api.TTSRequestConfig{Text: "<speak>olia</speak>", OutputTextFormat: api.TextNormalized,
-		SSMLParts: []ssml.Part{&ssml.Text{Text: "Olia"}, &ssml.Text{Text: "Olia"},
+	res, err := worker.Work(&api.TTSRequestConfig{Text: "<speak>olia</speak>", OutputTextFormat: api.TextNormalized,
+		SSMLParts: []ssml.Part{&ssml.Text{Texts: []ssml.TextPart{{Text: "Olia"}}}, &ssml.Text{Texts: []ssml.TextPart{{Text: "Olia"}}},
 			&ssml.Pause{Duration: 10 * time.Second}}})
+	assert.Nil(t, err)
 	assert.Equal(t, "olia lia", res.Text)
 }
 
@@ -107,7 +108,7 @@ func TestWork_SSML_Fail(t *testing.T) {
 	worker.processors = nil
 	worker.AddSSML(processorMock)
 	_, err := worker.Work(&api.TTSRequestConfig{Text: "<speak>olia</speak>", OutputTextFormat: api.TextNormalized,
-		SSMLParts: []ssml.Part{&ssml.Text{Text: "Olia"}}})
+		SSMLParts: []ssml.Part{&ssml.Text{Texts: []ssml.TextPart{{Text: "Olia"}}}}})
 	assert.NotNil(t, err)
 }
 
@@ -176,20 +177,23 @@ func Test_makeSSMLParts(t *testing.T) {
 		want    []*TTSData
 		wantErr bool
 	}{
-		{name: "text", args: &api.TTSRequestConfig{SSMLParts: []ssml.Part{&ssml.Text{Voice: "aa", Text: "oo", Speed: 0.6}}},
-			want:    []*TTSData{{OriginalText: "oo", Cfg: TTSConfig{Type: SSMLText, Voice: "aa", Speed: 0.6}}},
+		{name: "text", args: &api.TTSRequestConfig{SSMLParts: []ssml.Part{&ssml.Text{Voice: "aa", Texts: []ssml.TextPart{{Text: "oo"}}, Speed: 0.6}}},
+			want:    []*TTSData{{OriginalTextParts: []*TTSTextPart{{Text: "oo"}}, Cfg: TTSConfig{Type: SSMLText, Voice: "aa", Speed: 0.6}}},
 			wantErr: false},
 		{name: "pause", args: &api.TTSRequestConfig{SSMLParts: []ssml.Part{&ssml.Pause{Duration: time.Second, IsBreak: true}}},
-			want:    []*TTSData{{OriginalText: "", Cfg: TTSConfig{Type: SSMLPause, PauseDuration: time.Second}}},
+			want:    []*TTSData{{Cfg: TTSConfig{Type: SSMLPause, PauseDuration: time.Second}}},
 			wantErr: false},
 		{name: "pause", args: &api.TTSRequestConfig{SSMLParts: []ssml.Part{&ssml.Pause{Duration: time.Second, IsBreak: true},
-			&ssml.Text{Voice: "aa", Text: "oo", Speed: 0.6}}},
-			want: []*TTSData{{OriginalText: "", Cfg: TTSConfig{Type: SSMLPause, PauseDuration: time.Second}},
-				{OriginalText: "oo", Cfg: TTSConfig{Type: SSMLText, Voice: "aa", Speed: 0.6}}},
+			&ssml.Text{Voice: "aa", Texts: []ssml.TextPart{{Text: "oo"}}, Speed: 0.6}}},
+			want: []*TTSData{{Cfg: TTSConfig{Type: SSMLPause, PauseDuration: time.Second}},
+				{OriginalTextParts: []*TTSTextPart{{Text: "oo"}}, Cfg: TTSConfig{Type: SSMLText, Voice: "aa", Speed: 0.6}}},
 			wantErr: false},
 		{name: "fail", args: &api.TTSRequestConfig{SSMLParts: []ssml.Part{struct{}{}}},
 			want:    []*TTSData{},
 			wantErr: true},
+		{name: "text with accent", args: &api.TTSRequestConfig{SSMLParts: []ssml.Part{&ssml.Text{Voice: "aa", Texts: []ssml.TextPart{{Text: "oo", Accented: "acc"}}, Speed: 0.6}}},
+			want:    []*TTSData{{OriginalTextParts: []*TTSTextPart{{Text: "oo", Accented: "acc"}}, Cfg: TTSConfig{Type: SSMLText, Voice: "aa", Speed: 0.6}}},
+			wantErr: false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -200,7 +204,7 @@ func Test_makeSSMLParts(t *testing.T) {
 			}
 			require.Equal(t, len(tt.want), len(got))
 			for i := range tt.want {
-				assert.Equal(t, tt.want[i].OriginalText, got[i].OriginalText)
+				assert.Equal(t, tt.want[i].OriginalTextParts, got[i].OriginalTextParts)
 				assert.Equal(t, tt.want[i].Cfg.Voice, got[i].Cfg.Voice)
 				assert.Equal(t, tt.want[i].Cfg.Speed, got[i].Cfg.Speed)
 				assert.Equal(t, tt.want[i].Cfg.Type, got[i].Cfg.Type)

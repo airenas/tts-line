@@ -124,7 +124,7 @@ func testErrTooLong(l, max int) func(*testing.T, error) {
 func TestInvokeSSMLValidator(t *testing.T) {
 	pr, _ := NewSSMLValidator(100)
 	assert.NotNil(t, pr)
-	d := synthesizer.TTSData{SSMLParts: []*synthesizer.TTSData{{OriginalText: "olia"}}}
+	d := synthesizer.TTSData{SSMLParts: []*synthesizer.TTSData{{OriginalTextParts: []*synthesizer.TTSTextPart{{Text: "Olia"}}}}}
 	d.Input = &api.TTSRequestConfig{Text: "olia"}
 	err := pr.Process(&d)
 	assert.Nil(t, err)
@@ -134,7 +134,7 @@ func TestInvokeSSMLValidator_Fail(t *testing.T) {
 	initTestJSON(t)
 	pr, _ := NewSSMLValidator(100)
 	assert.NotNil(t, pr)
-	d := synthesizer.TTSData{SSMLParts: []*synthesizer.TTSData{{OriginalText: strings.Repeat("olia-", 100)}}}
+	d := synthesizer.TTSData{SSMLParts: []*synthesizer.TTSData{{OriginalTextParts: []*synthesizer.TTSTextPart{{Text: strings.Repeat("olia-", 100)}}}}}
 	d.Input = &api.TTSRequestConfig{Text: "olia"}
 	err := pr.Process(&d)
 	errTL, ok := err.(*utils.ErrTextTooLong)
@@ -151,11 +151,11 @@ func Test_getSSMLTextLen(t *testing.T) {
 		want  int
 	}{
 		{name: "empty", parts: []*synthesizer.TTSData{}, want: 0},
-		{name: "one", parts: []*synthesizer.TTSData{{OriginalText: "olia",
+		{name: "one", parts: []*synthesizer.TTSData{{OriginalTextParts: []*synthesizer.TTSTextPart{{Text: "olia"}},
 			Cfg: synthesizer.TTSConfig{Type: synthesizer.SSMLText}}}, want: 4},
-		{name: "several", parts: []*synthesizer.TTSData{{OriginalText: "olia",
+		{name: "several", parts: []*synthesizer.TTSData{{OriginalTextParts: []*synthesizer.TTSTextPart{{Text: "olia"}},
 			Cfg: synthesizer.TTSConfig{Type: synthesizer.SSMLText}},
-			{OriginalText: "olia2",
+			{OriginalTextParts: []*synthesizer.TTSTextPart{{Text: "olia2"}},
 				Cfg: synthesizer.TTSConfig{Type: synthesizer.SSMLText}}}, want: 9},
 	}
 	for _, tt := range tests {

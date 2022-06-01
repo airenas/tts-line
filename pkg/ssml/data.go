@@ -7,7 +7,6 @@ type Part interface{}
 
 // Text represents Text directive
 type Text struct {
-	Text  string
 	Speed float32
 	Voice string
 	Texts []TextPart

@@ -65,7 +65,7 @@ func makeSSMLParts(input *api.TTSRequestConfig) ([]*TTSData, error) {
 		switch pc := p.(type) {
 		case *ssml.Text:
 			data := &TTSData{}
-			data.OriginalText = pc.Text
+			data.OriginalTextParts = makeTextParts(pc.Texts)
 			data.Input = input
 			data.Cfg.Input = input
 			data.Cfg.Speed = pc.Speed
@@ -86,6 +86,14 @@ func makeSSMLParts(input *api.TTSRequestConfig) ([]*TTSData, error) {
 		}
 	}
 	return res, nil
+}
+
+func makeTextParts(textPart []ssml.TextPart) []*TTSTextPart {
+	res := []*TTSTextPart{}
+	for _, tp := range textPart {
+		res = append(res, &TTSTextPart{Text: tp.Text, Accented: tp.Accented})
+	}
+	return res
 }
 
 // Add adds a processor to the end
