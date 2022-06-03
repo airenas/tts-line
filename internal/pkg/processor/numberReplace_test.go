@@ -1,15 +1,14 @@
 package processor
 
 import (
+	"reflect"
 	"testing"
-
-	"github.com/petergtz/pegomock"
-	"github.com/pkg/errors"
-
-	"github.com/stretchr/testify/assert"
 
 	"github.com/airenas/tts-line/internal/pkg/synthesizer"
 	"github.com/airenas/tts-line/internal/pkg/test/mocks"
+	"github.com/petergtz/pegomock"
+	"github.com/pkg/errors"
+	"github.com/stretchr/testify/assert"
 )
 
 var (
@@ -68,4 +67,32 @@ func TestInvokeNumberReplace_Skip(t *testing.T) {
 	pr, _ := NewNumberReplace("http://server")
 	err := pr.Process(d)
 	assert.Nil(t, err)
+}
+
+func Test_doPartlyAllign(t *testing.T) {
+	type args struct {
+		s1 []string
+		s2 []string
+	}
+	tests := []struct {
+		name string
+		args args
+		want []int
+	}{
+		{name: "map last", args: args{s1: []string{"a", "6", "c", "d"}, s2: []string{"a", "b", "c", "c", "d"}}, want: []int{0, 1, 3, 4}},
+		{name: "insert", args: args{s1: []string{"a", "6", "c"}, s2: []string{"a", "b", "b1", "c"}}, want: []int{0, 1, 3}},
+		{name: "same", args: args{s1: []string{"a", "b", "c"}, s2: []string{"a", "b", "c"}}, want: []int{0, 1, 2}},
+		{name: "change", args: args{s1: []string{"a", "6", "c"}, s2: []string{"a", "b", "c"}}, want: []int{0, 1, 2}},
+		{name: "insert several", args: args{s1: []string{"a", "6", "c"}, s2: []string{"a", "b", "b1", "b1", "c"}}, want: []int{0, 1, 4}},
+		{name: "insert several", args: args{s1: []string{"a", "6", "c", "7"}, s2: []string{"a", "b", "b1", "b1", "c", "d", "d"}},
+			want: []int{0, 1, 4, 5}},
+		{name: "skip", args: args{s1: []string{"a", "6", "c"}, s2: []string{"a", "c"}}, want: []int{0, -1, 1}},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := doPartlyAllign(tt.args.s1, tt.args.s2); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("doPartlyAllign() = %v, want %v", got, tt.want)
+			}
+		})
+	}
 }

@@ -207,12 +207,12 @@ func addSSMLProcessors(synt *synthesizer.MainWorker, sp *mongodb.SessionProvider
 	processors = append(processors, pr)
 	processors = append(processors, processor.NewURLReplacer())
 	//number replacer
-	pr, err = processor.NewNumberReplace(cfg.GetString("numberReplace.url"))
+	pr, err = processor.NewSSMLNumberReplace(cfg.GetString("numberReplace.url"))
 	if err != nil {
 		return errors.Wrap(err, "can't init number replace")
 	}
 	processors = append(processors, pr)
-	pr, err = processor.NewTagger(cfg.GetString("tagger.url"))
+	pr, err = processor.NewSSMLTagger(cfg.GetString("tagger.url"))
 	if err != nil {
 		return errors.Wrap(err, "can't init tagger")
 	}

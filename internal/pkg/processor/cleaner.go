@@ -1,6 +1,7 @@
 package processor
 
 import (
+	"strings"
 	"time"
 
 	"github.com/airenas/go-app/pkg/goapp"
@@ -31,8 +32,9 @@ func (p *cleaner) Process(data *synthesizer.TTSData) error {
 		return nil
 	}
 	defer goapp.Estimate("Clean")()
-	utils.LogData("Input: ", data.OriginalText)
-	inData := &normData{Text: data.OriginalText}
+	txt := getNormText(data)
+	utils.LogData("Input: ", txt)
+	inData := &normData{Text: txt}
 	var output normData
 	err := p.httpWrap.InvokeJSON(inData, &output)
 	if err != nil {
@@ -45,6 +47,25 @@ func (p *cleaner) Process(data *synthesizer.TTSData) error {
 	}
 	utils.LogData("Output: ", data.CleanedText)
 	return nil
+}
+
+func getNormText(data *synthesizer.TTSData) string {
+	if len(data.OriginalTextParts) > 0 {
+		res := strings.Builder{}
+		for _, s := range data.OriginalTextParts {
+			if res.Len() > 0 {
+				res.WriteString(" ")
+			}
+			if s.Accented != "" {
+				res.WriteString(s.Accented)
+			} else {
+				res.WriteString(s.Text)
+			}
+		}
+		return res.String()
+
+	}
+	return data.OriginalText
 }
 
 type normData struct {

@@ -198,3 +198,29 @@ func min(i1, i2 int) int {
 	}
 	return i2
 }
+
+type ssmlTagger struct {
+	httpWrap HTTPInvoker
+}
+
+// NewSSMLTagger creates new processor
+func NewSSMLTagger(urlStr string) (synthesizer.Processor, error) {
+	res := &ssmlTagger{}
+	var err error
+	res.httpWrap, err = utils.NewHTTPWrap(urlStr)
+	if err != nil {
+		return nil, errors.Wrap(err, "Can't init http client")
+	}
+	return res, nil
+}
+
+func (p *ssmlTagger) Process(data *synthesizer.TTSData) error {
+	var output []*TaggedWord
+	txt := clearAccents(data.TextWithNumbers)
+	err := p.httpWrap.InvokeText(txt, &output)
+	if err != nil {
+		return err
+	}
+	data.Words, err = mapTagAccentResult(output, data.TextWithNumbers)
+	return err
+}
