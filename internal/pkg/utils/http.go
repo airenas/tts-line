@@ -116,7 +116,7 @@ func (hw *HTTPWrap) invoke(req *http.Request, dataOut interface{}) error {
 	return nil
 }
 
-// Info return info about processor
+// Info returns info about wrapper
 func (hw *HTTPWrap) Info() string {
 	return fmt.Sprintf("HTTPWrap(%s, tm: %s)", hw.URL, hw.Timeout.String())
 }

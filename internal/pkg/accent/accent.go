@@ -51,6 +51,7 @@ const (
 	Riestinis = '~'
 )
 
+// IsWordOrWithAccent checks if word is a correct one
 func IsWordOrWithAccent(v string) bool {
 	rns := []rune(v)
 	for i := 0; i < len(rns); i++ {

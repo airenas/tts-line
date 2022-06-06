@@ -99,6 +99,7 @@ func isTimeout(err error) bool {
 	return ok && (e.Timeout() || e.Temporary())
 }
 
+// Info returns info about wrapper
 func (hw *HTTPBackoff) Info() string {
 	return fmt.Sprintf("HTTPBackoff(%s)", RetrieveInfo(hw.HTTPClient))
 }
