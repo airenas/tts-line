@@ -238,5 +238,5 @@ func (p *ssmlTagger) Process(data *synthesizer.TTSData) error {
 
 // Info return info about processor
 func (p *ssmlTagger) Info() string {
-	return fmt.Sprintf("ssmlTagger(%s)", utils.RetrieveInfo(p.httpWrap))
+	return fmt.Sprintf("SSMLTagger(%s)", utils.RetrieveInfo(p.httpWrap))
 }

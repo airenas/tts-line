@@ -1,11 +1,13 @@
 package processor
 
 import (
+	"fmt"
 	"strings"
 	"time"
 
 	"github.com/airenas/go-app/pkg/goapp"
 	"github.com/airenas/tts-line/internal/pkg/synthesizer"
+	"github.com/airenas/tts-line/internal/pkg/utils"
 	"github.com/pkg/errors"
 )
 
@@ -40,6 +42,11 @@ func (p *numberReplace) Process(data *synthesizer.TTSData) error {
 
 func (p *numberReplace) skip(data *synthesizer.TTSData) bool {
 	return data.Cfg.JustAM
+}
+
+// Info return info about processor
+func (p *numberReplace) Info() string {
+	return fmt.Sprintf("numberReplace(%s)", utils.RetrieveInfo(p.httpWrap))
 }
 
 type ssmlNumberReplace struct {
@@ -96,6 +103,9 @@ func mapAccentsBack(new, orig string) (string, error) {
 		if nID == -1 {
 			return "", errors.Errorf("no word allignment for %s, ID: %d", oStrs[k], k)
 		}
+		if nStrs[nID] != ocStrs[k] {
+			return "", errors.Errorf("no word allignment for %s, ID: %d, got %s", oStrs[k], k, nStrs[nID])
+		}
 		nStrs[nID] = oStrs[k]
 	}
 	return strings.Join(nStrs, " "), nil
@@ -128,8 +138,10 @@ func allign(oStrs []string, nStrs []string) ([]int, error) {
 	return res, nil
 }
 
+type moveType byte
+
 const (
-	start byte = iota
+	start moveType = iota
 	left
 	top
 	corner
@@ -138,7 +150,7 @@ const (
 func doPartlyAllign(s1 []string, s2 []string) []int {
 	l1, l2 := len(s1), len(s2)
 	h := [partlyStep][partlyStep]byte{}
-	hb := [partlyStep][partlyStep]byte{}
+	hb := [partlyStep][partlyStep]moveType{}
 	// calc h and h backtrace matrices
 	for i1 := 0; i1 < l1; i1++ {
 		for i2 := 0; i2 < l2; i2++ {
@@ -164,7 +176,7 @@ func doPartlyAllign(s1 []string, s2 []string) []int {
 				if cv <= tv && cv <= lv {
 					h[i1][i2] = cv
 					hb[i1][i2] = corner
-					// prefer left ot top move qif not eq
+					// prefer left or top move if not eq
 					if !eq && (tv <= cv || lv <= cv) {
 						if lv <= tv {
 							hb[i1][i2] = left
@@ -205,8 +217,9 @@ func doPartlyAllign(s1 []string, s2 []string) []int {
 	return res
 }
 
+// findLastConsequtiveAllign find the last two words matching in a row
 func findLastConsequtiveAllign(partlyAll []int, oStrs []string, nStrs []string) (int, error) {
-	// find the last two words matching in a row
+
 	for i := len(partlyAll) - 1; i > 1; i-- {
 		v := partlyAll[i]
 		if v > -1 && v-1 == partlyAll[i-1] {
@@ -222,4 +235,9 @@ func findLastConsequtiveAllign(partlyAll []int, oStrs []string, nStrs []string) 
 
 func (p *ssmlNumberReplace) skip(data *synthesizer.TTSData) bool {
 	return data.Cfg.JustAM
+}
+
+// Info return info about processor
+func (p *ssmlNumberReplace) Info() string {
+	return fmt.Sprintf("SSMLNumberReplace(%s)", utils.RetrieveInfo(p.httpWrap))
 }

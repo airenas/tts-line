@@ -22,8 +22,8 @@ const testTaggerCfg = "tagger:\n  url: http://server\n"
 const testValidatorCfg = "validator:\n  maxChars: 100\n"
 const testConvCfg = "audioConvert:\n  url: http://server\n"
 const testObsceneCfg = "obscene:\n  url: http://server\n"
-const testCleanCfg = "clean:\n  url: http://server\n"
-const testNumberReplaceCfg = "numberReplace:\n  url: http://server\n"
+const testCleanCfg = "clean:\n  url: http://cl.su\n"
+const testNumberReplaceCfg = "numberReplace:\n  url: http://nr.su\n"
 const testSuffixLoaderCfg = "suffixLoader:\n  path: ./\n"
 
 var testAllCfg = testCompCfg +
@@ -91,10 +91,13 @@ func TestAddSSMLProcessors(t *testing.T) {
 	err := addSSMLProcessors(&mw, &mongodb.SessionProvider{}, test.NewConfig(t, testAllCfg))
 	assert.Nil(t, err)
 	info := mw.GetSSMLProcessorsInfo()
-	req := []string{"addMetrics", "ssmlValidator", "saver(originalSSML)",
+	req := []string{"addMetrics",
+		"SSMLValidator(100)",
+		"saver(originalSSML)",
 		"SSMLPartRunner",
-		"cleaner(",
-		"ssmlTagger(", "joinSSMLAudio(audioLoader(./))",
+		"cleaner(HTTPBackoff(HTTPWrap(http://cl.su, tm: 10s)))",
+		"SSMLNumberReplace(HTTPBackoff(HTTPWrap(http://nr.su, tm: 10s)))",
+		"SSMLTagger(", "joinSSMLAudio(audioLoader(./))",
 		"audioConverter", "addMetrics"}
 	infos := strings.Split(info, "\n")
 	pos := 0
@@ -116,7 +119,8 @@ func TestAddProcessors(t *testing.T) {
 	assert.Nil(t, err)
 	info := mw.GetProcessorsInfo()
 	req := []string{"addMetrics", "saver(original)",
-		"cleaner(", "saver(cleaned)", "saver(normalized)",
+		"cleaner(HTTPBackoff(HTTPWrap(http://cl.su, tm: 10s)))", "saver(cleaned)",
+		"numberReplace(HTTPBackoff(HTTPWrap(http://nr.su, tm: 10s)))", "saver(normalized)",
 		"tagger(", "joinAudio(audioLoader(./))",
 		"audioConverter", "addMetrics"}
 	infos := strings.Split(info, "\n")

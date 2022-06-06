@@ -93,5 +93,5 @@ func getSSMLTextLen(data *synthesizer.TTSData) int {
 
 // Info return info about processor
 func (p *ssmlValidator) Info() string {
-	return fmt.Sprintf("ssmlValidator(%d)", p.defaultMax)
+	return fmt.Sprintf("SSMLValidator(%d)", p.defaultMax)
 }
