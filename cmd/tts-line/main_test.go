@@ -91,7 +91,10 @@ func TestAddSSMLProcessors(t *testing.T) {
 	err := addSSMLProcessors(&mw, &mongodb.SessionProvider{}, test.NewConfig(t, testAllCfg))
 	assert.Nil(t, err)
 	info := mw.GetSSMLProcessorsInfo()
-	req := []string{"addMetrics", "ssmlValidator", "saver(originalSSML)", "SSMLPartRunner", "ssmlTagger(", "joinSSMLAudio(audioLoader(./))",
+	req := []string{"addMetrics", "ssmlValidator", "saver(originalSSML)",
+		"SSMLPartRunner",
+		"cleaner(",
+		"ssmlTagger(", "joinSSMLAudio(audioLoader(./))",
 		"audioConverter", "addMetrics"}
 	infos := strings.Split(info, "\n")
 	pos := 0
@@ -112,7 +115,9 @@ func TestAddProcessors(t *testing.T) {
 	err := addProcessors(&mw, &mongodb.SessionProvider{}, test.NewConfig(t, testAllCfg))
 	assert.Nil(t, err)
 	info := mw.GetProcessorsInfo()
-	req := []string{"addMetrics", "saver(original)", "saver(cleaned)", "saver(normalized)", "tagger(", "joinAudio(audioLoader(./))",
+	req := []string{"addMetrics", "saver(original)",
+		"cleaner(", "saver(cleaned)", "saver(normalized)",
+		"tagger(", "joinAudio(audioLoader(./))",
 		"audioConverter", "addMetrics"}
 	infos := strings.Split(info, "\n")
 	pos := 0

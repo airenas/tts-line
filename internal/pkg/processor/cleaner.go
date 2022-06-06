@@ -1,6 +1,7 @@
 package processor
 
 import (
+	"fmt"
 	"strings"
 	"time"
 
@@ -74,4 +75,9 @@ type normData struct {
 
 func (p *cleaner) skip(data *synthesizer.TTSData) bool {
 	return data.Cfg.JustAM
+}
+
+// Info return info about processor
+func (p *cleaner) Info() string {
+	return fmt.Sprintf("cleaner(%s)", utils.RetrieveInfo(p.httpWrap))
 }

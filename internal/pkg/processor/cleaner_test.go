@@ -78,3 +78,22 @@ func TestClean_Skip(t *testing.T) {
 	err := pr.Process(d)
 	assert.Nil(t, err)
 }
+
+func Test_getNormText(t *testing.T) {
+	tests := []struct {
+		name string
+		args *synthesizer.TTSData
+		want string
+	}{
+		{name: "originalText", args: &synthesizer.TTSData{OriginalText: "olia olia"}, want: "olia olia"},
+		{name: "from Parts", args: &synthesizer.TTSData{OriginalTextParts: []*synthesizer.TTSTextPart{{Text: "olia"}, {Text: "olia"}}}, want: "olia olia"},
+		{name: "from Parts Accented", args: &synthesizer.TTSData{OriginalTextParts: []*synthesizer.TTSTextPart{{Text: "olia"}, {Text: "o1", Accented: "aa{a/}"}}}, want: "olia aa{a/}"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := getNormText(tt.args); got != tt.want {
+				t.Errorf("getNormText() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
