@@ -47,3 +47,29 @@ func TestValue(t *testing.T) {
 		assert.Equal(t, tc.e, Value(tc.v), "Fail %d", i)
 	}
 }
+
+func TestIsWordOrWithAccent(t *testing.T) {
+	tests := []struct {
+		name string
+		args string
+		want bool
+	}{
+		{name: "empty", args: "", want: false},
+		{name: "word", args: "a", want: true},
+		{name: "word", args: "aba", want: true},
+		{name: "acc", args: "ab{a/}", want: true},
+		{name: "one letter", args: "{a/}", want: true},
+		{name: "no Word", args: ",", want: false},
+		{name: "wrong", args: "a123", want: false},
+		{name: "wrong", args: "a,", want: false},
+		{name: "wrong", args: "a b", want: false},
+		{name: "wrong", args: "a-c", want: false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := IsWordOrWithAccent(tt.args); got != tt.want {
+				t.Errorf("IsWordOrWithAccent() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}

@@ -7,6 +7,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/airenas/tts-line/internal/pkg/accent"
 )
 
 type startFunc func(xml.StartElement, *wrkData) error
@@ -287,11 +289,15 @@ func startWord(se xml.StartElement, wrk *wrkData) error {
 		return fmt.Errorf("<intelektika:w> not allowed inside <%s>", lt)
 	}
 	a := getAttr(se, "acc")
-	if a == "" {
-		return fmt.Errorf("no <intelektika:w>:acc")
+	if !okAccentedWord(a) {
+		return fmt.Errorf("wrong <intelektika:w>:acc='%s'", a)
 	}
 	wrk.lastWAcc = a
 	return nil
+}
+
+func okAccentedWord(a string) bool {
+	return a != "" && len(a) < 50 && accent.IsWordOrWithAccent(a)
 }
 
 func endWord(se xml.EndElement, wrk *wrkData) error {

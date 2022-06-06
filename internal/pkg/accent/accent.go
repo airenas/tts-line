@@ -2,6 +2,7 @@ package accent
 
 import (
 	"fmt"
+	"unicode"
 
 	"github.com/pkg/errors"
 )
@@ -49,6 +50,19 @@ const (
 	//Riestinis accent type
 	Riestinis = '~'
 )
+
+func IsWordOrWithAccent(v string) bool {
+	rns := []rune(v)
+	for i := 0; i < len(rns); i++ {
+		if i < (len(rns)-3) && rns[i] == '{' &&
+			unicode.IsLetter(rns[i+1]) && Value(rns[i+2]) > 0 && rns[i+3] == '}' {
+			i = i + 3
+		} else if !unicode.IsLetter(rns[i]) {
+			return false
+		}
+	}
+	return len(rns) > 0
+}
 
 func toString(r rune, tp int) (string, error) {
 	if tp == 1 {

@@ -244,3 +244,25 @@ func Test_getSpeed(t *testing.T) {
 		})
 	}
 }
+
+func Test_okAccentedWord(t *testing.T) {
+	tests := []struct {
+		name string
+		args string
+		want bool
+	}{
+		{name: "word", args: "aaa", want: true},
+		{name: "acc", args: "{a/}", want: true},
+		{name: "empty", args: " ", want: false},
+		{name: "empty", args: "", want: false},
+		{name: "long", args: strings.Repeat("a", 50), want: false},
+		{name: "wrong acc", args: "{a-}", want: false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := okAccentedWord(tt.args); got != tt.want {
+				t.Errorf("okAccentedWord() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
