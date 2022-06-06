@@ -22,7 +22,20 @@ func checkURL(urlStr string) (string, error) {
 }
 
 const eps float32 = 0.00000001
-//FloatEquals compares two floats
+
+// FloatEquals compares two floats
 func FloatEquals(a, b float32) bool {
-	return (a - b) < eps && (b - a) < eps
+	return (a-b) < eps && (b-a) < eps
+}
+
+// RetrieveInfo invokes Info() if interface has one
+// else returns ""
+func RetrieveInfo(pr interface{}) string {
+	pri, ok := pr.(interface {
+		Info() string
+	})
+	if ok {
+		return pri.Info()
+	}
+	return ""
 }

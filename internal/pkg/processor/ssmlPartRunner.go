@@ -2,8 +2,10 @@ package processor
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/airenas/tts-line/internal/pkg/synthesizer"
+	"github.com/airenas/tts-line/internal/pkg/utils"
 )
 
 // SSMLPartRunner runs all processors for Text part
@@ -33,5 +35,13 @@ func (p *SSMLPartRunner) Process(data *synthesizer.TTSData) error {
 
 // Info return info about processor
 func (p *SSMLPartRunner) Info() string {
-	return fmt.Sprintf("SSMLPartRunner(%d)", len(p.processors))
+	prInfo := strings.Builder{}
+	for _, pr := range p.processors {
+		s := utils.RetrieveInfo(pr)
+		if s != "" {
+			prInfo.WriteString(s)
+			prInfo.WriteString("\n")
+		}
+	}
+	return fmt.Sprintf("SSMLPartRunner(%d)[\n%s\n]", len(p.processors), strings.TrimSpace(prInfo.String()))
 }

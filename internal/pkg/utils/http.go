@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -113,4 +114,9 @@ func (hw *HTTPWrap) invoke(req *http.Request, dataOut interface{}) error {
 		return errors.Wrap(err, "can't decode response")
 	}
 	return nil
+}
+
+// Info return info about processor
+func (hw *HTTPWrap) Info() string {
+	return fmt.Sprintf("HTTPWrap(%s, tm: %s)", hw.URL, hw.Timeout.String())
 }

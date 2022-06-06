@@ -76,7 +76,7 @@ func join(parts []*synthesizer.TTSDataPart, suffix []byte) (string, float64, err
 	var bufRes bytes.Buffer
 	enc := base64.NewEncoder(base64.StdEncoding, &bufRes)
 	enc.Write(res.header)
-	
+
 	enc.Write([]byte("data"))
 	enc.Write(wav.SizeBytes(res.size))
 	enc.Write(res.buf.Bytes())
@@ -112,7 +112,7 @@ func appendWav(res *wavWriter, wavData []byte) error {
 
 // Info return info about processor
 func (p *joinAudio) Info() string {
-	return fmt.Sprintf("joinAudio(%s)", retrieveInfo(p.suffixProvider))
+	return fmt.Sprintf("joinAudio(%s)", utils.RetrieveInfo(p.suffixProvider))
 }
 
 type joinSSMLAudio struct {
@@ -238,15 +238,5 @@ func writePause(buf *bytes.Buffer, sampleRate uint32, bitsPerSample uint16, paus
 
 // Info return info about processor
 func (p *joinSSMLAudio) Info() string {
-	return fmt.Sprintf("joinSSMLAudio(%s)", retrieveInfo(p.suffixProvider))
-}
-
-func retrieveInfo (pr interface {}) string {
-	pri, ok := pr.(interface {
-		Info() string
-	})
-	if ok {
-		return pri.Info()
-	}
-	return ""
+	return fmt.Sprintf("joinSSMLAudio(%s)", utils.RetrieveInfo(p.suffixProvider))
 }

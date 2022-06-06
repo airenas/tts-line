@@ -1,6 +1,7 @@
 package processor
 
 import (
+	"fmt"
 	"strings"
 	"time"
 	"unicode"
@@ -92,6 +93,11 @@ func (p *tagger) skip(data *synthesizer.TTSData) bool {
 	return data.Cfg.JustAM
 }
 
+// Info return info about processor
+func (p *tagger) Info() string {
+	return fmt.Sprintf("tagger(%s)", utils.RetrieveInfo(p.httpWrap))
+}
+
 type taggerAccents struct {
 	httpWrap HTTPInvoker
 }
@@ -100,7 +106,7 @@ type taggerAccents struct {
 func NewTaggerAccents(urlStr string) (synthesizer.Processor, error) {
 	res := &taggerAccents{}
 	var err error
-	res.httpWrap, err = utils.NewHTTPWrap(urlStr)
+	res.httpWrap, err = newHTTPWrapBackoff(urlStr, time.Second*15)
 	if err != nil {
 		return nil, errors.Wrap(err, "Can't init http client")
 	}
@@ -199,6 +205,11 @@ func min(i1, i2 int) int {
 	return i2
 }
 
+// Info return info about processor
+func (p *taggerAccents) Info() string {
+	return fmt.Sprintf("taggerAccents(%s)", utils.RetrieveInfo(p.httpWrap))
+}
+
 type ssmlTagger struct {
 	httpWrap HTTPInvoker
 }
@@ -207,7 +218,7 @@ type ssmlTagger struct {
 func NewSSMLTagger(urlStr string) (synthesizer.Processor, error) {
 	res := &ssmlTagger{}
 	var err error
-	res.httpWrap, err = utils.NewHTTPWrap(urlStr)
+	res.httpWrap, err = newHTTPWrapBackoff(urlStr, time.Second*15)
 	if err != nil {
 		return nil, errors.Wrap(err, "Can't init http client")
 	}
@@ -223,4 +234,9 @@ func (p *ssmlTagger) Process(data *synthesizer.TTSData) error {
 	}
 	data.Words, err = mapTagAccentResult(output, data.TextWithNumbers)
 	return err
+}
+
+// Info return info about processor
+func (p *ssmlTagger) Info() string {
+	return fmt.Sprintf("ssmlTagger(%s)", utils.RetrieveInfo(p.httpWrap))
 }

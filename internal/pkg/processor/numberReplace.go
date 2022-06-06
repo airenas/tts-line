@@ -91,7 +91,7 @@ func mapAccentsBack(new, orig string) (string, error) {
 	if err != nil {
 		return "", errors.Wrapf(err, "can't allign")
 	}
-	for k, _ := range accWrds {
+	for k := range accWrds {
 		nID := allignIDs[k]
 		if nID == -1 {
 			return "", errors.Errorf("no word allignment for %s, ID: %d", oStrs[k], k)

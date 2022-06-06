@@ -2,6 +2,7 @@ package utils
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"net"
 	"syscall"
@@ -96,4 +97,8 @@ func IsRetryable(err error) bool {
 func isTimeout(err error) bool {
 	e, ok := err.(net.Error)
 	return ok && (e.Timeout() || e.Temporary())
+}
+
+func (hw *HTTPBackoff) Info() string {
+	return fmt.Sprintf("HTTPBackoff(%s)", RetrieveInfo(hw.HTTPClient))
 }
