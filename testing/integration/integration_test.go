@@ -96,6 +96,19 @@ func TestSynthesize_SSMLOK_Several(t *testing.T) {
 		http.StatusOK)
 }
 
+func TestSynthesize_SSMLOK_Word(t *testing.T) {
+	t.Parallel()
+	testSSML(t, `<speak><p/><intelektika:w acc="{O/}lia">Olia</intelektika:w></speak>`,
+		http.StatusOK)
+}
+
+func TestSynthesize_SSMLFail_WrongAcc(t *testing.T) {
+	t.Parallel()
+	testSSML(t, `<speak><p/><intelektika:w acc="{)-}lia">Olia</intelektika:w></speak>`,
+		http.StatusBadRequest)
+}
+
+
 func TestSynthesizeCustom_Success(t *testing.T) {
 	t.Parallel()
 	resp := Invoke(t, cfg.httpclient, NewRequest(t, http.MethodPost, cfg.url, "/synthesize",
