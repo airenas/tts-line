@@ -25,7 +25,7 @@ func (s *Letters) Process(word, mi string) ([]api.ResultWord, error) {
 	var cwr []*ldata
 	ad := allowDot(wl)
 	wLen := len(wr)
-	step :=1
+	step := 1
 	for i := 0; i < wLen; i = i + step {
 		var d *ldata
 		ok := false
@@ -39,7 +39,7 @@ func (s *Letters) Process(word, mi string) ([]api.ResultWord, error) {
 			step = 2
 		}
 		if !ok {
-			goapp.Log.Warnf("Unknown letter: '%s'", string(wr[i]))
+			goapp.Log.Warnf("Unknown letter: '%s'", goapp.Sanitize(string(wr[i])))
 			continue
 		}
 		if wr[i] == '.' && !ad {

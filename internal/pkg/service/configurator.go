@@ -134,7 +134,7 @@ func (c *TTSConfigutaror) Configure(r *http.Request, inText *api.Input) (*api.TT
 	if err != nil {
 		return nil, err
 	}
-	goapp.Log.Infof("Voice '%s' -> '%s'", inText.Voice, res.Voice)
+	goapp.Log.Infof("Voice '%s' -> '%s'", goapp.Sanitize(inText.Voice), res.Voice)
 	if inText.Priority < 0 {
 		return nil, errors.Errorf("wrong priority (>=0) value: %d", inText.Priority)
 	}
