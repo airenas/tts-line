@@ -98,6 +98,21 @@ func TestChangeSymbols(t *testing.T) {
 		{args: "rugpjū́čio", want: "rugpjūčio", up: true, lw: true},
 		{args: "į̃kvepia", want: "įkvepia", up: true, lw: true},
 		{args: "kū́nas", want: "kūnas", up: true, lw: true},
+		{args: "Κompozitoriai", want: "Kompozitoriai", up: true, lw: true},
+		{args: "šeši∙dešimt", want: "šeši-dešimt", up: true, lw: true},
+		{args: "taŋka", want: "tanka", up: true, lw: true},
+		{args: "Κartu", want: "Kartu", up: true, lw: true},
+		{args: "Τiriami", want: "Tiriami", up: true, lw: true},
+		{args: "Fazıl", want: "Fazil", up: true, lw: true},
+		{args: "Εžeras", want: "Ežeras", up: true, lw: true},
+		{args: "Talıs", want: "Talis", up: true, lw: true},
+		{args: "Ηeterogeniniuose", want: "Heterogeniniuose", up: true, lw: true},
+		{args: "Ιzoliacinė", want: "Izoliacinė", up: true, lw: true},
+		{args: "SX→x→R", want: "SX-x-R", up: true, lw: true},
+		{args: "kvœdi", want: "kvadi", up: true, lw: true},
+		{args: "Αnsamblis", want: "Ansamblis", up: true, lw: true},
+		{args: "Μelodiją", want: "Melodiją", up: true, lw: true},
+		{args: "minutės→penkios", want: "minutės-penkios", up: true, lw: true},
 	}
 	for _, tt := range tests {
 		n := tt.name
