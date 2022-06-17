@@ -99,7 +99,6 @@ func setAccent(w *synthesizer.ProcessedWord, out accentOutputElement) error {
 			return utils.NewErrWordTooLong(w.Tagged.Word)
 		}
 		if len(w.Tagged.Word) > 0 && out.Error == "No word" {
-			goapp.Log.Error(out.Error)
 			return utils.NewErrBadSymbols(w.Tagged.Word, "")
 		}
 		return errors.Errorf("accent error for '%s'('%s'): %s", w.Tagged.Word, out.Word, out.Error)
