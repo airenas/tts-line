@@ -98,10 +98,14 @@ func setAccent(w *synthesizer.ProcessedWord, out accentOutputElement) error {
 			goapp.Log.Error(out.Error)
 			return utils.NewErrWordTooLong(w.Tagged.Word)
 		}
+		if len(w.Tagged.Word) > 0 && out.Error == "No word" {
+			goapp.Log.Error(out.Error)
+			return utils.NewErrBadSymbols(w.Tagged.Word, "")
+		}
 		return errors.Errorf("accent error for '%s'('%s'): %s", w.Tagged.Word, out.Word, out.Error)
 	}
 	if w.Tagged.Word != out.Word {
-		return errors.Errorf("words do not match '%s' vs '%s'", w.Tagged.Word, out.Word)
+		return utils.NewErrBadSymbols(w.Tagged.Word, out.Word)
 	}
 	w.AccentVariant = findBestAccentVariant(out.Accent, w.Tagged.Mi, w.Tagged.Lemma)
 	return nil

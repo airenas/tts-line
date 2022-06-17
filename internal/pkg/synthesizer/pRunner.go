@@ -37,7 +37,7 @@ func (p *PartRunner) Process(data *TTSData) error {
 	for _, part := range data.Parts {
 		select {
 		case err := <-errCh:
-			return errors.Wrap(err, "Failed to process partial tasks")
+			return errors.Wrap(err, "failed to process partial tasks")
 		case workerQueueLimit <- true:
 			wg.Add(1)
 			go func(part *TTSDataPart) {
@@ -62,7 +62,7 @@ func (p *PartRunner) Process(data *TTSData) error {
 
 	select {
 	case err := <-errCh:
-		return errors.Wrap(err, "Failed to process partial tasks")
+		return errors.Wrap(err, "failed to process partial tasks")
 	case <-waitCh:
 	}
 	return nil
@@ -77,7 +77,7 @@ func (p *PartRunner) process(data *TTSDataPart, clCh <-chan bool) error {
 	for _, pr := range p.processors {
 		select {
 		case <-clCh:
-			return errors.New("Unexpected work termination")
+			return errors.New("unexpected work termination")
 		default:
 			err := pr.Process(data)
 			if err != nil {

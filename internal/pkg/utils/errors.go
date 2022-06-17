@@ -54,5 +54,19 @@ func NewErrWordTooLong(word string) *ErrWordTooLong {
 }
 
 func (r *ErrWordTooLong) Error() string {
-	return fmt.Sprintf("Wrong accent, too long word: '%s'", r.Word)
+	return fmt.Sprintf("wrong accent, too long word: '%s'", r.Word)
+}
+
+//ErrBadSymbols indicates a word with wrong symbols
+type ErrBadSymbols struct {
+	Orig, Cleaned string
+}
+
+//NewErrBadSymbols creates new error
+func NewErrBadSymbols(word, cleaned string) *ErrBadSymbols {
+	return &ErrBadSymbols{Orig: word, Cleaned: cleaned}
+}
+
+func (r *ErrBadSymbols) Error() string {
+	return fmt.Sprintf("wrong symbols: '%s' (%s)", r.Orig, r.Cleaned)
 }

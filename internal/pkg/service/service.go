@@ -159,7 +159,7 @@ func synthesizeCustom(data *PrData) func(echo.Context) error {
 		}
 
 		if inp.AllowCollectData != nil && !*inp.AllowCollectData {
-			goapp.Log.Warn("Can call with inp.AllowCollectData=false")
+			goapp.Log.Warn("Can't call with inp.AllowCollectData=false")
 			return echo.NewHTTPError(http.StatusBadRequest, "Method does not allow 'allowCollectData=false'")
 		}
 
@@ -250,6 +250,10 @@ func badReqError(err error) (bool, string) {
 	var errTTL *utils.ErrTextTooLong
 	if errors.As(err, &errTTL) {
 		return true, fmt.Sprintf("Text too long: passed %d chars, max allowed %d", errTTL.Len, errTTL.Max)
+	}
+	var errBadS *utils.ErrBadSymbols
+	if errors.As(err, &errBadS) {
+		return true, fmt.Sprintf("Wrong symbols: '%s'", errBadS.Orig)
 	}
 	return false, ""
 }

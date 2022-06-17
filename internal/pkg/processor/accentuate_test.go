@@ -204,9 +204,47 @@ func TestMapAccOutput_FailErrorTooLong(t *testing.T) {
 
 	err := mapAccentOutput(d, output)
 	if assert.NotNil(t, err) {
-		assert.Contains(t, err.Error(), "Wrong accent, too long word: ")
+		assert.Contains(t, err.Error(), "wrong accent, too long word: ")
 	}
 }
+
+func TestMapAccOutput_FailNoWordAccented(t *testing.T) {
+	d := newTestTTSDataPart()
+	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Word: "v2", Mi: "mi2"}})
+	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{
+		Word: "bad", Mi: "mi2"}})
+
+	output := []accentOutputElement{{Word: "v2",
+		Accent: []accent{
+			{MiVdu: "mi1", Variants: []synthesizer.AccentVariant{{Accent: 0, Syll: "v-1"}}},
+		}},
+		{Word: "v2", Error: "No word"}}
+
+	err := mapAccentOutput(d, output)
+	if assert.NotNil(t, err) {
+		assert.Contains(t, err.Error(), "wrong symbols: 'bad' ()")
+	}
+}
+
+
+func TestMapAccOutput_FailWrongWord(t *testing.T) {
+	d := newTestTTSDataPart()
+	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Word: "v2", Mi: "mi2"}})
+	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{
+		Word: "badd", Mi: "mi2"}})
+
+	output := []accentOutputElement{{Word: "v2",
+		Accent: []accent{
+			{MiVdu: "mi1", Variants: []synthesizer.AccentVariant{{Accent: 0, Syll: "v-1"}}},
+		}},
+		{Word: "bad", Error: ""}}
+
+	err := mapAccentOutput(d, output)
+	if assert.NotNil(t, err) {
+		assert.Contains(t, err.Error(), "wrong symbols: 'badd' (bad)")
+	}
+}
+
 
 func TestFindBest_UseLemma(t *testing.T) {
 	acc := []accent{{MiVdu: "mi2", MF: "lema1", Variants: []synthesizer.AccentVariant{{Accent: 101}}},
