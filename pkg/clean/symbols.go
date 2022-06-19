@@ -56,7 +56,7 @@ func getMaps() map[rune]rune {
 	addLetterMap(res, "şșβ", 's')
 	addLetterMap(res, "ğ", 'g')
 	addLetterMap(res, "đ", 'd')
-	addLetterMap(res, "ťţτ", 't')
+	addLetterMap(res, "ťţτт", 't')
 	addLetterMap(res, "в", 'b')
 	addLetterMap(res, "ⱡ", 'l')
 	addLetterMap(res, "κ", 'k')

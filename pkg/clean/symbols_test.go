@@ -113,6 +113,7 @@ func TestChangeSymbols(t *testing.T) {
 		{args: "Αnsamblis", want: "Ansamblis", up: true, lw: true},
 		{args: "Μelodiją", want: "Melodiją", up: true, lw: true},
 		{args: "minutės→penkios", want: "minutės-penkios", up: true, lw: true},
+		{args: "Тiškevičiai", want: "Tiškevičiai", up: true, lw: true},
 	}
 	for _, tt := range tests {
 		n := tt.name
