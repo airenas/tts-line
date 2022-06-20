@@ -21,6 +21,8 @@ func init() {
 	replaceableSymbols['\r'] = []rune("\n")
 	replaceableSymbols['℃'] = []rune("⁰C")
 	replaceableSymbols['ﬁ'] = []rune("fi")
+	replaceableSymbols['ĳ'] = []rune("ij")
+	replaceableSymbols['Ĳ'] = []rune("IJ")
 
 	for k, v := range getMaps() {
 		replaceableSymbols[k] = []rune{v}
@@ -33,8 +35,8 @@ func getMaps() map[rune]rune {
 
 	addMap(res, "'ˈ‚ʼ′´", '\'')
 	addMap(res, "”‟¨″", '"')
-	addMap(res, "\u2028\uFEFF\u001e\x00\u007f\t•·­˚\u200c", ' ')
-	addMap(res, "–—―‐‑‒∙→", '-')
+	addMap(res, "\u2028\uFEFF\u001e\x00\u007f\t•·­˚\u200c∙⋅", ' ')
+	addMap(res, "–—―‐‑‒→", '-')
 	addMap(res, "⁄", '/')
 
 	addMap(res, "С", 'C')
@@ -43,7 +45,7 @@ func getMaps() map[rune]rune {
 	addMap(res, "\u0130", 'I')
 
 	addLetterMap(res, "āäâãåàáăаœα", 'a')
-	addLetterMap(res, "оôõόóőò", 'o')
+	addLetterMap(res, "оôõόóőòο", 'o')
 	addLetterMap(res, "çć", 'c')
 	addLetterMap(res, "еéëèẽəěε", 'e')
 	addLetterMap(res, "ê", 'ė')

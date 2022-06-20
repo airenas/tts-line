@@ -99,7 +99,7 @@ func TestChangeSymbols(t *testing.T) {
 		{args: "į̃kvepia", want: "įkvepia", up: true, lw: true},
 		{args: "kū́nas", want: "kūnas", up: true, lw: true},
 		{args: "Κompozitoriai", want: "Kompozitoriai", up: true, lw: true},
-		{args: "šeši∙dešimt", want: "šeši-dešimt", up: true, lw: true},
+		{args: "šeši∙dešimt", want: "šeši dešimt", up: true, lw: true},
 		{args: "taŋka", want: "tanka", up: true, lw: true},
 		{args: "Κartu", want: "Kartu", up: true, lw: true},
 		{args: "Τiriami", want: "Tiriami", up: true, lw: true},
@@ -114,6 +114,10 @@ func TestChangeSymbols(t *testing.T) {
 		{args: "Μelodiją", want: "Melodiją", up: true, lw: true},
 		{args: "minutės→penkios", want: "minutės-penkios", up: true, lw: true},
 		{args: "Тiškevičiai", want: "Tiškevičiai", up: true, lw: true},
+		{args: "Οperacijų", want: "Operacijų", up: true, lw: true},
+		{args: "trijų⋅tūkstančio", want: "trijų tūkstančio", up: true, lw: true},
+		{args: "mutacĳos", want: "mutacijos", up: true, lw: true},		
+		{args: "dešimt⋅", want: "dešimt ", up: true, lw: true},		
 	}
 	for _, tt := range tests {
 		n := tt.name
