@@ -16,8 +16,8 @@ RUN go mod download
 # copy src
 COPY . /go/src
 
-RUN CGO_ENABLED=0 go build -o /go/bin/tts-line -ldflags "-X main.version=$BUILD_VERSION" cmd/tts-line/main.go
-RUN CGO_ENABLED=0 go build -o /go/bin/tts-export -ldflags "-X main.version=$BUILD_VERSION" cmd/tts-export/main.go
+RUN CGO_ENABLED=0 go build -o /go/bin/tts-line -trimpath -ldflags "-s -w -X main.version=$BUILD_VERSION" cmd/tts-line/main.go
+RUN CGO_ENABLED=0 go build -o /go/bin/tts-export -trimpath  -ldflags "-s -w -X main.version=$BUILD_VERSION" cmd/tts-export/main.go
 #####################################################################################
 FROM alpine:3.15 as runner
 
