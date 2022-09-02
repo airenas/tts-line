@@ -116,8 +116,21 @@ func TestChangeSymbols(t *testing.T) {
 		{args: "Тiškevičiai", want: "Tiškevičiai", up: true, lw: true},
 		{args: "Οperacijų", want: "Operacijų", up: true, lw: true},
 		{args: "trijų⋅tūkstančio", want: "trijų tūkstančio", up: true, lw: true},
-		{args: "mutacĳos", want: "mutacijos", up: true, lw: true},		
-		{args: "dešimt⋅", want: "dešimt ", up: true, lw: true},		
+		{args: "mutacĳos", want: "mutacijos", up: true, lw: true},
+		{args: "dešimt⋅", want: "dešimt ", up: true, lw: true},
+		{args: "Maître", want: "Maitre", up: true, lw: true},
+		{args: "Feďkovyč", want: "Fedkovyč", up: true, lw: true},
+		{args: "ꞌStaburadzeeꞌ", want: "'Staburadzee'", up: true, lw: true},
+		{args: "septynis‰", want: "septynis ", up: true, lw: true},
+		{args: "ruguǒ", want: "ruguo", up: true, lw: true},
+		{args: "wǒmen", want: "women", up: true, lw: true},
+		{args: "goumǎi", want: "goumai", up: true, lw: true},
+		{args: "Ysaÿe", want: "Ysaye", up: true, lw: true},
+		{args: "Νiekas", want: "Niekas", up: true, lw: false},
+		{args: "Нaрbe", want: "Hapbe", up: true, lw: false},
+		{args: "Andruța", want: "Andruta", up: true, lw: true},
+		{args: "Dîner", want: "Diner", up: true, lw: true},
+		{args: "įtraukiájam", want: "įtraukiajam", up: true, lw: true},
 	}
 	for _, tt := range tests {
 		n := tt.name
