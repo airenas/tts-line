@@ -131,6 +131,7 @@ func TestChangeSymbols(t *testing.T) {
 		{args: "Andruța", want: "Andruta", up: true, lw: true},
 		{args: "Dîner", want: "Diner", up: true, lw: true},
 		{args: "įtraukiájam", want: "įtraukiajam", up: true, lw: true},
+		{args: "\u0002start", want: "start", up: true, lw: true},
 	}
 	for _, tt := range tests {
 		n := tt.name

@@ -12,7 +12,7 @@ var oneQuoteBetweenLetters *regexp.Regexp
 
 func init() {
 	replaceableSymbols = make(map[rune][]rune)
-	for _, r := range "\u200b¡\u05c5\u0328\u200d˛\u05a4\u0307\u0300\u0301\u0303" { // drop symbols
+	for _, r := range "\u200b¡\u05c5\u0328\u200d˛\u05a4\u0307\u0300\u0301\u0303\u0002" { // drop symbols
 		replaceableSymbols[r] = []rune{}
 	}
 	replaceableSymbols['⎯'] = []rune("_")
