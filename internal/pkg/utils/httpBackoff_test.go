@@ -2,6 +2,7 @@ package utils_test
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"syscall"
 	"testing"
@@ -143,6 +144,7 @@ func TestIsEOF(t *testing.T) {
 		{name: "Broken pipe", args: args{err: syscall.EPIPE}, wantRetry: true},
 		{name: "Reset by peer", args: args{err: syscall.ECONNRESET}, wantRetry: true},
 		{name: "Wrapped EOF", args: args{err: errors.Wrap(io.EOF, "err")}, wantRetry: true},
+		{name: "Broken pipe Wrapped", args: args{err: fmt.Errorf("err: %w", syscall.EPIPE)}, wantRetry: true},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
