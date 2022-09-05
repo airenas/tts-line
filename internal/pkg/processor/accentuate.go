@@ -95,7 +95,6 @@ func mapAccentOutput(data *synthesizer.TTSDataPart, out []accentOutputElement) e
 func setAccent(w *synthesizer.ProcessedWord, out accentOutputElement) error {
 	if out.Error != "" {
 		if len(w.Tagged.Word) >= 50 {
-			goapp.Log.Error(out.Error)
 			return utils.NewErrWordTooLong(w.Tagged.Word)
 		}
 		if len(w.Tagged.Word) > 0 && out.Error == "No word" {

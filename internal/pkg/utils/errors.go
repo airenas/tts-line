@@ -40,7 +40,7 @@ func NewErrBadAccent(badAccents []string) *ErrBadAccent {
 }
 
 func (r *ErrBadAccent) Error() string {
-	return fmt.Sprintf("Wrong accents: %v", r.BadAccents)
+	return fmt.Sprintf("wrong accents: %v", r.BadAccents)
 }
 
 //ErrWordTooLong indicates too long word
