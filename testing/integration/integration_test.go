@@ -108,7 +108,6 @@ func TestSynthesize_SSMLFail_WrongAcc(t *testing.T) {
 		http.StatusBadRequest)
 }
 
-
 func TestSynthesizeCustom_Success(t *testing.T) {
 	t.Parallel()
 	resp := Invoke(t, cfg.httpclient, NewRequest(t, http.MethodPost, cfg.url, "/synthesize",
@@ -202,6 +201,8 @@ func startMockService(port int) (net.Listener, *httptest.Server) {
 			io.Copy(w, strings.NewReader(`"Olia"`))
 		case "/mock-obscene-filter":
 			io.Copy(w, strings.NewReader(`[{"token":"Olia","obscene":0}]`))
+		case "/mock-normalize":
+			io.Copy(w, strings.NewReader(`{"res":"Olia"}`))
 		case "/mock-compare":
 			io.Copy(w, strings.NewReader(`{"rc":1,"badacc":[]}`))
 		case "/mock-am":

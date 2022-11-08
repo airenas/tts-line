@@ -9,6 +9,7 @@ services:
       - CLEAN_URL=http://text-clean:8000/clean
       - NUMBERREPLACE_URL=http://integration-tests:9876/mock-number-replace
       - OBSCENE_URL=http://integration-tests:9876/mock-obscene-filter
+      - NORMALIZE_URL=http://integration-tests:9876/mock-normalizer
       - TAGGER_URL=http://tagger:8000/tag
       - ACCENTER_URL=http://accenter:8000/accent?human=true&roe=true
       - ACRONYMS_URL=http://acronyms:8000/acronyms
