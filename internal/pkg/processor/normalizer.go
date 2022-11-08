@@ -38,7 +38,7 @@ func (p *normalizer) Process(data *synthesizer.TTSData) error {
 	var output normResponseData
 	err := p.httpWrap.InvokeJSON(inData, &output)
 	if err != nil {
-		return err
+		return errors.Errorf("normalize (%s): %w", output.Err, err)
 	}
 
 	data.NormalizedText = output.Res
