@@ -25,6 +25,7 @@ actor User
 participant "TTS" as tts
 database "DB" as DB
 participant "Clean" as Clean
+participant "Normalizer" as Normalizer
 participant "Number\nreplace" as num
 participant "Tagger" as tagger
 participant "Lex" as lex
@@ -56,6 +57,11 @@ tts -> Clean: clean text, drop html tags
 activate Clean
 Clean --> tts:
 deactivate Clean
+
+tts -> Normalizer: normalize text, change some numbers
+activate Normalizer
+Normalizer --> tts:
+deactivate Normalizer
 
 tts -> tts: Replace URLs
 
