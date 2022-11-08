@@ -8,13 +8,11 @@ ARG BUILD_VERSION=0.1
 WORKDIR /go/src/
 ENV CGO_ENABLED=0
 
-# precache go.mod dependencies
-COPY go.mod /go/src/
-COPY go.sum /go/src/
-RUN go mod download
-
 COPY . /go/src
-RUN CGO_ENABLED=0 go build -o /go/bin/tts-text-clean -trimpath  -ldflags "-s -w -X main.version=$BUILD_VERSION" cmd/tts-text-clean/main.go
+
+RUN --mount=type=cache,target=/root/.cache/go-build \
+    --mount=type=cache,target=/go/pkg/mod \
+    go build -o /go/bin/tts-text-clean -trimpath  -ldflags "-s -w -X main.version=$BUILD_VERSION" cmd/tts-text-clean/main.go
 #####################################################################################
 FROM alpine:3.15 as runner
 
