@@ -10,24 +10,24 @@ help:
 #####################################################################################
 ## start all containers
 start: 
-	docker-compose up -d --build tagger lex semantika tts-line text-clean \
+	docker compose up -d --build tagger lex semantika tts-line text-clean \
 		acronyms accenter clitics transcriber audioconverter mongo
 .PHONY: start
 ## invoke integration tests
 test/integration: start 
-	docker-compose up --build --exit-code-from integration-tests integration-tests
+	docker compose up --build --exit-code-from integration-tests integration-tests
 .PHONY: test/integration
 ## invoke unit tests
 test/unit:  
-	docker-compose up --build --exit-code-from unit-tests unit-tests
+	docker compose up --build --exit-code-from unit-tests unit-tests
 .PHONY: test/unit
 ## invoke tests with compose up 
 test/up:  
-	docker-compose up tts-line integration-tests
+	docker compose up tts-line integration-tests
 .PHONY: test/unit
 ## clean everything, stops docker containers and removes them
 clean:
-	docker-compose stop && docker-compose rm -f
+	docker compose down
 .PHONY: clean	
 #####################################################################################
 
