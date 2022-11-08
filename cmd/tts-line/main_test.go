@@ -23,13 +23,14 @@ const testValidatorCfg = "validator:\n  maxChars: 100\n"
 const testConvCfg = "audioConvert:\n  url: http://server\n"
 const testObsceneCfg = "obscene:\n  url: http://server\n"
 const testCleanCfg = "clean:\n  url: http://cl.su\n"
+const testNormalizeCfg = "normalize:\n  url: http://norm.su\n"
 const testNumberReplaceCfg = "numberReplace:\n  url: http://nr.su\n"
 const testSuffixLoaderCfg = "suffixLoader:\n  path: ./\n"
 
 var testAllCfg = testCompCfg +
 	testAccenterCfg + testTransCfg + testAMCfg + testVocCfg + testTaggerCfg + testValidatorCfg +
 	testConvCfg + testAcrCfg + testCliticsCfg + testObsceneCfg + testCleanCfg +
-	testNumberReplaceCfg + testSuffixLoaderCfg
+	testNumberReplaceCfg + testSuffixLoaderCfg + testNormalizeCfg
 
 var testDBSession *mongodb.SessionProvider
 
@@ -96,6 +97,7 @@ func TestAddSSMLProcessors(t *testing.T) {
 		"saver(originalSSML)",
 		"SSMLPartRunner",
 		"cleaner(HTTPBackoff(HTTPWrap(http://cl.su, tm: 10s)))",
+		"normalizer(HTTPBackoff(HTTPWrap(http://norm.su, tm: 10s)))",
 		"SSMLNumberReplace(HTTPBackoff(HTTPWrap(http://nr.su, tm: 10s)))",
 		"SSMLTagger(", "joinSSMLAudio(audioLoader(./))",
 		"audioConverter", "addMetrics"}
@@ -119,7 +121,9 @@ func TestAddProcessors(t *testing.T) {
 	assert.Nil(t, err)
 	info := mw.GetProcessorsInfo()
 	req := []string{"addMetrics", "saver(original)",
-		"cleaner(HTTPBackoff(HTTPWrap(http://cl.su, tm: 10s)))", "saver(cleaned)",
+		"cleaner(HTTPBackoff(HTTPWrap(http://cl.su, tm: 10s)))", 
+		"saver(cleaned)",
+		"normalizer(HTTPBackoff(HTTPWrap(http://norm.su, tm: 10s)))",
 		"numberReplace(HTTPBackoff(HTTPWrap(http://nr.su, tm: 10s)))", "saver(normalized)",
 		"tagger(", "joinAudio(audioLoader(./))",
 		"audioConverter", "addMetrics"}

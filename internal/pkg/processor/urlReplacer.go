@@ -37,8 +37,8 @@ func (p *urlReplacer) Process(data *synthesizer.TTSData) error {
 		return nil
 	}
 	defer goapp.Estimate("URL replace")()
-	utils.LogData("Input: ", data.CleanedText)
-	data.Text = p.replaceURLs(data.CleanedText)
+	utils.LogData("Input: ", data.NormalizedText)
+	data.Text = p.replaceURLs(data.NormalizedText)
 	utils.LogData("Output: ", data.Text)
 	return nil
 }

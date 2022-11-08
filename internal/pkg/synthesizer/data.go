@@ -14,6 +14,7 @@ type TTSData struct {
 	OriginalText    string
 	PreviousText    string // text of previous request loaded by requestID
 	CleanedText     string
+	NormalizedText  string // text after normalization
 	Text            string // text after cleaning and URL replacement
 	TextWithNumbers string
 
@@ -27,12 +28,12 @@ type TTSData struct {
 	AudioLenSeconds float64
 
 	OriginalTextParts []*TTSTextPart
-	SSMLParts []*TTSData
+	SSMLParts         []*TTSData
 }
 
 // TTSTextPart part of the text
 type TTSTextPart struct {
-	Accented, Text    string
+	Accented, Text string
 }
 
 //TTSConfig some TTS configuration
