@@ -2,11 +2,13 @@
 #####################################################################################
 service=airenas/tts-line
 version=$(tts_version)
+debug?=
 ########### DOCKER ##################################################################
 tag=$(service):$(version)
 
 dbuild:
-	cd ../../ && docker buildx build -t $(tag) --build-arg BUILD_VERSION=$(version) -f build/tts-line/Dockerfile .
+	docker buildx build -t $(tag) --build-arg BUILD_VERSION=$(version) \
+		-f Dockerfile$(debug) ../../
 
 dpush: dbuild
 	docker push $(tag)
