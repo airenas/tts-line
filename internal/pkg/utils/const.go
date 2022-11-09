@@ -8,15 +8,14 @@ type RequestTypeEnum int
 const (
 	//RequestOriginal value
 	RequestOriginal RequestTypeEnum = iota + 1
-	//RequestNormalized value
+	//RequestNormalized value - text after number replace
 	RequestNormalized
-	//RequestCleaned value
+	//RequestCleaned value - text after clean, normalize and url replace
 	RequestCleaned
 	//RequestUser value - data normalized by user
 	RequestUser
 	//RequestOriginalSSML value
 	RequestOriginalSSML
-	
 )
 
 func (e RequestTypeEnum) String() string {

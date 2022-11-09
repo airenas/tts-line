@@ -46,7 +46,7 @@ activate tts
 
 tts -> tts: check for empty/too large text
 
-tts -[#blue]> DB: get original text (requestID)
+tts -[#blue]> DB: get previously cleaned text (requestID)
 activate DB #lightblue
 DB -[#blue]-> tts:
 deactivate DB

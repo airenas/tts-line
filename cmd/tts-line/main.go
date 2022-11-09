@@ -115,6 +115,13 @@ func addProcessors(synt *synthesizer.MainWorker, sp *mongodb.SessionProvider, cf
 	}
 	synt.Add(pr)
 
+	// normalizer
+	pr, err = processor.NewNormalizer(cfg.GetString("normalize.url"))
+	if err != nil {
+		return errors.Wrap(err, "can't init text normalizer processor")
+	}
+	synt.Add(pr)
+	synt.Add(processor.NewURLReplacer())
 	//db saver
 	sv, err = processor.NewSaver(ts, utils.RequestCleaned)
 	if err != nil {
@@ -122,14 +129,6 @@ func addProcessors(synt *synthesizer.MainWorker, sp *mongodb.SessionProvider, cf
 	}
 	synt.Add(sv)
 
-	// normalizer
-	pr, err = processor.NewNormalizer(cfg.GetString("normalize.url"))
-	if err != nil {
-		return errors.Wrap(err, "can't init text normalizer processor")
-	}
-	synt.Add(pr)
-
-	synt.Add(processor.NewURLReplacer())
 	//number replacer
 	pr, err = processor.NewNumberReplace(cfg.GetString("numberReplace.url"))
 	if err != nil {

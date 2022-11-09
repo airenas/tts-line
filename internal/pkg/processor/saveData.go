@@ -40,16 +40,20 @@ func (p *saver) Process(data *synthesizer.TTSData) error {
 }
 
 func getText(data *synthesizer.TTSData, t utils.RequestTypeEnum) string {
-	if t == utils.RequestOriginal {
+	switch t {
+	case utils.RequestOriginal:
 		return data.OriginalText
-	}
-	if t == utils.RequestCleaned {
+	case utils.RequestCleaned:
 		return data.Text
-	}
-	if t == utils.RequestUser {
+	case utils.RequestNormalized:
+		return data.TextWithNumbers
+	case utils.RequestUser:
+		return data.OriginalText
+	case utils.RequestOriginalSSML:
 		return data.OriginalText
 	}
-	return data.TextWithNumbers
+	goapp.Log.Warnf("Not configured RequestTypeEnum %v", t)
+	return data.OriginalText
 }
 
 func getTags(cfg *api.TTSRequestConfig) []string {

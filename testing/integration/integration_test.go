@@ -127,6 +127,24 @@ func TestSynthesizeCustom_Success(t *testing.T) {
 	require.NotEmpty(t, res.AudioAsString)
 }
 
+func TestSynthesizeCustom_Fail_Differs(t *testing.T) {
+	t.Parallel()
+	resp := Invoke(t, cfg.httpclient, NewRequest(t, http.MethodPost, cfg.url, "/synthesize",
+		api.Input{Text: "Olia", Voice: "astra", AllowCollectData: &[]bool{true}[0], OutputTextFormat: "accented"}))
+	CheckCode(t, resp, http.StatusOK)
+	res := api.Result{}
+	Decode(t, resp, &res)
+	require.NotEmpty(t, res.AudioAsString)
+	require.NotEmpty(t, res.RequestID)
+
+	resp = Invoke(t, cfg.httpclient, NewRequest(t, http.MethodPost, cfg.url,
+		fmt.Sprintf("/synthesizeCustom?requestID=%s", res.RequestID),
+		api.Input{Text: "Olia olia olia", Voice: "astra"}))
+	CheckCode(t, resp, http.StatusBadRequest)
+	res = api.Result{}
+	Decode(t, resp, &res)
+}
+
 func TestSynthesizeCustom_FailNoID(t *testing.T) {
 	t.Parallel()
 	resp := Invoke(t, cfg.httpclient, NewRequest(t, http.MethodPost, cfg.url,

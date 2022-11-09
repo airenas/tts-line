@@ -120,11 +120,13 @@ func TestAddProcessors(t *testing.T) {
 	err := addProcessors(&mw, &mongodb.SessionProvider{}, test.NewConfig(t, testAllCfg))
 	assert.Nil(t, err)
 	info := mw.GetProcessorsInfo()
-	req := []string{"addMetrics", "saver(original)",
-		"cleaner(HTTPBackoff(HTTPWrap(http://cl.su, tm: 10s)))", 
-		"saver(cleaned)",
+	req := []string{"addMetrics",
+		"saver(original)",
+		"cleaner(HTTPBackoff(HTTPWrap(http://cl.su, tm: 10s)))",
 		"normalizer(HTTPBackoff(HTTPWrap(http://norm.su, tm: 10s)))",
-		"numberReplace(HTTPBackoff(HTTPWrap(http://nr.su, tm: 10s)))", "saver(normalized)",
+		"saver(cleaned)",
+		"numberReplace(HTTPBackoff(HTTPWrap(http://nr.su, tm: 10s)))",
+		"saver(normalized)",
 		"tagger(", "joinAudio(audioLoader(./))",
 		"audioConverter", "addMetrics"}
 	infos := strings.Split(info, "\n")

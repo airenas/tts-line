@@ -29,7 +29,7 @@ func (p *loader) Process(data *synthesizer.TTSData) error {
 	defer goapp.Estimate("LoadDB")()
 
 	var err error
-	data.PreviousText, err = p.sDB.LoadText(data.Input.RequestID, utils.RequestCleaned)
+	data.PreviousText, err = p.sDB.LoadText(data.Input.RequestID, utils.RequestCleaned) 
 	if err != nil {
 		return errors.Wrapf(err, "Can't load request from DB for id '%s'", data.Input.RequestID)
 	}
