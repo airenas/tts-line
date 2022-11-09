@@ -19,7 +19,7 @@ func TestNewCleaner(t *testing.T) {
 
 func TestNewCleaner_Fails(t *testing.T) {
 	initTestJSON(t)
-	pr, err := NewAccentuator("")
+	pr, err := NewCleaner("")
 	assert.NotNil(t, err)
 	assert.Nil(t, pr)
 }
