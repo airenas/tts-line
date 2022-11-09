@@ -18,7 +18,7 @@ services:
       - AUDIOCONVERT_URL=http://audioconverter:8000/convert
       - ACOUSTICMODEL_URL=http://integration-tests:9876/mock-am
       - VOCODER_URL=http://192.168.1.77:8001/model    
-      - COMPARATOR_URL=http://integration-tests:9876/mock-compare
+      - COMPARATOR_URL=http://comparator:3000/resynthvalid
       - MONGO_URL=mongodb://tts:Ui3Ic5Meej8Ki8tohxawe7jei3iaci@mongo:27017
     volumes:
       - ./config.yaml:/app/config.yaml:ro
@@ -60,6 +60,10 @@ services:
   normalizer:
     image: intelektikalt/text-normalizer:0.1.28
     restart: on-failure  
+
+  comparator:
+    image: intelektikalt/resynth-validator:0.1.8
+    restart: on-failure 
 
   audioconverter:
     container_name: audioconverter
