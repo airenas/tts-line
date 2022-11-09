@@ -9,7 +9,7 @@ services:
       - CLEAN_URL=http://text-clean:8000/clean
       - NUMBERREPLACE_URL=http://integration-tests:9876/mock-number-replace
       - OBSCENE_URL=http://integration-tests:9876/mock-obscene-filter
-      - NORMALIZE_URL=http://integration-tests:9876/mock-normalizer
+      - NORMALIZE_URL=http://normalizer:3000/norm
       - TAGGER_URL=http://tagger:8000/tag
       - ACCENTER_URL=http://accenter:8000/accent?human=true&roe=true
       - ACRONYMS_URL=http://acronyms:8000/acronyms
@@ -22,6 +22,9 @@ services:
       - MONGO_URL=mongodb://tts:Ui3Ic5Meej8Ki8tohxawe7jei3iaci@mongo:27017
     volumes:
       - ./config.yaml:/app/config.yaml:ro
+    ports:
+      - 10000:8000 
+      - 2345:2345 
     restart: on-failure     
 
   text-clean:
@@ -39,7 +42,9 @@ services:
 
   semantika:
     image: semantikadocker.vdu.lt/v2/morph:0.2
-    restart: on-failure   
+    restart: on-failure
+    ports:
+      - 10001:8060     
 
   lex:
     image: semantikadocker.vdu.lt/lex:latest
@@ -51,6 +56,10 @@ services:
     environment:
       - SECRET=${CLITICS_SECRET} 
     restart: on-failure 
+
+  normalizer:
+    image: intelektikalt/text-normalizer:0.1.28
+    restart: on-failure  
 
   audioconverter:
     container_name: audioconverter

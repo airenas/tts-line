@@ -201,8 +201,6 @@ func startMockService(port int) (net.Listener, *httptest.Server) {
 			io.Copy(w, strings.NewReader(`"Olia"`))
 		case "/mock-obscene-filter":
 			io.Copy(w, strings.NewReader(`[{"token":"Olia","obscene":0}]`))
-		case "/mock-normalize":
-			io.Copy(w, strings.NewReader(`{"res":"Olia"}`))
 		case "/mock-compare":
 			io.Copy(w, strings.NewReader(`{"rc":1,"badacc":[]}`))
 		case "/mock-am":
