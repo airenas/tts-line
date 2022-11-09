@@ -1,6 +1,6 @@
 module github.com/airenas/tts-line
 
-go 1.17
+go 1.18
 
 require (
 	github.com/airenas/go-app v0.4.21
@@ -9,8 +9,8 @@ require (
 	github.com/facebookgo/grace v0.0.0-20180706040059-75cf19382434
 	github.com/google/uuid v1.2.0
 	github.com/labstack/echo-contrib v0.12.0
-	github.com/labstack/echo/v4 v4.7.2
-	github.com/labstack/gommon v0.3.1
+	github.com/labstack/echo/v4 v4.9.1
+	github.com/labstack/gommon v0.4.0
 	github.com/mattn/go-colorable v0.1.12
 	github.com/microcosm-cc/bluemonday v1.0.16
 	github.com/mschneider82/health v0.0.0-20191023121516-d79dedea6640
