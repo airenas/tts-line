@@ -5,7 +5,6 @@ import (
 	"time"
 
 	"github.com/airenas/go-app/pkg/goapp"
-	"github.com/pkg/errors"
 
 	"github.com/airenas/tts-line/internal/pkg/synthesizer"
 	"github.com/airenas/tts-line/internal/pkg/utils"
@@ -21,7 +20,7 @@ func NewNormalizer(urlStr string) (synthesizer.Processor, error) {
 	var err error
 	res.httpWrap, err = newHTTPWrapBackoff(urlStr, time.Second*10)
 	if err != nil {
-		return nil, errors.Wrap(err, "can't init http client")
+		return nil, fmt.Errorf("can't init http client: %w", err)
 	}
 	return res, nil
 }
@@ -38,7 +37,7 @@ func (p *normalizer) Process(data *synthesizer.TTSData) error {
 	var output normResponseData
 	err := p.httpWrap.InvokeJSON(inData, &output)
 	if err != nil {
-		return errors.Errorf("normalize (%s): %w", output.Err, err)
+		return fmt.Errorf("normalize (%s): %w", output.Err, err)
 	}
 
 	data.NormalizedText = output.Res
