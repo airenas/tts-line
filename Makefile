@@ -57,7 +57,7 @@ generate/diagram:
 #####################################################################################
 ## cleans prepared data for dockeriimage generation
 clean:
-	go mod tidy -compat=1.17
+	go mod tidy -compat=1.18
 	go clean
 	cd build/acronyms && $(MAKE) clean
 	cd build/clitics && $(MAKE) clean
