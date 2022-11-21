@@ -92,7 +92,7 @@ services:
   
   acronyms:
     container_name: acronyms
-    image: airenas/acronyms:0.1.303
+    image: airenas/acronyms:${acronyms_version}
     restart: on-failure 
     environment:
      - SECRET=${ACRONYMS_SECRET}      
