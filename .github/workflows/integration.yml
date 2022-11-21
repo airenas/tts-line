@@ -10,7 +10,9 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: Build containers
-        run: make docker/build
+        run: make docker/build acronyms_data_dir=../../testing/integration/data
+        env:
+          ACRONYMS_SECRET: ${{ secrets.ACRONYMS_SECRET }}
       - name: Login to dockerhub
         run: echo "${{ secrets.INTELEKTIKALT_DOCKERHUB_PASS }}" | docker login -u intelektikalt --password-stdin
       - name: Run integration tests
