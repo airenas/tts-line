@@ -63,7 +63,7 @@ func TestSynthesize_FailVoice(t *testing.T) {
 func TestSynthesize_Success(t *testing.T) {
 	t.Parallel()
 	resp := Invoke(t, cfg.httpclient, NewRequest(t, http.MethodPost, cfg.url, "/synthesize",
-		api.Input{Text: "Olia", Voice: "astra"}))
+		api.Input{Text: "Olia xrytas", Voice: "astra"}))
 	CheckCode(t, resp, http.StatusOK)
 	res := api.Result{}
 	Decode(t, resp, &res)
