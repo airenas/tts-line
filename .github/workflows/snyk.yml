@@ -16,7 +16,8 @@ jobs:
       - name: Build containers ${{ matrix.container }}
         run: make docker/${{ matrix.container }}/build clean_version=latest \
               tts_version=latest acronyms_version=latest acronyms_data_dir=../../testing/integration/data 
-
+        env:
+          ACRONYMS_SECRET: ${{ secrets.ACRONYMS_SECRET }}
       - name: Run Snyk to check ${{ matrix.container }} Docker image for vulnerabilities
         continue-on-error: true
         uses: snyk/actions/docker@master
