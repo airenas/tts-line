@@ -160,7 +160,7 @@ func synthesizeCustom(data *PrData) func(echo.Context) error {
 
 		if inp.AllowCollectData != nil && !*inp.AllowCollectData {
 			goapp.Log.Warn("Can't call with inp.AllowCollectData=false")
-			return echo.NewHTTPError(http.StatusBadRequest, "Method does not allow 'allowCollectData=false'")
+			return echo.NewHTTPError(http.StatusBadRequest, "Method does not allow 'saveRequest=false'")
 		}
 
 		cfg, err := data.Configurator.Configure(c.Request(), inp)

@@ -187,7 +187,7 @@ func getAllowCollect(v *bool, s string) (bool, error) {
 	if st == "never" && !*v {
 		return false, nil
 	}
-	return false, errors.Errorf("AllowCollectData=%t is rejected for this key.", *v)
+	return false, errors.Errorf("saveRequest=%t is rejected for this key.", *v)
 }
 
 func getOutputAudioFormat(s string) (api.AudioFormatEnum, error) {
