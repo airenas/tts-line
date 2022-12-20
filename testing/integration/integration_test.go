@@ -60,6 +60,21 @@ func TestSynthesize_FailVoice(t *testing.T) {
 	CheckCode(t, resp, http.StatusBadRequest)
 }
 
+func TestSynthesize_OK_SaveRequest(t *testing.T) {
+	t.Parallel()
+	resp := Invoke(t, cfg.httpclient, NewRequest(t, http.MethodPost, cfg.url, "/synthesize",
+		api.Input{Text: "Olia", Voice: "astra", AllowCollectData: &[]bool{true}[0]}))
+	CheckCode(t, resp, http.StatusOK)
+}
+
+func TestSynthesize_Fail_SaveRequest(t *testing.T) {
+	t.Parallel()
+	req := NewRequest(t, http.MethodPost, cfg.url, "/synthesize", api.Input{Text: "Olia", Voice: "astra", AllowCollectData: &[]bool{false}[0]})
+	req.Header.Add("x-tts-collect-data", "always")
+	resp := Invoke(t, cfg.httpclient, req)
+	CheckCode(t, resp, http.StatusBadRequest)
+}
+
 func TestSynthesize_Success(t *testing.T) {
 	t.Parallel()
 	resp := Invoke(t, cfg.httpclient, NewRequest(t, http.MethodPost, cfg.url, "/synthesize",
