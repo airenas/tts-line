@@ -100,6 +100,42 @@ func TestInvokeSSMLNumberReplace(t *testing.T) {
 	assert.Equal(t, "trys oli{a/} keturi", d.TextWithNumbers)
 }
 
+func TestInvokeSSMLNumberReplace_Real(t *testing.T) {
+	initTest(t)
+	pr, _ := NewSSMLNumberReplace("http://server")
+	assert.NotNil(t, pr)
+	pr.(*ssmlNumberReplace).httpWrap = httpInvokerMock
+	d := synthesizer.TTSData{Text: "kadenciją 1998-2002 m. {o\\}rb buvo demokratiškas vadovas. Kad 2010 m. grįžęs į valdžią jis staiga virto autokratu, buvo didelis"}
+	pegomock.When(httpInvokerMock.InvokeText(pegomock.AnyString(), pegomock.AnyInterface())).Then(
+		func(params []pegomock.Param) pegomock.ReturnValues {
+			*params[1].(*string) = "kadenciją tūkstantis devyni šimtai devyniasdešimt aštuntaisiais-du tūkstančiai antraisiais metais orb buvo demokratiškas vadovas." +
+				" Kad du tūkstančiai dešimtaisiais metais grįžęs į valdžią jis staiga virto autokratu, buvo didelis"
+			return []pegomock.ReturnValue{nil}
+		})
+	err := pr.Process(&d)
+	assert.Nil(t, err)
+	assert.Equal(t, "kadenciją tūkstantis devyni šimtai devyniasdešimt aštuntaisiais-du tūkstančiai antraisiais metais {o\\}rb buvo demokratiškas vadovas."+
+		" Kad du tūkstančiai dešimtaisiais metais grįžęs į valdžią jis staiga virto autokratu, buvo didelis", d.TextWithNumbers)
+}
+
+func TestInvokeSSMLNumberReplace_Real1(t *testing.T) {
+	initTest(t)
+	pr, _ := NewSSMLNumberReplace("http://server")
+	assert.NotNil(t, pr)
+	pr.(*ssmlNumberReplace).httpWrap = httpInvokerMock
+	d := synthesizer.TTSData{Text: "kadenciją 1998-2002 m. {o\\}rb buvo demokratiškas vadovas. Kad 2010 m. grįžęs į valdžią jis staiga virto autokratu, buvo"}
+	pegomock.When(httpInvokerMock.InvokeText(pegomock.AnyString(), pegomock.AnyInterface())).Then(
+		func(params []pegomock.Param) pegomock.ReturnValues {
+			*params[1].(*string) = "kadenciją tūkstantis devyni šimtai devyniasdešimt aštuntaisiais-du tūkstančiai antraisiais metais orb buvo demokratiškas vadovas." +
+				" Kad du tūkstančiai dešimtaisiais metais grįžęs į valdžią jis staiga virto autokratu, buvo"
+			return []pegomock.ReturnValue{nil}
+		})
+	err := pr.Process(&d)
+	assert.Nil(t, err)
+	assert.Equal(t, "kadenciją tūkstantis devyni šimtai devyniasdešimt aštuntaisiais-du tūkstančiai antraisiais metais {o\\}rb buvo demokratiškas vadovas."+
+		" Kad du tūkstančiai dešimtaisiais metais grįžęs į valdžią jis staiga virto autokratu, buvo", d.TextWithNumbers)
+}
+
 func Test_doPartlyAllign(t *testing.T) {
 	type args struct {
 		s1 []string
@@ -218,7 +254,7 @@ func Test_allign(t *testing.T) {
 			want: makeTestInt(0, 1000), wantErr: false},
 		{name: "super long", args: args{oStrs: makeTestStr("a", 10000), nStrs: makeTestStr("a", 10000)},
 			want: makeTestInt(0, 10000), wantErr: false},
-		{name: "fails", args: args{oStrs: makeTestStr("a", 25), nStrs: makeTestStr("b", 25)},
+		{name: "fails", args: args{oStrs: makeTestStr("a", 30), nStrs: makeTestStr("b", 30)},
 			want: nil, wantErr: true},
 		{name: "with shift", args: args{oStrs: makeTestStr("a", 100),
 			nStrs: append(makeTestStr("c", 5), makeTestStr("a", 100)...)},

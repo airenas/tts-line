@@ -111,7 +111,7 @@ func mapAccentsBack(new, orig string) (string, error) {
 	return strings.Join(nStrs, " "), nil
 }
 
-const partlyStep = 20
+const partlyStep = 25
 
 func allign(oStrs []string, nStrs []string) ([]int, error) {
 	res := make([]int, len(oStrs))
