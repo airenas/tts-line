@@ -136,6 +136,24 @@ func TestInvokeSSMLNumberReplace_Real1(t *testing.T) {
 		" Kad du tūkstančiai dešimtaisiais metais grįžęs į valdžią jis staiga virto autokratu, buvo", d.TextWithNumbers)
 }
 
+func TestInvokeSSMLNumberReplace_Real2(t *testing.T) {
+	initTest(t)
+	pr, _ := NewSSMLNumberReplace("http://server")
+	assert.NotNil(t, pr)
+	pr.(*ssmlNumberReplace).httpWrap = httpInvokerMock
+	d := synthesizer.TTSData{Text: "Robertsonas (1988 m. surinkęs 25 proc. balsų), bjūk{e~}nenas (1996 m. surinkęs 23 proc. balsų) ir f{o/}rbzas (2000 m. surinkęs 31 proc. balsų)"}
+	pegomock.When(httpInvokerMock.InvokeText(pegomock.AnyString(), pegomock.AnyInterface())).Then(
+		func(params []pegomock.Param) pegomock.ReturnValues {
+			*params[1].(*string) = "Robertsonas (tūkstantis devyni šimtai aštuoniasdešimt aštuntieji metai surinkęs dvidešimt penki procentai balsų), bjūkenenas (tūkstantis devyni šimtai " +
+				"devyniasdešimt šeštieji metai surinkęs dvidešimt trys procentai balsų) ir forbzas (du tūkstantieji metai surinkęs trisdešimt vienas procentas balsų)"
+			return []pegomock.ReturnValue{nil}
+		})
+	err := pr.Process(&d)
+	assert.Nil(t, err)
+	assert.Equal(t, "Robertsonas (tūkstantis devyni šimtai aštuoniasdešimt aštuntieji metai surinkęs dvidešimt penki procentai balsų), bjūk{e~}nenas (tūkstantis devyni šimtai devyniasdešimt "+
+		"šeštieji metai surinkęs dvidešimt trys procentai balsų) ir f{o/}rbzas (du tūkstantieji metai surinkęs trisdešimt vienas procentas balsų)", d.TextWithNumbers)
+}
+
 func Test_doPartlyAlign(t *testing.T) {
 	type args struct {
 		s1 []string
@@ -157,7 +175,7 @@ func Test_doPartlyAlign(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := doPartlyAlign(tt.args.s1, tt.args.s2); !reflect.DeepEqual(got, tt.want) {
+			if got := doPartlyAlign(tt.args.s1, tt.args.s2, 20); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("doPartlyAlign() = %v, want %v", got, tt.want)
 			}
 		})
@@ -266,7 +284,7 @@ func Test_align(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := align(tt.args.oStrs, tt.args.nStrs)
+			got, err := align(tt.args.oStrs, tt.args.nStrs, 20)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("align() error = %v, wantErr %v", err, tt.wantErr)
 				return

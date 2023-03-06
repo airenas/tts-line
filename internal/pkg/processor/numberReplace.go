@@ -11,7 +11,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-//HTTPInvoker makes http call
+// HTTPInvoker makes http call
 type HTTPInvoker interface {
 	InvokeText(string, interface{}) error
 }
@@ -20,7 +20,7 @@ type numberReplace struct {
 	httpWrap HTTPInvoker
 }
 
-//NewNumberReplace creates new processor
+// NewNumberReplace creates new processor
 func NewNumberReplace(urlStr string) (synthesizer.Processor, error) {
 	res := &numberReplace{}
 	var err error
@@ -94,9 +94,14 @@ func mapAccentsBack(new, orig string) (string, error) {
 		return new, nil
 	}
 
-	alignIDs, err := align(ocStrs, nStrs)
+	alignIDs, err := align(ocStrs, nStrs, 20)
 	if err != nil {
-		return "", errors.Wrapf(err, "can't align")
+		// try increase align buffer, maybe it will help
+		goapp.Log.Info("increase align size")
+		alignIDs, err = align(ocStrs, nStrs, 40)
+		if err != nil {
+			return "", errors.Wrapf(err, "can't align")
+		}
 	}
 	for k := range accWrds {
 		nID := alignIDs[k]
@@ -111,13 +116,11 @@ func mapAccentsBack(new, orig string) (string, error) {
 	return strings.Join(nStrs, " "), nil
 }
 
-const partlyStep = 25
-
-func align(oStrs []string, nStrs []string) ([]int, error) {
+func align(oStrs []string, nStrs []string, step int) ([]int, error) {
 	res := make([]int, len(oStrs))
 	i, j := 0, 0
 	for i < len(oStrs) {
-		partlyAll := doPartlyAlign(oStrs[i:min(i+partlyStep, len(oStrs))], nStrs[j:min(j+partlyStep, len(nStrs))])
+		partlyAll := doPartlyAlign(oStrs[i:min(i+step, len(oStrs))], nStrs[j:min(j+step, len(nStrs))], step)
 		for pi, v := range partlyAll {
 			if v > -1 {
 				res[i+pi] = partlyAll[pi] + j
@@ -125,7 +128,7 @@ func align(oStrs []string, nStrs []string) ([]int, error) {
 				res[i+pi] = -1
 			}
 		}
-		if min(i+partlyStep, len(oStrs)) == len(oStrs) && min(j+partlyStep, len(nStrs)) == len(nStrs) {
+		if min(i+step, len(oStrs)) == len(oStrs) && min(j+step, len(nStrs)) == len(nStrs) {
 			break
 		}
 		nextI, err := findLastConsequtiveAlign(partlyAll, oStrs[i:], nStrs[j:])
@@ -147,10 +150,13 @@ const (
 	corner
 )
 
-func doPartlyAlign(s1 []string, s2 []string) []int {
+func doPartlyAlign(s1 []string, s2 []string, step int) []int {
+	ind := func(i1, i2 int) int {
+		return i1*step + i2
+	}
 	l1, l2 := len(s1), len(s2)
-	h := [partlyStep][partlyStep]byte{}
-	hb := [partlyStep][partlyStep]moveType{}
+	h := make([]byte, step*step)
+	hb := make([]moveType, step*step)
 	// calc h and h backtrace matrices
 	for i1 := 0; i1 < l1; i1++ {
 		for i2 := 0; i2 < l2; i2++ {
@@ -160,36 +166,36 @@ func doPartlyAlign(s1 []string, s2 []string) []int {
 				eqv = 0
 			}
 			if i1 == 0 && i2 == 0 {
-				h[i1][i2] = byte(eqv)
-				hb[i1][i2] = start
+				h[ind(i1, i2)] = byte(eqv)
+				hb[ind(i1, i2)] = start
 			} else if i1 == 0 {
-				h[i1][i2] = h[i1][i2-1] + 1
-				hb[i1][i2] = left
+				h[ind(i1, i2)] = h[ind(i1, i2-1)] + 1
+				hb[ind(i1, i2)] = left
 			} else if i2 == 0 {
-				h[i1][i2] = h[i1-1][i2] + 1
-				hb[i1][i2] = top
+				h[ind(i1, i2)] = h[ind(i1-1, i2)] + 1
+				hb[ind(i1, i2)] = top
 			} else {
-				cv := h[i1-1][i2-1] + eqv
-				lv := h[i1][i2-1] + 1
-				tv := h[i1-1][i2] + 1
+				cv := h[ind(i1-1, i2-1)] + eqv
+				lv := h[ind(i1, i2-1)] + 1
+				tv := h[ind(i1-1, i2)] + 1
 
 				if cv <= tv && cv <= lv {
-					h[i1][i2] = cv
-					hb[i1][i2] = corner
+					h[ind(i1, i2)] = cv
+					hb[ind(i1, i2)] = corner
 					// prefer left or top move if not eq
 					if !eq && (tv <= cv || lv <= cv) {
 						if lv <= tv {
-							hb[i1][i2] = left
+							hb[ind(i1, i2)] = left
 						} else {
-							hb[i1][i2] = top
+							hb[ind(i1, i2)] = top
 						}
 					}
 				} else if lv <= tv {
-					h[i1][i2] = lv
-					hb[i1][i2] = left
+					h[ind(i1, i2)] = lv
+					hb[ind(i1, i2)] = left
 				} else {
-					h[i1][i2] = tv
-					hb[i1][i2] = top
+					h[ind(i1, i2)] = tv
+					hb[ind(i1, i2)] = top
 				}
 			}
 		}
@@ -197,14 +203,14 @@ func doPartlyAlign(s1 []string, s2 []string) []int {
 	res := make([]int, l1)
 	i2 := l2 - 1
 	for i1 := l1 - 1; i1 >= 0; i1-- {
-		v := hb[i1][i2]
+		v := hb[ind(i1, i2)]
 		if v == corner {
 			res[i1] = i2
 			i2--
 		} else if v == left {
 			for v == left && i2 > 0 {
 				i2--
-				v = hb[i1][i2]
+				v = hb[ind(i1, i2)]
 			}
 			res[i1] = i2
 			i2--
