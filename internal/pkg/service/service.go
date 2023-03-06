@@ -131,10 +131,10 @@ func synthesizeText(data *PrData) func(echo.Context) error {
 		resp, err := data.Processor.Work(cfg)
 		if err != nil {
 			if d, msg := badReqError(err); d {
-				goapp.Log.Warn("Can't process. ", err)
+				goapp.Log.Warn("can't process: ", err)
 				return echo.NewHTTPError(http.StatusBadRequest, msg)
 			}
-			goapp.Log.Error("Can't process. ", err)
+			goapp.Log.Error("can't process: ", err)
 			return echo.NewHTTPError(http.StatusInternalServerError)
 		}
 
@@ -174,10 +174,10 @@ func synthesizeCustom(data *PrData) func(echo.Context) error {
 		resp, err := data.Processor.Work(cfg)
 		if err != nil {
 			if d, msg := badReqError(err); d {
-				goapp.Log.Warn("Can't process. ", err)
+				goapp.Log.Warn("can't process: ", err)
 				return echo.NewHTTPError(http.StatusBadRequest, msg)
 			}
-			goapp.Log.Error("Can't process. ", err)
+			goapp.Log.Error("can't process: ", err)
 			return echo.NewHTTPError(http.StatusInternalServerError)
 		}
 		resp.RequestID = ""
