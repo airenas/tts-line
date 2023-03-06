@@ -136,7 +136,7 @@ func TestInvokeSSMLNumberReplace_Real1(t *testing.T) {
 		" Kad du tūkstančiai dešimtaisiais metais grįžęs į valdžią jis staiga virto autokratu, buvo", d.TextWithNumbers)
 }
 
-func Test_doPartlyAllign(t *testing.T) {
+func Test_doPartlyAlign(t *testing.T) {
 	type args struct {
 		s1 []string
 		s2 []string
@@ -157,8 +157,8 @@ func Test_doPartlyAllign(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := doPartlyAllign(tt.args.s1, tt.args.s2); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("doPartlyAllign() = %v, want %v", got, tt.want)
+			if got := doPartlyAlign(tt.args.s1, tt.args.s2); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("doPartlyAlign() = %v, want %v", got, tt.want)
 			}
 		})
 	}
@@ -195,7 +195,7 @@ func Test_mapAccentsBack(t *testing.T) {
 	}
 }
 
-func Test_findLastConsequtiveAllign(t *testing.T) {
+func Test_findLastConsequtiveAlign(t *testing.T) {
 	type args struct {
 		partlyAll []int
 		oStrs     []string
@@ -218,19 +218,19 @@ func Test_findLastConsequtiveAllign(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := findLastConsequtiveAllign(tt.args.partlyAll, tt.args.oStrs, tt.args.nStrs)
+			got, err := findLastConsequtiveAlign(tt.args.partlyAll, tt.args.oStrs, tt.args.nStrs)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("findLastConsequtiveAllign() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("findLastConsequtiveAlign() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 			if got != tt.want {
-				t.Errorf("findLastConsequtiveAllign() = %v, want %v", got, tt.want)
+				t.Errorf("findLastConsequtiveAlign() = %v, want %v", got, tt.want)
 			}
 		})
 	}
 }
 
-func Test_allign(t *testing.T) {
+func Test_align(t *testing.T) {
 	type args struct {
 		oStrs []string
 		nStrs []string
@@ -266,13 +266,13 @@ func Test_allign(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := allign(tt.args.oStrs, tt.args.nStrs)
+			got, err := align(tt.args.oStrs, tt.args.nStrs)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("allign() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("align() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("allign() = %v, want %v", got, tt.want)
+				t.Errorf("align() = %v, want %v", got, tt.want)
 			}
 		})
 	}

@@ -94,17 +94,17 @@ func mapAccentsBack(new, orig string) (string, error) {
 		return new, nil
 	}
 
-	allignIDs, err := allign(ocStrs, nStrs)
+	alignIDs, err := align(ocStrs, nStrs)
 	if err != nil {
-		return "", errors.Wrapf(err, "can't allign")
+		return "", errors.Wrapf(err, "can't align")
 	}
 	for k := range accWrds {
-		nID := allignIDs[k]
+		nID := alignIDs[k]
 		if nID == -1 {
-			return "", errors.Errorf("no word allignment for %s, ID: %d", oStrs[k], k)
+			return "", errors.Errorf("no word alignment for %s, ID: %d", oStrs[k], k)
 		}
 		if nStrs[nID] != ocStrs[k] {
-			return "", errors.Errorf("no word allignment for %s, ID: %d, got %s", oStrs[k], k, nStrs[nID])
+			return "", errors.Errorf("no word alignment for %s, ID: %d, got %s", oStrs[k], k, nStrs[nID])
 		}
 		nStrs[nID] = oStrs[k]
 	}
@@ -113,11 +113,11 @@ func mapAccentsBack(new, orig string) (string, error) {
 
 const partlyStep = 25
 
-func allign(oStrs []string, nStrs []string) ([]int, error) {
+func align(oStrs []string, nStrs []string) ([]int, error) {
 	res := make([]int, len(oStrs))
 	i, j := 0, 0
 	for i < len(oStrs) {
-		partlyAll := doPartlyAllign(oStrs[i:min(i+partlyStep, len(oStrs))], nStrs[j:min(j+partlyStep, len(nStrs))])
+		partlyAll := doPartlyAlign(oStrs[i:min(i+partlyStep, len(oStrs))], nStrs[j:min(j+partlyStep, len(nStrs))])
 		for pi, v := range partlyAll {
 			if v > -1 {
 				res[i+pi] = partlyAll[pi] + j
@@ -128,7 +128,7 @@ func allign(oStrs []string, nStrs []string) ([]int, error) {
 		if min(i+partlyStep, len(oStrs)) == len(oStrs) && min(j+partlyStep, len(nStrs)) == len(nStrs) {
 			break
 		}
-		nextI, err := findLastConsequtiveAllign(partlyAll, oStrs[i:], nStrs[j:])
+		nextI, err := findLastConsequtiveAlign(partlyAll, oStrs[i:], nStrs[j:])
 		if err != nil {
 			return nil, errors.Wrapf(err, "can't find next steps starting at %d, %d", i, j)
 		}
@@ -147,7 +147,7 @@ const (
 	corner
 )
 
-func doPartlyAllign(s1 []string, s2 []string) []int {
+func doPartlyAlign(s1 []string, s2 []string) []int {
 	l1, l2 := len(s1), len(s2)
 	h := [partlyStep][partlyStep]byte{}
 	hb := [partlyStep][partlyStep]moveType{}
@@ -217,8 +217,8 @@ func doPartlyAllign(s1 []string, s2 []string) []int {
 	return res
 }
 
-// findLastConsequtiveAllign find the last two words matching in a row
-func findLastConsequtiveAllign(partlyAll []int, oStrs []string, nStrs []string) (int, error) {
+// findLastConsequtiveAlign find the last two words matching in a row
+func findLastConsequtiveAlign(partlyAll []int, oStrs []string, nStrs []string) (int, error) {
 
 	for i := len(partlyAll) - 1; i > 1; i-- {
 		v := partlyAll[i]
@@ -230,7 +230,7 @@ func findLastConsequtiveAllign(partlyAll []int, oStrs []string, nStrs []string) 
 			}
 		}
 	}
-	return -1, errors.New("no consequtive match found in partly alligned sequences")
+	return -1, errors.New("no consequtive match found in partly aligned sequences")
 }
 
 func (p *ssmlNumberReplace) skip(data *synthesizer.TTSData) bool {
