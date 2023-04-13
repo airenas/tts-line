@@ -24,12 +24,6 @@ test/lint:
 	golint -set_exit_status ./...
 .PHONY: test/lint
 #####################################################################################
-## generate mock objects for test
-generate/mocks: 
-	go install github.com/petergtz/pegomock/...@v2.9.0 || go get github.com/petergtz/pegomock/...
-	go generate ./...
-.PHONY: generate/mocks	
-#####################################################################################
 ## build docker image
 docker/%/build:
 	cd build/$* && $(MAKE) dbuild	
@@ -57,7 +51,7 @@ generate/diagram:
 #####################################################################################
 ## cleans prepared data for dockeriimage generation
 clean:
-	go mod tidy -compat=1.18
+	go mod tidy -compat=1.19
 	go clean
 	cd build/acronyms && $(MAKE) clean
 	cd build/clitics && $(MAKE) clean
