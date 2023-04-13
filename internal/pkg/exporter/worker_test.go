@@ -6,26 +6,25 @@ import (
 	"testing"
 	"time"
 
-	"github.com/petergtz/pegomock"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 
 	"github.com/airenas/tts-line/internal/pkg/mongodb"
 	"github.com/airenas/tts-line/internal/pkg/test/mocks"
 )
 
 var (
-	expMock *mocks.MockExporter
+	expMock *mockExporter
 )
 
 func initTest(t *testing.T) {
-	mocks.AttachMockToTest(t)
-	expMock = mocks.NewMockExporter()
+	expMock = &mockExporter{}
 }
 
 func TestExport(t *testing.T) {
 	initTest(t)
 	writer := bytes.NewBufferString("")
-	pegomock.When(expMock.All()).ThenReturn([]*mongodb.TextRecord{}, nil)
+	expMock.On("All").Return([]*mongodb.TextRecord{}, nil)
 	err := Export(Params{Exporter: expMock, Out: writer})
 	assert.Nil(t, err)
 	assert.Equal(t, "[]", writer.String())
@@ -34,7 +33,7 @@ func TestExport(t *testing.T) {
 func TestExport_Writes(t *testing.T) {
 	initTest(t)
 	writer := bytes.NewBufferString("")
-	pegomock.When(expMock.All()).ThenReturn([]*mongodb.TextRecord{{ID: "1", Type: 1, Text: "olia"}}, nil)
+	expMock.On("All").Return([]*mongodb.TextRecord{{ID: "1", Type: 1, Text: "olia"}}, nil)
 	err := Export(Params{Exporter: expMock, Out: writer})
 	assert.Nil(t, err)
 	assert.Equal(t, "[{\"id\":\"1\",\"type\":1,\"text\":\"olia\",\"created\":\"0001-01-01T00:00:00Z\"}\n]", writer.String())
@@ -44,7 +43,7 @@ func TestExport_Sort(t *testing.T) {
 	initTest(t)
 	writer := bytes.NewBufferString("")
 	tn := time.Time{}.Add(time.Second)
-	pegomock.When(expMock.All()).ThenReturn([]*mongodb.TextRecord{{ID: "1", Type: 1, Text: "olia", Created: tn},
+	expMock.On("All").Return([]*mongodb.TextRecord{{ID: "1", Type: 1, Text: "olia", Created: tn},
 		{ID: "01", Type: 1, Text: "olia", Created: tn.Add(-time.Second)}}, nil)
 	err := Export(Params{Exporter: expMock, Out: writer})
 	assert.Nil(t, err)
@@ -55,7 +54,7 @@ func TestExport_Sort(t *testing.T) {
 func TestExport_Fails(t *testing.T) {
 	initTest(t)
 	writer := bytes.NewBufferString("")
-	pegomock.When(expMock.All()).ThenReturn(nil, errors.New("olia"))
+	expMock.On("All").Return(nil, errors.New("olia"))
 	err := Export(Params{Exporter: expMock, Out: writer})
 	assert.NotNil(t, err)
 }
@@ -64,22 +63,23 @@ func TestExportFilter(t *testing.T) {
 	initTest(t)
 	writer := bytes.NewBufferString("")
 	tn := time.Time{}.Add(time.Second)
-	pegomock.When(expMock.All()).ThenReturn([]*mongodb.TextRecord{{ID: "1", Type: 1, Text: "olia", Created: tn},
+	expMock.On("All").Return([]*mongodb.TextRecord{{ID: "1", Type: 1, Text: "olia", Created: tn},
 		{ID: "01", Type: 1, Text: "olia", Created: tn.Add(time.Hour * 25)}}, nil)
+	expMock.On("Delete", mock.Anything).Return(0, nil)
 	err := Export(Params{Exporter: expMock, Out: writer, Delete: true, To: tn.Add(time.Second)})
 	assert.Nil(t, err)
 	assert.Equal(t, "[{\"id\":\"1\",\"type\":1,\"text\":\"olia\",\"created\":\"0001-01-01T00:00:01Z\"}\n]", writer.String())
-	p := expMock.VerifyWasCalledOnce().Delete(pegomock.AnyString()).GetCapturedArguments()
-	assert.Equal(t, "1", p)
+	expMock.AssertNumberOfCalls(t, "Delete", 1)
+	expMock.AssertCalled(t, "Delete", "1")
 }
 
 func TestExportDelete_Fails(t *testing.T) {
 	initTest(t)
 	writer := bytes.NewBufferString("")
 	tn := time.Time{}.Add(time.Second)
-	pegomock.When(expMock.All()).ThenReturn([]*mongodb.TextRecord{{ID: "1", Type: 1, Text: "olia", Created: tn},
+	expMock.On("All").Return([]*mongodb.TextRecord{{ID: "1", Type: 1, Text: "olia", Created: tn},
 		{ID: "01", Type: 1, Text: "olia", Created: tn.Add(-time.Second)}}, nil)
-	pegomock.When(expMock.Delete(pegomock.AnyString())).ThenReturn(0, errors.New("olia"))
+	expMock.On("Delete", mock.Anything).Return(0, errors.New("olia"))
 	err := Export(Params{Exporter: expMock, Out: writer, Delete: true})
 	assert.NotNil(t, err)
 }
@@ -140,4 +140,16 @@ func TestFilterData(t *testing.T) {
 		fd := filterData(tc.d, tc.f)
 		assert.Equal(t, tc.c, len(fd), "Fail case %d", i)
 	}
+}
+
+type mockExporter struct{ mock.Mock }
+
+func (m *mockExporter) All() ([]*mongodb.TextRecord, error) {
+	args := m.Called()
+	return mocks.To[[]*mongodb.TextRecord](args.Get(0)), args.Error(1)
+}
+
+func (m *mockExporter) Delete(ID string) (int, error) {
+	args := m.Called(ID)
+	return mocks.To[int](args.Get(0)), args.Error(1)
 }

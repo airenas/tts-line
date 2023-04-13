@@ -26,8 +26,6 @@ import (
 
 //go:generate pegomock generate --package=mocks --output=audioLoader.go -m github.com/airenas/tts-line/internal/pkg/processor AudioLoader
 
-//go:generate pegomock generate --package=mocks --output=exporter.go -m github.com/airenas/tts-line/internal/pkg/exporter Exporter
-
 //AttachMockToTest register pegomock verification to be passed to testing engine
 func AttachMockToTest(t *testing.T) {
 	pegomock.RegisterMockFailHandler(handleByTest(t))
