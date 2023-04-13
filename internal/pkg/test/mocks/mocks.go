@@ -13,8 +13,6 @@ import (
 
 //go:generate pegomock generate --package=mocks --output=httpInvokerJSOM.go -m github.com/airenas/tts-line/internal/pkg/processor HTTPInvokerJSON
 
-//go:generate pegomock generate --package=mocks --output=waveSynthesizer.go -m github.com/airenas/tts-line/internal/pkg/wrapservice WaveSynthesizer
-
 //go:generate pegomock generate --package=mocks --output=saverDB.go -m github.com/airenas/tts-line/internal/pkg/processor SaverDB
 
 //go:generate pegomock generate --package=mocks --output=loadDB.go -m github.com/airenas/tts-line/internal/pkg/processor LoadDB
