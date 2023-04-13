@@ -5,9 +5,9 @@ import (
 
 	"github.com/airenas/tts-line/internal/pkg/synthesizer"
 	"github.com/airenas/tts-line/internal/pkg/utils"
-	"github.com/petergtz/pegomock"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 )
 
 func TestCreateTagger(t *testing.T) {
@@ -30,13 +30,12 @@ func TestInvokeTagger(t *testing.T) {
 	assert.NotNil(t, pr)
 	pr.(*tagger).httpWrap = httpInvokerMock
 	d := synthesizer.TTSData{}
-	pegomock.When(httpInvokerMock.InvokeText(pegomock.AnyString(), pegomock.AnyInterface())).Then(
-		func(params []pegomock.Param) pegomock.ReturnValues {
+	httpInvokerMock.On("InvokeText", mock.Anything, mock.Anything).Run(
+		func(params mock.Arguments) {
 			*params[1].(*[]*TaggedWord) = []*TaggedWord{{Type: "SPACE", String: " "},
 				{Type: "SEPARATOR", String: ","}, {Type: "WORD", String: "word", Lemma: "lemma", Mi: "mi"},
 				{Type: "SENTENCE_END"}}
-			return []pegomock.ReturnValue{nil}
-		})
+		}).Return(nil)
 	err := pr.Process(&d)
 	assert.Nil(t, err)
 	assert.Equal(t, 4, len(d.Words))
@@ -63,11 +62,10 @@ func TestInvoke_NoWords(t *testing.T) {
 	assert.NotNil(t, pr)
 	pr.(*tagger).httpWrap = httpInvokerMock
 	d := synthesizer.TTSData{}
-	pegomock.When(httpInvokerMock.InvokeText(pegomock.AnyString(), pegomock.AnyInterface())).Then(
-		func(params []pegomock.Param) pegomock.ReturnValues {
+	httpInvokerMock.On("InvokeText", mock.Anything, mock.Anything).Run(
+		func(params mock.Arguments) {
 			*params[1].(*[]*TaggedWord) = []*TaggedWord{{Type: "SPACE", String: " "}}
-			return []pegomock.ReturnValue{nil}
-		})
+		}).Return(nil)
 	err := pr.Process(&d)
 	assert.Equal(t, utils.ErrNoInput, err)
 }
@@ -78,7 +76,7 @@ func TestInvokeTagger_Fail(t *testing.T) {
 	assert.NotNil(t, pr)
 	pr.(*tagger).httpWrap = httpInvokerMock
 	d := synthesizer.TTSData{}
-	pegomock.When(httpInvokerMock.InvokeText(pegomock.AnyString(), pegomock.AnyInterface())).ThenReturn(errors.New("haha"))
+	httpInvokerMock.On("InvokeText", mock.Anything, mock.Anything).Return(errors.New("haha"))
 	err := pr.Process(&d)
 	assert.NotNil(t, err)
 }
@@ -112,13 +110,12 @@ func TestInvokeTaggerAccent(t *testing.T) {
 	pr.(*taggerAccents).httpWrap = httpInvokerMock
 	d := synthesizer.TTSData{}
 	d.OriginalText = " ,word"
-	pegomock.When(httpInvokerMock.InvokeText(pegomock.AnyString(), pegomock.AnyInterface())).Then(
-		func(params []pegomock.Param) pegomock.ReturnValues {
+	httpInvokerMock.On("InvokeText", mock.Anything, mock.Anything).Run(
+		func(params mock.Arguments) {
 			*params[1].(*[]*TaggedWord) = []*TaggedWord{{Type: "SPACE", String: " "},
 				{Type: "SEPARATOR", String: ","}, {Type: "WORD", String: "word", Lemma: "lemma", Mi: "mi"},
 				{Type: "SENTENCE_END"}}
-			return []pegomock.ReturnValue{nil}
-		})
+		}).Return(nil)
 	err := pr.Process(&d)
 	assert.Nil(t, err)
 	assert.Equal(t, 4, len(d.Words))
@@ -145,7 +142,7 @@ func TestInvokeTaggerAccent_Fail(t *testing.T) {
 	assert.NotNil(t, pr)
 	pr.(*taggerAccents).httpWrap = httpInvokerMock
 	d := synthesizer.TTSData{}
-	pegomock.When(httpInvokerMock.InvokeText(pegomock.AnyString(), pegomock.AnyInterface())).ThenReturn(errors.New("haha"))
+	httpInvokerMock.On("InvokeText", mock.Anything, mock.Anything).Return(errors.New("haha"))
 	err := pr.Process(&d)
 	assert.NotNil(t, err)
 }
@@ -157,13 +154,12 @@ func TestInvokeTaggerAccent_FailMap(t *testing.T) {
 	pr.(*taggerAccents).httpWrap = httpInvokerMock
 	d := synthesizer.TTSData{}
 	d.OriginalText = " ,wor1"
-	pegomock.When(httpInvokerMock.InvokeText(pegomock.AnyString(), pegomock.AnyInterface())).Then(
-		func(params []pegomock.Param) pegomock.ReturnValues {
+	httpInvokerMock.On("InvokeText", mock.Anything, mock.Anything).Run(
+		func(params mock.Arguments) {
 			*params[1].(*[]*TaggedWord) = []*TaggedWord{{Type: "SPACE", String: " "},
 				{Type: "SEPARATOR", String: ","}, {Type: "WORD", String: "word", Lemma: "lemma", Mi: "mi"},
 				{Type: "SENTENCE_END"}}
-			return []pegomock.ReturnValue{nil}
-		})
+		}).Return(nil)
 	err := pr.Process(&d)
 	assert.NotNil(t, err)
 }
@@ -317,15 +313,14 @@ func TestInvokeSSMLTagger(t *testing.T) {
 	pr.(*ssmlTagger).httpWrap = httpInvokerMock
 	d := synthesizer.TTSData{}
 	d.TextWithNumbers = ", word "
-	pegomock.When(httpInvokerMock.InvokeText(pegomock.AnyString(), pegomock.AnyInterface())).Then(
-		func(params []pegomock.Param) pegomock.ReturnValues {
+	httpInvokerMock.On("InvokeText", mock.Anything, mock.Anything).Run(
+		func(params mock.Arguments) {
 			*params[1].(*[]*TaggedWord) = []*TaggedWord{
 				{Type: "SPACE", String: " "},
-				{Type: "SEPARATOR", String: ","}, 
+				{Type: "SEPARATOR", String: ","},
 				{Type: "WORD", String: "word", Lemma: "lemma", Mi: "mi"},
 				{Type: "SENTENCE_END"}}
-			return []pegomock.ReturnValue{nil}
-		})
+		}).Return(nil)
 	err := pr.Process(&d)
 	assert.Nil(t, err)
 	assert.Equal(t, 4, len(d.Words))

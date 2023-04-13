@@ -6,19 +6,17 @@ import (
 	"testing"
 
 	"github.com/airenas/tts-line/internal/pkg/synthesizer"
-	"github.com/airenas/tts-line/internal/pkg/test/mocks"
-	"github.com/petergtz/pegomock"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 )
 
 var (
-	httpInvokerMock *mocks.MockHTTPInvoker
+	httpInvokerMock *mockHTTPInvoker
 )
 
 func initTest(t *testing.T) {
-	mocks.AttachMockToTest(t)
-	httpInvokerMock = mocks.NewMockHTTPInvoker()
+	httpInvokerMock = &mockHTTPInvoker{}
 }
 
 func TestCreateNumberReplace(t *testing.T) {
@@ -41,11 +39,10 @@ func TestInvokeNumberReplace(t *testing.T) {
 	assert.NotNil(t, pr)
 	pr.(*numberReplace).httpWrap = httpInvokerMock
 	d := synthesizer.TTSData{}
-	pegomock.When(httpInvokerMock.InvokeText(pegomock.AnyString(), pegomock.AnyInterface())).Then(
-		func(params []pegomock.Param) pegomock.ReturnValues {
+	httpInvokerMock.On("InvokeText", mock.Anything, mock.Anything).Run(
+		func(params mock.Arguments) {
 			*params[1].(*string) = "trys"
-			return []pegomock.ReturnValue{nil}
-		})
+		}).Return(nil)
 	err := pr.Process(&d)
 	assert.Nil(t, err)
 	assert.Equal(t, "trys", d.TextWithNumbers)
@@ -57,7 +54,7 @@ func TestInvokeNumberReplace_Fail(t *testing.T) {
 	assert.NotNil(t, pr)
 	pr.(*numberReplace).httpWrap = httpInvokerMock
 	d := synthesizer.TTSData{}
-	pegomock.When(httpInvokerMock.InvokeText(pegomock.AnyString(), pegomock.AnyInterface())).ThenReturn(errors.New("haha"))
+	httpInvokerMock.On("InvokeText", mock.Anything, mock.Anything).Return(errors.New("haha"))
 	err := pr.Process(&d)
 	assert.NotNil(t, err)
 }
@@ -90,11 +87,10 @@ func TestInvokeSSMLNumberReplace(t *testing.T) {
 	assert.NotNil(t, pr)
 	pr.(*ssmlNumberReplace).httpWrap = httpInvokerMock
 	d := synthesizer.TTSData{Text: "3 oli{a/} 4"}
-	pegomock.When(httpInvokerMock.InvokeText(pegomock.AnyString(), pegomock.AnyInterface())).Then(
-		func(params []pegomock.Param) pegomock.ReturnValues {
+	httpInvokerMock.On("InvokeText", mock.Anything, mock.Anything).Run(
+		func(params mock.Arguments) {
 			*params[1].(*string) = "trys olia keturi"
-			return []pegomock.ReturnValue{nil}
-		})
+		}).Return(nil)
 	err := pr.Process(&d)
 	assert.Nil(t, err)
 	assert.Equal(t, "trys oli{a/} keturi", d.TextWithNumbers)
@@ -106,12 +102,11 @@ func TestInvokeSSMLNumberReplace_Real(t *testing.T) {
 	assert.NotNil(t, pr)
 	pr.(*ssmlNumberReplace).httpWrap = httpInvokerMock
 	d := synthesizer.TTSData{Text: "kadenciją 1998-2002 m. {o\\}rb buvo demokratiškas vadovas. Kad 2010 m. grįžęs į valdžią jis staiga virto autokratu, buvo didelis"}
-	pegomock.When(httpInvokerMock.InvokeText(pegomock.AnyString(), pegomock.AnyInterface())).Then(
-		func(params []pegomock.Param) pegomock.ReturnValues {
+	httpInvokerMock.On("InvokeText", mock.Anything, mock.Anything).Run(
+		func(params mock.Arguments) {
 			*params[1].(*string) = "kadenciją tūkstantis devyni šimtai devyniasdešimt aštuntaisiais-du tūkstančiai antraisiais metais orb buvo demokratiškas vadovas." +
 				" Kad du tūkstančiai dešimtaisiais metais grįžęs į valdžią jis staiga virto autokratu, buvo didelis"
-			return []pegomock.ReturnValue{nil}
-		})
+		}).Return(nil)
 	err := pr.Process(&d)
 	assert.Nil(t, err)
 	assert.Equal(t, "kadenciją tūkstantis devyni šimtai devyniasdešimt aštuntaisiais-du tūkstančiai antraisiais metais {o\\}rb buvo demokratiškas vadovas."+
@@ -124,12 +119,11 @@ func TestInvokeSSMLNumberReplace_Real1(t *testing.T) {
 	assert.NotNil(t, pr)
 	pr.(*ssmlNumberReplace).httpWrap = httpInvokerMock
 	d := synthesizer.TTSData{Text: "kadenciją 1998-2002 m. {o\\}rb buvo demokratiškas vadovas. Kad 2010 m. grįžęs į valdžią jis staiga virto autokratu, buvo"}
-	pegomock.When(httpInvokerMock.InvokeText(pegomock.AnyString(), pegomock.AnyInterface())).Then(
-		func(params []pegomock.Param) pegomock.ReturnValues {
+	httpInvokerMock.On("InvokeText", mock.Anything, mock.Anything).Run(
+		func(params mock.Arguments) {
 			*params[1].(*string) = "kadenciją tūkstantis devyni šimtai devyniasdešimt aštuntaisiais-du tūkstančiai antraisiais metais orb buvo demokratiškas vadovas." +
 				" Kad du tūkstančiai dešimtaisiais metais grįžęs į valdžią jis staiga virto autokratu, buvo"
-			return []pegomock.ReturnValue{nil}
-		})
+		}).Return(nil)
 	err := pr.Process(&d)
 	assert.Nil(t, err)
 	assert.Equal(t, "kadenciją tūkstantis devyni šimtai devyniasdešimt aštuntaisiais-du tūkstančiai antraisiais metais {o\\}rb buvo demokratiškas vadovas."+
@@ -142,12 +136,11 @@ func TestInvokeSSMLNumberReplace_Real2(t *testing.T) {
 	assert.NotNil(t, pr)
 	pr.(*ssmlNumberReplace).httpWrap = httpInvokerMock
 	d := synthesizer.TTSData{Text: "Robertsonas (1988 m. surinkęs 25 proc. balsų), bjūk{e~}nenas (1996 m. surinkęs 23 proc. balsų) ir f{o/}rbzas (2000 m. surinkęs 31 proc. balsų)"}
-	pegomock.When(httpInvokerMock.InvokeText(pegomock.AnyString(), pegomock.AnyInterface())).Then(
-		func(params []pegomock.Param) pegomock.ReturnValues {
+	httpInvokerMock.On("InvokeText", mock.Anything, mock.Anything).Run(
+		func(params mock.Arguments) {
 			*params[1].(*string) = "Robertsonas (tūkstantis devyni šimtai aštuoniasdešimt aštuntieji metai surinkęs dvidešimt penki procentai balsų), bjūkenenas (tūkstantis devyni šimtai " +
 				"devyniasdešimt šeštieji metai surinkęs dvidešimt trys procentai balsų) ir forbzas (du tūkstantieji metai surinkęs trisdešimt vienas procentas balsų)"
-			return []pegomock.ReturnValue{nil}
-		})
+		}).Return(nil)
 	err := pr.Process(&d)
 	assert.Nil(t, err)
 	assert.Equal(t, "Robertsonas (tūkstantis devyni šimtai aštuoniasdešimt aštuntieji metai surinkęs dvidešimt penki procentai balsų), bjūk{e~}nenas (tūkstantis devyni šimtai devyniasdešimt "+
@@ -310,4 +303,11 @@ func makeTestInt(from, n int) []int {
 		res = append(res, i)
 	}
 	return res
+}
+
+type mockHTTPInvoker struct{ mock.Mock }
+
+func (m *mockHTTPInvoker) InvokeText(in string, out interface{}) error {
+	args := m.Called(in, out)
+	return args.Error(0)
 }

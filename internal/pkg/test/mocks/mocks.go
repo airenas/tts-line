@@ -9,8 +9,6 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-//go:generate pegomock generate --package=mocks --output=httpInvoker.go -m github.com/airenas/tts-line/internal/pkg/processor HTTPInvoker
-
 //go:generate pegomock generate --package=mocks --output=httpInvokerJSOM.go -m github.com/airenas/tts-line/internal/pkg/processor HTTPInvokerJSON
 
 // AttachMockToTest register pegomock verification to be passed to testing engine
