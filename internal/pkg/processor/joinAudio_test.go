@@ -12,19 +12,18 @@ import (
 	"github.com/airenas/tts-line/internal/pkg/synthesizer"
 	"github.com/airenas/tts-line/internal/pkg/test/mocks"
 	"github.com/airenas/tts-line/internal/pkg/wav"
-	"github.com/petergtz/pegomock"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 )
 
 var (
-	loaderMock *mocks.MockAudioLoader
+	loaderMock *mockAudioLoader
 )
 
 func initTestJoiner(t *testing.T) {
 	t.Helper()
-	mocks.AttachMockToTest(t)
-	loaderMock = mocks.NewMockAudioLoader()
+	loaderMock = &mockAudioLoader{}
 }
 
 func TestNewJoinAudio(t *testing.T) {
@@ -97,7 +96,7 @@ func TestJoinAudio_SuffixFail(t *testing.T) {
 	d := synthesizer.TTSData{Input: &api.TTSRequestConfig{OutputFormat: api.AudioMP3}, AudioSuffix: "test.wav"}
 	strA := getTestEncAudio(t)
 	d.Parts = []*synthesizer.TTSDataPart{{Audio: strA}}
-	pegomock.When(loaderMock.TakeWav(pegomock.AnyString())).ThenReturn(nil, errors.New("fail"))
+	loaderMock.On("TakeWav", mock.Anything).Return(nil, errors.New("fail"))
 	err := pr.Process(&d)
 	assert.NotNil(t, err)
 }
@@ -108,7 +107,7 @@ func TestJoinAudio_Suffix(t *testing.T) {
 	d := synthesizer.TTSData{Input: &api.TTSRequestConfig{OutputFormat: api.AudioMP3}, AudioSuffix: "test.wav"}
 	strA := getTestEncAudio(t)
 	d.Parts = []*synthesizer.TTSDataPart{{Audio: strA}}
-	pegomock.When(loaderMock.TakeWav(pegomock.AnyString())).ThenReturn(getWaveData(t), nil)
+	loaderMock.On("TakeWav", mock.Anything).Return(getWaveData(t), nil)
 	err := pr.Process(&d)
 	assert.Nil(t, err)
 	assert.InDelta(t, 0.5572*2, d.AudioLenSeconds, 0.001)
@@ -230,10 +229,10 @@ func TestJoinSSMLAudio_Suffix(t *testing.T) {
 	d.Parts = []*synthesizer.TTSDataPart{{Audio: strA}}
 	d.Cfg.Type = synthesizer.SSMLText
 	da := &synthesizer.TTSData{Input: d.Input, SSMLParts: []*synthesizer.TTSData{&d}, AudioSuffix: "oo.wav"}
-	pegomock.When(loaderMock.TakeWav(pegomock.AnyString())).ThenReturn(getWaveData(t), nil)
+	loaderMock.On("TakeWav", mock.Anything).Return(getWaveData(t), nil)
 	err := pr.Process(da)
 	assert.Nil(t, err)
-	assert.InDelta(t, 0.5572 * 2, da.AudioLenSeconds, 0.001)
+	assert.InDelta(t, 0.5572*2, da.AudioLenSeconds, 0.001)
 }
 
 func TestJoinSSMLAudio_SuffixFail(t *testing.T) {
@@ -244,7 +243,7 @@ func TestJoinSSMLAudio_SuffixFail(t *testing.T) {
 	d.Parts = []*synthesizer.TTSDataPart{{Audio: strA}}
 	d.Cfg.Type = synthesizer.SSMLText
 	da := &synthesizer.TTSData{Input: d.Input, SSMLParts: []*synthesizer.TTSData{&d}, AudioSuffix: "oo.wav"}
-	pegomock.When(loaderMock.TakeWav(pegomock.AnyString())).ThenReturn(nil, errors.New("fail"))
+	loaderMock.On("TakeWav", mock.Anything).Return(nil, errors.New("fail"))
 	err := pr.Process(da)
 	assert.NotNil(t, err)
 }
@@ -302,4 +301,11 @@ func Test_writePause(t *testing.T) {
 			}
 		})
 	}
+}
+
+type mockAudioLoader struct{ mock.Mock }
+
+func (m *mockAudioLoader) TakeWav(in string) ([]byte, error) {
+	args := m.Called(in)
+	return mocks.To[[]byte](args.Get(0)), args.Error(1)
 }
