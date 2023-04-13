@@ -5,10 +5,10 @@ import (
 
 	"github.com/airenas/tts-line/internal/pkg/clitics/service/api"
 	"github.com/airenas/tts-line/internal/pkg/synthesizer"
-	"github.com/petergtz/pegomock"
 	"github.com/pkg/errors"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 )
 
 func TestNewClitics(t *testing.T) {
@@ -32,12 +32,11 @@ func TestInvokeClitics(t *testing.T) {
 	pr.(*cliticDetector).httpWrap = httpJSONMock
 	d := newTestTTSDataPart()
 	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Word: "word"}})
-	pegomock.When(httpJSONMock.InvokeJSON(pegomock.AnyInterface(), pegomock.AnyInterface())).Then(
-		func(params []pegomock.Param) pegomock.ReturnValues {
+	httpJSONMock.On("InvokeJSON", mock.Anything, mock.Anything).Run(
+		func(params mock.Arguments) {
 			*params[1].(*[]api.CliticsOutput) = []api.CliticsOutput{{ID: 0,
 				Type: "CLITIC", AccentType: api.TypeNone}}
-			return []pegomock.ReturnValue{nil}
-		})
+		}).Return(nil)
 	err := pr.Process(d)
 	assert.Nil(t, err)
 	assert.Equal(t, synthesizer.CliticsNone, d.Words[0].Clitic.Type)
@@ -48,7 +47,7 @@ func TestInvokeClitics_Skip(t *testing.T) {
 	d := newTestTTSDataPart()
 	d.Cfg.JustAM = true
 	pr, _ := NewClitics("http://server")
-	pegomock.When(httpJSONMock.InvokeJSON(pegomock.AnyInterface(), pegomock.AnyInterface())).ThenReturn(
+	httpJSONMock.On("InvokeJSON", mock.Anything, mock.Anything).Return(
 		errors.New("olia err"))
 	err := pr.Process(d)
 	assert.Nil(t, err)
@@ -61,7 +60,7 @@ func TestInvokeClitics_Fail(t *testing.T) {
 	pr.(*cliticDetector).httpWrap = httpJSONMock
 	d := newTestTTSDataPart()
 	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Word: "word"}})
-	pegomock.When(httpJSONMock.InvokeJSON(pegomock.AnyInterface(), pegomock.AnyInterface())).ThenReturn(
+	httpJSONMock.On("InvokeJSON", mock.Anything, mock.Anything).Return(
 		errors.New("olia err"))
 	err := pr.Process(d)
 	assert.NotNil(t, err)

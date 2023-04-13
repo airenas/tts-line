@@ -5,9 +5,9 @@ import (
 	"testing"
 
 	"github.com/airenas/tts-line/internal/pkg/synthesizer"
-	"github.com/petergtz/pegomock"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 )
 
 func TestNewObsceneFilter(t *testing.T) {
@@ -42,11 +42,10 @@ func TestInvokeObscene(t *testing.T) {
 	pr.(*obscene).httpWrap = httpJSONMock
 	d := newTestTTSDataPart()
 	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Word: "word"}})
-	pegomock.When(httpJSONMock.InvokeJSON(pegomock.AnyInterface(), pegomock.AnyInterface())).Then(
-		func(params []pegomock.Param) pegomock.ReturnValues {
+	httpJSONMock.On("InvokeJSON", mock.Anything, mock.Anything).Run(
+		func(params mock.Arguments) {
 			*params[1].(*[]obsceneResultToken) = []obsceneResultToken{{Token: "word", Obscene: 1}}
-			return []pegomock.ReturnValue{nil}
-		})
+		}).Return(nil)
 	err := pr.Process(d)
 	assert.Nil(t, err)
 	assert.Equal(t, true, d.Words[0].Obscene)
@@ -59,11 +58,10 @@ func TestInvokeObscene_FailOutput(t *testing.T) {
 	pr.(*obscene).httpWrap = httpJSONMock
 	d := newTestTTSDataPart()
 	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Word: "word"}})
-	pegomock.When(httpJSONMock.InvokeJSON(pegomock.AnyInterface(), pegomock.AnyInterface())).Then(
-		func(params []pegomock.Param) pegomock.ReturnValues {
+	httpJSONMock.On("InvokeJSON", mock.Anything, mock.Anything).Run(
+		func(params mock.Arguments) {
 			*params[1].(*[]obsceneResultToken) = []obsceneResultToken{}
-			return []pegomock.ReturnValue{nil}
-		})
+		}).Return(nil)
 	err := pr.Process(d)
 	assert.NotNil(t, err)
 }
@@ -78,9 +76,8 @@ func TestInvokeObscene_Skip(t *testing.T) {
 	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Word: "word"}})
 	err := pr.Process(d)
 	assert.Nil(t, err)
-	httpJSONMock.VerifyWasCalled(pegomock.Never()).InvokeJSON(pegomock.AnyInterface(), pegomock.AnyInterface())
+	httpJSONMock.AssertNumberOfCalls(t, "InvokeJSON", 0)
 }
-
 
 func TestInvokeObscene_FailError(t *testing.T) {
 	initTestJSON(t)
@@ -89,7 +86,7 @@ func TestInvokeObscene_FailError(t *testing.T) {
 	pr.(*obscene).httpWrap = httpJSONMock
 	d := newTestTTSDataPart()
 	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Word: "word"}})
-	pegomock.When(httpJSONMock.InvokeJSON(pegomock.AnyInterface(), pegomock.AnyInterface())).ThenReturn(errors.New("err"))
+	httpJSONMock.On("InvokeJSON", mock.Anything, mock.Anything).Return(errors.New("err"))
 	err := pr.Process(d)
 	assert.NotNil(t, err)
 }

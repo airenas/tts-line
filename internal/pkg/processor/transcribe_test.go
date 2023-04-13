@@ -3,10 +3,10 @@ package processor
 import (
 	"testing"
 
-	"github.com/petergtz/pegomock"
 	"github.com/pkg/errors"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 
 	"github.com/airenas/tts-line/internal/pkg/service/api"
@@ -35,12 +35,11 @@ func TestInvokeTranscriber(t *testing.T) {
 	d := newTestTTSDataPart()
 	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Word: "word"},
 		AccentVariant: &synthesizer.AccentVariant{Accent: 103}})
-	pegomock.When(httpJSONMock.InvokeJSON(pegomock.AnyInterface(), pegomock.AnyInterface())).Then(
-		func(params []pegomock.Param) pegomock.ReturnValues {
+	httpJSONMock.On("InvokeJSON", mock.Anything, mock.Anything).Run(
+		func(params mock.Arguments) {
 			*params[1].(*[]transOutput) = []transOutput{{Word: "word",
 				Transcription: []trans{{Transcription: "w o r d"}}}}
-			return []pegomock.ReturnValue{nil}
-		})
+		}).Return(nil)
 	err := pr.Process(d)
 	assert.Nil(t, err)
 	assert.Equal(t, "w o r d", d.Words[0].Transcription)
@@ -56,7 +55,7 @@ func TestInvokeTranscriber_SkipFormat(t *testing.T) {
 	pr.(*transcriber).httpWrap = httpJSONMock
 	err := pr.Process(d)
 	assert.Nil(t, err)
-	httpJSONMock.VerifyWasCalled(pegomock.Never()).InvokeJSON(pegomock.AnyInterface(), pegomock.AnyInterface())
+	httpJSONMock.AssertNumberOfCalls(t, "InvokeJSON", 0)
 }
 
 func TestInvokeTranscriber_FailInput(t *testing.T) {
@@ -67,7 +66,7 @@ func TestInvokeTranscriber_FailInput(t *testing.T) {
 	d := newTestTTSDataPart()
 	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Word: "word"},
 		AccentVariant: nil})
-	pegomock.When(httpJSONMock.InvokeJSON(pegomock.AnyInterface(), pegomock.AnyInterface())).ThenReturn(errors.New("haha"))
+	httpJSONMock.On("InvokeJSON", mock.Anything, mock.Anything).Return(errors.New("haha"))
 	err := pr.Process(d)
 	assert.NotNil(t, err)
 }
@@ -80,7 +79,7 @@ func TestInvokeTranscriber_Fail(t *testing.T) {
 	d := newTestTTSDataPart()
 	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Word: "word"},
 		AccentVariant: &synthesizer.AccentVariant{Accent: 103}})
-	pegomock.When(httpJSONMock.InvokeJSON(pegomock.AnyInterface(), pegomock.AnyInterface())).ThenReturn(errors.New("haha"))
+	httpJSONMock.On("InvokeJSON", mock.Anything, mock.Anything).Return(errors.New("haha"))
 	err := pr.Process(d)
 	assert.NotNil(t, err)
 }
@@ -104,7 +103,7 @@ func TestInvokeTranscriber_Skip(t *testing.T) {
 	pr.(*transcriber).httpWrap = httpJSONMock
 	err := pr.Process(d)
 	assert.Nil(t, err)
-	httpJSONMock.VerifyWasCalled(pegomock.Never()).InvokeJSON(pegomock.AnyInterface(), pegomock.AnyInterface())
+	httpJSONMock.AssertNumberOfCalls(t, "InvokeJSON", 0)
 }
 
 func TestInvokeTranscriber_FailOutput(t *testing.T) {
@@ -115,11 +114,10 @@ func TestInvokeTranscriber_FailOutput(t *testing.T) {
 	d := newTestTTSDataPart()
 	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Word: "word"},
 		AccentVariant: &synthesizer.AccentVariant{Accent: 103}})
-	pegomock.When(httpJSONMock.InvokeJSON(pegomock.AnyInterface(), pegomock.AnyInterface())).Then(
-		func(params []pegomock.Param) pegomock.ReturnValues {
+	httpJSONMock.On("InvokeJSON", mock.Anything, mock.Anything).Run(
+		func(params mock.Arguments) {
 			*params[1].(*[]transOutput) = []transOutput{}
-			return []pegomock.ReturnValue{nil}
-		})
+		}).Return(nil)
 	err := pr.Process(d)
 	assert.NotNil(t, err)
 }
@@ -147,7 +145,7 @@ func TestMapTransInput_RC(t *testing.T) {
 	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Word: "word"},
 		AccentVariant: &synthesizer.AccentVariant{Accent: 103}})
 	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Space: true}})
-	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Space: true}})	
+	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Space: true}})
 	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Word: "word1"},
 		AccentVariant: &synthesizer.AccentVariant{Accent: 103}})
 	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Separator: ","}})

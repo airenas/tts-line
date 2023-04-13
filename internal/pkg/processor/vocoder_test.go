@@ -4,10 +4,10 @@ import (
 	"testing"
 
 	"github.com/airenas/tts-line/internal/pkg/service/api"
-	"github.com/petergtz/pegomock"
 	"github.com/pkg/errors"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 )
 
 func TestNewVocoder(t *testing.T) {
@@ -33,17 +33,17 @@ func TestInvokeVocoder(t *testing.T) {
 	d.Spectogram = "spectogram"
 	d.Cfg.Input.Voice = "aaa"
 	d.Cfg.Input.Priority = 10
-	pegomock.When(httpJSONMock.InvokeJSONU(pegomock.AnyString(), pegomock.AnyInterface(), pegomock.AnyInterface())).Then(
-		func(params []pegomock.Param) pegomock.ReturnValues {
+	httpJSONMock.On("InvokeJSONU", mock.Anything, mock.Anything, mock.Anything).Run(
+		func(params mock.Arguments) {
 			*params[2].(*vocOutput) = vocOutput{Data: "wav"}
-			return []pegomock.ReturnValue{nil}
-		})
+		}).Return(nil)
 	err := pr.Process(d)
 	assert.Nil(t, err)
 	assert.Equal(t, "wav", d.Audio)
 
-	url, inp, _ := httpJSONMock.VerifyWasCalled(pegomock.Once()).InvokeJSONU(pegomock.AnyString(), pegomock.AnyInterface(),
-		pegomock.AnyInterface()).GetCapturedArguments()
+	httpJSONMock.AssertNumberOfCalls(t, "InvokeJSONU", 1)
+	url := httpJSONMock.Calls[0].Arguments[0]
+	inp := httpJSONMock.Calls[0].Arguments[1]
 	ai := inp.(vocInput)
 	assert.Equal(t, "aaa", ai.Voice)
 	assert.Equal(t, "http://aaa.server", url)
@@ -60,7 +60,7 @@ func TestInvokeVocoder_Skip(t *testing.T) {
 	d.Spectogram = "spectogram"
 	err := pr.Process(d)
 	assert.Nil(t, err)
-	httpJSONMock.VerifyWasCalled(pegomock.Never()).InvokeJSONU(pegomock.AnyString(), pegomock.AnyInterface(), pegomock.AnyInterface())
+	httpJSONMock.AssertNumberOfCalls(t, "InvokeJSONU", 0)
 }
 
 func TestInvokeVocoder_Fail(t *testing.T) {
@@ -70,7 +70,7 @@ func TestInvokeVocoder_Fail(t *testing.T) {
 	pr.(*vocoder).httpWrap = httpJSONMock
 	d := newTestTTSDataPart()
 	d.Spectogram = "spectogram"
-	pegomock.When(httpJSONMock.InvokeJSONU(pegomock.AnyString(), pegomock.AnyInterface(), pegomock.AnyInterface())).ThenReturn(errors.New("haha"))
+	httpJSONMock.On("InvokeJSONU", mock.Anything, mock.Anything, mock.Anything).Return(errors.New("haha"))
 	err := pr.Process(d)
 	assert.NotNil(t, err)
 }

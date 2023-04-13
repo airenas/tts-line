@@ -18,7 +18,6 @@ var (
 )
 
 func initLoadTestDB(t *testing.T) {
-	mocks.AttachMockToTest(t)
 	loadMock = &mockLoadDB{}
 }
 

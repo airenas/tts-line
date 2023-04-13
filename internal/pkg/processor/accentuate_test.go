@@ -3,10 +3,10 @@ package processor
 import (
 	"testing"
 
-	"github.com/petergtz/pegomock"
 	"github.com/pkg/errors"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 
 	"github.com/airenas/tts-line/internal/pkg/synthesizer"
 )
@@ -32,12 +32,12 @@ func TestInvokeAccentuator(t *testing.T) {
 	pr.(*accentuator).httpWrap = httpJSONMock
 	d := newTestTTSDataPart()
 	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Word: "word"}})
-	pegomock.When(httpJSONMock.InvokeJSON(pegomock.AnyInterface(), pegomock.AnyInterface())).Then(
-		func(params []pegomock.Param) pegomock.ReturnValues {
+
+	httpJSONMock.On("InvokeJSON", mock.Anything, mock.Anything).Run(
+		func(params mock.Arguments) {
 			*params[1].(*[]accentOutputElement) = []accentOutputElement{{Word: "word",
 				Accent: []accent{{Mi: "mi", Variants: []synthesizer.AccentVariant{{Accent: 101}}}}}}
-			return []pegomock.ReturnValue{nil}
-		})
+		}).Return(nil)
 	err := pr.Process(d)
 	assert.Nil(t, err)
 	assert.Equal(t, 101, d.Words[0].AccentVariant.Accent)
@@ -50,11 +50,10 @@ func TestInvokeAccentuator_FailOutput(t *testing.T) {
 	pr.(*accentuator).httpWrap = httpJSONMock
 	d := newTestTTSDataPart()
 	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Word: "word"}})
-	pegomock.When(httpJSONMock.InvokeJSON(pegomock.AnyInterface(), pegomock.AnyInterface())).Then(
-		func(params []pegomock.Param) pegomock.ReturnValues {
+	httpJSONMock.On("InvokeJSON", mock.Anything, mock.Anything).Run(
+		func(params mock.Arguments) {
 			*params[1].(*[]accentOutputElement) = []accentOutputElement{}
-			return []pegomock.ReturnValue{nil}
-		})
+		}).Return(nil)
 	err := pr.Process(d)
 	assert.NotNil(t, err)
 }
@@ -66,7 +65,7 @@ func TestInvokeAccentuator_Fail(t *testing.T) {
 	pr.(*accentuator).httpWrap = httpJSONMock
 	d := newTestTTSDataPart()
 	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Word: "word"}})
-	pegomock.When(httpJSONMock.InvokeJSON(pegomock.AnyInterface(), pegomock.AnyInterface())).ThenReturn(errors.New("haha"))
+	httpJSONMock.On("InvokeJSON", mock.Anything, mock.Anything).Return(errors.New("haha"))
 	err := pr.Process(d)
 	assert.NotNil(t, err)
 }
@@ -226,7 +225,6 @@ func TestMapAccOutput_FailNoWordAccented(t *testing.T) {
 	}
 }
 
-
 func TestMapAccOutput_FailWrongWord(t *testing.T) {
 	d := newTestTTSDataPart()
 	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Word: "v2", Mi: "mi2"}})
@@ -244,7 +242,6 @@ func TestMapAccOutput_FailWrongWord(t *testing.T) {
 		assert.Contains(t, err.Error(), "wrong symbols: 'badd' (bad)")
 	}
 }
-
 
 func TestFindBest_UseLemma(t *testing.T) {
 	acc := []accent{{MiVdu: "mi2", MF: "lema1", Variants: []synthesizer.AccentVariant{{Accent: 101}}},

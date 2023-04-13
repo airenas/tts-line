@@ -7,8 +7,6 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
-
-	"github.com/airenas/tts-line/internal/pkg/test/mocks"
 )
 
 var (
@@ -18,7 +16,6 @@ var (
 )
 
 func initPRunnerTest(t *testing.T) {
-	mocks.AttachMockToTest(t)
 	partProcTest = &partProcMock{f: func(d *TTSDataPart) error { return nil }}
 	runner = NewPartRunner(0)
 	runner.Add(partProcTest)

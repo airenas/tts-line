@@ -5,9 +5,9 @@ import (
 
 	"github.com/airenas/tts-line/internal/pkg/synthesizer"
 	"github.com/airenas/tts-line/internal/pkg/utils"
-	"github.com/petergtz/pegomock"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 )
 
 func TestNewCleaner(t *testing.T) {
@@ -31,14 +31,14 @@ func TestCleanProcess(t *testing.T) {
 	pr, _ := NewCleaner("http://server")
 	assert.NotNil(t, pr)
 	pr.(*cleaner).httpWrap = httpJSONMock
-	pegomock.When(httpJSONMock.InvokeJSON(pegomock.AnyInterface(), pegomock.AnyInterface())).Then(
-		func(params []pegomock.Param) pegomock.ReturnValues {
+	httpJSONMock.On("InvokeJSON", mock.Anything, mock.Anything).Run(
+		func(params mock.Arguments) {
 			*params[1].(*normData) = normData{Text: "clean text"}
-			return []pegomock.ReturnValue{nil}
-		})
+		}).Return(nil)
 	err := pr.Process(d)
 	assert.Nil(t, err)
-	cp1, _ := httpJSONMock.VerifyWasCalledOnce().InvokeJSON(pegomock.AnyInterface(), pegomock.AnyInterface()).GetCapturedArguments()
+	httpJSONMock.AssertNumberOfCalls(t, "InvokeJSON", 1)
+	cp1 := httpJSONMock.Calls[0].Arguments[0]
 	assert.Equal(t, &normData{Text: " a a"}, cp1)
 	assert.Equal(t, "clean text", d.CleanedText)
 }
@@ -50,7 +50,7 @@ func TestCleanProcess_Fail(t *testing.T) {
 	pr, _ := NewCleaner("http://server")
 	assert.NotNil(t, pr)
 	pr.(*cleaner).httpWrap = httpJSONMock
-	pegomock.When(httpJSONMock.InvokeJSON(pegomock.AnyInterface(), pegomock.AnyInterface())).ThenReturn(errors.New("olia"))
+	httpJSONMock.On("InvokeJSON", mock.Anything, mock.Anything).Return(errors.New("olia"))
 	err := pr.Process(d)
 	assert.NotNil(t, err)
 }
@@ -62,11 +62,10 @@ func TestCleanProcess_NoText(t *testing.T) {
 	pr, _ := NewCleaner("http://server")
 	assert.NotNil(t, pr)
 	pr.(*cleaner).httpWrap = httpJSONMock
-	pegomock.When(httpJSONMock.InvokeJSON(pegomock.AnyInterface(), pegomock.AnyInterface())).Then(
-		func(params []pegomock.Param) pegomock.ReturnValues {
+	httpJSONMock.On("InvokeJSON", mock.Anything, mock.Anything).Run(
+		func(params mock.Arguments) {
 			*params[1].(*normData) = normData{Text: ""}
-			return []pegomock.ReturnValue{nil}
-		})
+		}).Return(nil)
 	err := pr.Process(d)
 	assert.Equal(t, utils.ErrNoInput, err)
 }

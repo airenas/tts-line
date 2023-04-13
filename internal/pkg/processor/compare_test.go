@@ -5,9 +5,9 @@ import (
 
 	"github.com/airenas/tts-line/internal/pkg/synthesizer"
 	"github.com/airenas/tts-line/internal/pkg/utils"
-	"github.com/petergtz/pegomock"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 )
 
 func TestNewComparator(t *testing.T) {
@@ -32,14 +32,14 @@ func TestCompareProcess(t *testing.T) {
 	pr, _ := NewComparator("http://server")
 	assert.NotNil(t, pr)
 	pr.(*comparator).httpWrap = httpJSONMock
-	pegomock.When(httpJSONMock.InvokeJSON(pegomock.AnyInterface(), pegomock.AnyInterface())).Then(
-		func(params []pegomock.Param) pegomock.ReturnValues {
+	httpJSONMock.On("InvokeJSON", mock.Anything, mock.Anything).Run(
+		func(params mock.Arguments) {
 			*params[1].(*compOut) = compOut{BadAccents: []string{}, RC: 1}
-			return []pegomock.ReturnValue{nil}
-		})
+		}).Return(nil)
 	err := pr.Process(d)
 	assert.Nil(t, err)
-	cp1, _ := httpJSONMock.VerifyWasCalledOnce().InvokeJSON(pegomock.AnyInterface(), pegomock.AnyInterface()).GetCapturedArguments()
+	httpJSONMock.AssertNumberOfCalls(t, "InvokeJSON", 1)
+	cp1 := httpJSONMock.Calls[0].Arguments[0]
 	assert.Equal(t, &compIn{Original: "orig", Modified: "mod"}, cp1)
 }
 
@@ -49,7 +49,7 @@ func TestCpmpareProcess_Fail(t *testing.T) {
 	pr, _ := NewComparator("http://server")
 	assert.NotNil(t, pr)
 	pr.(*comparator).httpWrap = httpJSONMock
-	pegomock.When(httpJSONMock.InvokeJSON(pegomock.AnyInterface(), pegomock.AnyInterface())).ThenReturn(errors.New("olia"))
+	httpJSONMock.On("InvokeJSON", mock.Anything, mock.Anything).Return(errors.New("olia"))
 	err := pr.Process(d)
 	assert.NotNil(t, err)
 }
@@ -60,11 +60,10 @@ func TestCpmpareProcess_NoMatch(t *testing.T) {
 	pr, _ := NewComparator("http://server")
 	assert.NotNil(t, pr)
 	pr.(*comparator).httpWrap = httpJSONMock
-	pegomock.When(httpJSONMock.InvokeJSON(pegomock.AnyInterface(), pegomock.AnyInterface())).Then(
-		func(params []pegomock.Param) pegomock.ReturnValues {
+	httpJSONMock.On("InvokeJSON", mock.Anything, mock.Anything).Run(
+		func(params mock.Arguments) {
 			*params[1].(*compOut) = compOut{BadAccents: []string{"a{x}"}, RC: 1}
-			return []pegomock.ReturnValue{nil}
-		})
+		}).Return(nil)
 	err := pr.Process(d)
 	assert.Equal(t, utils.NewErrBadAccent([]string{"a{x}"}), err)
 }
@@ -75,11 +74,10 @@ func TestCpmpareProcess_BadAccents(t *testing.T) {
 	pr, _ := NewComparator("http://server")
 	assert.NotNil(t, pr)
 	pr.(*comparator).httpWrap = httpJSONMock
-	pegomock.When(httpJSONMock.InvokeJSON(pegomock.AnyInterface(), pegomock.AnyInterface())).Then(
-		func(params []pegomock.Param) pegomock.ReturnValues {
+	httpJSONMock.On("InvokeJSON", mock.Anything, mock.Anything).Run(
+		func(params mock.Arguments) {
 			*params[1].(*compOut) = compOut{BadAccents: []string{}, RC: 0}
-			return []pegomock.ReturnValue{nil}
-		})
+		}).Return(nil)
 	err := pr.Process(d)
 	assert.Equal(t, utils.ErrTextDoesNotMatch, err)
 }

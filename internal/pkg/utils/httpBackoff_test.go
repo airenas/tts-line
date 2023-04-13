@@ -10,19 +10,18 @@ import (
 	"github.com/airenas/tts-line/internal/pkg/test/mocks"
 	"github.com/airenas/tts-line/internal/pkg/utils"
 	"github.com/cenkalti/backoff/v4"
-	"github.com/petergtz/pegomock"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 )
 
 var (
-	testHTTPWrap *mocks.MockHTTPInvokerJSON
+	testHTTPWrap *mocks.HTTPInvokerJSON
 )
 
 func initTestJSON(t *testing.T) {
-	mocks.AttachMockToTest(t)
-	testHTTPWrap = mocks.NewMockHTTPInvokerJSON()
+	testHTTPWrap = &mocks.HTTPInvokerJSON{}
 }
 
 func TestNewHTTPBackoff(t *testing.T) {
@@ -35,11 +34,11 @@ func TestNewHTTPBackoff(t *testing.T) {
 func TestInvokeJSON(t *testing.T) {
 	initTestJSON(t)
 	pr, _ := utils.NewHTTPBackoff(testHTTPWrap, func() backoff.BackOff { return backoff.NewExponentialBackOff() }, utils.RetryAll)
-	pegomock.When(testHTTPWrap.InvokeJSON(pegomock.AnyInterface(), pegomock.AnyInterface())).ThenReturn(nil)
+	testHTTPWrap.On("InvokeJSON", mock.Anything, mock.Anything).Return(nil)
 
 	err := pr.InvokeJSON("olia", "")
 	assert.Nil(t, err)
-	testHTTPWrap.VerifyWasCalled(pegomock.Times(1)).InvokeJSON(pegomock.AnyInterface(), pegomock.AnyInterface())
+	testHTTPWrap.AssertNumberOfCalls(t, "InvokeJSON", 1)
 }
 
 func TestInvokeText(t *testing.T) {
@@ -47,11 +46,11 @@ func TestInvokeText(t *testing.T) {
 	pr, _ := utils.NewHTTPBackoff(testHTTPWrap,
 		func() backoff.BackOff { return backoff.NewExponentialBackOff() },
 		utils.RetryAll)
-	pegomock.When(testHTTPWrap.InvokeText(pegomock.AnyString(), pegomock.AnyInterface())).ThenReturn(nil)
+	testHTTPWrap.On("InvokeText", mock.Anything, mock.Anything).Return(nil)
 
 	err := pr.InvokeText("olia", "")
 	assert.Nil(t, err)
-	testHTTPWrap.VerifyWasCalled(pegomock.Times(1)).InvokeText(pegomock.AnyString(), pegomock.AnyInterface())
+	testHTTPWrap.AssertNumberOfCalls(t, "InvokeText", 1)
 }
 
 func TestInvokeText_Retry(t *testing.T) {
@@ -60,11 +59,11 @@ func TestInvokeText_Retry(t *testing.T) {
 		func() backoff.BackOff {
 			return backoff.WithMaxRetries(&backoff.ZeroBackOff{}, 3)
 		}, utils.RetryAll)
-	pegomock.When(testHTTPWrap.InvokeText(pegomock.AnyString(), pegomock.AnyInterface())).ThenReturn(errors.New("olia"))
+	testHTTPWrap.On("InvokeText", mock.Anything, mock.Anything).Return(errors.New("olia"))
 
 	err := pr.InvokeText("olia", "")
 	assert.NotNil(t, err)
-	testHTTPWrap.VerifyWasCalled(pegomock.Times(4)).InvokeText(pegomock.AnyString(), pegomock.AnyInterface())
+	testHTTPWrap.AssertNumberOfCalls(t, "InvokeText", 4)
 }
 
 func TestInvokeRetry(t *testing.T) {
@@ -72,11 +71,11 @@ func TestInvokeRetry(t *testing.T) {
 	pr, _ := utils.NewHTTPBackoff(testHTTPWrap, func() backoff.BackOff {
 		return backoff.WithMaxRetries(&backoff.ZeroBackOff{}, 3)
 	}, utils.RetryAll)
-	pegomock.When(testHTTPWrap.InvokeJSON(pegomock.AnyInterface(), pegomock.AnyInterface())).ThenReturn(errors.New("olia"))
+	testHTTPWrap.On("InvokeJSON", mock.Anything, mock.Anything).Return(errors.New("olia"))
 
 	err := pr.InvokeJSON("olia", "")
 	assert.NotNil(t, err)
-	testHTTPWrap.VerifyWasCalled(pegomock.Times(4)).InvokeJSON(pegomock.AnyInterface(), pegomock.AnyInterface())
+	testHTTPWrap.AssertNumberOfCalls(t, "InvokeJSON", 4)
 }
 
 func TestCallbacks(t *testing.T) {
@@ -94,11 +93,11 @@ func TestCallbacks(t *testing.T) {
 		rc++
 		assert.Equal(t, "olia", d)
 	}
-	pegomock.When(testHTTPWrap.InvokeJSON(pegomock.AnyInterface(), pegomock.AnyInterface())).ThenReturn(errors.New("olia"))
+	testHTTPWrap.On("InvokeJSON", mock.Anything, mock.Anything).Return(errors.New("olia"))
 
 	err := pr.InvokeJSON("olia", "")
 	assert.NotNil(t, err)
-	testHTTPWrap.VerifyWasCalled(pegomock.Times(4)).InvokeJSON(pegomock.AnyInterface(), pegomock.AnyInterface())
+	testHTTPWrap.AssertNumberOfCalls(t, "InvokeJSON", 4)
 	assert.Equal(t, 4, ic)
 	assert.Equal(t, 3, rc)
 }
@@ -108,10 +107,10 @@ func TestRetry_StopsNonEOF(t *testing.T) {
 	pr, _ := utils.NewHTTPBackoff(testHTTPWrap, func() backoff.BackOff {
 		return backoff.WithMaxRetries(&backoff.ZeroBackOff{}, 4)
 	}, utils.IsRetryable)
-	pegomock.When(testHTTPWrap.InvokeJSON(pegomock.AnyInterface(), pegomock.AnyInterface())).ThenReturn(errors.New("olia"))
+	testHTTPWrap.On("InvokeJSON", mock.Anything, mock.Anything).Return(errors.New("olia"))
 	err := pr.InvokeJSON("olia", "")
 	require.NotNil(t, err)
-	testHTTPWrap.VerifyWasCalled(pegomock.Times(1)).InvokeJSON(pegomock.AnyInterface(), pegomock.AnyInterface())
+	testHTTPWrap.AssertNumberOfCalls(t, "InvokeJSON", 1)
 }
 
 func TestRetry_ContinueEOF(t *testing.T) {
@@ -119,10 +118,10 @@ func TestRetry_ContinueEOF(t *testing.T) {
 	pr, _ := utils.NewHTTPBackoff(testHTTPWrap, func() backoff.BackOff {
 		return backoff.WithMaxRetries(&backoff.ZeroBackOff{}, 4)
 	}, utils.IsRetryable)
-	pegomock.When(testHTTPWrap.InvokeJSON(pegomock.AnyInterface(), pegomock.AnyInterface())).ThenReturn(io.EOF)
+	testHTTPWrap.On("InvokeJSON", mock.Anything, mock.Anything).Return(io.EOF)
 	err := pr.InvokeJSON("olia", "")
 	require.NotNil(t, err)
-	testHTTPWrap.VerifyWasCalled(pegomock.Times(5)).InvokeJSON(pegomock.AnyInterface(), pegomock.AnyInterface())
+	testHTTPWrap.AssertNumberOfCalls(t, "InvokeJSON", 5)
 }
 
 func TestIsEOF(t *testing.T) {

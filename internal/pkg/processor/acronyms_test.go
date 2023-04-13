@@ -7,18 +7,17 @@ import (
 	"github.com/airenas/tts-line/internal/pkg/service/api"
 	"github.com/airenas/tts-line/internal/pkg/synthesizer"
 	"github.com/airenas/tts-line/internal/pkg/test/mocks"
-	"github.com/petergtz/pegomock"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 )
 
 var (
-	httpJSONMock *mocks.MockHTTPInvokerJSON
+	httpJSONMock *mocks.HTTPInvokerJSON
 )
 
 func initTestJSON(t *testing.T) {
-	mocks.AttachMockToTest(t)
-	httpJSONMock = mocks.NewMockHTTPInvokerJSON()
+	httpJSONMock = &mocks.HTTPInvokerJSON{}
 }
 
 func TestNewAbbreviator(t *testing.T) {
@@ -42,12 +41,11 @@ func TestInvokeNewAbbreviator(t *testing.T) {
 	pr.(*acronyms).httpWrap = httpJSONMock
 	d := newTestTTSDataPart()
 	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Mi: "Y"}})
-	pegomock.When(httpJSONMock.InvokeJSON(pegomock.AnyInterface(), pegomock.AnyInterface())).Then(
-		func(params []pegomock.Param) pegomock.ReturnValues {
+	httpJSONMock.On("InvokeJSON", mock.Anything, mock.Anything).Run(
+		func(params mock.Arguments) {
 			*params[1].(*[]acrWordOutput) = []acrWordOutput{{ID: "0",
 				Words: []acrResultWord{{Word: "olia", WordTrans: "oolia", UserTrans: "o l i a", Syll: "o-lia"}}}}
-			return []pegomock.ReturnValue{nil}
-		})
+		}).Return(nil)
 	err := pr.Process(d)
 	assert.Nil(t, err)
 	assert.Equal(t, "o l i a", d.Words[0].UserTranscription)
@@ -62,7 +60,7 @@ func TestInvokeNewAbbreviator_Fail(t *testing.T) {
 	pr.(*acronyms).httpWrap = httpJSONMock
 	d := newTestTTSDataPart()
 	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Mi: "Y"}})
-	pegomock.When(httpJSONMock.InvokeJSON(pegomock.AnyInterface(), pegomock.AnyInterface())).ThenReturn(errors.New("haha"))
+	httpJSONMock.On("InvokeJSON", mock.Anything, mock.Anything).Return(errors.New("haha"))
 	err := pr.Process(d)
 	assert.NotNil(t, err)
 }
@@ -155,7 +153,7 @@ func Test_mapAbbrInput(t *testing.T) {
 			want: []acrInput{}},
 		{name: "Obscene with user accent",
 			args: []*synthesizer.ProcessedWord{{Tagged: synthesizer.TaggedWord{Word: "word", Mi: "X-", Lemma: "Looooong"},
-				Obscene: true, UserAccent: 101,}},
+				Obscene: true, UserAccent: 101}},
 			want: []acrInput{{Word: "word", MI: "X-", ID: "0"}}},
 	}
 	for _, tt := range tests {

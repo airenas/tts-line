@@ -4,9 +4,9 @@ import (
 	"testing"
 
 	"github.com/airenas/tts-line/internal/pkg/synthesizer"
-	"github.com/petergtz/pegomock"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 )
 
 func TestNewNormalizer(t *testing.T) {
@@ -30,14 +30,14 @@ func TestNormalizeProcess(t *testing.T) {
 	pr, _ := NewNormalizer("http://server")
 	assert.NotNil(t, pr)
 	pr.(*normalizer).httpWrap = httpJSONMock
-	pegomock.When(httpJSONMock.InvokeJSON(pegomock.AnyInterface(), pegomock.AnyInterface())).Then(
-		func(params []pegomock.Param) pegomock.ReturnValues {
+	httpJSONMock.On("InvokeJSON", mock.Anything, mock.Anything).Run(
+		func(params mock.Arguments) {
 			*params[1].(*normResponseData) = normResponseData{Res: "out text"}
-			return []pegomock.ReturnValue{nil}
-		})
+		}).Return(nil)
 	err := pr.Process(d)
 	assert.Nil(t, err)
-	cp1, _ := httpJSONMock.VerifyWasCalledOnce().InvokeJSON(pegomock.AnyInterface(), pegomock.AnyInterface()).GetCapturedArguments()
+	httpJSONMock.AssertNumberOfCalls(t, "InvokeJSON", 1)
+	cp1 := httpJSONMock.Calls[0].Arguments[0]
 	assert.Equal(t, &normRequestData{Orig: " a a"}, cp1)
 	assert.Equal(t, "out text", d.NormalizedText)
 }
@@ -49,7 +49,7 @@ func TestNormalizeProcess_Fail(t *testing.T) {
 	pr, _ := NewNormalizer("http://server")
 	assert.NotNil(t, pr)
 	pr.(*normalizer).httpWrap = httpJSONMock
-	pegomock.When(httpJSONMock.InvokeJSON(pegomock.AnyInterface(), pegomock.AnyInterface())).ThenReturn(errors.New("olia"))
+	httpJSONMock.On("InvokeJSON", mock.Anything, mock.Anything).Return(errors.New("olia"))
 	err := pr.Process(d)
 	assert.NotNil(t, err)
 }
@@ -62,5 +62,5 @@ func TestNormalize_Skip(t *testing.T) {
 	pr.(*normalizer).httpWrap = httpJSONMock
 	err := pr.Process(d)
 	assert.Nil(t, err)
-	httpJSONMock.VerifyWasCalled(pegomock.Never()).InvokeJSON(pegomock.AnyInterface(), pegomock.AnyInterface())
+	httpJSONMock.AssertNumberOfCalls(t, "InvokeJSON", 0)
 }

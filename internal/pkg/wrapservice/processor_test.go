@@ -3,25 +3,24 @@ package wrapservice
 import (
 	"testing"
 
-	"github.com/petergtz/pegomock"
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus/testutil"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 
 	"github.com/airenas/tts-line/internal/pkg/test/mocks"
 	"github.com/airenas/tts-line/internal/pkg/wrapservice/api"
 )
 
 var (
-	httpAMMock  *mocks.MockHTTPInvokerJSON
-	httpVocMock *mocks.MockHTTPInvokerJSON
+	httpAMMock  *mocks.HTTPInvokerJSON
+	httpVocMock *mocks.HTTPInvokerJSON
 )
 
 func initTestJSON(t *testing.T) {
-	mocks.AttachMockToTest(t)
-	httpAMMock = mocks.NewMockHTTPInvokerJSON()
-	httpVocMock = mocks.NewMockHTTPInvokerJSON()
+	httpAMMock = &mocks.HTTPInvokerJSON{}
+	httpVocMock = &mocks.HTTPInvokerJSON{}
 }
 
 func TestNewProcessor(t *testing.T) {
@@ -48,24 +47,25 @@ func TestInvokeProcessor(t *testing.T) {
 	pr.amWrap = httpAMMock
 	pr.vocWrap = httpVocMock
 
-	pegomock.When(httpAMMock.InvokeJSON(pegomock.AnyInterface(), pegomock.AnyInterface())).Then(
-		func(params []pegomock.Param) pegomock.ReturnValues {
+	httpAMMock.On("InvokeJSON", mock.Anything, mock.Anything).Run(
+		func(params mock.Arguments) {
 			*params[1].(*output) = output{Data: "specs"}
-			return []pegomock.ReturnValue{nil}
-		})
-	pegomock.When(httpVocMock.InvokeJSON(pegomock.AnyInterface(), pegomock.AnyInterface())).Then(
-		func(params []pegomock.Param) pegomock.ReturnValues {
+		}).Return(nil)
+
+	httpVocMock.On("InvokeJSON", mock.Anything, mock.Anything).Run(
+		func(params mock.Arguments) {
 			*params[1].(*output) = output{Data: "audio"}
-			return []pegomock.ReturnValue{nil}
-		})
+		}).Return(nil)
 	text, err := pr.Work(&api.Params{Text: "olia", Speed: 0.9, Voice: "voice", Priority: 10})
 	assert.Nil(t, err)
 	assert.Equal(t, "audio", text)
 
-	cp1, _ := httpAMMock.VerifyWasCalledOnce().InvokeJSON(pegomock.AnyInterface(), pegomock.AnyInterface()).GetCapturedArguments()
+	httpAMMock.AssertNumberOfCalls(t, "InvokeJSON", 1)
+	cp1 := httpAMMock.Calls[0].Arguments[0]
 	assert.Equal(t, &amInput{Text: "olia", Speed: 0.9, Voice: "voice", Priority: 10}, cp1)
 
-	cp2, _ := httpVocMock.VerifyWasCalledOnce().InvokeJSON(pegomock.AnyInterface(), pegomock.AnyInterface()).GetCapturedArguments()
+	httpVocMock.AssertNumberOfCalls(t, "InvokeJSON", 1)
+	cp2 := httpVocMock.Calls[0].Arguments[0]
 	assert.Equal(t, &vocInput{Data: "specs", Voice: "voice", Priority: 10}, cp2)
 	assert.InDelta(t, 0.0, testutil.ToFloat64(totalFailureMetrics.WithLabelValues("am", "voice")), 0.000001)
 	assert.InDelta(t, 0.0, testutil.ToFloat64(totalFailureMetrics.WithLabelValues("vocoder", "voice")), 0.000001)
@@ -78,12 +78,11 @@ func TestInvokeProcessor_FailAM(t *testing.T) {
 	pr.amWrap = httpAMMock
 	pr.vocWrap = httpVocMock
 
-	pegomock.When(httpAMMock.InvokeJSON(pegomock.AnyInterface(), pegomock.AnyInterface())).ThenReturn(errors.New("haha"))
-	pegomock.When(httpVocMock.InvokeJSON(pegomock.AnyInterface(), pegomock.AnyInterface())).Then(
-		func(params []pegomock.Param) pegomock.ReturnValues {
+	httpAMMock.On("InvokeJSON", mock.Anything, mock.Anything).Return(errors.New("haha"))
+	httpVocMock.On("InvokeJSON", mock.Anything, mock.Anything).Run(
+		func(params mock.Arguments) {
 			*params[1].(*output) = output{Data: "audio"}
-			return []pegomock.ReturnValue{nil}
-		})
+		}).Return(nil)
 	_, err := pr.Work(&api.Params{Text: "olia", Speed: 1, Voice: "voice", Priority: 10})
 	assert.NotNil(t, err)
 	assert.InDelta(t, 1.0, testutil.ToFloat64(totalFailureMetrics.WithLabelValues("am", "voice")), 0.000001)
@@ -96,12 +95,11 @@ func TestInvokeProcessor_FailVoc(t *testing.T) {
 	pr.amWrap = httpAMMock
 	pr.vocWrap = httpVocMock
 
-	pegomock.When(httpAMMock.InvokeJSON(pegomock.AnyInterface(), pegomock.AnyInterface())).Then(
-		func(params []pegomock.Param) pegomock.ReturnValues {
+	httpAMMock.On("InvokeJSON", mock.Anything, mock.Anything).Run(
+		func(params mock.Arguments) {
 			*params[1].(*output) = output{Data: "audio"}
-			return []pegomock.ReturnValue{nil}
-		})
-	pegomock.When(httpVocMock.InvokeJSON(pegomock.AnyInterface(), pegomock.AnyInterface())).ThenReturn(errors.New("haha"))
+		}).Return(nil)
+	httpVocMock.On("InvokeJSON", mock.Anything, mock.Anything).Return(errors.New("haha"))
 	_, err := pr.Work(&api.Params{Text: "olia", Speed: 1, Voice: "voice", Priority: 10})
 	assert.NotNil(t, err)
 	assert.InDelta(t, 1.0, testutil.ToFloat64(totalFailureMetrics.WithLabelValues("vocoder", "voice")), 0.000001)

@@ -26,7 +26,6 @@ var (
 )
 
 func initTest(t *testing.T) {
-	mocks.AttachMockToTest(t)
 	synthesizerMock = &mockWaveSynthesizer{}
 	var hf http.HandlerFunc = func(w http.ResponseWriter, r *http.Request) { w.WriteHeader(http.StatusOK) }
 	tData = &Data{Port: 8000, Processor: synthesizerMock, HealthHandler: hf}

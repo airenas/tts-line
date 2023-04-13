@@ -1,28 +1,10 @@
 package mocks
 
 import (
-	"testing"
-
 	aapi "github.com/airenas/tts-line/internal/pkg/acronyms/service/api"
 	tapi "github.com/airenas/tts-line/internal/pkg/service/api"
-	"github.com/petergtz/pegomock"
 	"github.com/stretchr/testify/mock"
 )
-
-//go:generate pegomock generate --package=mocks --output=httpInvokerJSOM.go -m github.com/airenas/tts-line/internal/pkg/processor HTTPInvokerJSON
-
-// AttachMockToTest register pegomock verification to be passed to testing engine
-func AttachMockToTest(t *testing.T) {
-	pegomock.RegisterMockFailHandler(handleByTest(t))
-}
-
-func handleByTest(t *testing.T) pegomock.FailHandler {
-	return func(message string, callerSkip ...int) {
-		if message != "" {
-			t.Error(message)
-		}
-	}
-}
 
 // To convert interface to object
 func To[T interface{}](val interface{}) T {
@@ -45,4 +27,21 @@ type Synthesizer struct{ mock.Mock }
 func (m *Synthesizer) Work(in *tapi.TTSRequestConfig) (*tapi.Result, error) {
 	args := m.Called(in)
 	return To[*tapi.Result](args.Get(0)), args.Error(1)
+}
+
+type HTTPInvokerJSON struct{ mock.Mock }
+
+func (m *HTTPInvokerJSON) InvokeText(in string, out interface{}) error {
+	args := m.Called(in, out)
+	return args.Error(0)
+}
+
+func (m *HTTPInvokerJSON) InvokeJSON(in interface{}, out interface{}) error {
+	args := m.Called(in, out)
+	return args.Error(0)
+}
+
+func (m *HTTPInvokerJSON) InvokeJSONU(URL string, in interface{}, out interface{}) error {
+	args := m.Called(URL, in, out)
+	return args.Error(0)
 }

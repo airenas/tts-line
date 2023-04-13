@@ -14,7 +14,6 @@ require (
 	github.com/mattn/go-colorable v0.1.12
 	github.com/microcosm-cc/bluemonday v1.0.16
 	github.com/mschneider82/health v0.0.0-20191023121516-d79dedea6640
-	github.com/petergtz/pegomock v2.9.0+incompatible
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.11.1
 	github.com/spf13/viper v1.10.1
@@ -55,8 +54,6 @@ require (
 	github.com/mattn/go-isatty v0.0.14 // indirect
 	github.com/matttproud/golang_protobuf_extensions v1.0.1 // indirect
 	github.com/mitchellh/mapstructure v1.4.3 // indirect
-	github.com/onsi/ginkgo v1.16.3 // indirect
-	github.com/onsi/gomega v1.13.0 // indirect
 	github.com/pelletier/go-toml v1.9.4 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/prometheus/client_model v0.2.0 // indirect

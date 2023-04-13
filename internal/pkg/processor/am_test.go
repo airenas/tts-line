@@ -4,11 +4,11 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/petergtz/pegomock"
 	"github.com/pkg/errors"
 	"github.com/spf13/viper"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 
 	"github.com/airenas/tts-line/internal/pkg/service/api"
 	"github.com/airenas/tts-line/internal/pkg/synthesizer"
@@ -69,17 +69,18 @@ func TestInvokeAcousticModel(t *testing.T) {
 	d.Cfg.Speed = 0.5
 	d.Cfg.Voice = "aa"
 	d.Cfg.Input.Priority = 10
-	pegomock.When(httpJSONMock.InvokeJSONU(pegomock.AnyString(), pegomock.AnyInterface(), pegomock.AnyInterface())).Then(
-		func(params []pegomock.Param) pegomock.ReturnValues {
+	httpJSONMock.On("InvokeJSONU", mock.Anything, mock.Anything, mock.Anything).Run(
+		func(params mock.Arguments) {
 			*params[2].(*amOutput) = amOutput{Data: "spec"}
-			return []pegomock.ReturnValue{nil}
-		})
+		}).Return(nil)
 	err := pr.Process(d)
 	assert.Nil(t, err)
 	assert.Equal(t, "spec", d.Spectogram)
 
-	url, inp, _ := httpJSONMock.VerifyWasCalled(pegomock.Once()).InvokeJSONU(pegomock.AnyString(), pegomock.AnyInterface(),
-		pegomock.AnyInterface()).GetCapturedArguments()
+	httpJSONMock.AssertNumberOfCalls(t, "InvokeJSONU", 1)
+	url := httpJSONMock.Calls[0].Arguments[0]
+	inp := httpJSONMock.Calls[0].Arguments[1]
+
 	ai := inp.(*amInput)
 	assert.InDelta(t, 0.5, ai.Speed, 0.0001)
 	assert.Equal(t, "aa", ai.Voice)
@@ -97,7 +98,7 @@ func TestInvokeAcousticModel_Skip(t *testing.T) {
 	d.Spectogram = ""
 	err := pr.Process(d)
 	assert.Nil(t, err)
-	httpJSONMock.VerifyWasCalled(pegomock.Never()).InvokeJSONU(pegomock.AnyString(), pegomock.AnyInterface(), pegomock.AnyInterface())
+	httpJSONMock.AssertNumberOfCalls(t, "InvokeJSONU", 0)
 }
 
 func TestInvokeAcousticModel_WriteAudio(t *testing.T) {
@@ -107,11 +108,10 @@ func TestInvokeAcousticModel_WriteAudio(t *testing.T) {
 	pr.(*amodel).httpWrap = httpJSONMock
 	d := newTestTTSDataPart()
 	d.Spectogram = "spectogram"
-	pegomock.When(httpJSONMock.InvokeJSONU(pegomock.AnyString(), pegomock.AnyInterface(), pegomock.AnyInterface())).Then(
-		func(params []pegomock.Param) pegomock.ReturnValues {
+	httpJSONMock.On("InvokeJSONU", mock.Anything, mock.Anything, mock.Anything).Run(
+		func(params mock.Arguments) {
 			*params[2].(*amOutput) = amOutput{Data: "audio"}
-			return []pegomock.ReturnValue{nil}
-		})
+		}).Return(nil)
 	err := pr.Process(d)
 	assert.Nil(t, err)
 	assert.Equal(t, "spectogram", d.Spectogram)
@@ -125,7 +125,7 @@ func TestInvokeAcousticModel_Fail(t *testing.T) {
 	pr.(*amodel).httpWrap = httpJSONMock
 	d := newTestTTSDataPart()
 	d.Spectogram = "spectogram"
-	pegomock.When(httpJSONMock.InvokeJSONU(pegomock.AnyString(), pegomock.AnyInterface(), pegomock.AnyInterface())).ThenReturn(errors.New("haha"))
+	httpJSONMock.On("InvokeJSONU", mock.Anything, mock.Anything, mock.Anything).Return(errors.New("haha"))
 	err := pr.Process(d)
 	assert.NotNil(t, err)
 }
@@ -138,10 +138,11 @@ func TestInvokeAcousticModel_FromAM(t *testing.T) {
 	d := newTestTTSDataPart()
 	d.Cfg.JustAM = true
 	d.Text = "olia"
-	pegomock.When(httpJSONMock.InvokeJSONU(pegomock.AnyString(), pegomock.AnyInterface(), pegomock.AnyInterface())).ThenReturn(nil)
+	httpJSONMock.On("InvokeJSONU", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	err := pr.Process(d)
 	assert.Nil(t, err)
-	_, cp1, _ := httpJSONMock.VerifyWasCalledOnce().InvokeJSONU(pegomock.AnyString(), pegomock.AnyInterface(), pegomock.AnyInterface()).GetCapturedArguments()
+	httpJSONMock.AssertNumberOfCalls(t, "InvokeJSONU", 1)
+	cp1 := httpJSONMock.Calls[0].Arguments[1]
 	assert.Equal(t, &amInput{Text: "olia"}, cp1)
 }
 

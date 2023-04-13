@@ -5,7 +5,6 @@ import (
 	"time"
 
 	"github.com/airenas/tts-line/internal/pkg/service/api"
-	"github.com/airenas/tts-line/internal/pkg/test/mocks"
 	"github.com/airenas/tts-line/pkg/ssml"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
@@ -18,7 +17,6 @@ var (
 )
 
 func initTest(t *testing.T) {
-	mocks.AttachMockToTest(t)
 	processorMock = &procMock{f: func(d *TTSData) error { return nil }}
 	worker = &MainWorker{}
 	worker.Add(processorMock)
