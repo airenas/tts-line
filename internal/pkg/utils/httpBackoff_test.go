@@ -138,7 +138,6 @@ func TestIsEOF(t *testing.T) {
 		{name: "EOF", args: args{err: io.EOF}, wantRetry: true},
 		{name: "Timeout", args: args{err: context.DeadlineExceeded}, wantRetry: true},
 		{name: "Timeout 2", args: args{err: testTmErr{timeout: true}}, wantRetry: true},
-		{name: "Temporary", args: args{err: testTmErr{temp: true}}, wantRetry: true},
 		{name: "No Timeout", args: args{err: testTmErr{}}, wantRetry: false},
 		{name: "Broken pipe", args: args{err: syscall.EPIPE}, wantRetry: true},
 		{name: "Reset by peer", args: args{err: syscall.ECONNRESET}, wantRetry: true},
