@@ -3,24 +3,22 @@ package processor
 import (
 	"testing"
 
-	"github.com/petergtz/pegomock"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 
 	"github.com/airenas/tts-line/internal/pkg/service/api"
 	"github.com/airenas/tts-line/internal/pkg/synthesizer"
 	"github.com/airenas/tts-line/internal/pkg/test/mocks"
-	"github.com/airenas/tts-line/internal/pkg/test/mocks/matchers"
 	"github.com/airenas/tts-line/internal/pkg/utils"
 )
 
 var (
-	dbMock *mocks.MockSaverDB
+	dbMock *mockSaverDB
 )
 
 func initTestDB(t *testing.T) {
-	mocks.AttachMockToTest(t)
-	dbMock = mocks.NewMockSaverDB()
+	dbMock = &mockSaverDB{}
 }
 
 func TestNewSaver(t *testing.T) {
@@ -44,8 +42,7 @@ func TestSave_Ignore(t *testing.T) {
 	d.Input = &api.TTSRequestConfig{AllowCollectData: false}
 	err := pr.Process(d)
 	assert.Nil(t, err)
-	dbMock.VerifyWasCalled(pegomock.Never()).Save(pegomock.AnyString(), pegomock.AnyString(),
-		matchers.AnyUtilsRequestTypeEnum(), pegomock.AnyStringSlice())
+	dbMock.AssertNumberOfCalls(t, "Save", 0)
 }
 
 func TestSave_Call(t *testing.T) {
@@ -56,12 +53,15 @@ func TestSave_Call(t *testing.T) {
 	d.RequestID = "olia"
 	d.OriginalText = "tata"
 	d.Input = &api.TTSRequestConfig{AllowCollectData: true, SaveTags: []string{"olia"}}
+	dbMock.On("Save", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
+
 	err := pr.Process(d)
 	assert.Nil(t, err)
-	cRID, cText, cType, cTags := dbMock.VerifyWasCalled(pegomock.Once()).
-		Save(pegomock.AnyString(), pegomock.AnyString(), matchers.AnyUtilsRequestTypeEnum(),
-			pegomock.AnyStringSlice()).
-		GetCapturedArguments()
+	dbMock.AssertNumberOfCalls(t, "Save", 1)
+	cRID := mocks.To[string](dbMock.Calls[0].Arguments[0])
+	cText := mocks.To[string](dbMock.Calls[0].Arguments[1])
+	cType := mocks.To[utils.RequestTypeEnum](dbMock.Calls[0].Arguments[2])
+	cTags := mocks.To[[]string](dbMock.Calls[0].Arguments[3])
 	assert.Equal(t, "olia", cRID)
 	assert.Equal(t, "tata", cText)
 	assert.Equal(t, utils.RequestOriginal, cType)
@@ -76,12 +76,14 @@ func TestSave_Normalized(t *testing.T) {
 	d.RequestID = "olia"
 	d.TextWithNumbers = "normalized"
 	d.Input = &api.TTSRequestConfig{AllowCollectData: true}
+	dbMock.On("Save", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
+
 	err := pr.Process(d)
 	assert.Nil(t, err)
-	cRID, cText, cType, _ := dbMock.VerifyWasCalled(pegomock.Once()).
-		Save(pegomock.AnyString(), pegomock.AnyString(), matchers.AnyUtilsRequestTypeEnum(),
-			pegomock.AnyStringSlice()).
-		GetCapturedArguments()
+	dbMock.AssertNumberOfCalls(t, "Save", 1)
+	cRID := mocks.To[string](dbMock.Calls[0].Arguments[0])
+	cText := mocks.To[string](dbMock.Calls[0].Arguments[1])
+	cType := mocks.To[utils.RequestTypeEnum](dbMock.Calls[0].Arguments[2])
 	assert.Equal(t, "olia", cRID)
 	assert.Equal(t, "normalized", cText)
 	assert.Equal(t, utils.RequestNormalized, cType)
@@ -95,9 +97,7 @@ func TestSave_Fail(t *testing.T) {
 	d.RequestID = "olia"
 	d.OriginalText = "tata"
 	d.Input = &api.TTSRequestConfig{AllowCollectData: true}
-	pegomock.When(dbMock.Save(pegomock.AnyString(), pegomock.AnyString(),
-		matchers.AnyUtilsRequestTypeEnum(), pegomock.AnyStringSlice())).
-		ThenReturn(errors.New("haha"))
+	dbMock.On("Save", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(errors.New("haha"))
 	err := pr.Process(d)
 	assert.NotNil(t, err)
 }
@@ -113,4 +113,11 @@ func TestGetText(t *testing.T) {
 	assert.Equal(t, "t numbers", getText(d, utils.RequestNormalized))
 	assert.Equal(t, "tata", getText(d, utils.RequestUser))
 	assert.Equal(t, "tata", getText(d, utils.RequestOriginalSSML))
+}
+
+type mockSaverDB struct{ mock.Mock }
+
+func (m *mockSaverDB) Save(req, text string, reqType utils.RequestTypeEnum, tags []string) error {
+	args := m.Called(req, text, reqType, tags)
+	return args.Error(0)
 }
