@@ -28,8 +28,6 @@ import (
 
 //go:generate pegomock generate --package=mocks --output=acrWorker.go -m github.com/airenas/tts-line/internal/pkg/acronyms/service Worker
 
-//go:generate pegomock generate --package=mocks --output=clitWorker.go -m github.com/airenas/tts-line/internal/pkg/clitics/service ClitWorker
-
 //AttachMockToTest register pegomock verification to be passed to testing engine
 func AttachMockToTest(t *testing.T) {
 	pegomock.RegisterMockFailHandler(handleByTest(t))
@@ -41,4 +39,13 @@ func handleByTest(t *testing.T) pegomock.FailHandler {
 			t.Error(message)
 		}
 	}
+}
+
+// To convert interface to object
+func To[T interface{}](val interface{}) T {
+	if val == nil {
+		var res T
+		return res
+	}
+	return val.(T)
 }

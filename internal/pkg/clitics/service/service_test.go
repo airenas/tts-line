@@ -8,23 +8,21 @@ import (
 
 	"github.com/airenas/tts-line/internal/pkg/clitics/service/api"
 	"github.com/airenas/tts-line/internal/pkg/test/mocks"
-	"github.com/airenas/tts-line/internal/pkg/test/mocks/matchers"
 	"github.com/labstack/echo/v4"
-	"github.com/petergtz/pegomock"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 )
 
 var (
 	tData *Data
 	tEcho *echo.Echo
 	tRec  *httptest.ResponseRecorder
-	wMock *mocks.MockClitWorker
+	wMock *mockClitWorker
 )
 
 func initTest(t *testing.T) {
-	mocks.AttachMockToTest(t)
-	wMock = mocks.NewMockClitWorker()
+	wMock = &mockClitWorker{}
 	tData = &Data{Port: 8000, Worker: wMock}
 	tEcho = initRoutes(tData)
 	tRec = httptest.NewRecorder()
@@ -51,7 +49,7 @@ func TestNotFound(t *testing.T) {
 
 func TestProvides(t *testing.T) {
 	initTest(t)
-	pegomock.When(wMock.Process(matchers.AnySliceOfPtrToApiCliticsInput())).ThenReturn([]*api.CliticsOutput{}, nil)
+	wMock.On("Process", mock.Anything).Return([]*api.CliticsOutput{}, nil)
 	req := httptest.NewRequest(http.MethodPost, "/clitics", strings.NewReader(`[]`))
 	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
 
@@ -72,7 +70,7 @@ func TestFails_Data(t *testing.T) {
 }
 func TestFails(t *testing.T) {
 	initTest(t)
-	pegomock.When(wMock.Process(matchers.AnySliceOfPtrToApiCliticsInput())).ThenReturn(nil, errors.New("err"))
+	wMock.On("Process", mock.Anything).Return(nil, errors.New("err"))
 	req := httptest.NewRequest(http.MethodPost, "/clitics", strings.NewReader(`[{"word":"aa"}]`))
 	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
 
@@ -83,7 +81,7 @@ func TestFails(t *testing.T) {
 
 func TestReturnsResponse(t *testing.T) {
 	initTest(t)
-	pegomock.When(wMock.Process(matchers.AnySliceOfPtrToApiCliticsInput())).ThenReturn([]*api.CliticsOutput{{ID: 1, AccentType: "NONE"}}, nil)
+	wMock.On("Process", mock.Anything).Return([]*api.CliticsOutput{{ID: 1, AccentType: "NONE"}}, nil)
 	req := httptest.NewRequest(http.MethodPost, "/clitics", strings.NewReader(`[{"word":"aa"}]`))
 	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
 
@@ -91,4 +89,11 @@ func TestReturnsResponse(t *testing.T) {
 
 	assert.Equal(t, http.StatusOK, tRec.Code)
 	assert.Equal(t, "[{\"id\":1,\"accentType\":\"NONE\"}]", strings.TrimSpace(tRec.Body.String()))
+}
+
+type mockClitWorker struct{ mock.Mock }
+
+func (m *mockClitWorker) Process(words []*api.CliticsInput) ([]*api.CliticsOutput, error) {
+	args := m.Called(words)
+	return mocks.To[[]*api.CliticsOutput](args.Get(0)), args.Error(1)
 }
