@@ -2,7 +2,6 @@ package file
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 
@@ -30,7 +29,7 @@ func NewLoader(path string) (*Loader, error) {
 func (l *Loader) TakeWav(name string) ([]byte, error) {
 	fn := getFileName(l.baseDir, name)
 	goapp.Log.Infof("Loading suffix %s", fn)
-	return ioutil.ReadFile(fn)
+	return os.ReadFile(fn)
 }
 
 func getFileName(b, name string) string {

@@ -3,7 +3,7 @@ package wav
 import (
 	"crypto/md5"
 	"fmt"
-	"io/ioutil"
+	"os"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -79,7 +79,7 @@ func getWaveData(t *testing.T) []byte {
 }
 
 func getWaveDataN(t *testing.T, name string) []byte {
-	res, err := ioutil.ReadFile(fmt.Sprintf("_testdata/%s.wav", name))
+	res, err := os.ReadFile(fmt.Sprintf("_testdata/%s.wav", name))
 	assert.Nil(t, err)
 	return res
 }

@@ -45,7 +45,7 @@ func (p *acronyms) Process(data *synthesizer.TTSDataPart) error {
 		if err != nil {
 			return err
 		}
-		mapAbbrOutput(data, outData)
+		return mapAbbrOutput(data, outData)
 	} else {
 		goapp.Log.Debug("Skip abbreviation - no data in")
 	}

@@ -25,7 +25,7 @@ func (s *Letters) Process(word, mi string) ([]api.ResultWord, error) {
 	var cwr []*ldata
 	ad := allowDot(wl)
 	wLen := len(wr)
-	step := 1
+	var step int
 	for i := 0; i < wLen; i = i + step {
 		var d *ldata
 		ok := false

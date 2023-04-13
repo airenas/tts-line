@@ -103,12 +103,12 @@ func TestWork_Key(t *testing.T) {
 	assert.NotNil(t, c)
 	synthesizerMock.On("Work", mock.Anything).Return(&api.Result{AudioAsString: "wav"}, nil)
 
-	c.Work(newtestInput("olia"))
-	c.Work(&api.TTSRequestConfig{Text: "olia", OutputFormat: api.AudioMP3})
+	_, _ = c.Work(newtestInput("olia"))
+	_, _ = c.Work(&api.TTSRequestConfig{Text: "olia", OutputFormat: api.AudioMP3})
 	synthesizerMock.AssertNumberOfCalls(t, "Work", 2)
-	c.Work(&api.TTSRequestConfig{Text: "olia", OutputFormat: api.AudioMP3})
+	_, _ = c.Work(&api.TTSRequestConfig{Text: "olia", OutputFormat: api.AudioMP3})
 	synthesizerMock.AssertNumberOfCalls(t, "Work", 2)
-	c.Work(&api.TTSRequestConfig{Text: "olia", OutputFormat: api.AudioM4A})
+	_, _ = c.Work(&api.TTSRequestConfig{Text: "olia", OutputFormat: api.AudioM4A})
 	synthesizerMock.AssertNumberOfCalls(t, "Work", 3)
 }
 
@@ -129,11 +129,11 @@ func Test_MaxMB(t *testing.T) {
 	assert.NotNil(t, c)
 	synthesizerMock.On("Work", mock.Anything).Return(&api.Result{AudioAsString: strOfSize(1024 * 1024 / 64)}, nil) // 64 shards in cache hardcoded
 
-	c.Work(newtestInput("olia"))
+	_, _ = c.Work(newtestInput("olia"))
 	synthesizerMock.AssertNumberOfCalls(t, "Work", 1)
-	c.Work(newtestInput("olia"))
+	_, _ = c.Work(newtestInput("olia"))
 	synthesizerMock.AssertNumberOfCalls(t, "Work", 2) //expected not to add
-	c.Work(newtestInput("olia"))
+	_, _ = c.Work(newtestInput("olia"))
 	synthesizerMock.AssertNumberOfCalls(t, "Work", 3)
 }
 
@@ -143,14 +143,14 @@ func Test_MaxTextLen(t *testing.T) {
 	assert.NotNil(t, c)
 	synthesizerMock.On("Work", mock.Anything).Return(&api.Result{AudioAsString: "wav"}, nil) // 64 shards in cache hardcoded
 
-	c.Work(newtestInput("0123456789"))
+	_, _ = c.Work(newtestInput("0123456789"))
 	synthesizerMock.AssertNumberOfCalls(t, "Work", 1)
-	c.Work(newtestInput("0123456789"))
+	_, _ = c.Work(newtestInput("0123456789"))
 	synthesizerMock.AssertNumberOfCalls(t, "Work", 1)
 
-	c.Work(newtestInput("01234567891"))
+	_, _ = c.Work(newtestInput("01234567891"))
 	synthesizerMock.AssertNumberOfCalls(t, "Work", 2)
-	c.Work(newtestInput("01234567891"))
+	_, _ = c.Work(newtestInput("01234567891"))
 	synthesizerMock.AssertNumberOfCalls(t, "Work", 3)
 }
 
@@ -173,7 +173,7 @@ func TestIsOK(t *testing.T) {
 func newTestConfig(yaml string) *viper.Viper {
 	res := viper.New()
 	res.SetConfigType("yaml")
-	res.ReadConfig(strings.NewReader(yaml))
+	_ = res.ReadConfig(strings.NewReader(yaml))
 	return res
 }
 

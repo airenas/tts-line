@@ -12,11 +12,11 @@ import (
 )
 
 var multiSpaceRegexp *regexp.Regexp
-var multiNewLineRegexp *regexp.Regexp
+// var multiNewLineRegexp *regexp.Regexp
 
 func init() {
 	multiSpaceRegexp = regexp.MustCompile("[ ]{2,}")
-	multiNewLineRegexp = regexp.MustCompile("[\n]{2,}")
+	// multiNewLineRegexp = regexp.MustCompile("[\n]{2,}")
 }
 
 //Text removes html tags from text
@@ -51,7 +51,7 @@ func skipIgnoreTags(text string) (string, error) {
 
 func docToString(doc *html.Node) string {
 	res := strings.Builder{}
-	html.Render(&res, doc)
+	_ = html.Render(&res, doc)
 	return res.String()
 }
 

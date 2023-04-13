@@ -46,7 +46,7 @@ func (sp *SessionProvider) Close() {
 	if sp.client != nil {
 		ctx, cancel := mongoContext()
 		defer cancel()
-		sp.client.Disconnect(ctx)
+		_ = sp.client.Disconnect(ctx)
 	}
 }
 
@@ -106,7 +106,7 @@ func checkIndex(s mongo.Session, indexData IndexData, database string) error {
 	}
 	index := mongo.IndexModel{
 		Keys:    keys,
-		Options: options.Index().SetUnique(indexData.Unique).SetBackground(true).SetSparse(true),
+		Options: options.Index().SetUnique(indexData.Unique).SetSparse(true),
 	}
 	_, err := c.Indexes().CreateOne(context.Background(), index)
 	return err

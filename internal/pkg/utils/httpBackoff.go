@@ -96,7 +96,7 @@ func IsRetryable(err error) bool {
 
 func isTimeout(err error) bool {
 	e, ok := err.(net.Error)
-	return ok && (e.Timeout() || e.Temporary())
+	return ok && (e.Timeout())
 }
 
 // Info returns info about wrapper

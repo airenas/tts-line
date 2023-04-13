@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"errors"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -73,7 +72,7 @@ func Test_Returns(t *testing.T) {
 	req := httptest.NewRequest("POST", "/synthesize", toReader(api.Input{Text: "olia", Speed: 0.9, Voice: "aa", Priority: 10}))
 	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
 	resp := testCode(t, req, 200)
-	bytes, _ := ioutil.ReadAll(resp.Body)
+	bytes, _ := io.ReadAll(resp.Body)
 	assert.Contains(t, string(bytes), `"data":"wav"`)
 
 	synthesizerMock.AssertNumberOfCalls(t, "Work", 1)

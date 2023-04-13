@@ -1,7 +1,7 @@
 package utils
 
 import (
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -25,9 +25,9 @@ type testType struct {
 func TestInvokeText(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
 		assert.Equal(t, "POST", req.Method)
-		br, _ := ioutil.ReadAll(req.Body)
+		br, _ := io.ReadAll(req.Body)
 		assert.Equal(t, "olia", string(br))
-		rw.Write([]byte(`{"test":"respo"}`))
+		_, _ = rw.Write([]byte(`{"test":"respo"}`))
 	}))
 	defer server.Close()
 	hw, _ := NewHTTPWrap(server.URL)
@@ -45,9 +45,9 @@ func TestInvokeText(t *testing.T) {
 func TestInvokeJSON(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
 		assert.Equal(t, "POST", req.Method)
-		br, _ := ioutil.ReadAll(req.Body)
+		br, _ := io.ReadAll(req.Body)
 		assert.Equal(t, "{\"test\":\"haha\"}\n", string(br))
-		rw.Write([]byte(`{"test":"respo"}`))
+		_, _ = rw.Write([]byte(`{"test":"respo"}`))
 	}))
 	defer server.Close()
 	hw, _ := NewHTTPWrap(server.URL)
@@ -75,7 +75,7 @@ func TestInvokeFail_Server(t *testing.T) {
 
 func TestInvokeFail_Response(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
-		rw.Write([]byte(`{"test":"respo"`))
+		_, _ = rw.Write([]byte(`{"test":"respo"`))
 	}))
 	defer server.Close()
 	hw, _ := NewHTTPWrap(server.URL)
@@ -86,7 +86,7 @@ func TestInvokeFail_Response(t *testing.T) {
 
 func TestTimeout(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
-		rw.Write([]byte(`{"test":"respo"}`))
+		_, _ = rw.Write([]byte(`{"test":"respo"}`))
 	}))
 	defer server.Close()
 	hw, _ := NewHTTPWrap(server.URL)
@@ -100,7 +100,7 @@ func TestTimeout(t *testing.T) {
 
 func TestTimeout_Fail(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
-		rw.Write([]byte(`{"test":"respo"}`))
+		_, _ = rw.Write([]byte(`{"test":"respo"}`))
 		time.Sleep(time.Second)
 	}))
 	defer server.Close()

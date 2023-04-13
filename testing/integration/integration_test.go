@@ -8,7 +8,6 @@ import (
 	"encoding/base64"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"log"
 	"net"
 	"net/http"
@@ -235,7 +234,7 @@ func startMockService(port int) (net.Listener, *httptest.Server) {
 		case "/mock-obscene-filter":
 			io.Copy(w, strings.NewReader(`[{"token":"Olia","obscene":0}]`))
 		case "/mock-am":
-			b, err := ioutil.ReadFile("data/test.wav")
+			b, err := os.ReadFile("data/test.wav")
 			if err != nil {
 				log.Printf(err.Error())
 			}

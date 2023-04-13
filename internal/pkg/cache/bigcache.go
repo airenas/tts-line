@@ -67,7 +67,7 @@ func (c *BigCacher) Work(inp *api.TTSRequestConfig) (*api.Result, error) {
 	goapp.Log.Debug("Not found in cache")
 	res, err := c.realSynt.Work(inp)
 	if res != nil && err == nil {
-		c.cache.Set(key(inp), []byte(res.AudioAsString))
+		_ = c.cache.Set(key(inp), []byte(res.AudioAsString))
 	}
 	return res, err
 }

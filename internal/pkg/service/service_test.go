@@ -3,7 +3,6 @@ package service
 import (
 	"encoding/json"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -61,7 +60,7 @@ func Test_Returns(t *testing.T) {
 	req := httptest.NewRequest("POST", "/synthesize", toReader(api.Input{Text: "olia"}))
 	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
 	resp := testCode(t, req, 200)
-	bytes, _ := ioutil.ReadAll(resp.Body)
+	bytes, _ := io.ReadAll(resp.Body)
 	assert.Contains(t, string(bytes), `"audioAsString":"wav"`)
 	synthesizerMock.AssertNumberOfCalls(t, "Work", 1)
 	txt := mocks.To[*api.TTSRequestConfig](synthesizerMock.Calls[0].Arguments[0])
@@ -123,7 +122,7 @@ func TestCustom_Returns(t *testing.T) {
 	req := httptest.NewRequest("POST", "/synthesizeCustom?requestID=1", toReader(api.Input{Text: "olia"}))
 	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
 	resp := testCode(t, req, 200)
-	bytes, _ := ioutil.ReadAll(resp.Body)
+	bytes, _ := io.ReadAll(resp.Body)
 	assert.Contains(t, string(bytes), `"audioAsString":"wav"`)
 
 	synthesizerMock.AssertNumberOfCalls(t, "Work", 1)
@@ -245,7 +244,7 @@ func TestInfo_Returns(t *testing.T) {
 	req := httptest.NewRequest(http.MethodGet, "/request/olia1", nil)
 	igMock.On("Provide", mock.Anything).Return(&api.InfoResult{Count: 123}, nil)
 	resp := testCode(t, req, 200)
-	bytes, _ := ioutil.ReadAll(resp.Body)
+	bytes, _ := io.ReadAll(resp.Body)
 	assert.Contains(t, string(bytes), `"count":123`)
 
 	igMock.AssertNumberOfCalls(t, "Provide", 1)

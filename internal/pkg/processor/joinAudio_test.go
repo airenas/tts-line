@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"encoding/base64"
 	"errors"
-	"io/ioutil"
+	"os"
 	"testing"
 	"time"
 
@@ -267,7 +267,7 @@ func getTestPauseSize(as string, dur time.Duration) uint32 {
 
 func getWaveData(t *testing.T) []byte {
 	t.Helper()
-	res, err := ioutil.ReadFile("../wav/_testdata/test.wav")
+	res, err := os.ReadFile("../wav/_testdata/test.wav")
 	assert.Nil(t, err)
 	return res
 }
