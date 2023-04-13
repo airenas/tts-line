@@ -4,6 +4,8 @@ import (
 	"testing"
 
 	"github.com/petergtz/pegomock"
+	"github.com/stretchr/testify/mock"
+	aapi "github.com/airenas/tts-line/internal/pkg/acronyms/service/api"
 )
 
 //go:generate pegomock generate --package=mocks --output=synthesizer.go -m github.com/airenas/tts-line/internal/pkg/service Synthesizer
@@ -26,8 +28,6 @@ import (
 
 //go:generate pegomock generate --package=mocks --output=exporter.go -m github.com/airenas/tts-line/internal/pkg/exporter Exporter
 
-//go:generate pegomock generate --package=mocks --output=acrWorker.go -m github.com/airenas/tts-line/internal/pkg/acronyms/service Worker
-
 //AttachMockToTest register pegomock verification to be passed to testing engine
 func AttachMockToTest(t *testing.T) {
 	pegomock.RegisterMockFailHandler(handleByTest(t))
@@ -48,4 +48,11 @@ func To[T interface{}](val interface{}) T {
 		return res
 	}
 	return val.(T)
+}
+
+type Worker struct{ mock.Mock }
+
+func (m *Worker) Process(word, mi string) ([]aapi.ResultWord, error) {
+	args := m.Called(word, mi)
+	return To[[]aapi.ResultWord](args.Get(0)), args.Error(1)
 }

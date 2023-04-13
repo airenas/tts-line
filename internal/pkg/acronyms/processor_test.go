@@ -5,27 +5,26 @@ import (
 
 	"github.com/airenas/tts-line/internal/pkg/acronyms/service/api"
 	"github.com/airenas/tts-line/internal/pkg/test/mocks"
-	"github.com/petergtz/pegomock"
 
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 )
 
 var (
-	w1Mock *mocks.MockWorker
-	w2Mock *mocks.MockWorker
+	w1Mock *mocks.Worker
+	w2Mock *mocks.Worker
 )
 
 func initTest(t *testing.T) {
-	mocks.AttachMockToTest(t)
-	w1Mock = mocks.NewMockWorker()
-	w2Mock = mocks.NewMockWorker()
+	w1Mock = &mocks.Worker{}
+	w2Mock = &mocks.Worker{}
 }
 
 func TestProcessFirst(t *testing.T) {
 	initTest(t)
-	pegomock.When(w1Mock.Process(pegomock.AnyString(), pegomock.AnyString())).ThenReturn([]api.ResultWord{{Word: "olia"}}, nil)
-	pegomock.When(w2Mock.Process(pegomock.AnyString(), pegomock.AnyString())).ThenReturn([]api.ResultWord{{Word: "olia2"}}, nil)
+	w1Mock.On("Process", mock.Anything, mock.Anything).Return([]api.ResultWord{{Word: "olia"}}, nil)
+	w2Mock.On("Process", mock.Anything, mock.Anything).Return([]api.ResultWord{{Word: "olia2"}}, nil)
 	pr, err := NewProcessor(w1Mock, w2Mock)
 	assert.Nil(t, err)
 	assert.NotNil(t, pr)
@@ -37,8 +36,8 @@ func TestProcessFirst(t *testing.T) {
 
 func TestProcessSecond(t *testing.T) {
 	initTest(t)
-	pegomock.When(w1Mock.Process(pegomock.AnyString(), pegomock.AnyString())).ThenReturn(nil, nil)
-	pegomock.When(w2Mock.Process(pegomock.AnyString(), pegomock.AnyString())).ThenReturn([]api.ResultWord{{Word: "olia2"}}, nil)
+	w1Mock.On("Process", mock.Anything, mock.Anything).Return(nil, nil)
+	w2Mock.On("Process", mock.Anything, mock.Anything).Return([]api.ResultWord{{Word: "olia2"}}, nil)
 	pr, err := NewProcessor(w1Mock, w2Mock)
 	assert.Nil(t, err)
 	assert.NotNil(t, pr)
@@ -50,8 +49,8 @@ func TestProcessSecond(t *testing.T) {
 
 func TestProcessLongWord(t *testing.T) {
 	initTest(t)
-	pegomock.When(w1Mock.Process(pegomock.AnyString(), pegomock.AnyString())).ThenReturn(nil, nil)
-	pegomock.When(w2Mock.Process(pegomock.AnyString(), pegomock.AnyString())).ThenReturn([]api.ResultWord{{Word: "olia2"}}, nil)
+	w1Mock.On("Process", mock.Anything, mock.Anything).Return(nil, nil)
+	w2Mock.On("Process", mock.Anything, mock.Anything).Return([]api.ResultWord{{Word: "olia2"}}, nil)
 	pr, err := NewProcessor(w1Mock, w2Mock)
 	assert.Nil(t, err)
 	assert.NotNil(t, pr)
@@ -63,8 +62,8 @@ func TestProcessLongWord(t *testing.T) {
 
 func TestProcessShortWord(t *testing.T) {
 	initTest(t)
-	pegomock.When(w1Mock.Process(pegomock.AnyString(), pegomock.AnyString())).ThenReturn(nil, nil)
-	pegomock.When(w2Mock.Process(pegomock.AnyString(), pegomock.AnyString())).ThenReturn([]api.ResultWord{{Word: "olia2"}}, nil)
+	w1Mock.On("Process", mock.Anything, mock.Anything).Return(nil, nil)
+	w2Mock.On("Process", mock.Anything, mock.Anything).Return([]api.ResultWord{{Word: "olia2"}}, nil)
 	pr, err := NewProcessor(w1Mock, w2Mock)
 	assert.Nil(t, err)
 	assert.NotNil(t, pr)
@@ -76,8 +75,8 @@ func TestProcessShortWord(t *testing.T) {
 
 func TestFailsFirst(t *testing.T) {
 	initTest(t)
-	pegomock.When(w1Mock.Process(pegomock.AnyString(), pegomock.AnyString())).ThenReturn(nil, errors.New("err"))
-	pegomock.When(w2Mock.Process(pegomock.AnyString(), pegomock.AnyString())).ThenReturn([]api.ResultWord{{Word: "olia2"}}, nil)
+	w1Mock.On("Process", mock.Anything, mock.Anything).Return(nil, errors.New("err"))
+	w2Mock.On("Process", mock.Anything, mock.Anything).Return([]api.ResultWord{{Word: "olia2"}}, nil)
 	pr, err := NewProcessor(w1Mock, w2Mock)
 	assert.Nil(t, err)
 	assert.NotNil(t, pr)
@@ -87,8 +86,8 @@ func TestFailsFirst(t *testing.T) {
 
 func TestFailsSecond(t *testing.T) {
 	initTest(t)
-	pegomock.When(w1Mock.Process(pegomock.AnyString(), pegomock.AnyString())).ThenReturn(nil, nil)
-	pegomock.When(w2Mock.Process(pegomock.AnyString(), pegomock.AnyString())).ThenReturn(nil, errors.New("err"))
+	w1Mock.On("Process", mock.Anything, mock.Anything).Return(nil, nil)
+	w2Mock.On("Process", mock.Anything, mock.Anything).Return(nil, errors.New("err"))
 	pr, err := NewProcessor(w1Mock, w2Mock)
 	assert.Nil(t, err)
 	assert.NotNil(t, pr)
