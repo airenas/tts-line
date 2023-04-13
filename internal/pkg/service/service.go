@@ -31,7 +31,6 @@ type (
 	Synthesizer interface {
 		Work(*api.TTSRequestConfig) (*api.Result, error)
 	}
-	//InfoGetter main sythesis processor
 	InfoGetter interface {
 		Provide(ID string) (*api.InfoResult, error)
 	}

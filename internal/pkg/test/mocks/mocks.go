@@ -3,16 +3,11 @@ package mocks
 import (
 	"testing"
 
+	aapi "github.com/airenas/tts-line/internal/pkg/acronyms/service/api"
+	tapi "github.com/airenas/tts-line/internal/pkg/service/api"
 	"github.com/petergtz/pegomock"
 	"github.com/stretchr/testify/mock"
-	aapi "github.com/airenas/tts-line/internal/pkg/acronyms/service/api"
 )
-
-//go:generate pegomock generate --package=mocks --output=synthesizer.go -m github.com/airenas/tts-line/internal/pkg/service Synthesizer
-
-//go:generate pegomock generate --package=mocks --output=infoGetter.go -m github.com/airenas/tts-line/internal/pkg/service InfoGetter
-
-//go:generate pegomock generate --package=mocks --output=configurator.go -m github.com/airenas/tts-line/internal/pkg/service Configurator
 
 //go:generate pegomock generate --package=mocks --output=httpInvoker.go -m github.com/airenas/tts-line/internal/pkg/processor HTTPInvoker
 
@@ -26,7 +21,7 @@ import (
 
 //go:generate pegomock generate --package=mocks --output=audioLoader.go -m github.com/airenas/tts-line/internal/pkg/processor AudioLoader
 
-//AttachMockToTest register pegomock verification to be passed to testing engine
+// AttachMockToTest register pegomock verification to be passed to testing engine
 func AttachMockToTest(t *testing.T) {
 	pegomock.RegisterMockFailHandler(handleByTest(t))
 }
@@ -53,4 +48,11 @@ type Worker struct{ mock.Mock }
 func (m *Worker) Process(word, mi string) ([]aapi.ResultWord, error) {
 	args := m.Called(word, mi)
 	return To[[]aapi.ResultWord](args.Get(0)), args.Error(1)
+}
+
+type Synthesizer struct{ mock.Mock }
+
+func (m *Synthesizer) Work(in *tapi.TTSRequestConfig) (*tapi.Result, error) {
+	args := m.Called(in)
+	return To[*tapi.Result](args.Get(0)), args.Error(1)
 }
