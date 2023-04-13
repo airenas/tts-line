@@ -21,8 +21,8 @@ require (
 	github.com/stretchr/testify v1.7.1
 	github.com/tmdvs/Go-Emoji-Utils v1.1.0
 	go.mongodb.org/mongo-driver v1.8.4
-	golang.org/x/net v0.0.0-20211015210444-4f30a5c0130f
-	golang.org/x/text v0.3.7
+	golang.org/x/net v0.9.0
+	golang.org/x/text v0.9.0
 	mvdan.cc/xurls/v2 v2.3.0
 )
 
@@ -76,7 +76,7 @@ require (
 	github.com/youmark/pkcs8 v0.0.0-20181117223130-1be2e3e5546d // indirect
 	golang.org/x/crypto v0.0.0-20210920023735-84f357641f63 // indirect
 	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c // indirect
-	golang.org/x/sys v0.0.0-20211210111614-af8b64212486 // indirect
+	golang.org/x/sys v0.7.0 // indirect
 	golang.org/x/time v0.0.0-20201208040808-7e3f01d25324 // indirect
 	google.golang.org/protobuf v1.27.1 // indirect
 	gopkg.in/ini.v1 v1.66.2 // indirect
