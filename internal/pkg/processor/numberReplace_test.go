@@ -41,11 +41,11 @@ func TestInvokeNumberReplace(t *testing.T) {
 	d := synthesizer.TTSData{}
 	httpInvokerMock.On("InvokeText", mock.Anything, mock.Anything).Run(
 		func(params mock.Arguments) {
-			*params[1].(*string) = "trys"
+			*params[1].(*[]string) = []string{"trys"}
 		}).Return(nil)
 	err := pr.Process(&d)
 	assert.Nil(t, err)
-	assert.Equal(t, "trys", d.TextWithNumbers)
+	assert.Equal(t, []string{"trys"}, d.TextWithNumbers)
 }
 
 func TestInvokeNumberReplace_Fail(t *testing.T) {
@@ -93,7 +93,7 @@ func TestInvokeSSMLNumberReplace(t *testing.T) {
 		}).Return(nil)
 	err := pr.Process(&d)
 	assert.Nil(t, err)
-	assert.Equal(t, "trys oli{a/} keturi", d.TextWithNumbers)
+	assert.Equal(t, []string{"trys oli{a/} keturi"}, d.TextWithNumbers)
 }
 
 func TestInvokeSSMLNumberReplace_Real(t *testing.T) {
@@ -109,8 +109,8 @@ func TestInvokeSSMLNumberReplace_Real(t *testing.T) {
 		}).Return(nil)
 	err := pr.Process(&d)
 	assert.Nil(t, err)
-	assert.Equal(t, "kadenciją tūkstantis devyni šimtai devyniasdešimt aštuntaisiais-du tūkstančiai antraisiais metais {o\\}rb buvo demokratiškas vadovas."+
-		" Kad du tūkstančiai dešimtaisiais metais grįžęs į valdžią jis staiga virto autokratu, buvo didelis", d.TextWithNumbers)
+	assert.Equal(t, []string{"kadenciją tūkstantis devyni šimtai devyniasdešimt aštuntaisiais-du tūkstančiai antraisiais metais {o\\}rb buvo demokratiškas vadovas." +
+		" Kad du tūkstančiai dešimtaisiais metais grįžęs į valdžią jis staiga virto autokratu, buvo didelis"}, d.TextWithNumbers)
 }
 
 func TestInvokeSSMLNumberReplace_Real1(t *testing.T) {
@@ -126,8 +126,8 @@ func TestInvokeSSMLNumberReplace_Real1(t *testing.T) {
 		}).Return(nil)
 	err := pr.Process(&d)
 	assert.Nil(t, err)
-	assert.Equal(t, "kadenciją tūkstantis devyni šimtai devyniasdešimt aštuntaisiais-du tūkstančiai antraisiais metais {o\\}rb buvo demokratiškas vadovas."+
-		" Kad du tūkstančiai dešimtaisiais metais grįžęs į valdžią jis staiga virto autokratu, buvo", d.TextWithNumbers)
+	assert.Equal(t, []string{"kadenciją tūkstantis devyni šimtai devyniasdešimt aštuntaisiais-du tūkstančiai antraisiais metais {o\\}rb buvo demokratiškas vadovas." +
+		" Kad du tūkstančiai dešimtaisiais metais grįžęs į valdžią jis staiga virto autokratu, buvo"}, d.TextWithNumbers)
 }
 
 func TestInvokeSSMLNumberReplace_Real2(t *testing.T) {
@@ -143,8 +143,8 @@ func TestInvokeSSMLNumberReplace_Real2(t *testing.T) {
 		}).Return(nil)
 	err := pr.Process(&d)
 	assert.Nil(t, err)
-	assert.Equal(t, "Robertsonas (tūkstantis devyni šimtai aštuoniasdešimt aštuntieji metai surinkęs dvidešimt penki procentai balsų), bjūk{e~}nenas (tūkstantis devyni šimtai devyniasdešimt "+
-		"šeštieji metai surinkęs dvidešimt trys procentai balsų) ir f{o/}rbzas (du tūkstantieji metai surinkęs trisdešimt vienas procentas balsų)", d.TextWithNumbers)
+	assert.Equal(t, []string{"Robertsonas (tūkstantis devyni šimtai aštuoniasdešimt aštuntieji metai surinkęs dvidešimt penki procentai balsų), bjūk{e~}nenas (tūkstantis devyni šimtai devyniasdešimt " +
+		"šeštieji metai surinkęs dvidešimt trys procentai balsų) ir f{o/}rbzas (du tūkstantieji metai surinkęs trisdešimt vienas procentas balsų)"}, d.TextWithNumbers)
 }
 
 func Test_doPartlyAlign(t *testing.T) {
@@ -189,8 +189,8 @@ func Test_mapAccentsBack(t *testing.T) {
 		{name: "empty", args: args{new: "", orig: []string{""}}, want: []string{""}, wantErr: false},
 		{name: "no accent", args: args{new: "a b c d r", orig: []string{"a b c d r"}}, want: []string{"a b c d r"}, wantErr: false},
 		{name: "with accent", args: args{new: "a b c d r", orig: []string{"a {b/} c d {r~}"}}, want: []string{"a {b/} c d {r~}"}, wantErr: false},
-		{name: "fail on other word", args: args{new: "a b c d k", orig: []string{"a {b/} c d {r~}"}}, want: []string{""}, wantErr: true},
-		{name: "fail on missing", args: args{new: "a b c d", orig: []string{"a {b/} c d {r~}"}}, want: []string{""}, wantErr: true},
+		{name: "fail on other word", args: args{new: "a b c d k", orig: []string{"a {b/} c d {r~}"}}, want: nil, wantErr: true},
+		{name: "fail on missing", args: args{new: "a b c d", orig: []string{"a {b/} c d {r~}"}}, want: nil, wantErr: true},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

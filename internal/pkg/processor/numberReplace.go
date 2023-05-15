@@ -120,7 +120,7 @@ func mapAccentsBack(new string, origArr []string) ([]string, error) {
 		l := strings.Count(s, " ")
 		nID := len(alignIDs)
 		if nID > (l + wi){
-			nID = alignIDs[l + wi]
+			nID = alignIDs[l + wi] + 1
 		} 
 		if nID == -1 {
 			return nil, errors.Errorf("no word alignment for %v", s)
