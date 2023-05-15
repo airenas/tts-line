@@ -73,7 +73,7 @@ func TestWork_HasUUID(t *testing.T) {
 func TestWork_ReturnText(t *testing.T) {
 	initTest(t)
 	processorMock.f = func(d *TTSData) error {
-		d.TextWithNumbers = "olia lia"
+		d.TextWithNumbers = []string{"olia lia"}
 		return nil
 	}
 	res, _ := worker.Work(&api.TTSRequestConfig{Text: "olia", OutputTextFormat: api.TextNormalized})
@@ -85,7 +85,7 @@ func TestWork_ReturnText(t *testing.T) {
 func TestWork_SSML(t *testing.T) {
 	initTest(t)
 	processorMock.f = func(d *TTSData) error {
-		d.TextWithNumbers = "olia lia"
+		d.TextWithNumbers = []string{"olia lia"}
 		assert.Equal(t, 3, len(d.SSMLParts))
 		return nil
 	}
@@ -138,7 +138,7 @@ func TestGetTranscriberAccent(t *testing.T) {
 func TestMapResult_Normalized(t *testing.T) {
 	d := &TTSData{}
 	d.Input = &api.TTSRequestConfig{OutputTextFormat: api.TextNormalized}
-	d.TextWithNumbers = "oo"
+	d.TextWithNumbers = []string{"oo"}
 	res, err := mapResult(d)
 	assert.Nil(t, err)
 	assert.Equal(t, "oo", res.Text)

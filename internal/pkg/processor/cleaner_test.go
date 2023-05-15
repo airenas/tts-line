@@ -40,7 +40,7 @@ func TestCleanProcess(t *testing.T) {
 	httpJSONMock.AssertNumberOfCalls(t, "InvokeJSON", 1)
 	cp1 := httpJSONMock.Calls[0].Arguments[0]
 	assert.Equal(t, &normData{Text: " a a"}, cp1)
-	assert.Equal(t, "clean text", d.CleanedText)
+	assert.Equal(t, []string{"clean text"}, d.CleanedText)
 }
 
 func TestCleanProcess_Fail(t *testing.T) {
@@ -85,8 +85,10 @@ func Test_getNormText(t *testing.T) {
 		want string
 	}{
 		{name: "originalText", args: &synthesizer.TTSData{OriginalText: "olia olia"}, want: "olia olia"},
-		{name: "from Parts", args: &synthesizer.TTSData{OriginalTextParts: []*synthesizer.TTSTextPart{{Text: "olia"}, {Text: "olia"}}}, want: "olia olia"},
-		{name: "from Parts Accented", args: &synthesizer.TTSData{OriginalTextParts: []*synthesizer.TTSTextPart{{Text: "olia"}, {Text: "o1", Accented: "aa{a/}"}}}, want: "olia aa{a/}"},
+		{name: "from Parts", args: &synthesizer.TTSData{OriginalTextParts: []*synthesizer.TTSTextPart{{Text: "olia"}, {Text: "olia"}}},
+			want: splitIndicator + "olia " + splitIndicator + "olia"},
+		{name: "from Parts Accented", args: &synthesizer.TTSData{OriginalTextParts: []*synthesizer.TTSTextPart{{Text: "olia"}, {Text: "o1", Accented: "aa{a/}"}}},
+			want: splitIndicator + "olia " + splitIndicator + "aa{a/}"},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

@@ -16,7 +16,7 @@ type cleaner struct {
 	httpWrap HTTPInvokerJSON
 }
 
-//NewCleaner creates new text clean processor
+// NewCleaner creates new text clean processor
 func NewCleaner(urlStr string) (synthesizer.Processor, error) {
 	res := &cleaner{}
 	var err error
@@ -42,13 +42,38 @@ func (p *cleaner) Process(data *synthesizer.TTSData) error {
 		return err
 	}
 
-	data.CleanedText = output.Text
-	if data.CleanedText == "" {
+	data.CleanedText, err = processCleanOutput(output.Text, data.OriginalTextParts)
+	if err != nil {
+		return err
+	}
+	if emptyStrArr(data.CleanedText) {
 		return utils.ErrNoInput
 	}
-	utils.LogData("Output: ", data.CleanedText)
+	utils.LogData("Output: ", strings.Join(data.CleanedText, ""))
 	return nil
 }
+
+func emptyStrArr(arr []string) bool {
+	for _, s := range arr {
+		if len(s) > 0 {
+			return false
+		}
+	}
+	return true
+}
+
+func processCleanOutput(text string, textPart []*synthesizer.TTSTextPart) ([]string, error) {
+	if len(textPart) == 0 {
+		return []string{text}, nil
+	}
+	splits := strings.Split(text, splitIndicator)
+	if len(textPart) != len(splits) - 1 {
+		return nil, fmt.Errorf("can't restore after clean, returned count of parts is not the same")
+	}
+	return splits[1:], nil
+}
+
+const splitIndicator = "{i_t_s}"
 
 func getNormText(data *synthesizer.TTSData) string {
 	if len(data.OriginalTextParts) > 0 {
@@ -57,6 +82,7 @@ func getNormText(data *synthesizer.TTSData) string {
 			if res.Len() > 0 {
 				res.WriteString(" ")
 			}
+			res.WriteString(splitIndicator) // add split indicator
 			if s.Accented != "" {
 				res.WriteString(s.Accented)
 			} else {

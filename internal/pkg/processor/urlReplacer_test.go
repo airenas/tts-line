@@ -18,7 +18,7 @@ func TestNewReplacer(t *testing.T) {
 func TestReplacerProcess(t *testing.T) {
 	initTestJSON(t)
 	d := &synthesizer.TTSData{}
-	d.NormalizedText = " a a www.delfi.lt"
+	d.NormalizedText = []string{" a a www.delfi.lt"}
 	pr := NewURLReplacer()
 	require.NotNil(t, pr)
 	err := pr.Process(d)
@@ -29,7 +29,7 @@ func TestReplacerProcess(t *testing.T) {
 func TestReplacer_Skip(t *testing.T) {
 	d := &synthesizer.TTSData{}
 	d.Cfg.JustAM = true
-	d.CleanedText = "text"
+	d.CleanedText = []string{"text"}
 	pr := NewURLReplacer()
 	err := pr.Process(d)
 	require.Nil(t, err)

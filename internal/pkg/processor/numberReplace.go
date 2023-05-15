@@ -37,7 +37,7 @@ func (p *numberReplace) Process(data *synthesizer.TTSData) error {
 		goapp.Log.Info("Skip numberReplace")
 		return nil
 	}
-	return p.httpWrap.InvokeText(data.Text, &data.TextWithNumbers)
+	return p.httpWrap.InvokeText(strings.Join(data.Text, ""), &data.TextWithNumbers)
 }
 
 func (p *numberReplace) skip(data *synthesizer.TTSData) bool {
@@ -71,7 +71,7 @@ func (p *ssmlNumberReplace) Process(data *synthesizer.TTSData) error {
 		return nil
 	}
 	res := ""
-	err := p.httpWrap.InvokeText(clearAccents(data.Text), &res)
+	err := p.httpWrap.InvokeText(clearAccents(strings.Join(data.Text, "")), &res)
 	if err != nil {
 		return err
 	}
@@ -79,7 +79,8 @@ func (p *ssmlNumberReplace) Process(data *synthesizer.TTSData) error {
 	return err
 }
 
-func mapAccentsBack(new, orig string) (string, error) {
+func mapAccentsBack(new string, origArr []string) ([]string, error) {
+	orig := strings.Join(origArr, "")
 	oStrs := strings.Split(orig, " ")
 	nStrs := strings.Split(new, " ")
 	accWrds := map[int]bool{}
@@ -90,9 +91,9 @@ func mapAccentsBack(new, orig string) (string, error) {
 			accWrds[i] = true
 		}
 	}
-	if len(accWrds) == 0 {
-		return new, nil
-	}
+	// if len(accWrds) == 0 {
+	// 	return new, nil
+	// }
 
 	alignIDs, err := align(ocStrs, nStrs, 20)
 	if err != nil {
@@ -100,20 +101,34 @@ func mapAccentsBack(new, orig string) (string, error) {
 		goapp.Log.Info("increase align size")
 		alignIDs, err = align(ocStrs, nStrs, 40)
 		if err != nil {
-			return "", errors.Wrapf(err, "can't align")
+			return nil, errors.Wrapf(err, "can't align")
 		}
 	}
 	for k := range accWrds {
 		nID := alignIDs[k]
 		if nID == -1 {
-			return "", errors.Errorf("no word alignment for %s, ID: %d", oStrs[k], k)
+			return nil, errors.Errorf("no word alignment for %s, ID: %d", oStrs[k], k)
 		}
 		if nStrs[nID] != ocStrs[k] {
-			return "", errors.Errorf("no word alignment for %s, ID: %d, got %s", oStrs[k], k, nStrs[nID])
+			return nil, errors.Errorf("no word alignment for %s, ID: %d, got %s", oStrs[k], k, nStrs[nID])
 		}
 		nStrs[nID] = oStrs[k]
 	}
-	return strings.Join(nStrs, " "), nil
+	var res []string
+	wi := 0
+	for _, s := range origArr{
+		l := strings.Count(s, " ")
+		nID := len(alignIDs)
+		if nID > (l + wi){
+			nID = alignIDs[l + wi]
+		} 
+		if nID == -1 {
+			return nil, errors.Errorf("no word alignment for %v", s)
+		}
+		res = append(res, strings.Join(nStrs[wi:nID], " "))
+		wi += l
+	}
+	return res, nil
 }
 
 func align(oStrs []string, nStrs []string, step int) ([]int, error) {

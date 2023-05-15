@@ -19,7 +19,7 @@ type urlReplacer struct {
 	skipURLs    map[string]bool
 }
 
-//NewURLReplacer creates new URL replacer processor
+// NewURLReplacer creates new URL replacer processor
 func NewURLReplacer() synthesizer.Processor {
 	res := &urlReplacer{}
 	res.urlPhrase = "Internetinis adresas"
@@ -37,9 +37,13 @@ func (p *urlReplacer) Process(data *synthesizer.TTSData) error {
 		return nil
 	}
 	defer goapp.Estimate("URL replace")()
-	utils.LogData("Input: ", data.NormalizedText)
-	data.Text = p.replaceURLs(data.NormalizedText)
-	utils.LogData("Output: ", data.Text)
+	text := strings.Join(data.NormalizedText, "")
+	utils.LogData("Input: ", text)
+	data.Text = nil
+	for _, s := range data.NormalizedText{
+		data.Text = append(data.Text, p.replaceURLs(s))
+	}
+	utils.LogData("Output: ", strings.Join(data.Text, ""))
 	return nil
 }
 
@@ -58,7 +62,7 @@ func (p *urlReplacer) replaceURLs(s string) string {
 	})
 }
 
-//baseURL removes http, https, www, and / at the end
+// baseURL removes http, https, www, and / at the end
 func baseURL(s string) string {
 	res := s
 	for _, p := range [...]string{"https://", "http://", "www."} {
