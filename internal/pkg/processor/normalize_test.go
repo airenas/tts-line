@@ -39,7 +39,7 @@ func TestNormalizeProcess(t *testing.T) {
 	httpJSONMock.AssertNumberOfCalls(t, "InvokeJSON", 1)
 	cp1 := httpJSONMock.Calls[0].Arguments[0]
 	assert.Equal(t, &normRequestData{Orig: " a a"}, cp1)
-	assert.Equal(t, "out text", d.NormalizedText)
+	assert.Equal(t, []string{"out text"}, d.NormalizedText)
 }
 
 func TestNormalizeProcess_Fail(t *testing.T) {

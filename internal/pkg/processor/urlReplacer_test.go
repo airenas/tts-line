@@ -23,7 +23,7 @@ func TestReplacerProcess(t *testing.T) {
 	require.NotNil(t, pr)
 	err := pr.Process(d)
 	assert.Nil(t, err)
-	assert.Equal(t, " a a Internetinis adresas", d.Text)
+	assert.Equal(t, []string{" a a Internetinis adresas"}, d.Text)
 }
 
 func TestReplacer_Skip(t *testing.T) {
@@ -33,7 +33,7 @@ func TestReplacer_Skip(t *testing.T) {
 	pr := NewURLReplacer()
 	err := pr.Process(d)
 	require.Nil(t, err)
-	assert.Equal(t, "", d.Text)
+	assert.Nil(t, d.Text)
 }
 
 func Test_replaceURLs(t *testing.T) {
