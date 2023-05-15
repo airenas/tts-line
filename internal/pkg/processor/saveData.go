@@ -2,6 +2,7 @@ package processor
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/airenas/go-app/pkg/goapp"
 	"github.com/pkg/errors"
@@ -44,9 +45,9 @@ func getText(data *synthesizer.TTSData, t utils.RequestTypeEnum) string {
 	case utils.RequestOriginal:
 		return data.OriginalText
 	case utils.RequestCleaned:
-		return data.Text
+		return strings.Join(data.Text, "")
 	case utils.RequestNormalized:
-		return data.TextWithNumbers
+		return strings.Join(data.TextWithNumbers, "")
 	case utils.RequestUser:
 		return data.OriginalText
 	case utils.RequestOriginalSSML:

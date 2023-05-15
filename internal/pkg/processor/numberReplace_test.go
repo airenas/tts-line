@@ -86,7 +86,7 @@ func TestInvokeSSMLNumberReplace(t *testing.T) {
 	pr, _ := NewSSMLNumberReplace("http://server")
 	assert.NotNil(t, pr)
 	pr.(*ssmlNumberReplace).httpWrap = httpInvokerMock
-	d := synthesizer.TTSData{Text: "3 oli{a/} 4"}
+	d := synthesizer.TTSData{Text: []string{"3 oli{a/} 4"}}
 	httpInvokerMock.On("InvokeText", mock.Anything, mock.Anything).Run(
 		func(params mock.Arguments) {
 			*params[1].(*string) = "trys olia keturi"
@@ -101,7 +101,7 @@ func TestInvokeSSMLNumberReplace_Real(t *testing.T) {
 	pr, _ := NewSSMLNumberReplace("http://server")
 	assert.NotNil(t, pr)
 	pr.(*ssmlNumberReplace).httpWrap = httpInvokerMock
-	d := synthesizer.TTSData{Text: "kadenciją 1998-2002 m. {o\\}rb buvo demokratiškas vadovas. Kad 2010 m. grįžęs į valdžią jis staiga virto autokratu, buvo didelis"}
+	d := synthesizer.TTSData{Text: []string{"kadenciją 1998-2002 m. {o\\}rb buvo demokratiškas vadovas. Kad 2010 m. grįžęs į valdžią jis staiga virto autokratu, buvo didelis"}}
 	httpInvokerMock.On("InvokeText", mock.Anything, mock.Anything).Run(
 		func(params mock.Arguments) {
 			*params[1].(*string) = "kadenciją tūkstantis devyni šimtai devyniasdešimt aštuntaisiais-du tūkstančiai antraisiais metais orb buvo demokratiškas vadovas." +
@@ -118,7 +118,7 @@ func TestInvokeSSMLNumberReplace_Real1(t *testing.T) {
 	pr, _ := NewSSMLNumberReplace("http://server")
 	assert.NotNil(t, pr)
 	pr.(*ssmlNumberReplace).httpWrap = httpInvokerMock
-	d := synthesizer.TTSData{Text: "kadenciją 1998-2002 m. {o\\}rb buvo demokratiškas vadovas. Kad 2010 m. grįžęs į valdžią jis staiga virto autokratu, buvo"}
+	d := synthesizer.TTSData{Text: []string{"kadenciją 1998-2002 m. {o\\}rb buvo demokratiškas vadovas. Kad 2010 m. grįžęs į valdžią jis staiga virto autokratu, buvo"}}
 	httpInvokerMock.On("InvokeText", mock.Anything, mock.Anything).Run(
 		func(params mock.Arguments) {
 			*params[1].(*string) = "kadenciją tūkstantis devyni šimtai devyniasdešimt aštuntaisiais-du tūkstančiai antraisiais metais orb buvo demokratiškas vadovas." +
@@ -135,7 +135,7 @@ func TestInvokeSSMLNumberReplace_Real2(t *testing.T) {
 	pr, _ := NewSSMLNumberReplace("http://server")
 	assert.NotNil(t, pr)
 	pr.(*ssmlNumberReplace).httpWrap = httpInvokerMock
-	d := synthesizer.TTSData{Text: "Robertsonas (1988 m. surinkęs 25 proc. balsų), bjūk{e~}nenas (1996 m. surinkęs 23 proc. balsų) ir f{o/}rbzas (2000 m. surinkęs 31 proc. balsų)"}
+	d := synthesizer.TTSData{Text: []string{"Robertsonas (1988 m. surinkęs 25 proc. balsų), bjūk{e~}nenas (1996 m. surinkęs 23 proc. balsų) ir f{o/}rbzas (2000 m. surinkęs 31 proc. balsų)"}}
 	httpInvokerMock.On("InvokeText", mock.Anything, mock.Anything).Run(
 		func(params mock.Arguments) {
 			*params[1].(*string) = "Robertsonas (tūkstantis devyni šimtai aštuoniasdešimt aštuntieji metai surinkęs dvidešimt penki procentai balsų), bjūkenenas (tūkstantis devyni šimtai " +
@@ -178,19 +178,19 @@ func Test_doPartlyAlign(t *testing.T) {
 func Test_mapAccentsBack(t *testing.T) {
 	type args struct {
 		new  string
-		orig string
+		orig []string
 	}
 	tests := []struct {
 		name    string
 		args    args
-		want    string
+		want    []string
 		wantErr bool
 	}{
-		{name: "empty", args: args{new: "", orig: ""}, want: "", wantErr: false},
-		{name: "no accent", args: args{new: "a b c d r", orig: "a b c d r"}, want: "a b c d r", wantErr: false},
-		{name: "with accent", args: args{new: "a b c d r", orig: "a {b/} c d {r~}"}, want: "a {b/} c d {r~}", wantErr: false},
-		{name: "fail on other word", args: args{new: "a b c d k", orig: "a {b/} c d {r~}"}, want: "", wantErr: true},
-		{name: "fail on missing", args: args{new: "a b c d", orig: "a {b/} c d {r~}"}, want: "", wantErr: true},
+		{name: "empty", args: args{new: "", orig: []string{""}}, want: []string{""}, wantErr: false},
+		{name: "no accent", args: args{new: "a b c d r", orig: []string{"a b c d r"}}, want: []string{"a b c d r"}, wantErr: false},
+		{name: "with accent", args: args{new: "a b c d r", orig: []string{"a {b/} c d {r~}"}}, want: []string{"a {b/} c d {r~}"}, wantErr: false},
+		{name: "fail on other word", args: args{new: "a b c d k", orig: []string{"a {b/} c d {r~}"}}, want: []string{""}, wantErr: true},
+		{name: "fail on missing", args: args{new: "a b c d", orig: []string{"a {b/} c d {r~}"}}, want: []string{""}, wantErr: true},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -199,7 +199,7 @@ func Test_mapAccentsBack(t *testing.T) {
 				t.Errorf("mapAccentsBack() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			if got != tt.want {
+			if !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("mapAccentsBack() = %v, want %v", got, tt.want)
 			}
 		})

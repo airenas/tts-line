@@ -8,15 +8,17 @@ import (
 
 // TTSData working data for one request
 type TTSData struct {
-	Input           *api.TTSRequestConfig
-	RequestID       string
-	Cfg             TTSConfig
-	OriginalText    string
-	PreviousText    string // text of previous request loaded by requestID
-	CleanedText     string
-	NormalizedText  string // text after normalization
-	Text            string // text after cleaning and URL replacement
-	TextWithNumbers string
+	Input        *api.TTSRequestConfig
+	RequestID    string
+	Cfg          TTSConfig
+	OriginalText string
+	PreviousText string // text of previous request loaded by requestID
+
+	CleanedText []string // corresponds to OriginalTextParts
+
+	NormalizedText  []string // text after normalization, array corresponds to OriginalTextParts
+	Text            []string // text after cleaning and URL replacement
+	TextWithNumbers []string
 
 	AudioSuffix string // add audio suffix if var is set
 
@@ -36,7 +38,7 @@ type TTSTextPart struct {
 	Accented, Text string
 }
 
-//TTSConfig some TTS configuration
+// TTSConfig some TTS configuration
 type TTSConfig struct {
 	JustAM bool
 	Input  *api.TTSRequestConfig
@@ -58,7 +60,7 @@ type TTSDataPart struct {
 	Audio      string
 }
 
-//ProcessedWord keeps one word info
+// ProcessedWord keeps one word info
 type ProcessedWord struct {
 	Tagged            TaggedWord
 	UserTranscription string
@@ -69,9 +71,10 @@ type ProcessedWord struct {
 	Clitic            Clitic
 	Transcription     string
 	Obscene           bool
+	TextPart          *TTSTextPart
 }
 
-//CliticAccentEnum contains types of possible clitics
+// CliticAccentEnum contains types of possible clitics
 type CliticAccentEnum int
 
 const (
@@ -85,13 +88,13 @@ const (
 	CliticsCustom
 )
 
-//Clitic structure
+// Clitic structure
 type Clitic struct {
 	Type   CliticAccentEnum
 	Accent int
 }
 
-//TaggedWord - tagger's result
+// TaggedWord - tagger's result
 type TaggedWord struct {
 	Separator   string
 	SentenceEnd bool
@@ -101,7 +104,7 @@ type TaggedWord struct {
 	Lemma       string
 }
 
-//AccentVariant - accenters's result
+// AccentVariant - accenters's result
 type AccentVariant struct {
 	Accent   int     `json:"accent"`
 	Accented string  `json:"accented"`
@@ -124,7 +127,7 @@ const (
 	SSMLPause
 )
 
-//IsWord returns true if object indicates word
+// IsWord returns true if object indicates word
 func (tw TaggedWord) IsWord() bool {
 	return !tw.SentenceEnd && tw.Separator == "" && !tw.Space
 }

@@ -26,7 +26,7 @@ func TestNewNormalizer_Fails(t *testing.T) {
 func TestNormalizeProcess(t *testing.T) {
 	initTestJSON(t)
 	d := &synthesizer.TTSData{}
-	d.CleanedText = " a a"
+	d.CleanedText = []string{" a a"}
 	pr, _ := NewNormalizer("http://server")
 	assert.NotNil(t, pr)
 	pr.(*normalizer).httpWrap = httpJSONMock
@@ -45,7 +45,7 @@ func TestNormalizeProcess(t *testing.T) {
 func TestNormalizeProcess_Fail(t *testing.T) {
 	initTestJSON(t)
 	d := &synthesizer.TTSData{}
-	d.CleanedText = " a a"
+	d.CleanedText = []string{" a a"}
 	pr, _ := NewNormalizer("http://server")
 	assert.NotNil(t, pr)
 	pr.(*normalizer).httpWrap = httpJSONMock

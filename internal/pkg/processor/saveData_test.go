@@ -74,7 +74,7 @@ func TestSave_Normalized(t *testing.T) {
 	assert.NotNil(t, pr)
 	d := &synthesizer.TTSData{}
 	d.RequestID = "olia"
-	d.TextWithNumbers = "normalized"
+	d.TextWithNumbers = []string{"normalized"}
 	d.Input = &api.TTSRequestConfig{AllowCollectData: true}
 	dbMock.On("Save", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
@@ -106,8 +106,8 @@ func TestGetText(t *testing.T) {
 	d := &synthesizer.TTSData{}
 	d.RequestID = "olia"
 	d.OriginalText = "tata"
-	d.Text = "cleaned"
-	d.TextWithNumbers = "t numbers"
+	d.Text = []string{"cleaned"}
+	d.TextWithNumbers = []string{"t numbers"}
 	assert.Equal(t, "tata", getText(d, utils.RequestOriginal))
 	assert.Equal(t, "cleaned", getText(d, utils.RequestCleaned))
 	assert.Equal(t, "t numbers", getText(d, utils.RequestNormalized))

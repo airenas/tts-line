@@ -192,7 +192,7 @@ func TestClearAccents(t *testing.T) {
 
 func TestMapAccent(t *testing.T) {
 	p, err := mapTagAccentResult([]*TaggedWord{{Type: "SEPARATOR", String: ","},
-		{Type: "SENTENCE_END"}}, ",")
+		{Type: "SENTENCE_END"}}, []string{","}, nil)
 	assert.Nil(t, err)
 	if assert.Equal(t, 2, len(p)) {
 		assert.Equal(t, ",", p[0].Tagged.Separator)
@@ -200,7 +200,7 @@ func TestMapAccent(t *testing.T) {
 	}
 
 	p, err = mapTagAccentResult([]*TaggedWord{{Type: "WORD", String: "mama"},
-		{Type: "SPACE", String: " "}}, "mam{a~} ")
+		{Type: "SPACE", String: " "}}, []string{"mam{a~} "}, nil)
 	assert.Nil(t, err)
 	if assert.Equal(t, 2, len(p)) {
 		assert.Equal(t, "mama", p[0].Tagged.Word)
@@ -209,7 +209,7 @@ func TestMapAccent(t *testing.T) {
 	}
 
 	p, err = mapTagAccentResult([]*TaggedWord{{Type: "SPACE", String: " "},
-		{Type: "WORD", String: "mama"}}, " mam{a~}")
+		{Type: "WORD", String: "mama"}}, []string{" mam{a~}"}, nil)
 	assert.Nil(t, err)
 	if assert.Equal(t, 2, len(p)) {
 		assert.Equal(t, true, p[0].Tagged.Space)
@@ -218,7 +218,7 @@ func TestMapAccent(t *testing.T) {
 	}
 
 	p, err = mapTagAccentResult([]*TaggedWord{
-		{Type: "WORD", String: "mama"}, {Type: "WORD", String: "mama"}}, "mam{a~}mam{a~}")
+		{Type: "WORD", String: "mama"}, {Type: "WORD", String: "mama"}}, []string{"mam{a~}mam{a~}"}, nil)
 	assert.Nil(t, err)
 	if assert.Equal(t, 2, len(p)) {
 		assert.Equal(t, "mama", p[0].Tagged.Word)
@@ -229,19 +229,19 @@ func TestMapAccent(t *testing.T) {
 }
 
 func TestMapAccent_Fail(t *testing.T) {
-	_, err := mapTagAccentResult([]*TaggedWord{{Type: "WORD", String: "mama"}}, " mam{a~}")
+	_, err := mapTagAccentResult([]*TaggedWord{{Type: "WORD", String: "mama"}}, []string{" mam{a~}"}, nil)
 	assert.NotNil(t, err)
-	_, err = mapTagAccentResult([]*TaggedWord{{Type: "WORD", String: "mama"}}, ",mam{a~}")
+	_, err = mapTagAccentResult([]*TaggedWord{{Type: "WORD", String: "mama"}}, []string{",mam{a~}"}, nil)
 	assert.NotNil(t, err)
 }
 
 func TestMapAccent_ErrorType(t *testing.T) {
-	_, err := mapTagAccentResult([]*TaggedWord{{Type: "WORD", String: "mama"}}, "m{a~}m{a~}")
+	_, err := mapTagAccentResult([]*TaggedWord{{Type: "WORD", String: "mama"}}, []string{"m{a~}m{a~}"}, nil)
 	assert.NotNil(t, err)
 	var errBA *utils.ErrBadAccent
 	assert.True(t, errors.As(err, &errBA))
 
-	_, err = mapTagAccentResult([]*TaggedWord{{Type: "WORD", String: "mama"}}, ",mam{a~}")
+	_, err = mapTagAccentResult([]*TaggedWord{{Type: "WORD", String: "mama"}}, []string{",mam{a~}"}, nil)
 	assert.NotNil(t, err)
 	assert.False(t, errors.As(err, &errBA))
 }
@@ -312,7 +312,7 @@ func TestInvokeSSMLTagger(t *testing.T) {
 	assert.NotNil(t, pr)
 	pr.(*ssmlTagger).httpWrap = httpInvokerMock
 	d := synthesizer.TTSData{}
-	d.TextWithNumbers = ", word "
+	d.TextWithNumbers = []string{", word "}
 	httpInvokerMock.On("InvokeText", mock.Anything, mock.Anything).Run(
 		func(params mock.Arguments) {
 			*params[1].(*[]*TaggedWord) = []*TaggedWord{

@@ -2,6 +2,7 @@ package processor
 
 import (
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/airenas/go-app/pkg/goapp"
@@ -14,7 +15,7 @@ type normalizer struct {
 	httpWrap HTTPInvokerJSON
 }
 
-//NewNormalizer creates new text normalize processor
+// NewNormalizer creates new text normalize processor
 func NewNormalizer(urlStr string) (synthesizer.Processor, error) {
 	res := &normalizer{}
 	var err error
@@ -31,7 +32,7 @@ func (p *normalizer) Process(data *synthesizer.TTSData) error {
 		return nil
 	}
 	defer goapp.Estimate("Normalize")()
-	txt := data.CleanedText
+	txt := strings.Join(data.CleanedText, "")
 	utils.LogData("Input: ", txt)
 	inData := &normRequestData{Orig: txt}
 	var output normResponseData
@@ -40,9 +41,77 @@ func (p *normalizer) Process(data *synthesizer.TTSData) error {
 		return fmt.Errorf("normalize (%s): %w", output.Err, err)
 	}
 
-	data.NormalizedText = output.Res
-	utils.LogData("Output: ", data.NormalizedText)
+	data.NormalizedText, err = processNormalizedOutput(output, data.CleanedText)
+	if err != nil {
+		return err
+	}
+	utils.LogData("Output: ", strings.Join(data.NormalizedText, ""))
 	return nil
+}
+
+func processNormalizedOutput(output normResponseData, input []string) ([]string, error) {
+	if len(input) == 1 {
+		return []string{output.Res}, nil
+	}
+	if len(output.Rep) == 0 {
+		return input, nil
+	}
+	resR := make([][]rune, len(input))
+	for i := range input {
+		resR[i] = []rune(input[i])
+	}
+	
+	shift, fromI := 0, 0
+	for _, rep := range output.Rep {
+		var atI int
+		var err error
+
+
+		atI, fromI, err = getNextStr(resR, fromI, rep.Beg - shift)
+		if (err != nil) {
+			return nil, fmt.Errorf("err replace %v: %w", rep, err)
+		}
+		rns := resR[fromI]
+		repRns := []rune(rep.Text)
+		rnsNew := append(rns[:atI], repRns...)
+		end := (rep.End - rep.Beg) + atI
+		if end < len(rns) {
+			rnsNew = append(rnsNew, rns[end:]...)
+		} 
+		resR[fromI] = rnsNew
+		rem := end - len(rns)
+		for rem > 0 {
+			fromI++
+			if len(resR[fromI]) > rem {
+				resR[fromI] = resR[fromI][rem:]
+				rem = 0
+			} else {
+				rem -= len(resR[fromI])
+				resR[fromI] = nil
+			}
+		}
+		shift += (rep.End - rep.Beg) - len(repRns)
+	}
+	
+	res := make ([]string, len(resR))
+	for i := range input {
+		res[i] = string(resR[i])
+	}
+	return res, nil
+}
+
+func getNextStr(resR [][]rune, fromI, at int) (int, int, error){
+	for i := fromI; i < len(resR); i++ {
+		res := resR[i]
+		l := len(res)
+		if at > l {
+			fromI++
+			at -= l
+		} else {
+			return at, fromI, nil
+		}
+	}
+	return 0, 0, fmt.Errorf("wrong start pos at [%d]%d", fromI, at)
 }
 
 type normRequestData struct {
@@ -57,8 +126,8 @@ type normResponseData struct {
 }
 
 type normResponseDataRep struct {
-	Beg  int64  `json:"beg"`
-	End  int64  `json:"end"`
+	Beg  int  `json:"beg"`
+	End  int  `json:"end"`
 	Text string `json:"text"`
 }
 

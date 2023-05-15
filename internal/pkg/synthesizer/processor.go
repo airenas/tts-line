@@ -124,7 +124,7 @@ func mapResult(data *TTSData) (*api.Result, error) {
 			res.RequestID = data.RequestID
 		}
 		if data.Input.OutputTextFormat == api.TextNormalized {
-			res.Text = data.TextWithNumbers
+			res.Text = strings.Join(data.TextWithNumbers, "")
 		} else if data.Input.OutputTextFormat == api.TextAccented {
 			var err error
 			res.Text, err = mapAccentedText(data)
@@ -174,6 +174,8 @@ func GetTranscriberAccent(w *ProcessedWord) int {
 		res := w.AccentVariant.Accent
 		if w.UserAccent > 0 {
 			res = w.UserAccent
+		} else if w.TextPart != nil && w.TextPart.Accented != "" { // was empty accent provided if it not set in w.UserAccent
+			res = 0
 		} else if w.Clitic.Type == CliticsCustom {
 			res = w.Clitic.Accent
 		} else if w.Clitic.Type == CliticsNone {
