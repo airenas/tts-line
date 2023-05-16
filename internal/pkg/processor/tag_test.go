@@ -8,6 +8,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/require"
 )
 
 func TestCreateTagger(t *testing.T) {
@@ -226,6 +227,17 @@ func TestMapAccent(t *testing.T) {
 		assert.Equal(t, "mama", p[1].Tagged.Word)
 		assert.Equal(t, 304, p[1].UserAccent)
 	}
+	p, err = mapTagAccentResult([]*TaggedWord{
+		{Type: "WORD", String: "mama"}, {Type: "WORD", String: "mama"}}, []string{"mam{a~}", "mama"},
+		[]*synthesizer.TTSTextPart{{Text: "mama", Accented: "mama"}, {Text: "mama", Accented: "mama"}})
+	assert.Nil(t, err)
+	require.Equal(t, 2, len(p))
+	assert.Equal(t, "mama", p[0].Tagged.Word)
+	assert.Equal(t, 304, p[0].UserAccent)
+	assert.Nil(t, p[0].TextPart)
+	assert.Equal(t, "mama", p[1].Tagged.Word)
+	require.NotNil(t, p[1].TextPart)
+	assert.Equal(t, "mama", p[1].TextPart.Accented)
 }
 
 func TestMapAccent_Fail(t *testing.T) {
