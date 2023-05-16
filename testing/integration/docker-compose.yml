@@ -110,7 +110,8 @@ services:
       CLEAN_URL: http://text-clean:8000    
     volumes:
       - ../../:/go/src/
-    command: -tags integration -v -count=1 ./testing/integration/...
+    command: -tags integration -v -count=1 ./testing/integration/... 
+    # command: -tags integration -v -count=1 -run TestSynthesize_Success ./testing/integration/... 
 
   # unit-tests:
   #   build:
