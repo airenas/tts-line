@@ -116,7 +116,7 @@ func NewTaggerAccents(urlStr string) (synthesizer.Processor, error) {
 func (p *taggerAccents) Process(data *synthesizer.TTSData) error {
 	var output []*TaggedWord
 	data.TextWithNumbers = []string{data.OriginalText}
-	err := p.httpWrap.InvokeText(strings.Join(data.TextWithNumbers, ""), &output)
+	err := p.httpWrap.InvokeText(clearAccents(strings.Join(data.TextWithNumbers, "")), &output)
 	if err != nil {
 		return err
 	}
@@ -242,6 +242,7 @@ func NewSSMLTagger(urlStr string) (synthesizer.Processor, error) {
 
 func (p *ssmlTagger) Process(data *synthesizer.TTSData) error {
 	var output []*TaggedWord
+	data.TextWithNumbers = addSpaces(data.TextWithNumbers)
 	txt := clearAccents(strings.Join(data.TextWithNumbers, ""))
 	err := p.httpWrap.InvokeText(txt, &output)
 	if err != nil {
@@ -249,6 +250,18 @@ func (p *ssmlTagger) Process(data *synthesizer.TTSData) error {
 	}
 	data.Words, err = mapTagAccentResult(output, data.TextWithNumbers, data.OriginalTextParts)
 	return err
+}
+
+func addSpaces(in []string) []string{
+	res := make([]string, len(in))
+	for i, s := range in {
+		if strings.HasPrefix(s, " ") {
+			res[i] = s
+		} else {
+			res[i] = s + " "
+		}
+	}
+	return res
 }
 
 // Info return info about processor

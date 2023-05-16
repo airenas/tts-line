@@ -324,18 +324,20 @@ func TestInvokeSSMLTagger(t *testing.T) {
 	assert.NotNil(t, pr)
 	pr.(*ssmlTagger).httpWrap = httpInvokerMock
 	d := synthesizer.TTSData{}
-	d.TextWithNumbers = []string{", word "}
+	d.TextWithNumbers = []string{", word", "word2"}
 	httpInvokerMock.On("InvokeText", mock.Anything, mock.Anything).Run(
 		func(params mock.Arguments) {
 			*params[1].(*[]*TaggedWord) = []*TaggedWord{
 				{Type: "SPACE", String: " "},
 				{Type: "SEPARATOR", String: ","},
 				{Type: "WORD", String: "word", Lemma: "lemma", Mi: "mi"},
+				{Type: "SPACE", String: " "},
+				{Type: "WORD", String: "word2", Lemma: "lemma2", Mi: "mi"},
 				{Type: "SENTENCE_END"}}
 		}).Return(nil)
 	err := pr.Process(&d)
 	assert.Nil(t, err)
-	assert.Equal(t, 4, len(d.Words))
+	assert.Equal(t, 6, len(d.Words))
 	assert.Equal(t, true, d.Words[0].Tagged.Space)
 	assert.False(t, d.Words[0].Tagged.IsWord())
 
@@ -349,6 +351,13 @@ func TestInvokeSSMLTagger(t *testing.T) {
 	assert.Equal(t, "mi", d.Words[2].Tagged.Mi)
 	assert.True(t, d.Words[2].Tagged.IsWord())
 
-	assert.True(t, d.Words[3].Tagged.SentenceEnd)
-	assert.False(t, d.Words[3].Tagged.IsWord())
+	assert.Equal(t, "", d.Words[4].Tagged.Separator)
+	assert.Equal(t, "word2", d.Words[4].Tagged.Word)
+	assert.Equal(t, "lemma2", d.Words[4].Tagged.Lemma)
+	assert.Equal(t, "mi", d.Words[4].Tagged.Mi)
+	assert.True(t, d.Words[4].Tagged.IsWord())
+
+
+	assert.True(t, d.Words[5].Tagged.SentenceEnd)
+	assert.False(t, d.Words[5].Tagged.IsWord())
 }
