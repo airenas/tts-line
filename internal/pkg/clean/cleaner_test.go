@@ -23,6 +23,7 @@ func TestCleanHTML(t *testing.T) {
 		{v: "olia<a = href\"https://semantika.lt\">kur</a>", e: "olia kur"},
 		{v: "<div><p>tada\n\nkur\n no\n</p></div>", e: "tada\nkur\nno"},
 		{v: "olia http://olia.lt", e: "olia http://olia.lt", i: "Leaves link"},
+		{v: "olia http://olia.lt ", e: "olia http://olia.lt", i: "Drops space"},
 		{v: "&lt; &gt; &amp;", e: "< > &", i: "Changes symbols &lt &gt &"},
 	}
 
