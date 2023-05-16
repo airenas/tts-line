@@ -26,6 +26,17 @@ func TestReplacerProcess(t *testing.T) {
 	assert.Equal(t, []string{" a a Internetinis adresas"}, d.Text)
 }
 
+func TestReplacerProcess_several(t *testing.T) {
+	initTestJSON(t)
+	d := &synthesizer.TTSData{}
+	d.NormalizedText = []string{" a a www.delfi.lt", " a a www.delfi.lt", "ooo"}
+	pr := NewURLReplacer()
+	require.NotNil(t, pr)
+	err := pr.Process(d)
+	assert.Nil(t, err)
+	assert.Equal(t, []string{" a a Internetinis adresas", " a a Internetinis adresas", "ooo"}, d.Text)
+}
+
 func TestReplacer_Skip(t *testing.T) {
 	d := &synthesizer.TTSData{}
 	d.Cfg.JustAM = true

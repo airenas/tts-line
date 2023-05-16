@@ -108,7 +108,7 @@ func NewTaggerAccents(urlStr string) (synthesizer.Processor, error) {
 	var err error
 	res.httpWrap, err = newHTTPWrapBackoff(urlStr, time.Second*15)
 	if err != nil {
-		return nil, errors.Wrap(err, "Can't init http client")
+		return nil, errors.Wrap(err, "can't init http client")
 	}
 	return res, nil
 }
