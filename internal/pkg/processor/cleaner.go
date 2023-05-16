@@ -49,7 +49,7 @@ func (p *cleaner) Process(data *synthesizer.TTSData) error {
 	if emptyStrArr(data.CleanedText) {
 		return utils.ErrNoInput
 	}
-	utils.LogData("Output: ", strings.Join(data.CleanedText, ""))
+	utils.LogData("Output: ", strings.Join(data.CleanedText, " "))
 	return nil
 }
 

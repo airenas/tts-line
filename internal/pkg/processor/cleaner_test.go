@@ -1,6 +1,7 @@
 package processor
 
 import (
+	"reflect"
 	"testing"
 
 	"github.com/airenas/tts-line/internal/pkg/synthesizer"
@@ -94,6 +95,59 @@ func Test_getNormText(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := getNormText(tt.args); got != tt.want {
 				t.Errorf("getNormText() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func Test_emptyStrArr(t *testing.T) {
+	type args struct {
+		arr []string
+	}
+	tests := []struct {
+		name string
+		args args
+		want bool
+	}{
+		{name: "empty", args: args{arr: []string{"", ""}}, want: true},
+		{name: "empty", args: args{arr: []string{}}, want: true},
+		{name: "non empty", args: args{arr: []string{"", "a"}}, want: false},
+		{name: "non empty", args: args{arr: []string{"b"}}, want: false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := emptyStrArr(tt.args.arr); got != tt.want {
+				t.Errorf("emptyStrArr() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func Test_processCleanOutput(t *testing.T) {
+	type args struct {
+		text     string
+		textPart []*synthesizer.TTSTextPart
+	}
+	tests := []struct {
+		name    string
+		args    args
+		want    []string
+		wantErr bool
+	}{
+		{name: "empty", args: args{text: splitIndicator + "", textPart: []*synthesizer.TTSTextPart{{Text: ""}}}, want: []string{""}, wantErr: false},
+		{name: "one", args: args{text: splitIndicator + "olia", textPart: []*synthesizer.TTSTextPart{{Text: "olia"}}}, want: []string{"olia"}, wantErr: false},
+		{name: "one", args: args{text: splitIndicator + "olia" + splitIndicator + "olia2", textPart: []*synthesizer.TTSTextPart{{Text: "olia"}, {Text: "cleaned olia2"}}}, want: []string{"olia", "olia2"}, wantErr: false},
+		{name: "error", args: args{text: splitIndicator + "olia" + splitIndicator + "olia2", textPart: []*synthesizer.TTSTextPart{{Text: "olia"}}}, wantErr: true},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := processCleanOutput(tt.args.text, tt.args.textPart)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("processCleanOutput() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("processCleanOutput() = %v, want %v", got, tt.want)
 			}
 		})
 	}

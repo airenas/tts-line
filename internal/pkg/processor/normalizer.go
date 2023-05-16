@@ -61,19 +61,16 @@ func processNormalizedOutput(output normResponseData, input []string) ([]string,
 		resR[i] = []rune(input[i])
 	}
 	
-	shift, fromI := 0, 0
+	shift := 0
 	for _, rep := range output.Rep {
-		var atI int
-		var err error
-
-
-		atI, fromI, err = getNextStr(resR, fromI, rep.Beg - shift)
+		atI, fromI, err := getNextStr(resR, rep.Beg - shift)
 		if (err != nil) {
 			return nil, fmt.Errorf("err replace %v: %w", rep, err)
 		}
 		rns := resR[fromI]
 		repRns := []rune(rep.Text)
-		rnsNew := append(rns[:atI], repRns...)
+		rnsNew := append([]rune{}, rns[:atI]...)
+		rnsNew = append(rnsNew, repRns...)
 		end := (rep.End - rep.Beg) + atI
 		if end < len(rns) {
 			rnsNew = append(rnsNew, rns[end:]...)
@@ -100,18 +97,17 @@ func processNormalizedOutput(output normResponseData, input []string) ([]string,
 	return res, nil
 }
 
-func getNextStr(resR [][]rune, fromI, at int) (int, int, error){
-	for i := fromI; i < len(resR); i++ {
+func getNextStr(resR [][]rune, at int) (int, int, error){
+	for i := 0; i < len(resR); i++ {
 		res := resR[i]
 		l := len(res)
 		if at > l {
-			fromI++
 			at -= l
 		} else {
-			return at, fromI, nil
+			return at, i, nil
 		}
 	}
-	return 0, 0, fmt.Errorf("wrong start pos at [%d]%d", fromI, at)
+	return 0, 0, fmt.Errorf("wrong start pos at %d", at)
 }
 
 type normRequestData struct {
