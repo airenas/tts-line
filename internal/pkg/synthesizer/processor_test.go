@@ -122,19 +122,6 @@ func TestMapResult_Accented(t *testing.T) {
 	assert.Equal(t, "{a\\}a ,a{i~}", res.Text)
 }
 
-func TestGetTranscriberAccent(t *testing.T) {
-	assert.Equal(t, 101, GetTranscriberAccent(&ProcessedWord{Tagged: TaggedWord{Word: "aa"},
-		AccentVariant: &AccentVariant{Accent: 101}}))
-	assert.Equal(t, 103, GetTranscriberAccent(&ProcessedWord{Tagged: TaggedWord{Word: "aa"},
-		AccentVariant: &AccentVariant{Accent: 101}, UserAccent: 103}))
-	assert.Equal(t, 101, GetTranscriberAccent(&ProcessedWord{Tagged: TaggedWord{Word: "aa"},
-		AccentVariant: &AccentVariant{Accent: 101}, Clitic: Clitic{Type: CliticsUnused}}))
-	assert.Equal(t, 0, GetTranscriberAccent(&ProcessedWord{Tagged: TaggedWord{Word: "aa"},
-		AccentVariant: &AccentVariant{Accent: 101}, Clitic: Clitic{Type: CliticsNone}}))
-	assert.Equal(t, 105, GetTranscriberAccent(&ProcessedWord{Tagged: TaggedWord{Word: "aa"},
-		AccentVariant: &AccentVariant{Accent: 101}, Clitic: Clitic{Type: CliticsCustom, Accent: 105}}))
-}
-
 func TestMapResult_Normalized(t *testing.T) {
 	d := &TTSData{}
 	d.Input = &api.TTSRequestConfig{OutputTextFormat: api.TextNormalized}
@@ -206,6 +193,35 @@ func Test_makeSSMLParts(t *testing.T) {
 				assert.Equal(t, tt.want[i].Cfg.Voice, got[i].Cfg.Voice)
 				assert.Equal(t, tt.want[i].Cfg.Speed, got[i].Cfg.Speed)
 				assert.Equal(t, tt.want[i].Cfg.Type, got[i].Cfg.Type)
+			}
+		})
+	}
+}
+
+func TestGetTranscriberAccent(t *testing.T) {
+	type args struct {
+		w *ProcessedWord
+	}
+	tests := []struct {
+		name string
+		args args
+		want int
+	}{
+		{name: "from accenter", args: args{w: &ProcessedWord{Tagged: TaggedWord{Word: "aa"}, AccentVariant: &AccentVariant{Accent: 101}}}, want: 101},
+		{name: "from user", args: args{w: &ProcessedWord{Tagged: TaggedWord{Word: "aa"}, AccentVariant: &AccentVariant{Accent: 101}, UserAccent: 103}}, want: 103},
+		{name: "clitics unused", args: args{w: &ProcessedWord{Tagged: TaggedWord{Word: "aa"}, AccentVariant: &AccentVariant{Accent: 101},
+			Clitic: Clitic{Type: CliticsUnused}}}, want: 101},
+		{name: "clitics none", args: args{w: &ProcessedWord{Tagged: TaggedWord{Word: "aa"}, AccentVariant: &AccentVariant{Accent: 101},
+			Clitic: Clitic{Type: CliticsNone}}}, want: 0},
+		{name: "clitics custom", args: args{w: &ProcessedWord{Tagged: TaggedWord{Word: "aa"}, AccentVariant: &AccentVariant{Accent: 101},
+			Clitic: Clitic{Type: CliticsCustom, Accent: 105}}}, want: 105},
+		{name: "no accent from user", args: args{w: &ProcessedWord{Tagged: TaggedWord{Word: "aa"},
+			AccentVariant: &AccentVariant{Accent: 101}, TextPart: &TTSTextPart{Accented: "aa"},}}, want: 0},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := GetTranscriberAccent(tt.args.w); got != tt.want {
+				t.Errorf("GetTranscriberAccent() = %v, want %v", got, tt.want)
 			}
 		})
 	}
