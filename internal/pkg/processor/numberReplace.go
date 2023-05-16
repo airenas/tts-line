@@ -37,7 +37,13 @@ func (p *numberReplace) Process(data *synthesizer.TTSData) error {
 		goapp.Log.Info("Skip numberReplace")
 		return nil
 	}
-	return p.httpWrap.InvokeText(strings.Join(data.Text, ""), &data.TextWithNumbers)
+	res := ""
+	err := p.httpWrap.InvokeText(clearAccents(strings.Join(data.Text, "")), &res)
+	if err != nil {
+		return err
+	}
+	data.TextWithNumbers, err = mapAccentsBack(res, data.Text)
+	return err
 }
 
 func (p *numberReplace) skip(data *synthesizer.TTSData) bool {
@@ -120,11 +126,12 @@ func mapAccentsBack(new string, origArr []string) ([]string, error) {
 		l := strings.Count(s, " ")
 		nID := len(alignIDs)
 		if nID > (l + wi){
-			nID = alignIDs[l + wi] + 1
+			nID = alignIDs[l + wi]
 		} 
 		if nID == -1 {
 			return nil, errors.Errorf("no word alignment for %v", s)
 		}
+		nID += 1
 		res = append(res, strings.Join(nStrs[wi:nID], " "))
 		wi += l
 	}

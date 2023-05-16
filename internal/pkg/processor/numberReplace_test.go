@@ -38,10 +38,10 @@ func TestInvokeNumberReplace(t *testing.T) {
 	pr, _ := NewNumberReplace("http://server")
 	assert.NotNil(t, pr)
 	pr.(*numberReplace).httpWrap = httpInvokerMock
-	d := synthesizer.TTSData{}
+	d := synthesizer.TTSData{Text: []string{"3"}}
 	httpInvokerMock.On("InvokeText", mock.Anything, mock.Anything).Run(
 		func(params mock.Arguments) {
-			*params[1].(*[]string) = []string{"trys"}
+			*params[1].(*string) = "trys"
 		}).Return(nil)
 	err := pr.Process(&d)
 	assert.Nil(t, err)
