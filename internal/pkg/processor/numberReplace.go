@@ -38,7 +38,7 @@ func (p *numberReplace) Process(data *synthesizer.TTSData) error {
 		return nil
 	}
 	res := ""
-	err := p.httpWrap.InvokeText(clearAccents(strings.Join(data.Text, "")), &res)
+	err := p.httpWrap.InvokeText(clearAccents(strings.Join(data.Text, " ")), &res)
 	if err != nil {
 		return err
 	}
@@ -86,7 +86,7 @@ func (p *ssmlNumberReplace) Process(data *synthesizer.TTSData) error {
 }
 
 func mapAccentsBack(new string, origArr []string) ([]string, error) {
-	orig := strings.Join(origArr, "")
+	orig := strings.Join(origArr, " ")
 	oStrs := strings.Split(orig, " ")
 	nStrs := strings.Split(new, " ")
 	accWrds := map[int]bool{}
@@ -97,9 +97,6 @@ func mapAccentsBack(new string, origArr []string) ([]string, error) {
 			accWrds[i] = true
 		}
 	}
-	// if len(accWrds) == 0 {
-	// 	return new, nil
-	// }
 
 	alignIDs, err := align(ocStrs, nStrs, 20)
 	if err != nil {
@@ -121,19 +118,24 @@ func mapAccentsBack(new string, origArr []string) ([]string, error) {
 		nStrs[nID] = oStrs[k]
 	}
 	var res []string
-	wi := 0
+	wFrom, nFrom, nTo := 0, 0, 0
 	for _, s := range origArr{
-		l := strings.Count(s, " ")
-		nID := len(alignIDs)
-		if nID > (l + wi){
-			nID = alignIDs[l + wi]
+		l := strings.Count(s, " ") + 1
+		wTo := l + wFrom
+		nTo = len(nStrs)
+		if wTo < len(alignIDs) {
+			nTo = alignIDs[wTo]
 		} 
-		if nID == -1 {
+		for nTo == -1 && wTo < len(alignIDs) {
+			wTo++
+			nTo = alignIDs[wTo]
+		}
+		if nTo == -1 {
 			return nil, errors.Errorf("no word alignment for %v", s)
 		}
-		nID += 1
-		res = append(res, strings.Join(nStrs[wi:nID], " "))
-		wi += l
+		res = append(res, strings.Join(nStrs[nFrom:nTo], " "))
+		wFrom += l
+		nFrom = nTo
 	}
 	return res, nil
 }

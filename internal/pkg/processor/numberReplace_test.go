@@ -186,9 +186,13 @@ func Test_mapAccentsBack(t *testing.T) {
 		want    []string
 		wantErr bool
 	}{
+		{name: "several lines", args: args{new: "a b c d e", orig: []string{"a b", "c d"}}, want: []string{"a b", "c d e"}, wantErr: false},
+		{name: "drop last", args: args{new: "a b c", orig: []string{"a b c d"}}, want: []string{"a b c"}, wantErr: false},
+		{name: "add last", args: args{new: "a b c d e f", orig: []string{"a b c"}}, want: []string{"a b c d e f"}, wantErr: false},
 		{name: "empty", args: args{new: "", orig: []string{""}}, want: []string{""}, wantErr: false},
 		{name: "no accent", args: args{new: "a b c d r", orig: []string{"a b c d r"}}, want: []string{"a b c d r"}, wantErr: false},
 		{name: "with accent", args: args{new: "a b c d r", orig: []string{"a {b/} c d {r~}"}}, want: []string{"a {b/} c d {r~}"}, wantErr: false},
+		{name: "several lines2", args: args{new: "a b c d e f g h", orig: []string{"a b", "c d", "g h"}}, want: []string{"a b", "c d e f", "g h"}, wantErr: false},
 		{name: "fail on other word", args: args{new: "a b c d k", orig: []string{"a {b/} c d {r~}"}}, want: nil, wantErr: true},
 		{name: "fail on missing", args: args{new: "a b c d", orig: []string{"a {b/} c d {r~}"}}, want: nil, wantErr: true},
 	}
