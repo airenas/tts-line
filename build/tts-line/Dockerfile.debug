@@ -8,9 +8,9 @@ ARG BUILD_VERSION=0.1
 WORKDIR /go/src/
 ENV CGO_ENABLED=0
 
-COPY . /go/src
-
 RUN go install github.com/go-delve/delve/cmd/dlv@latest 
+
+COPY . /go/src
 
 RUN --mount=type=cache,target=/root/.cache/go-build \
     --mount=type=cache,target=/go/pkg/mod \
