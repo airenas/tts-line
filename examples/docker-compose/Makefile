@@ -1,13 +1,14 @@
+-include ../../version
 -include Makefile.options
 #####################################################################################
 start: .env 
-	docker-compose up -d
+	docker compose up -d
 
 stop:
-	docker-compose stop && docker-compose rm -f
+	docker compose down
 
 logs:
-	docker-compose logs	
+	docker compose logs	
 
 clean: stop
 #####################################################################################

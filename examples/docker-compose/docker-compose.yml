@@ -5,18 +5,25 @@ services:
     image: airenas/tts-line:${SERVICE_VERSION}
     ports:
       - "${SERVICE_PORT}:8000"
+      - 2345:2345 
     environment:
-      - NUMBERREPLACE_URL=${NUMBERREPLACE_URL}
-      - TAGGER_URL=${TAGGER_URL} 
-      - VALIDATOR_URL=${VALIDATOR_URL}
-      - ABBREVIATOR_URL=${ABBREVIATOR_URL}
-      - ACCENTER_URL=${ACCENTER_URL}
-      - TRANSCRIBER_URL=${TRANSCRIBER_URL}
-      - ACOUSTICMODEL_URL=${ACOUSTICMODEL_URL}
-      - VOCODER_URL=${VOCODER_URL}  
+      - LOGGER_LEVEL=DEBUG
+      - NUMBERREPLACE_URL=http://hnum2txt:80/api/
+      - OBSCENE_URL=http://obscene:3000/obscene-filter
+      - NORMALIZE_URL=http://normalizer:3000/norm
+      - TAGGER_URL=http://tagger:8000/tag
+      - ACCENTER_URL=http://accenter:8000/accent?human=true&roe=true
+      - ACRONYMS_URL=http://acronyms:8000/acronyms
+      - TRANSCRIBER_URL=http://transcriber:8000/transcription?gem=gem1&joinatsi=true
+      - CLITICS_URL=http://clitics:8000/clitics
+      - ACOUSTICMODEL_URL=http://integration-tests:9876/mock-am
+      - VOCODER_URL=http://192.168.1.77:8001/model    
+      - MONGO_URL=mongodb://tts:Ui3Ic5Meej8Ki8tohxawe7jei3iaci@mongo:27017
       - AUDIOCONVERT_URL=http://audioconverter:8000/convert
       - CLEAN_URL=http://text-clean:8000/clean
       - COMPARATOR_URL=http://comparator:3000/resynthvalid 
+    volumes:
+      - ./config.yaml:/app/config.yaml:ro  
 
   text-clean:
     image: airenas/tts-text-clean:0.2.197
@@ -31,6 +38,10 @@ services:
     ports:
       - "8017:80"     
 
+  normalizer:
+    image: intelektikalt/text-normalizer:0.1.28
+    restart: on-failure  
+
   audioconverter:
     image: airenas/audio-convert-service:0.1.8
     ports:
@@ -40,6 +51,26 @@ services:
     image: airenas/resynth-validator:0.1.2
     ports:
       - "8014:3000"
+
+  tagger:
+    image: airenas/tagger:0.6.61
+    environment:
+      - MORPHOLOGY_URL=http://semantika:8090/morphology
+      - SEGMENTATION_URL=http://lex:8080/
+    restart: on-failure
+    depends_on:
+      - semantika
+      - lex
+
+  semantika:
+    image: semantikadocker.vdu.lt/v2/morph:0.2
+    restart: on-failure
+    ports:
+      - 10001:8060     
+
+  lex:
+    image: semantikadocker.vdu.lt/lex:latest
+    restart: on-failure          
   
   clitics:
     image: airenas/clitics:0.1.206
@@ -52,7 +83,30 @@ services:
     container_name: obscene
     image: intelektikalt/obscene-filter:0.1.12 
     ports:
-      - "8016:3000"        
+      - "8016:3000"   
+
+  acronyms:
+    container_name: acronyms
+    image: airenas/acronyms:${acronyms_version}
+    restart: on-failure 
+    environment:
+     - SECRET=${ACRONYMS_SECRET} 
+
+  transcriber:
+    container_name: transcriber
+    image: airenas/transcriber:1.3.1209
+    environment:
+      - SECRET=${TRANSCRIBER_SECRET} 
+    restart: on-failure  
+
+  accenter:
+    container_name: accenter
+    image: airenas/accenter:1.3.1209
+    restart: on-failure
+    environment:
+      - lema.type=hunspell_lema
+      - LEMA_HUNSPELL_SKIP_OFFENSIVE=false
+      - SECRET=${ACCENTER_SECRET}            
 
   mongo:
     image: mongo:4.4.1

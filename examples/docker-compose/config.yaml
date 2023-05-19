@@ -1,0 +1,33 @@
+port: 8000
+maxLogDataSize: 1500
+
+debug:
+    port: 8080
+allowCustom: true
+options:
+  output:
+    defaultFormat: mp3 
+    metadata:
+      - copyright=UAB Intelektika
+      - description=encoded by UAB Intelektika
+    defaultVoice: astra 
+    voices: 
+      - default:astra
+      - astra:astra.v04
+      - laimis:laimis.v04
+
+acousticModel:
+  url:
+  hasVocoder: true
+
+validator:
+  maxChars: 200
+
+splitter:
+  maxChars: 200
+
+partRunner:
+  workers: 1  
+
+suffixLoader:
+  path: /suffixes    
