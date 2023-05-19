@@ -166,3 +166,26 @@ func Test_mapAbbrInput(t *testing.T) {
 		})
 	}
 }
+
+func Test_isAccented(t *testing.T) {
+	type args struct {
+		w *synthesizer.ProcessedWord
+	}
+	tests := []struct {
+		name string
+		args args
+		want bool
+	}{
+		{name: "accented", args: args{w: &synthesizer.ProcessedWord{UserAccent: 101}}, want: true},
+		{name: "accented", args: args{w: &synthesizer.ProcessedWord{UserAccent: 0, TextPart: &synthesizer.TTSTextPart{Accented: "olia"}}}, want: true},
+		{name: "not accented", args: args{w: &synthesizer.ProcessedWord{UserAccent: 0, TextPart: &synthesizer.TTSTextPart{Accented: ""}}}, want: false},
+		{name: "not accented", args: args{w: &synthesizer.ProcessedWord{UserAccent: 0}}, want: false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := isAccented(tt.args.w); got != tt.want {
+				t.Errorf("isAccented() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
