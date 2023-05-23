@@ -35,7 +35,7 @@ type TTSData struct {
 
 // TTSTextPart part of the text
 type TTSTextPart struct {
-	Accented, Text string
+	Accented, Text, Syllables, UserOEPal string
 }
 
 // TTSConfig some TTS configuration

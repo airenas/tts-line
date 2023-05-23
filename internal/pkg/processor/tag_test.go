@@ -165,32 +165,6 @@ func TestInvokeTaggerAccent_FailMap(t *testing.T) {
 	assert.NotNil(t, err)
 }
 
-func TestClearAccents(t *testing.T) {
-	tests := []struct {
-		v string
-		e string
-	}{
-		{v: "", e: ""},
-		{v: "{a~}", e: "a"},
-		{v: "{a\\}", e: "a"},
-		{v: "{a/}", e: "a"},
-		{v: "{a~", e: "{a~"},
-		{v: "{a~ }", e: "{a~ }"},
-		{v: "{1~}", e: "{1~}"},
-		{v: "{Ą~}", e: "Ą"},
-		{v: "{ą~}", e: "ą"},
-		{v: "oli{ą~} {ą~}s", e: "olią ąs"},
-		{v: "oli{ą~}{k~} {{ą~}}s", e: "oliąk {ą}s"},
-	}
-
-	for i, tc := range tests {
-		t.Run(tc.v, func(t *testing.T) {
-			v := clearAccents(tc.v)
-			assert.Equal(t, tc.e, v, "Fail %d", i)
-		})
-	}
-}
-
 func TestMapAccent(t *testing.T) {
 	p, err := mapTagAccentResult([]*TaggedWord{{Type: "SEPARATOR", String: ","},
 		{Type: "SENTENCE_END"}}, []string{","}, nil)
@@ -234,7 +208,7 @@ func TestMapAccent(t *testing.T) {
 	require.Equal(t, 2, len(p))
 	assert.Equal(t, "mama", p[0].Tagged.Word)
 	assert.Equal(t, 304, p[0].UserAccent)
-	assert.Nil(t, p[0].TextPart)
+	assert.NotNil(t, p[0].TextPart)
 	assert.Equal(t, "mama", p[1].Tagged.Word)
 	require.NotNil(t, p[1].TextPart)
 	assert.Equal(t, "mama", p[1].TextPart.Accented)

@@ -3,8 +3,10 @@ package processor
 import (
 	"strings"
 	"time"
+	"unicode"
 
 	"github.com/airenas/go-app/pkg/goapp"
+	"github.com/airenas/tts-line/internal/pkg/accent"
 	"github.com/airenas/tts-line/internal/pkg/service/api"
 	"github.com/airenas/tts-line/internal/pkg/synthesizer"
 	"github.com/pkg/errors"
@@ -14,7 +16,7 @@ type transcriber struct {
 	httpWrap HTTPInvokerJSON
 }
 
-//NewTranscriber creates new processor
+// NewTranscriber creates new processor
 func NewTranscriber(urlStr string) (synthesizer.PartProcessor, error) {
 	res := &transcriber{}
 	var err error
@@ -91,9 +93,12 @@ func mapTransInput(data *synthesizer.TTSDataPart) ([]*transInput, error) {
 				if w.AccentVariant == nil {
 					return nil, errors.New("no accent variant for " + tword)
 				}
-				ti.Acc = synthesizer.GetTranscriberAccent(w)
-				ti.Syll = w.AccentVariant.Syll
-				ti.Ml = w.AccentVariant.Ml
+				ti.Syll = getSyllables(w)
+				ti.User = getUserOEPal(w)
+				if ti.User == "" {
+					ti.Acc = synthesizer.GetTranscriberAccent(w)
+					ti.Ml = w.AccentVariant.Ml
+				}
 			}
 			if pr != nil {
 				pr.Rc = tword
@@ -103,6 +108,42 @@ func mapTransInput(data *synthesizer.TTSDataPart) ([]*transInput, error) {
 		}
 	}
 	return res, nil
+}
+
+func getSyllables(w *synthesizer.ProcessedWord) string {
+	if w.TextPart != nil && w.TextPart.Accented != "" && w.TextPart.Syllables != "" { // provided by user
+		return w.TextPart.Syllables
+	}
+	if w.AccentVariant != nil {
+		return w.AccentVariant.Syll
+	}
+	return ""
+}
+
+func getUserOEPal(w *synthesizer.ProcessedWord) string {
+	res := ""
+	if w.TextPart != nil && w.TextPart.Accented != "" && w.TextPart.UserOEPal != "" { // provided by user
+		res = w.TextPart.UserOEPal
+		if w.UserAccent > 0 {
+			res = addAccent(res, w.UserAccent)
+		}
+	}
+	return res
+}
+
+func addAccent(in string, acc int) string {
+	res := strings.Builder{}
+	acc, pos, li := acc/100, acc%100, 0
+	for _, s := range in {
+		res.WriteRune(s)
+		if unicode.IsLetter(s) {
+			li++
+			if li == pos {
+				res.WriteString(accent.TranscriberAccent(acc))
+			}
+		}
+	}
+	return res.String()
 }
 
 func (p *transcriber) skip(data *synthesizer.TTSDataPart) bool {

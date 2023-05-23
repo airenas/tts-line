@@ -73,3 +73,29 @@ func TestIsWordOrWithAccent(t *testing.T) {
 		})
 	}
 }
+
+func TestClearAccents(t *testing.T) {
+	tests := []struct {
+		v string
+		e string
+	}{
+		{v: "", e: ""},
+		{v: "{a~}", e: "a"},
+		{v: "{a\\}", e: "a"},
+		{v: "{a/}", e: "a"},
+		{v: "{a~", e: "{a~"},
+		{v: "{a~ }", e: "{a~ }"},
+		{v: "{1~}", e: "{1~}"},
+		{v: "{Ą~}", e: "Ą"},
+		{v: "{ą~}", e: "ą"},
+		{v: "oli{ą~} {ą~}s", e: "olią ąs"},
+		{v: "oli{ą~}{k~} {{ą~}}s", e: "oliąk {ą}s"},
+	}
+
+	for i, tc := range tests {
+		t.Run(tc.v, func(t *testing.T) {
+			v := ClearAccents(tc.v)
+			assert.Equal(t, tc.e, v, "Fail %d", i)
+		})
+	}
+}

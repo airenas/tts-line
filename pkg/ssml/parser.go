@@ -19,8 +19,10 @@ type wrkData struct {
 	speakTagEndCount int
 	lastTag          []string
 	voiceFunc        func(string) (string, error)
-	lastWAcc         string
-	lastText         *Text
+
+	lastWAcc, lastWSyll, lastWUser string
+
+	lastText *Text
 
 	res     []Part
 	cValues []*Text
@@ -142,6 +144,8 @@ func makeTextPart(se xml.CharData, wrk *wrkData) error {
 			tp.Accented = wrk.lastWAcc
 			wrk.lastWAcc = ""
 		}
+		tp.Syllables = wrk.lastWSyll
+		tp.UserOEPal = wrk.lastWUser
 		if wrk.lastText != nil {
 			wrk.lastText.Texts = append(wrk.lastText.Texts, tp)
 		} else {
@@ -293,7 +297,24 @@ func startWord(se xml.StartElement, wrk *wrkData) error {
 		return fmt.Errorf("wrong <intelektika:w>:acc='%s'", a)
 	}
 	wrk.lastWAcc = a
+	wrk.lastWSyll = getAttr(se, "syll")
+	if wrk.lastWSyll != "" && accent.ClearAccents(wrk.lastWAcc) != clearSylls(wrk.lastWSyll) {
+		return fmt.Errorf("wrong syllables <intelektika:w>:acc='%s' syll='%s'", wrk.lastWAcc, wrk.lastWSyll)
+	}
+	wrk.lastWUser = getAttr(se, "user")
+	if wrk.lastWUser != "" && !strings.EqualFold(accent.ClearAccents(wrk.lastWAcc), clearUserOE(wrk.lastWUser)) {
+		return fmt.Errorf("wrong OE model <intelektika:w>:acc='%s' user='%s'", wrk.lastWAcc, wrk.lastWUser)
+	}
 	return nil
+}
+
+func clearUserOE(s string) string {
+	r := strings.NewReplacer("'", "", "*", "")
+	return r.Replace(s)
+}
+
+func clearSylls(s string) string {
+	return strings.ReplaceAll(s, "-", "")
 }
 
 func okAccentedWord(a string) bool {

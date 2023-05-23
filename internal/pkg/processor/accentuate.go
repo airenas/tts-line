@@ -49,12 +49,12 @@ func (p *accentuator) Process(data *synthesizer.TTSDataPart) error {
 }
 
 type accentOutputElement struct {
-	Accent []accent `json:"accent"`
+	Accent []accentInfo `json:"accent"`
 	Word   string   `json:"word"`
 	Error  string   `json:"error"`
 }
 
-type accent struct {
+type accentInfo struct {
 	MF       string                      `json:"mf"`
 	Mi       string                      `json:"mi"`
 	MiVdu    string                      `json:"mi_vdu"`
@@ -109,8 +109,8 @@ func setAccent(w *synthesizer.ProcessedWord, out accentOutputElement) error {
 	return nil
 }
 
-func findBestAccentVariant(acc []accent, mi string, lema string) *synthesizer.AccentVariant {
-	find := func(fa func(a *accent) bool, fv func(v *synthesizer.AccentVariant) bool) *synthesizer.AccentVariant {
+func findBestAccentVariant(acc []accentInfo, mi string, lema string) *synthesizer.AccentVariant {
+	find := func(fa func(a *accentInfo) bool, fv func(v *synthesizer.AccentVariant) bool) *synthesizer.AccentVariant {
 		for _, a := range acc {
 			if fa(&a) {
 				for _, v := range a.Variants {
@@ -124,19 +124,19 @@ func findBestAccentVariant(acc []accent, mi string, lema string) *synthesizer.Ac
 	}
 	fIsAccent := func(v *synthesizer.AccentVariant) bool { return v.Accent > 0 }
 
-	if res := find(func(a *accent) bool { return a.Error == "" && a.MiVdu == mi && a.MF == lema }, fIsAccent); res != nil {
+	if res := find(func(a *accentInfo) bool { return a.Error == "" && a.MiVdu == mi && a.MF == lema }, fIsAccent); res != nil {
 		return res
 	}
 
-	if res := find(func(a *accent) bool { return a.Error == "" && a.MiVdu == mi }, fIsAccent); res != nil {
+	if res := find(func(a *accentInfo) bool { return a.Error == "" && a.MiVdu == mi }, fIsAccent); res != nil {
 		return res
 	}
 	// no mi filter
-	if res := find(func(a *accent) bool { return a.Error == "" }, fIsAccent); res != nil {
+	if res := find(func(a *accentInfo) bool { return a.Error == "" }, fIsAccent); res != nil {
 		return res
 	}
 	//no filter
-	return find(func(a *accent) bool { return true }, func(v *synthesizer.AccentVariant) bool { return true })
+	return find(func(a *accentInfo) bool { return true }, func(v *synthesizer.AccentVariant) bool { return true })
 }
 
 func (p *accentuator) skip(data *synthesizer.TTSDataPart) bool {

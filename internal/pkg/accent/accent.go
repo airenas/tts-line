@@ -2,12 +2,13 @@ package accent
 
 import (
 	"fmt"
+	"strings"
 	"unicode"
 
 	"github.com/pkg/errors"
 )
 
-//ToAccentString add accent to string
+// ToAccentString add accent to string
 func ToAccentString(w string, a int) (string, error) {
 	if a == 0 {
 		return w, nil
@@ -28,7 +29,7 @@ func ToAccentString(w string, a int) (string, error) {
 	return string(rn[:pos]) + as + string(rn[pos+1:]), nil
 }
 
-//Value returns accent value as int or 0
+// Value returns accent value as int or 0
 func Value(r rune) int {
 	if r == Kairinis {
 		return 1
@@ -63,6 +64,34 @@ func IsWordOrWithAccent(v string) bool {
 		}
 	}
 	return len(rns) > 0
+}
+
+func ClearAccents(v string) string {
+	rns := []rune(v)
+	sb := strings.Builder{}
+	for i := 0; i < len(rns); i++ {
+		if i < (len(rns)-3) && rns[i] == '{' &&
+			unicode.IsLetter(rns[i+1]) && Value(rns[i+2]) > 0 && rns[i+3] == '}' {
+			sb.WriteRune(rns[i+1])
+			i = i + 3
+		} else {
+			sb.WriteRune(rns[i])
+		}
+	}
+	return sb.String()
+}
+
+func TranscriberAccent(acc int) string {
+	if acc == 1 {
+		return "4"
+	}
+	if acc == 2 {
+		return "9"
+	}
+	if acc == 3 {
+		return "3"
+	}
+	return ""
 }
 
 func toString(r rune, tp int) (string, error) {

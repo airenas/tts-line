@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"strings"
 	"time"
-	"unicode"
 
 	"github.com/airenas/go-app/pkg/goapp"
+	"github.com/airenas/tts-line/internal/pkg/accent"
 	accentI "github.com/airenas/tts-line/internal/pkg/accent"
 	"github.com/airenas/tts-line/internal/pkg/synthesizer"
 	"github.com/airenas/tts-line/internal/pkg/utils"
@@ -116,27 +116,12 @@ func NewTaggerAccents(urlStr string) (synthesizer.Processor, error) {
 func (p *taggerAccents) Process(data *synthesizer.TTSData) error {
 	var output []*TaggedWord
 	data.TextWithNumbers = []string{data.OriginalText}
-	err := p.httpWrap.InvokeText(clearAccents(strings.Join(data.TextWithNumbers, "")), &output)
+	err := p.httpWrap.InvokeText(accent.ClearAccents(strings.Join(data.TextWithNumbers, "")), &output)
 	if err != nil {
 		return err
 	}
 	data.Words, err = mapTagAccentResult(output, data.TextWithNumbers, data.OriginalTextParts)
 	return err
-}
-
-func clearAccents(v string) string {
-	rns := []rune(v)
-	sb := strings.Builder{}
-	for i := 0; i < len(rns); i++ {
-		if i < (len(rns)-3) && rns[i] == '{' &&
-			unicode.IsLetter(rns[i+1]) && accentI.Value(rns[i+2]) > 0 && rns[i+3] == '}' {
-			sb.WriteRune(rns[i+1])
-			i = i + 3
-		} else {
-			sb.WriteRune(rns[i])
-		}
-	}
-	return sb.String()
 }
 
 func mapTagAccentResult(tags []*TaggedWord, text []string, textParts []*synthesizer.TTSTextPart) ([]*synthesizer.ProcessedWord, error) {
@@ -154,7 +139,8 @@ func mapTagAccentResult(tags []*TaggedWord, text []string, textParts []*synthesi
 		pw := synthesizer.ProcessedWord{Tagged: mapTag(t)}
 		if acc > 0 {
 			pw.UserAccent = acc
-		} else if len(textParts) > posI {
+		}
+		if len(textParts) > posI {
 			tp := textParts[posI]
 			pw.TextPart = tp
 		}
@@ -243,7 +229,7 @@ func NewSSMLTagger(urlStr string) (synthesizer.Processor, error) {
 func (p *ssmlTagger) Process(data *synthesizer.TTSData) error {
 	var output []*TaggedWord
 	data.TextWithNumbers = addSpaces(data.TextWithNumbers)
-	txt := clearAccents(strings.Join(data.TextWithNumbers, ""))
+	txt := accent.ClearAccents(strings.Join(data.TextWithNumbers, ""))
 	err := p.httpWrap.InvokeText(txt, &output)
 	if err != nil {
 		return err
@@ -252,7 +238,7 @@ func (p *ssmlTagger) Process(data *synthesizer.TTSData) error {
 	return err
 }
 
-func addSpaces(in []string) []string{
+func addSpaces(in []string) []string {
 	res := make([]string, len(in))
 	for i, s := range in {
 		if strings.HasPrefix(s, " ") {

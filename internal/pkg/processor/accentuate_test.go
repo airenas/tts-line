@@ -36,7 +36,7 @@ func TestInvokeAccentuator(t *testing.T) {
 	httpJSONMock.On("InvokeJSON", mock.Anything, mock.Anything).Run(
 		func(params mock.Arguments) {
 			*params[1].(*[]accentOutputElement) = []accentOutputElement{{Word: "word",
-				Accent: []accent{{Mi: "mi", Variants: []synthesizer.AccentVariant{{Accent: 101}}}}}}
+				Accent: []accentInfo{{Mi: "mi", Variants: []synthesizer.AccentVariant{{Accent: 101}}}}}}
 		}).Return(nil)
 	err := pr.Process(d)
 	assert.Nil(t, err)
@@ -106,7 +106,7 @@ func TestMapAccOutput(t *testing.T) {
 	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Word: "v2"}})
 
 	output := []accentOutputElement{{Word: "v2",
-		Accent: []accent{{Mi: "mi", Variants: []synthesizer.AccentVariant{{Accent: 101,
+		Accent: []accentInfo{{Mi: "mi", Variants: []synthesizer.AccentVariant{{Accent: 101,
 			Syll: "v-1"}}}}}}
 
 	err := mapAccentOutput(d, output)
@@ -122,7 +122,7 @@ func TestMapAccOutput_FindBest(t *testing.T) {
 	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Word: "v2", Mi: "mi2"}})
 
 	output := []accentOutputElement{{Word: "v2",
-		Accent: []accent{{MiVdu: "mi1", Variants: []synthesizer.AccentVariant{{Accent: 101,
+		Accent: []accentInfo{{MiVdu: "mi1", Variants: []synthesizer.AccentVariant{{Accent: 101,
 			Syll: "v-1"}}},
 			{MiVdu: "mi2", Variants: []synthesizer.AccentVariant{{Accent: 102,
 				Syll: "v-1"}}},
@@ -140,7 +140,7 @@ func TestMapAccOutput_Error(t *testing.T) {
 	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Word: "v2", Mi: "mi2"}})
 
 	output := []accentOutputElement{{Word: "v2",
-		Accent: []accent{{MiVdu: "mi1", Error: "err", Variants: []synthesizer.AccentVariant{{Accent: 0,
+		Accent: []accentInfo{{MiVdu: "mi1", Error: "err", Variants: []synthesizer.AccentVariant{{Accent: 0,
 			Syll: "v-1"}}},
 			{MiVdu: "mi2", Variants: []synthesizer.AccentVariant{{Accent: 102,
 				Syll: "v-2"}}},
@@ -158,7 +158,7 @@ func TestMapAccOutput_WithAccent(t *testing.T) {
 	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Word: "v2", Mi: "mi2"}})
 
 	output := []accentOutputElement{{Word: "v2",
-		Accent: []accent{
+		Accent: []accentInfo{
 			{MiVdu: "mi1", Error: "err", Variants: []synthesizer.AccentVariant{{Accent: 0, Syll: "v-1"}}},
 			{MiVdu: "mi2", Variants: []synthesizer.AccentVariant{
 				{Accent: 0, Syll: "v-2"},
@@ -178,7 +178,7 @@ func TestMapAccOutput_FailError(t *testing.T) {
 	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Word: "v2", Mi: "mi2"}})
 
 	output := []accentOutputElement{{Word: "v2",
-		Accent: []accent{
+		Accent: []accentInfo{
 			{MiVdu: "mi1", Variants: []synthesizer.AccentVariant{{Accent: 0, Syll: "v-1"}}},
 		}},
 		{Word: "v2", Error: "error olia"}}
@@ -196,7 +196,7 @@ func TestMapAccOutput_FailErrorTooLong(t *testing.T) {
 		Word: "loooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooong", Mi: "mi2"}})
 
 	output := []accentOutputElement{{Word: "v2",
-		Accent: []accent{
+		Accent: []accentInfo{
 			{MiVdu: "mi1", Variants: []synthesizer.AccentVariant{{Accent: 0, Syll: "v-1"}}},
 		}},
 		{Word: "v2", Error: "error olia"}}
@@ -214,7 +214,7 @@ func TestMapAccOutput_FailNoWordAccented(t *testing.T) {
 		Word: "bad", Mi: "mi2"}})
 
 	output := []accentOutputElement{{Word: "v2",
-		Accent: []accent{
+		Accent: []accentInfo{
 			{MiVdu: "mi1", Variants: []synthesizer.AccentVariant{{Accent: 0, Syll: "v-1"}}},
 		}},
 		{Word: "v2", Error: "No word"}}
@@ -232,7 +232,7 @@ func TestMapAccOutput_FailWrongWord(t *testing.T) {
 		Word: "badd", Mi: "mi2"}})
 
 	output := []accentOutputElement{{Word: "v2",
-		Accent: []accent{
+		Accent: []accentInfo{
 			{MiVdu: "mi1", Variants: []synthesizer.AccentVariant{{Accent: 0, Syll: "v-1"}}},
 		}},
 		{Word: "bad", Error: ""}}
@@ -244,7 +244,7 @@ func TestMapAccOutput_FailWrongWord(t *testing.T) {
 }
 
 func TestFindBest_UseLemma(t *testing.T) {
-	acc := []accent{{MiVdu: "mi2", MF: "lema1", Variants: []synthesizer.AccentVariant{{Accent: 101}}},
+	acc := []accentInfo{{MiVdu: "mi2", MF: "lema1", Variants: []synthesizer.AccentVariant{{Accent: 101}}},
 		{MiVdu: "mi2", MF: "lema", Variants: []synthesizer.AccentVariant{{Accent: 103}}}}
 	res := findBestAccentVariant(acc, "mi2", "lema")
 

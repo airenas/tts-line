@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/airenas/go-app/pkg/goapp"
+	"github.com/airenas/tts-line/internal/pkg/accent"
 	"github.com/airenas/tts-line/internal/pkg/synthesizer"
 	"github.com/airenas/tts-line/internal/pkg/utils"
 	"github.com/pkg/errors"
@@ -38,7 +39,7 @@ func (p *numberReplace) Process(data *synthesizer.TTSData) error {
 		return nil
 	}
 	res := ""
-	err := p.httpWrap.InvokeText(clearAccents(strings.Join(data.Text, " ")), &res)
+	err := p.httpWrap.InvokeText(accent.ClearAccents(strings.Join(data.Text, " ")), &res)
 	if err != nil {
 		return err
 	}
@@ -77,7 +78,7 @@ func (p *ssmlNumberReplace) Process(data *synthesizer.TTSData) error {
 		return nil
 	}
 	res := ""
-	err := p.httpWrap.InvokeText(clearAccents(strings.Join(data.Text, "")), &res)
+	err := p.httpWrap.InvokeText(accent.ClearAccents(strings.Join(data.Text, "")), &res)
 	if err != nil {
 		return err
 	}
@@ -92,7 +93,7 @@ func mapAccentsBack(new string, origArr []string) ([]string, error) {
 	accWrds := map[int]bool{}
 	ocStrs := make([]string, len(oStrs))
 	for i, s := range oStrs {
-		ocStrs[i] = clearAccents(s)
+		ocStrs[i] = accent.ClearAccents(s)
 		if ocStrs[i] != s {
 			accWrds[i] = true
 		}
@@ -119,13 +120,13 @@ func mapAccentsBack(new string, origArr []string) ([]string, error) {
 	}
 	var res []string
 	wFrom, nFrom, nTo := 0, 0, 0
-	for _, s := range origArr{
+	for _, s := range origArr {
 		l := strings.Count(s, " ") + 1
 		wTo := l + wFrom
 		nTo = len(nStrs)
 		if wTo < len(alignIDs) {
 			nTo = alignIDs[wTo]
-		} 
+		}
 		for nTo == -1 && wTo < len(alignIDs) {
 			wTo++
 			nTo = alignIDs[wTo]
