@@ -131,6 +131,25 @@ func TestMapResult_Normalized(t *testing.T) {
 	assert.Equal(t, "oo", res.Text)
 }
 
+func TestMapResult_Transcribed(t *testing.T) {
+	d := &TTSData{}
+	d.Input = &api.TTSRequestConfig{OutputTextFormat: api.TextTranscribed}
+	d.Parts = []*TTSDataPart{{TranscribedText: "a b c sil"}, {TranscribedText: "d sil"}}
+	res, err := mapResult(d)
+	assert.Nil(t, err)
+	assert.Equal(t, "a b c sil d sil", res.Text)
+}
+
+func TestMapResult_Transcribed_SSML(t *testing.T) {
+	d := &TTSData{}
+	d.Input = &api.TTSRequestConfig{OutputTextFormat: api.TextTranscribed}
+	d.SSMLParts = []*TTSData{{Parts: []*TTSDataPart{{TranscribedText: "a b c sil"}, {TranscribedText: "d sil"}}},
+		{Parts: []*TTSDataPart{{TranscribedText: "c , sil"}}}}
+	res, err := mapResult(d)
+	assert.Nil(t, err)
+	assert.Equal(t, "a b c sil d sil c , sil", res.Text)
+}
+
 func TestMapResult_AccentedFail(t *testing.T) {
 	d := &TTSData{}
 	d.Input = &api.TTSRequestConfig{OutputTextFormat: api.TextAccented}
@@ -216,7 +235,7 @@ func TestGetTranscriberAccent(t *testing.T) {
 		{name: "clitics custom", args: args{w: &ProcessedWord{Tagged: TaggedWord{Word: "aa"}, AccentVariant: &AccentVariant{Accent: 101},
 			Clitic: Clitic{Type: CliticsCustom, Accent: 105}}}, want: 105},
 		{name: "no accent from user", args: args{w: &ProcessedWord{Tagged: TaggedWord{Word: "aa"},
-			AccentVariant: &AccentVariant{Accent: 101}, TextPart: &TTSTextPart{Accented: "aa"},}}, want: 0},
+			AccentVariant: &AccentVariant{Accent: 101}, TextPart: &TTSTextPart{Accented: "aa"}}}, want: 0},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

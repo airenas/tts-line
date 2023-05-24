@@ -99,6 +99,21 @@ func TestInvokeAcousticModel_Skip(t *testing.T) {
 	err := pr.Process(d)
 	assert.Nil(t, err)
 	httpJSONMock.AssertNumberOfCalls(t, "InvokeJSONU", 0)
+	assert.Equal(t, d.TranscribedText, "")
+}
+
+func TestInvokeAcousticModel_Skip_ReturnTranscribed(t *testing.T) {
+	initTestJSON(t)
+	pr, _ := NewAcousticModel(test.NewConfig(t, "url: http://server\n"))
+	assert.NotNil(t, pr)
+	pr.(*amodel).httpWrap = httpJSONMock
+	d := newTestTTSDataPart()
+	d.Cfg.Input.OutputFormat = api.AudioNone
+	d.Cfg.Input.OutputTextFormat = api.TextTranscribed
+	d.Spectogram = ""
+	err := pr.Process(d)
+	assert.Nil(t, err)
+	assert.Equal(t, d.TranscribedText, "sil")
 }
 
 func TestInvokeAcousticModel_WriteAudio(t *testing.T) {
@@ -116,6 +131,7 @@ func TestInvokeAcousticModel_WriteAudio(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Equal(t, "spectogram", d.Spectogram)
 	assert.Equal(t, "audio", d.Audio)
+	assert.Equal(t, d.TranscribedText, "sil")
 }
 
 func TestInvokeAcousticModel_Fail(t *testing.T) {
