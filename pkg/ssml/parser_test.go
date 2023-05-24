@@ -139,6 +139,18 @@ func TestParse(t *testing.T) {
 			want: nil, wantErr: true},
 		{name: "fail <w> in <break>", xml: `<speak><break time="10s"><intelektika:w acc="g{a/}li">gali</intelektika:w></break></speak>`,
 			want: nil, wantErr: true},
+		{name: "parses sylls", xml: `<speak><intelektika:w acc="g{a/}li" syll="ga-li">gali</intelektika:w></speak>`,
+		want: []Part{
+			&Text{Voice: "aa", Speed: 1, Texts: []TextPart{{Text: "gali", Accented: "g{a/}li", Syllables: "ga-li"}}},
+		}, wantErr: false},
+		{name: "parses OE", xml: `<speak><intelektika:w acc="ole" syll="o-le" user="O*l'E">olia</intelektika:w></speak>`,
+		want: []Part{
+			&Text{Voice: "aa", Speed: 1, Texts: []TextPart{{Text: "olia", Accented: "ole", Syllables: "o-le",UserOEPal: "O*l'E"}}},
+		}, wantErr: false},
+		{name: "fails OE", xml: `<speak><intelektika:w acc="ole" syll="o-le" user="OlEe">olia</intelektika:w></speak>`,
+		want: nil, wantErr: true},
+		{name: "fails sylls", xml: `<speak><intelektika:w acc="ole" syll="oo-le" user="OlE">olia</intelektika:w></speak>`,
+		want: nil, wantErr: true},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -266,3 +278,48 @@ func Test_okAccentedWord(t *testing.T) {
 		})
 	}
 }
+
+func Test_clearSylls(t *testing.T) {
+	type args struct {
+		s string
+	}
+	tests := []struct {
+		name string
+		args args
+		want string
+	}{
+		{name: "empty", args: args{s: ""}, want: ""},
+		{name: "none", args: args{s: "olia"}, want: "olia"},
+		{name: "clears", args: args{s: "o-li-a"}, want: "olia"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := clearSylls(tt.args.s); got != tt.want {
+				t.Errorf("clearSylls() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func Test_clearUserOE(t *testing.T) {
+	type args struct {
+		s string
+	}
+	tests := []struct {
+		name string
+		args args
+		want string
+	}{
+		{name: "empty", args: args{s: ""}, want: ""},
+		{name: "none", args: args{s: "Olia"}, want: "Olia"},
+		{name: "clears", args: args{s: "Ol'iab*a"}, want: "Oliaba"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := clearUserOE(tt.args.s); got != tt.want {
+				t.Errorf("clearUserOE() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
