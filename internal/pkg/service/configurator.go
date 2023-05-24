@@ -170,6 +170,9 @@ func getOutputTextFormat(s string) (api.TextFormatEnum, error) {
 	if st == "accented" {
 		return api.TextAccented, nil
 	}
+	if st == "transcribed" {
+		return api.TextTranscribed, nil
+	}
 	return api.TextNone, errors.New("Unknown text format " + s)
 }
 

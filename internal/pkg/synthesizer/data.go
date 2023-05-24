@@ -52,12 +52,13 @@ type TTSConfig struct {
 
 // TTSDataPart partial tts data
 type TTSDataPart struct {
-	Text       string
-	Cfg        *TTSConfig
-	First      bool
-	Words      []*ProcessedWord
-	Spectogram string
-	Audio      string
+	Text            string
+	Cfg             *TTSConfig
+	First           bool
+	Words           []*ProcessedWord
+	Spectogram      string
+	Audio           string
+	TranscribedText string
 }
 
 // ProcessedWord keeps one word info

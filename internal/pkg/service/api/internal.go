@@ -16,6 +16,8 @@ const (
 	TextNormalized
 	//TextAccented output normalized accented text
 	TextAccented
+	//TextTranscribed output data that was sent to AM
+	TextTranscribed
 )
 
 func (e TextFormatEnum) String() string {

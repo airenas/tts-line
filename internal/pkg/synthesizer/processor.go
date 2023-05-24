@@ -12,19 +12,19 @@ import (
 	"github.com/airenas/tts-line/pkg/ssml"
 )
 
-//Processor interface
+// Processor interface
 type Processor interface {
 	Process(*TTSData) error
 }
 
-//MainWorker does synthesis work
+// MainWorker does synthesis work
 type MainWorker struct {
 	processors      []Processor
 	ssmlProcessors  []Processor
 	AllowCustomCode bool
 }
 
-//Work is main method
+// Work is main method
 func (mw *MainWorker) Work(input *api.TTSRequestConfig) (*api.Result, error) {
 	data := &TTSData{}
 	data.OriginalText = input.Text
@@ -125,6 +125,8 @@ func mapResult(data *TTSData) (*api.Result, error) {
 		}
 		if data.Input.OutputTextFormat == api.TextNormalized {
 			res.Text = strings.Join(data.TextWithNumbers, "")
+		} else if data.Input.OutputTextFormat == api.TextTranscribed {
+			res.Text = mapTranscribed(data)
 		} else if data.Input.OutputTextFormat == api.TextAccented {
 			var err error
 			res.Text, err = mapAccentedText(data)
@@ -145,6 +147,25 @@ func tryCustomCode(data *TTSData) {
 		data.Cfg.JustAM = true
 		goapp.Log.Infof("Start from AM")
 	}
+}
+
+func mapTranscribed(data *TTSData) string {
+	res := strings.Builder{}
+	write_func := func(s string) {
+		if res.Len() > 0 {
+			res.WriteRune(' ')
+		}
+		res.WriteString(s)
+	}
+	for _, p := range data.Parts {
+		write_func(p.TranscribedText)
+	}
+	for _, sp := range data.SSMLParts {
+		for _, p := range sp.Parts {
+			write_func(p.TranscribedText)
+		}
+	}
+	return res.String()
 }
 
 func mapAccentedText(data *TTSData) (string, error) {
@@ -168,7 +189,7 @@ func mapAccentedText(data *TTSData) (string, error) {
 	return res.String(), nil
 }
 
-//GetTranscriberAccent return accent from ProcessedWord
+// GetTranscriberAccent return accent from ProcessedWord
 func GetTranscriberAccent(w *ProcessedWord) int {
 	if w.AccentVariant != nil {
 		res := w.AccentVariant.Accent

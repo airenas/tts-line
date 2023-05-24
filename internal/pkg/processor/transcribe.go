@@ -29,7 +29,7 @@ func NewTranscriber(urlStr string) (synthesizer.PartProcessor, error) {
 
 func (p *transcriber) Process(data *synthesizer.TTSDataPart) error {
 	if p.skip(data) {
-		goapp.Log.Info("Skip accentuator")
+		goapp.Log.Info("Skip transcriber")
 		return nil
 	}
 
@@ -147,7 +147,7 @@ func addAccent(in string, acc int) string {
 }
 
 func (p *transcriber) skip(data *synthesizer.TTSDataPart) bool {
-	return data.Cfg.JustAM || data.Cfg.Input.OutputFormat == api.AudioNone
+	return data.Cfg.JustAM || (data.Cfg.Input.OutputFormat == api.AudioNone && data.Cfg.Input.OutputTextFormat != api.TextTranscribed)
 }
 
 func transWord(w *synthesizer.ProcessedWord) string {

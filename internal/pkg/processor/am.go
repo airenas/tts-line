@@ -35,7 +35,7 @@ func init() {
 	}
 }
 
-//NewAcousticModel creates new processor
+// NewAcousticModel creates new processor
 func NewAcousticModel(config *viper.Viper) (synthesizer.PartProcessor, error) {
 	if config == nil {
 		return nil, errors.New("No acousticModel config")
@@ -68,10 +68,14 @@ func NewAcousticModel(config *viper.Viper) (synthesizer.PartProcessor, error) {
 
 func (p *amodel) Process(data *synthesizer.TTSDataPart) error {
 	if data.Cfg.Input.OutputFormat == api.AudioNone {
+		if data.Cfg.Input.OutputTextFormat == api.TextTranscribed {
+			data.TranscribedText = p.mapAMInput(data).Text
+		}
 		return nil
 	}
 
 	inData := p.mapAMInput(data)
+	data.TranscribedText = inData.Text
 	var output amOutput
 	err := p.httpWrap.InvokeJSONU(getVoiceURL(p.url, data.Cfg.Voice), inData, &output)
 	if err != nil {
