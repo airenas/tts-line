@@ -362,3 +362,27 @@ func Test_getSyllables(t *testing.T) {
 		})
 	}
 }
+
+func Test_skipTranscribe(t *testing.T) {
+	type args struct {
+		cfg *synthesizer.TTSConfig
+	}
+	tests := []struct {
+		name string
+		args args
+		want bool
+	}{
+		{name: "not", args: args{cfg: &synthesizer.TTSConfig{Input: &api.TTSRequestConfig{OutputFormat: api.AudioMP3}}}, want: false},
+		{name: "not", args: args{cfg: &synthesizer.TTSConfig{Input: &api.TTSRequestConfig{OutputFormat: api.AudioMP3, OutputTextFormat: api.TextAccented}}}, want: false},
+		{name: "just am", args: args{cfg: &synthesizer.TTSConfig{JustAM: true, Input: &api.TTSRequestConfig{OutputFormat: api.AudioMP3}}}, want: true},
+		{name: "audio none", args: args{cfg: &synthesizer.TTSConfig{Input: &api.TTSRequestConfig{OutputFormat: api.AudioNone, OutputTextFormat: api.TextNormalized}}}, want: true},
+		{name: "transcribed text", args: args{cfg: &synthesizer.TTSConfig{Input: &api.TTSRequestConfig{OutputFormat: api.AudioNone, OutputTextFormat: api.TextTranscribed}}}, want: false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := skipTranscribe(tt.args.cfg); got != tt.want {
+				t.Errorf("skipTranscribe() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}

@@ -266,6 +266,7 @@ func TestOutputTextFormat(t *testing.T) {
 		{in: "none", res: api.TextNone, isErr: false},
 		{in: "normalized", res: api.TextNormalized, isErr: false},
 		{in: "accented", res: api.TextAccented, isErr: false},
+		{in: "transcribed", res: api.TextTranscribed, isErr: false},
 		{in: "olia", res: api.TextNone, isErr: true},
 	}
 
