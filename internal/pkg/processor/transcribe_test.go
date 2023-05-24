@@ -3,14 +3,12 @@ package processor
 import (
 	"testing"
 
+	"github.com/airenas/tts-line/internal/pkg/service/api"
+	"github.com/airenas/tts-line/internal/pkg/synthesizer"
 	"github.com/pkg/errors"
-
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
-
-	"github.com/airenas/tts-line/internal/pkg/service/api"
-	"github.com/airenas/tts-line/internal/pkg/synthesizer"
 )
 
 func TestNewTranscriber(t *testing.T) {
@@ -290,4 +288,77 @@ func TestMapTransOutput_FailError(t *testing.T) {
 
 	err := mapTransOutput(d, output)
 	assert.NotNil(t, err)
+}
+
+func Test_addAccent(t *testing.T) {
+	type args struct {
+		in  string
+		acc int
+	}
+	tests := []struct {
+		name string
+		args args
+		want string
+	}{
+		{name: "no acc", args: args{in: "Olia", acc: 0}, want: "Olia"},
+		{name: "adds", args: args{in: "Olia", acc: 101}, want: "O4lia"},
+		{name: "adds 3", args: args{in: "Olia", acc: 201}, want: "O9lia"},
+		{name: "adds 9", args: args{in: "Olia", acc: 301}, want: "O3lia"},
+		{name: "with palatalization", args: args{in: "Ol*ia", acc: 301}, want: "O3l*ia"},
+		{name: "with palatalization", args: args{in: "Ol*ia", acc: 304}, want: "Ol*ia3"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := addAccent(tt.args.in, tt.args.acc); got != tt.want {
+				t.Errorf("addAccent() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func Test_getUserOEPal(t *testing.T) {
+	type args struct {
+		w *synthesizer.ProcessedWord
+	}
+	tests := []struct {
+		name string
+		args args
+		want string
+	}{
+		{name: "none", args: args{w: &synthesizer.ProcessedWord{TextPart: &synthesizer.TTSTextPart{Accented: "aa", UserOEPal: ""}}}, want: ""},
+		{name: "adds", args: args{w: &synthesizer.ProcessedWord{TextPart: &synthesizer.TTSTextPart{Accented: "aa", UserOEPal: "aa"}}}, want: "aa"},
+		{name: "with acc", args: args{w: &synthesizer.ProcessedWord{UserAccent: 302, TextPart: &synthesizer.TTSTextPart{Accented: "aa", UserOEPal: "aa"}}}, want: "aa3"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := getUserOEPal(tt.args.w); got != tt.want {
+				t.Errorf("getUserOEPal() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func Test_getSyllables(t *testing.T) {
+	type args struct {
+		w *synthesizer.ProcessedWord
+	}
+	tests := []struct {
+		name string
+		args args
+		want string
+	}{
+		{name: "none", args: args{w: &synthesizer.ProcessedWord{TextPart: &synthesizer.TTSTextPart{Accented: "aa", Syllables: ""}}}, want: ""},
+		{name: "adds", args: args{w: &synthesizer.ProcessedWord{TextPart: &synthesizer.TTSTextPart{Accented: "aa", Syllables: "a-a"}}}, want: "a-a"},
+		{name: "from accenter", args: args{w: &synthesizer.ProcessedWord{UserAccent: 302,
+			TextPart: &synthesizer.TTSTextPart{Accented: "aa"}, AccentVariant: &synthesizer.AccentVariant{Syll: "a-b"}}}, want: "a-b"},
+		{name: "prefers user's", args: args{w: &synthesizer.ProcessedWord{UserAccent: 302,
+			TextPart: &synthesizer.TTSTextPart{Accented: "aa", Syllables: "a-a"}, AccentVariant: &synthesizer.AccentVariant{Syll: "a-b"}}}, want: "a-a"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := getSyllables(tt.args.w); got != tt.want {
+				t.Errorf("getSyllables() = %v, want %v", got, tt.want)
+			}
+		})
+	}
 }
