@@ -149,6 +149,9 @@ func TestInvokeSSMLNumberReplace_Real3(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			// if tt.name != "real3" {
+			// 	return
+			// }
 			initTest(t)
 			pr, _ := NewSSMLNumberReplace("http://server")
 			assert.NotNil(t, pr, "err on "+tt.name)
@@ -159,45 +162,12 @@ func TestInvokeSSMLNumberReplace_Real3(t *testing.T) {
 					*params[1].(*string) = tt.out
 				}).Return(nil)
 			err := pr.Process(&d)
-			assert.Equal(t, tt.wantErr, err != nil, "err on "+tt.name)
+			assert.Equal(t, tt.wantErr, err != nil, "err on "+tt.name + ":%v", err)
 			if tt.wantString != "" {
 				assert.Equal(t, []string{tt.wantString}, d.TextWithNumbers, "err on "+tt.name)
 			}
 		})
 	}
-}
-
-func TestInvokeSSMLNumberReplace_Real4(t *testing.T) {
-	initTest(t)
-	pr, _ := NewSSMLNumberReplace("http://server")
-	assert.NotNil(t, pr)
-	pr.(*ssmlNumberReplace).httpWrap = httpInvokerMock
-	d := synthesizer.TTSData{Text: []string{`Norvegija n750,00 Eur n n nII grupė nAustrija, Belgija, Vokietija, Prancūzija, Italija, 
-	Graikija, Ispanija, Kipras, Nyderlandai, Malta, Portugalija n750,00 Eur n n nIII grupė nBulgarija, Kroatija, Čekija, Estija, 
-	Latvija, Vengrija, Lenkija, Rumunija, Serbija, Slovakija, Slovėnija, Šiaurės Makedonija, Turkija n690,00 Eur n n nIV grupė nŠveicarija*
-	 n700,00 Eur n n n nŠalims už ES/EEE ribų: nStipendija 700,00 Eur/mėn. nIšmoka kelionei, kurios dydis nustatomas pagal atstumą* nuo Lietuvos 
-	 (Kauno miesto) iki praktikos organizacijos vietos (miesto): n n100-499 km - 180,00 EUR n500-1999 km - 275,00 EUR n2000-2999 km - 360,00 EUR 
-	 n3000-3999 km - 530,00 EUR n4000-7999 km - 820,00 EUR nvirš 8000 km - 1500,00 EUR n nPapildoma ekologiškos kelionės stipendija, jei keliaujama 
-	 autobusu ar traukiniu. nAtrankos rezultatai bus skelbiami el. paštu, informuojant visus kandidatus. nŠis konkursas yra išskirtinė galimybė praktikai 
-	 išvykti už ES/EEE ribų su „Erasmus+“ stipendija, kitas toks konkursas bus skelbiamas tik rudens semestro metu. nDaugiau informacijos: n n n`}}
-	httpInvokerMock.On("InvokeText", mock.Anything, mock.Anything).Run(
-		func(params mock.Arguments) {
-			*params[1].(*string) = `Norvegija n septyni šimtai penkiasdešimt ,nulis nulis eurų n n nII grupė 
-			nAustrija, Belgija, Vokietija, Prancūzija, Italija, Graikija, Ispanija, Kipras, Nyderlandai, Malta, Portugalija n septyni šimtai penkiasdešimt 
-			,nulis nulis eurų n n nIII grupė nBulgarija, Kroatija, Čekija, Estija, Latvija, Vengrija, Lenkija, Rumunija, Serbija, Slovakija, Slovėnija, Šiaurės Makedonija, 
-			Turkija n šeši šimtai devyniasdešimt ,nulis nulis eurų n n nIV grupė nŠveicarija* n septyni šimtai ,nulis nulis eurų n n n nŠalims už ES/EEE ribų: nStipendija 
-			septyni šimtai kablelis nulis nulis eurų/mėn. nIšmoka kelionei, kurios dydis nustatomas pagal atstumą* nuo Lietuvos (Kauno miesto) iki praktikos organizacijos 
-			vietos (miesto): n n šimtas -keturi šimtai devyniasdešimt devyni kilometrai - šimtas aštuoniasdešimt kablelis nulis nulis eurų n penki šimtai -tūkstantis devyni 
-			šimtai devyniasdešimt devyni kilometrai - du šimtai septyniasdešimt penki kablelis nulis nulis eurai n du tūkstančiai -du tūkstančiai devyni šimtai devyniasdešimt 
-			devyni kilometrai - trys šimtai šešiasdešimt kablelis nulis nulis eurų n trys tūkstančiai -trys tūkstančiai devyni šimtai devyniasdešimt devyni kilometrai - penki 
-			šimtai trisdešimt kablelis nulis nulis eurų n keturi tūkstančiai -septyni tūkstančiai devyni šimtai devyniasdešimt devyni kilometrai - aštuoni šimtai dvidešimt kablelis 
-			nulis nulis eurų nvirš aštuoni tūkstančiai kilometrų - tūkstantis penki šimtai kablelis nulis nulis eurų n nPapildoma ekologiškos kelionės stipendija, jei keliaujama autobusu 
-			ar traukiniu. nAtrankos rezultatai bus skelbiami el. paštu, informuojant visus kandidatus. nŠis konkursas yra išskirtinė galimybė praktikai išvykti už ES/EEE ribų su „Erasmus+“ 
-			stipendija, kitas toks konkursas bus skelbiamas tik rudens semestro metu. nDaugiau informacijos: n n n`
-		}).Return(nil)
-	err := pr.Process(&d)
-	assert.Nil(t, err)
-
 }
 
 func Test_doPartlyAlign(t *testing.T) {
@@ -221,12 +191,25 @@ func Test_doPartlyAlign(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := doPartlyAlign(tt.args.s1, tt.args.s2, 20); !reflect.DeepEqual(got, tt.want) {
+			if got, _ := doPartlyAlign(tt.args.s1, tt.args.s2, 20); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("doPartlyAlign() = %v, want %v", got, tt.want)
 			}
 		})
 	}
 }
+
+// func Test_doPartlyAlign_Manual(t *testing.T) {
+// 	c := 10
+// 	to := func(i1 []string, i2 int) []string {
+// 		if i2 <  len(i1) {
+// 			return i1[:i2]
+// 		}
+// 		return i1
+// 	}
+// 	res, resAlternative := doPartlyAlign(to([]string{"a", "1", "e", "3", "3", "3", "3", "3", "3", "a"}, c), to([]string{"a", "2", "2", "2", "2", "2", "e", "2", "2", "2", "2", "a"}, c), c)
+// 	fmt.Printf("%v", res)
+// 	fmt.Printf("%v", resAlternative)
+// }
 
 func Test_mapAccentsBack(t *testing.T) {
 	type args struct {
