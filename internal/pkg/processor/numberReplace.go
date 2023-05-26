@@ -99,14 +99,19 @@ func mapAccentsBack(new string, origArr []string) ([]string, error) {
 		}
 	}
 
-	alignIDs, err := align(ocStrs, nStrs, 20)
-	if err != nil {
-		// try increase align buffer, maybe it will help
-		goapp.Log.Info("increase align size")
-		alignIDs, err = align(ocStrs, nStrs, 40)
-		if err != nil {
-			return nil, errors.Wrapf(err, "can't align")
+	var alignIDs []int
+	var err error
+	for i, alignBuffer := range [...]int{20, 40, 80, 120} {
+		if i > 0 {
+			goapp.Log.Infof("increase align size to %d", alignBuffer)
 		}
+		alignIDs, err = align(ocStrs, nStrs, alignBuffer)
+		if err == nil {
+			break
+		}
+	}
+	if err != nil {
+		return nil, errors.Wrapf(err, "can't align")
 	}
 	for k := range accWrds {
 		nID := alignIDs[k]
@@ -182,6 +187,7 @@ func doPartlyAlign(s1 []string, s2 []string, step int) []int {
 	l1, l2 := len(s1), len(s2)
 	h := make([]byte, step*step)
 	hb := make([]moveType, step*step)
+
 	// calc h and h backtrace matrices
 	for i1 := 0; i1 < l1; i1++ {
 		for i2 := 0; i2 < l2; i2++ {
@@ -225,6 +231,7 @@ func doPartlyAlign(s1 []string, s2 []string, step int) []int {
 			}
 		}
 	}
+
 	res := make([]int, l1)
 	i2 := l2 - 1
 	for i1 := l1 - 1; i1 >= 0; i1-- {

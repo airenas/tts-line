@@ -135,6 +135,25 @@ func TestInvokeSSMLNumberReplace_Real2(t *testing.T) {
 	pr, _ := NewSSMLNumberReplace("http://server")
 	assert.NotNil(t, pr)
 	pr.(*ssmlNumberReplace).httpWrap = httpInvokerMock
+	d := synthesizer.TTSData{Text: []string{"Be to, per šį laikotarpį rusai neteko 3 795 tankų, 7 432 šarvuotųjų kovos mašinų, 3 359 artilerijos sistemų, " +
+		"570 reaktyvinės salvinės ugnies sistemų, 327 oro gynybos priemonių, 309 lėktuvų, 296 sraigtasparnių, 2 977 dronų, 1 015 sparnuotųjų raketų, 18 laivų, 6 148 automobilių"}}
+	httpInvokerMock.On("InvokeText", mock.Anything, mock.Anything).Run(
+		func(params mock.Arguments) {
+			*params[1].(*string) = "Be to, per šį laikotarpį rusai neteko trijų tūkstančių septynių šimtų devyniasdešimt penkių tankų, " + 
+			"septynių tūkstančių keturių šimtų trisdešimt dviejų šarvuotųjų kovos mašinų, trys tūkstančiai trys šimtai penkiasdešimt devintosios artilerijos sistemų, " + 
+			"penki šimtai septyniasdešimtosios reaktyvinės salvinės ugnies sistemų, trys šimtai dvidešimt septintosios oro gynybos priemonių, " +
+			"trijų šimtų devynių lėktuvų, dviejų šimtų devyniasdešimt šešių sraigtasparnių, dviejų tūkstančių devynių šimtų septyniasdešimt septynių dronų, "+
+			"tūkstantį penkiolika sparnuotųjų raketų, aštuoniolika laivų, šešių tūkstančių šimto keturiasdešimt aštuonių automobilių"
+		}).Return(nil)
+	err := pr.Process(&d)
+	assert.Nil(t, err)
+}
+
+func TestInvokeSSMLNumberReplace_Real3(t *testing.T) {
+	initTest(t)
+	pr, _ := NewSSMLNumberReplace("http://server")
+	assert.NotNil(t, pr)
+	pr.(*ssmlNumberReplace).httpWrap = httpInvokerMock
 	d := synthesizer.TTSData{Text: []string{"Robertsonas (1988 m. surinkęs 25 proc. balsų), bjūk{e~}nenas (1996 m. surinkęs 23 proc. balsų) ir f{o/}rbzas (2000 m. surinkęs 31 proc. balsų)"}}
 	httpInvokerMock.On("InvokeText", mock.Anything, mock.Anything).Run(
 		func(params mock.Arguments) {
