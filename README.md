@@ -6,7 +6,7 @@ Pipeline for Lithuanian speech synthesizer.
 
 ## Information
 
-Sequence diagram for synthesize request [Sequence diagram](./info/tts.png).
+Sequence diagram for synthesizing request [Sequence diagram](./info/tts.png).
 
 ---
 ### Author
@@ -20,8 +20,8 @@ Sequence diagram for synthesize request [Sequence diagram](./info/tts.png).
 ---
 ### License
 
-Copyright © 2021, [Airenas Vaičiūnas](https://github.com/airenas).
-Released under the [The 3-Clause BSD License](LICENSE).
+Copyright © 2023, [Airenas Vaičiūnas](https://github.com/airenas).
+Released under [The 3-Clause BSD License](LICENSE).
 
 Also, please, see other used [licenses](Licenses/).
 
