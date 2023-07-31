@@ -101,7 +101,7 @@ func mapAccentsBack(new string, origArr []string) ([]string, error) {
 
 	var alignIDs []int
 	var err error
-	for i, alignBuffer := range [...]int{20, 40, 80, 120} {
+	for i, alignBuffer := range [...]int{20, 40, 80, 120, 240} {
 		if i > 0 {
 			goapp.Log.Infof("increase align size to %d", alignBuffer)
 		}
