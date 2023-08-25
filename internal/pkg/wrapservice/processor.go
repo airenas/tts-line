@@ -11,13 +11,13 @@ import (
 	"github.com/pkg/errors"
 )
 
-//Processor does synthesis work
+// Processor does synthesis work
 type Processor struct {
 	amWrap  processor.HTTPInvokerJSON
 	vocWrap processor.HTTPInvokerJSON
 }
 
-//NewProcessor creates new processor
+// NewProcessor creates new processor
 func NewProcessor(amURL, vocURL string) (*Processor, error) {
 	res := &Processor{}
 	goapp.Log.Infof("AM URL: %s", amURL+"/model")
@@ -56,23 +56,23 @@ func NewProcessor(amURL, vocURL string) (*Processor, error) {
 	return res, nil
 }
 
-//Work is main method
-func (p *Processor) Work(params *api.Params) (string, error) {
+// Work is main method
+func (p *Processor) Work(params *api.Params) (*api.Result, error) {
 	amIn := amInput{Text: params.Text, Speed: params.Speed, Voice: params.Voice, Priority: params.Priority}
-	var amOut output
+	var amOut amOutput
 	err := p.amWrap.InvokeJSON(&amIn, &amOut)
 	if err != nil {
 		totalFailureMetrics.WithLabelValues("am", params.Voice).Add(1)
-		return "", errors.Wrap(err, "can't invoke AM")
+		return nil, errors.Wrap(err, "can't invoke AM")
 	}
 	vocIn := vocInput{Data: amOut.Data, Voice: params.Voice, Priority: params.Priority}
 	var vocOut output
 	err = p.vocWrap.InvokeJSON(&vocIn, &vocOut)
 	if err != nil {
 		totalFailureMetrics.WithLabelValues("vocoder", params.Voice).Add(1)
-		return "", errors.Wrap(err, "can't invoke Vocoder")
+		return nil, errors.Wrap(err, "can't invoke Vocoder")
 	}
-	return vocOut.Data, nil
+	return &api.Result{Data: vocOut.Data, Durations: amOut.Durations, SilDuration: amOut.SilDuration}, nil
 }
 
 type amInput struct {
@@ -90,6 +90,13 @@ type vocInput struct {
 
 type output struct {
 	Data string `json:"data"`
+}
+
+type amOutput struct {
+	Data        string `json:"data"`
+	Durations   []int  `json:"durations,omitempty"`
+	SilDuration int    `json:"silDuration,omitempty"`
+	Error       string `json:"error,omitempty"`
 }
 
 func newBackoff() backoff.BackOff {

@@ -68,12 +68,12 @@ func TestWrongMethod(t *testing.T) {
 
 func Test_Returns(t *testing.T) {
 	initTest(t)
-	synthesizerMock.On("Work", mock.Anything).Return("wav", nil)
+	synthesizerMock.On("Work", mock.Anything).Return(&api.Result{Data: "wav"}, nil)
 	req := httptest.NewRequest("POST", "/synthesize", toReader(api.Input{Text: "olia", Speed: 0.9, Voice: "aa", Priority: 10}))
 	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
 	resp := testCode(t, req, 200)
 	bytes, _ := io.ReadAll(resp.Body)
-	assert.Contains(t, string(bytes), `"data":"wav"`)
+	assert.Equal(t, `{"data":"wav"}`, strings.TrimSpace(string(bytes)))
 
 	synthesizerMock.AssertNumberOfCalls(t, "Work", 1)
 	gPrms := mocks.To[*api.Params](synthesizerMock.Calls[0].Arguments[0])
@@ -85,7 +85,7 @@ func Test_Returns(t *testing.T) {
 
 func Test_Fail(t *testing.T) {
 	initTest(t)
-	synthesizerMock.On("Work", mock.Anything).Return("", errors.New("haha"))
+	synthesizerMock.On("Work", mock.Anything).Return(nil, errors.New("haha"))
 	req := httptest.NewRequest("POST", "/synthesize", toReader(api.Input{Text: "olia", Voice: "aa"}))
 	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
 	testCode(t, req, 500)
@@ -122,7 +122,7 @@ func testCode(t *testing.T, req *http.Request, code int) *httptest.ResponseRecor
 
 type mockWaveSynthesizer struct{ mock.Mock }
 
-func (m *mockWaveSynthesizer) Work(in *api.Params) (string, error) {
+func (m *mockWaveSynthesizer) Work(in *api.Params) (*api.Result, error) {
 	args := m.Called(in)
-	return mocks.To[string](args.Get(0)), args.Error(1)
+	return mocks.To[*api.Result](args.Get(0)), args.Error(1)
 }

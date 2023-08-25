@@ -20,7 +20,7 @@ import (
 type (
 	//WaveSynthesizer main sythesis processor
 	WaveSynthesizer interface {
-		Work(params *api.Params) (string, error)
+		Work(params *api.Params) (*api.Result, error)
 	}
 	//Data is service operation data
 	Data struct {
@@ -92,12 +92,11 @@ func handleSynthesize(data *Data) func(echo.Context) error {
 			return echo.NewHTTPError(http.StatusBadRequest, "No voice")
 		}
 
-		resp, err := data.Processor.Work(&api.Params{Text: input.Text, Speed: input.Speed, Voice: input.Voice, Priority: input.Priority})
+		res, err := data.Processor.Work(&api.Params{Text: input.Text, Speed: input.Speed, Voice: input.Voice, Priority: input.Priority})
 		if err != nil {
 			goapp.Log.Error(errors.Wrap(err, "cannot process text"))
 			return echo.NewHTTPError(http.StatusInternalServerError, "Cannot process text")
 		}
-		res := &api.Result{Data: resp}
 		c.Response().Header().Set(echo.HeaderContentType, echo.MIMEApplicationJSONCharsetUTF8)
 		c.Response().WriteHeader(http.StatusOK)
 		return json.NewEncoder(c.Response()).Encode(res)

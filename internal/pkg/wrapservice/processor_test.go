@@ -49,16 +49,16 @@ func TestInvokeProcessor(t *testing.T) {
 
 	httpAMMock.On("InvokeJSON", mock.Anything, mock.Anything).Run(
 		func(params mock.Arguments) {
-			*params[1].(*output) = output{Data: "specs"}
+			*params[1].(*amOutput) = amOutput{Data: "specs", Durations: []int{10, 12}, SilDuration: 15}
 		}).Return(nil)
 
 	httpVocMock.On("InvokeJSON", mock.Anything, mock.Anything).Run(
 		func(params mock.Arguments) {
 			*params[1].(*output) = output{Data: "audio"}
 		}).Return(nil)
-	text, err := pr.Work(&api.Params{Text: "olia", Speed: 0.9, Voice: "voice", Priority: 10})
+	res, err := pr.Work(&api.Params{Text: "olia", Speed: 0.9, Voice: "voice", Priority: 10})
 	assert.Nil(t, err)
-	assert.Equal(t, "audio", text)
+	assert.Equal(t, &api.Result{Data: "audio", Durations: []int{10, 12}, SilDuration: 15}, res)
 
 	httpAMMock.AssertNumberOfCalls(t, "InvokeJSON", 1)
 	cp1 := httpAMMock.Calls[0].Arguments[0]
@@ -97,7 +97,7 @@ func TestInvokeProcessor_FailVoc(t *testing.T) {
 
 	httpAMMock.On("InvokeJSON", mock.Anything, mock.Anything).Run(
 		func(params mock.Arguments) {
-			*params[1].(*output) = output{Data: "audio"}
+			*params[1].(*amOutput) = amOutput{Data: "audio"}
 		}).Return(nil)
 	httpVocMock.On("InvokeJSON", mock.Anything, mock.Anything).Return(errors.New("haha"))
 	_, err := pr.Work(&api.Params{Text: "olia", Speed: 1, Voice: "voice", Priority: 10})
