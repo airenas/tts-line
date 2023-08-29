@@ -13,5 +13,6 @@ type Result struct {
 	Data        string `json:"data,omitempty"`
 	Durations   []int  `json:"durations,omitempty"`
 	SilDuration int    `json:"silDuration,omitempty"`
+	Step        int    `json:"step,omitempty"`
 	Error       string `json:"error,omitempty"`
 }

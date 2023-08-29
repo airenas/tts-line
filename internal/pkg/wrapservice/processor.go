@@ -72,7 +72,7 @@ func (p *Processor) Work(params *api.Params) (*api.Result, error) {
 		totalFailureMetrics.WithLabelValues("vocoder", params.Voice).Add(1)
 		return nil, errors.Wrap(err, "can't invoke Vocoder")
 	}
-	return &api.Result{Data: vocOut.Data, Durations: amOut.Durations, SilDuration: amOut.SilDuration}, nil
+	return &api.Result{Data: vocOut.Data, Durations: amOut.Durations, SilDuration: amOut.SilDuration, Step: amOut.Step}, nil
 }
 
 type amInput struct {
@@ -96,6 +96,7 @@ type amOutput struct {
 	Data        string `json:"data"`
 	Durations   []int  `json:"durations,omitempty"`
 	SilDuration int    `json:"silDuration,omitempty"`
+	Step        int    `json:"step,omitempty"`
 	Error       string `json:"error,omitempty"`
 }
 
