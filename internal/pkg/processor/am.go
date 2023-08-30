@@ -81,6 +81,10 @@ func (p *amodel) Process(data *synthesizer.TTSDataPart) error {
 	if err != nil {
 		return err
 	}
+	data.DefaultSilence = output.SilDuration
+	data.Step = output.Step
+	data.Durations = output.Durations
+
 	if p.hasVocoder {
 		data.Audio = output.Data
 	} else {
@@ -97,7 +101,10 @@ type amInput struct {
 }
 
 type amOutput struct {
-	Data string `json:"data"`
+	Data        string `json:"data"`
+	Durations   []int  `json:"durations,omitempty"`
+	SilDuration int    `json:"silDuration,omitempty"`
+	Step        int    `json:"step,omitempty"`
 }
 
 func (p *amodel) mapAMInput(data *synthesizer.TTSDataPart) *amInput {
