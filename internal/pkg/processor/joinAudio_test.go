@@ -309,3 +309,158 @@ func (m *mockAudioLoader) TakeWav(in string) ([]byte, error) {
 	args := m.Called(in)
 	return mocks.To[[]byte](args.Get(0)), args.Error(1)
 }
+
+func Test_calcPauseWithEnds(t *testing.T) {
+	type args struct {
+		s1    int
+		s2    int
+		pause int
+	}
+	tests := []struct {
+		name  string
+		args  args
+		want  int
+		want1 int
+		want2 int
+	}{
+		{name: "no data", args: args{s1: 0, s2: 0, pause: 0}, want: 0, want1: 0, want2: 0},
+		{name: "returns pause", args: args{s1: 0, s2: 0, pause: 10}, want: 0, want1: 0, want2: 10},
+		{name: "returns s1", args: args{s1: 5, s2: 0, pause: 10}, want: 0, want1: 0, want2: 5},
+		{name: "returns s2", args: args{s1: 0, s2: 5, pause: 10}, want: 0, want1: 0, want2: 5},
+		{name: "returns s2", args: args{s1: 5, s2: 5, pause: 10}, want: 0, want1: 0, want2: 0},
+		{name: "returns s2", args: args{s1: 6, s2: 6, pause: 10}, want: 1, want1: 1, want2: 0},
+		{name: "returns s2", args: args{s1: 7, s2: 6, pause: 10}, want: 2, want1: 1, want2: 0},
+		{name: "returns s2", args: args{s1: 6, s2: 7, pause: 10}, want: 1, want1: 2, want2: 0},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, got1, got2 := calcPauseWithEnds(tt.args.s1, tt.args.s2, tt.args.pause)
+			if got != tt.want {
+				t.Errorf("calcPauseWithEnds() got = %v, want %v", got, tt.want)
+			}
+			if got1 != tt.want1 {
+				t.Errorf("calcPauseWithEnds() got1 = %v, want %v", got1, tt.want1)
+			}
+			if got2 != tt.want2 {
+				t.Errorf("calcPauseWithEnds() got2 = %v, want %v", got2, tt.want2)
+			}
+		})
+	}
+}
+
+func Test_fixPause(t *testing.T) {
+	type args struct {
+		s1    int
+		s2    int
+		pause time.Duration
+		step  int
+	}
+	tests := []struct {
+		name  string
+		args  args
+		want  int
+		want1 int
+		want2 time.Duration
+	}{
+		{name: "leaves pause", args: args{s1: 10, s2: 3, pause: time.Second * 1, step: 2205}, want: 3, want1: 0, want2: time.Second * 0},
+		{name: "no data", args: args{s1: 1, s2: 2, pause: 10, step: 0}, want: 1, want1: 2, want2: 10},
+		{name: "no drop pause", args: args{s1: 10, s2: 10, pause: time.Second, step: 2205}, want: 5, want1: 5, want2: 0},
+		{name: "leaves pause", args: args{s1: 10, s2: 10, pause: time.Second * 5, step: 2205}, want: 0, want1: 0, want2: time.Second * 3},
+		// 1s - (30*256 + 20*256)/22050
+		{name: "leaves pause", args: args{s1: 30, s2: 20, pause: time.Second * 1, step: 256}, want: 0, want1: 0, want2: time.Millisecond * 417},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, got1, got2 := fixPause(tt.args.s1, tt.args.s2, tt.args.pause, tt.args.step)
+			if got != tt.want {
+				t.Errorf("fixPause() got = %v, want %v", got, tt.want)
+			}
+			if got1 != tt.want1 {
+				t.Errorf("fixPause() got1 = %v, want %v", got1, tt.want1)
+			}
+			if got2 != tt.want2 {
+				t.Errorf("fixPause() got2 = %v, want %v", got2, tt.want2)
+			}
+		})
+	}
+}
+
+func Test_getStartSilSize(t *testing.T) {
+	type args struct {
+		phones    []string
+		durations []int
+	}
+	tests := []struct {
+		name string
+		args args
+		want int
+	}{
+		{name: "none", args: args{phones: []string{}, durations: []int{}}, want: 0},
+		{name: "none", args: args{phones: []string{"a", "b"}, durations: []int{1, 2, 3}}, want: 0},
+		{name: "finds", args: args{phones: []string{"sil", "a", "b", "sp", "sil"}, durations: []int{10, 2, 3, 5, 6, 7}}, want: 10},
+		{name: "finds", args: args{phones: []string{"sil", "-", "a", "b", "sp", "sil"}, durations: []int{10, 2, 3, 5, 6, 7}}, want: 12},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := getStartSilSize(tt.args.phones, tt.args.durations); got != tt.want {
+				t.Errorf("getStartSilSize() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func Test_getEndSilSize(t *testing.T) {
+	type args struct {
+		phones    []string
+		durations []int
+	}
+	tests := []struct {
+		name string
+		args args
+		want int
+	}{
+		{name: "none", args: args{phones: []string{}, durations: []int{}}, want: 0},
+		{name: "none", args: args{phones: []string{"a", "b"}, durations: []int{1, 2, 3}}, want: 3},
+		{name: "finds", args: args{phones: []string{"sil", "a", "b", "sp", "sil"}, durations: []int{10, 2, 3, 5, 6, 7}}, want: 18},
+		{name: "finds", args: args{phones: []string{"sil", "-", "a", "b", ",", "sp", "sil"}, durations: []int{10, 2, 3, 5, 6, 7, 8, 9}}, want: 30},
+		{name: "finds punct", args: args{phones: []string{"sil", "-", "a", "-", ".", ",", "sp", "sil"}, durations: []int{10, 2, 3, 5, 6, 7, 8, 9, 10}}, want: 45},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := getEndSilSize(tt.args.phones, tt.args.durations); got != tt.want {
+				t.Errorf("getEndSilSize() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func Test_isSil(t *testing.T) {
+	type args struct {
+		ph string
+	}
+	tests := []struct {
+		name string
+		args args
+		want bool
+	}{
+		{name: "punc", args: args{ph: "."}, want: true},
+		{name: "not", args: args{ph: "a"}, want: false},
+		{name: "not", args: args{ph: "^a"}, want: false},
+		{name: "not", args: args{ph: "\"a"}, want: false},
+		{name: "punc", args: args{ph: "."}, want: true},
+		{name: "punc", args: args{ph: ","}, want: true},
+		{name: "punc", args: args{ph: ":"}, want: true},
+		{name: "punc", args: args{ph: "?"}, want: true},
+		{name: "punc", args: args{ph: "!"}, want: true},
+		{name: "punc", args: args{ph: ";"}, want: true},
+		{name: "sil", args: args{ph: "sil"}, want: true},
+		{name: "sp", args: args{ph: "sp"}, want: true},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := isSil(tt.args.ph); got != tt.want {
+				t.Errorf("isSil() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
