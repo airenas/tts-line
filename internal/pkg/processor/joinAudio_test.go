@@ -396,6 +396,7 @@ func Test_getStartSilSize(t *testing.T) {
 		want int
 	}{
 		{name: "none", args: args{phones: []string{}, durations: []int{}}, want: 0},
+		{name: "none", args: args{phones: []string{"sil", "a", "a", "a", "a", "a", "a"}, durations: []int{}}, want: 0},
 		{name: "none", args: args{phones: []string{"a", "b"}, durations: []int{1, 2, 3}}, want: 0},
 		{name: "finds", args: args{phones: []string{"sil", "a", "b", "sp", "sil"}, durations: []int{10, 2, 3, 5, 6, 7}}, want: 10},
 		{name: "finds", args: args{phones: []string{"sil", "-", "a", "b", "sp", "sil"}, durations: []int{10, 2, 3, 5, 6, 7}}, want: 12},
@@ -420,6 +421,7 @@ func Test_getEndSilSize(t *testing.T) {
 		want int
 	}{
 		{name: "none", args: args{phones: []string{}, durations: []int{}}, want: 0},
+		{name: "none", args: args{phones: []string{"sil", "a", "a", "a", "a", "a", "a", "sil"}, durations: []int{}}, want: 0},
 		{name: "none", args: args{phones: []string{"a", "b"}, durations: []int{1, 2, 3}}, want: 3},
 		{name: "finds", args: args{phones: []string{"sil", "a", "b", "sp", "sil"}, durations: []int{10, 2, 3, 5, 6, 7}}, want: 18},
 		{name: "finds", args: args{phones: []string{"sil", "-", "a", "b", ",", "sp", "sil"}, durations: []int{10, 2, 3, 5, 6, 7, 8, 9}}, want: 30},

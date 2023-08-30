@@ -118,7 +118,7 @@ func join(parts []*synthesizer.TTSDataPart, suffix []byte) (string, float64, err
 func getStartSilSize(phones []string, durations []int) int {
 	l := len(phones)
 	res := 0
-	for i := 0; i < l-3; i++ {
+	for i := 0; i < l-3 && i < len(durations); i++ {
 		if isSil(phones[i]) {
 			res = res + durations[i]
 		} else {
