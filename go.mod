@@ -1,6 +1,6 @@
 module github.com/airenas/tts-line
 
-go 1.19
+go 1.21
 
 require (
 	github.com/airenas/go-app v0.4.21
