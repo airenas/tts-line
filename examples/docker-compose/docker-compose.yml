@@ -6,6 +6,8 @@ services:
     ports:
       - "${SERVICE_PORT}:8000"
       - 2345:2345 
+    extra_hosts:
+        host.docker.internal: host-gateway  
     environment:
       - LOGGER_LEVEL=DEBUG
       - NUMBERREPLACE_URL=http://hnum2txt:80/api/
@@ -16,7 +18,7 @@ services:
       - ACRONYMS_URL=http://acronyms:8000/acronyms
       - TRANSCRIBER_URL=http://transcriber:8000/transcription?gem=gem1&joinatsi=true
       - CLITICS_URL=http://clitics:8000/clitics
-      - ACOUSTICMODEL_URL=http://integration-tests:9876/mock-am
+      - ACOUSTICMODEL_URL=http://host.docker.internal:8007/synthesize
       - VOCODER_URL=http://192.168.1.77:8001/model    
       - MONGO_URL=mongodb://tts:Ui3Ic5Meej8Ki8tohxawe7jei3iaci@mongo:27017
       - AUDIOCONVERT_URL=http://audioconverter:8000/convert

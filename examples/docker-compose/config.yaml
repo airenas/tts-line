@@ -15,16 +15,20 @@ options:
       - default:astra
       - astra:astra.v04
       - laimis:laimis.v04
+      - laimis:laimis.v01
+      - lina:lina.v04b
+      - vytautas:vytautas.v06b
+
 
 acousticModel:
   url:
   hasVocoder: true
 
 validator:
-  maxChars: 200
+  maxChars: 1000
 
 splitter:
-  maxChars: 200
+  maxChars: 50
 
 partRunner:
   workers: 1  
