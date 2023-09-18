@@ -78,7 +78,7 @@ func (p *ssmlNumberReplace) Process(data *synthesizer.TTSData) error {
 		return nil
 	}
 	res := ""
-	err := p.httpWrap.InvokeText(accent.ClearAccents(strings.Join(data.Text, "")), &res)
+	err := p.httpWrap.InvokeText(accent.ClearAccents(strings.Join(data.Text, " ")), &res)
 	if err != nil {
 		return err
 	}
@@ -132,7 +132,7 @@ func mapAccentsBack(new string, origArr []string) ([]string, error) {
 		if wTo < len(alignIDs) {
 			nTo = alignIDs[wTo]
 		}
-		for nTo == -1 && wTo < len(alignIDs) {
+		for nTo == -1 && wTo < (len(alignIDs) - 1) {
 			wTo++
 			nTo = alignIDs[wTo]
 		}

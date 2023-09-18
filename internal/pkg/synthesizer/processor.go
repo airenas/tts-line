@@ -124,7 +124,7 @@ func mapResult(data *TTSData) (*api.Result, error) {
 			res.RequestID = data.RequestID
 		}
 		if data.Input.OutputTextFormat == api.TextNormalized {
-			res.Text = strings.Join(data.TextWithNumbers, "")
+			res.Text = strings.Join(data.TextWithNumbers, " ")
 		} else if data.Input.OutputTextFormat == api.TextTranscribed {
 			res.Text = mapTranscribed(data)
 		} else if data.Input.OutputTextFormat == api.TextAccented {

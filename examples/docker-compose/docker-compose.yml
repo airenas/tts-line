@@ -28,7 +28,7 @@ services:
       - ./config.yaml:/app/config.yaml:ro  
 
   text-clean:
-    image: airenas/tts-text-clean:0.2.197
+    image: airenas/tts-text-clean:0.5.7
     ports:
       - "8011:8000"  
 
@@ -41,7 +41,7 @@ services:
       - "8017:80"     
 
   normalizer:
-    image: intelektikalt/text-normalizer:0.1.28
+    image: intelektikalt/text-normalizer:0.1.33
     restart: on-failure  
 
   audioconverter:
@@ -50,7 +50,7 @@ services:
       - "8013:8000"
 
   comparator:
-    image: airenas/resynth-validator:0.1.2
+    image: intelektikalt/resynth-validator:0.1.8
     ports:
       - "8014:3000"
 
@@ -83,7 +83,7 @@ services:
 
   obscene:
     container_name: obscene
-    image: intelektikalt/obscene-filter:0.1.12 
+    image: intelektikalt/obscene-filter:0.1.14
     ports:
       - "8016:3000"   
 

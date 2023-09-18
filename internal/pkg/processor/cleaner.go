@@ -67,8 +67,13 @@ func processCleanOutput(text string, textPart []*synthesizer.TTSTextPart) ([]str
 		return []string{text}, nil
 	}
 	splits := strings.Split(text, splitIndicator)
-	if len(textPart) != len(splits) - 1 {
+	if len(textPart) != len(splits)-1 {
 		return nil, fmt.Errorf("can't restore after clean, returned count of parts is not the same")
+	}
+	for i, s := range splits {
+		if strings.HasSuffix(s, " ") {
+			splits[i] = s[:len(s)-1]
+		}
 	}
 	return splits[1:], nil
 }

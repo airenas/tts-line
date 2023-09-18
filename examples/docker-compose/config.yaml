@@ -25,13 +25,13 @@ acousticModel:
   hasVocoder: true
 
 validator:
-  maxChars: 1000
+  maxChars: 2500
 
 splitter:
-  maxChars: 50
+  maxChars: 200
 
 partRunner:
-  workers: 1  
+  workers: 5  
 
 suffixLoader:
   path: /suffixes    

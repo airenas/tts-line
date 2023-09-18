@@ -32,7 +32,7 @@ func (p *normalizer) Process(data *synthesizer.TTSData) error {
 		return nil
 	}
 	defer goapp.Estimate("Normalize")()
-	txt := strings.Join(data.CleanedText, "")
+	txt := strings.Join(data.CleanedText, " ")
 	utils.LogData("Input: ", txt)
 	inData := &normRequestData{Orig: txt}
 	var output normResponseData
@@ -45,7 +45,7 @@ func (p *normalizer) Process(data *synthesizer.TTSData) error {
 	if err != nil {
 		return err
 	}
-	utils.LogData("Output: ", strings.Join(data.NormalizedText, ""))
+	utils.LogData("Output: ", strings.Join(data.NormalizedText, " "))
 	return nil
 }
 

@@ -116,7 +116,7 @@ func NewTaggerAccents(urlStr string) (synthesizer.Processor, error) {
 func (p *taggerAccents) Process(data *synthesizer.TTSData) error {
 	var output []*TaggedWord
 	data.TextWithNumbers = []string{data.OriginalText}
-	err := p.httpWrap.InvokeText(accent.ClearAccents(strings.Join(data.TextWithNumbers, "")), &output)
+	err := p.httpWrap.InvokeText(accent.ClearAccents(strings.Join(data.TextWithNumbers, " ")), &output)
 	if err != nil {
 		return err
 	}
@@ -229,7 +229,7 @@ func NewSSMLTagger(urlStr string) (synthesizer.Processor, error) {
 func (p *ssmlTagger) Process(data *synthesizer.TTSData) error {
 	var output []*TaggedWord
 	data.TextWithNumbers = addSpaces(data.TextWithNumbers)
-	txt := accent.ClearAccents(strings.Join(data.TextWithNumbers, ""))
+	txt := accent.ClearAccents(strings.Join(data.TextWithNumbers, " "))
 	err := p.httpWrap.InvokeText(txt, &output)
 	if err != nil {
 		return err

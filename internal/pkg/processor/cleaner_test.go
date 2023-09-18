@@ -136,8 +136,9 @@ func Test_processCleanOutput(t *testing.T) {
 	}{
 		{name: "empty", args: args{text: splitIndicator + "", textPart: []*synthesizer.TTSTextPart{{Text: ""}}}, want: []string{""}, wantErr: false},
 		{name: "one", args: args{text: splitIndicator + "olia", textPart: []*synthesizer.TTSTextPart{{Text: "olia"}}}, want: []string{"olia"}, wantErr: false},
-		{name: "one", args: args{text: splitIndicator + "olia" + splitIndicator + "olia2", textPart: []*synthesizer.TTSTextPart{{Text: "olia"}, {Text: "cleaned olia2"}}}, want: []string{"olia", "olia2"}, wantErr: false},
-		{name: "error", args: args{text: splitIndicator + "olia" + splitIndicator + "olia2", textPart: []*synthesizer.TTSTextPart{{Text: "olia"}}}, wantErr: true},
+		{name: "one", args: args{text: splitIndicator + "olia " + splitIndicator + "olia2", textPart: []*synthesizer.TTSTextPart{{Text: "olia"}, {Text: "cleaned olia2"}}}, want: []string{"olia", "olia2"}, wantErr: false},
+		{name: "unicode", args: args{text: splitIndicator + "ąąolia " + splitIndicator + "čęolia2", textPart: []*synthesizer.TTSTextPart{{Text: "olia"}, {Text: "cleaned olia2"}}}, want: []string{"ąąolia", "čęolia2"}, wantErr: false},
+		{name: "error", args: args{text: splitIndicator + "olia " + splitIndicator + "olia2", textPart: []*synthesizer.TTSTextPart{{Text: "olia"}}}, wantErr: true},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
