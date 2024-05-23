@@ -64,7 +64,7 @@ type ssmlNumberReplace struct {
 func NewSSMLNumberReplace(urlStr string) (synthesizer.Processor, error) {
 	res := &ssmlNumberReplace{}
 	var err error
-	res.httpWrap, err = newHTTPWrapBackoff(urlStr, time.Second*10)
+	res.httpWrap, err = newHTTPWrapBackoff(urlStr, time.Second*20)
 
 	if err != nil {
 		return nil, errors.Wrap(err, "can't init http client")
