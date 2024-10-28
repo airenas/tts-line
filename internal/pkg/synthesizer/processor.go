@@ -1,7 +1,9 @@
 package synthesizer
 
 import (
+	"fmt"
 	"strings"
+	"time"
 
 	"github.com/airenas/go-app/pkg/goapp"
 	"github.com/google/uuid"
@@ -9,6 +11,7 @@ import (
 
 	"github.com/airenas/tts-line/internal/pkg/accent"
 	"github.com/airenas/tts-line/internal/pkg/service/api"
+	"github.com/airenas/tts-line/internal/pkg/utils"
 	"github.com/airenas/tts-line/pkg/ssml"
 )
 
@@ -138,7 +141,125 @@ func mapResult(data *TTSData) (*api.Result, error) {
 			return nil, errors.Errorf("can't process OutputTextFormat %s", data.Input.OutputTextFormat.String())
 		}
 	}
+	if data.Input.SpeechMarkTypes[api.SpeechMarkTypeWord] {
+		var err error
+		res.SpeechMarks, err = mapSpeechMarks(data)
+		if err != nil {
+			return nil, err
+		}
+	}
 	return res, nil
+}
+
+type wordMapData struct {
+	pw    *ProcessedWord
+	part  *TTSDataPart
+	start time.Duration
+	shift int
+}
+
+func mapSpeechMarks(data *TTSData) ([]*api.SpeechMark, error) {
+	if len(data.SSMLParts) == 0 {
+		res, _, err := mapSpeechMarksInt(data, 0)
+		return res, err
+	}
+
+	var res []*api.SpeechMark
+	from := time.Duration(0)
+	for _, p := range data.SSMLParts {
+		pRes, dur, err := mapSpeechMarksInt(p, from)
+		if err != nil {
+			return nil, err
+		}
+		res = append(res, pRes...)
+		from += dur
+	}
+	return res, nil
+}
+
+func mapSpeechMarksInt(data *TTSData, from time.Duration) ([]*api.SpeechMark, time.Duration, error) {
+	text := strings.Join(data.Text, " ")
+	if len(text) == 0 {
+		return nil, 0, nil
+	}
+	originalWords := strings.Fields(accent.ClearAccents(text))
+	words, maps := collectWords(data.Parts)
+	aligned, err := utils.Align(originalWords, words)
+	if err != nil {
+		return nil, 0, fmt.Errorf("can't align words: %w", err)
+	}
+	var res []*api.SpeechMark
+	for i, w := range originalWords {
+		if aligned[i] == -1 || aligned[i] >= len(maps) {
+			continue
+		}
+		md := maps[aligned[i]]
+		to := getLastWordTo(aligned, i, maps, data.SampleRate, md.part.Step)
+		sm := &api.SpeechMark{
+			Value:        w,
+			Type:         api.SpeechMarkTypeWord,
+			TimeInMillis: (from + md.start + utils.ToDuration(md.pw.SynthesizedPos.From+md.shift, data.SampleRate, md.part.Step)).Milliseconds(),
+			Duration: (getLastWordTo(aligned, i, maps, data.SampleRate, md.part.Step) -
+				(utils.ToDuration(md.pw.SynthesizedPos.From+md.shift, data.SampleRate, md.part.Step) + md.start)).Milliseconds(),
+		}
+		goapp.Log.Debugf("Word: %s, from: %d, to: %d, shift: %d, start: %d, from %d, res: %d-%d (%d)",
+			w, md.pw.SynthesizedPos.From, to.Milliseconds(), md.shift, md.start.Milliseconds(), from.Milliseconds(), sm.TimeInMillis, sm.TimeInMillis + sm.Duration, sm.Duration)
+		res = append(res, sm)
+	}
+	return res, calcDuration(data.Parts), nil
+}
+
+func calcDuration(tTSDataPart []*TTSDataPart) time.Duration {
+	res := time.Duration(0)
+	for _, p := range tTSDataPart {
+		if p.AudioDurations != nil {
+			res += p.AudioDurations.Duration
+		}
+	}
+	return res
+}
+
+func getLastWordTo(aligned []int, i int, maps []*wordMapData, sampleRate uint32, step int) time.Duration {
+	c := aligned[i]
+	var upTo int
+	if c < len(aligned)-1 {
+		upTo = aligned[i+1]
+	} else {
+		upTo = len(maps)
+	}
+
+	res := c
+	for i := c; i < upTo; i++ {
+		if maps[i].pw.Tagged.IsWord() {
+			res = i
+		}
+	}
+	mw := maps[res]
+	return utils.ToDuration(mw.pw.SynthesizedPos.To+mw.shift, sampleRate, step) + mw.start
+}
+
+func collectWords(parts []*TTSDataPart) ([]string, []*wordMapData) {
+	var words []string
+	var maps []*wordMapData
+	startAt := time.Duration(0)
+	for _, p := range parts {
+		for _, w := range p.Words {
+			if w.Tagged.IsWord() {
+				words = append(words, w.Tagged.Word)
+				maps = append(maps,
+					&wordMapData{
+						start: startAt,
+						shift: p.AudioDurations.Shift,
+						pw:    w,
+						part:  p,
+					})
+			} else if w.Tagged.Separator != "" && len(words) > 0 {
+				words[len(words)-1] += w.Tagged.Separator
+			}
+		}
+		startAt += p.AudioDurations.Duration
+	}
+	return words, maps
 }
 
 func tryCustomCode(data *TTSData) {

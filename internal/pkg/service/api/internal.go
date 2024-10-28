@@ -6,7 +6,7 @@ import (
 	"github.com/airenas/tts-line/pkg/ssml"
 )
 
-//TextFormatEnum represent possible output text types
+// TextFormatEnum represent possible output text types
 type TextFormatEnum int
 
 const (
@@ -27,7 +27,7 @@ func (e TextFormatEnum) String() string {
 	return [...]string{"", "normalized", "accented"}[e]
 }
 
-//AudioFormatEnum represent possible audio outputs
+// AudioFormatEnum represent possible audio outputs
 type AudioFormatEnum int
 
 const (
@@ -48,7 +48,7 @@ func (e AudioFormatEnum) String() string {
 	return [...]string{"", "default", "mp3", "m4a"}[e]
 }
 
-//TTSRequestConfig config for request
+// TTSRequestConfig config for request
 type TTSRequestConfig struct {
 	Text             string
 	RequestID        string
@@ -63,4 +63,5 @@ type TTSRequestConfig struct {
 	AllowedMaxLen    int
 	SSMLParts        []ssml.Part
 	AudioSuffix      string
+	SpeechMarkTypes  map[string]bool
 }

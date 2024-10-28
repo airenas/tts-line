@@ -5,6 +5,7 @@ import (
 	"encoding/base64"
 	"fmt"
 	"math"
+	"os"
 	"strings"
 	"time"
 	"unicode"
@@ -46,7 +47,7 @@ func (p *joinAudio) Process(data *synthesizer.TTSData) error {
 		p.TranscribedSymbols = strings.Split(p.TranscribedText, " ")
 	}
 
-	data.Audio, data.AudioLenSeconds, err = join(data.Parts, suffix)
+	data.Audio, data.AudioLenSeconds, data.SampleRate, err = join(data.Parts, suffix)
 	if err != nil {
 		return errors.Wrap(err, "can't join audio")
 	}
@@ -60,13 +61,27 @@ type wavWriter struct {
 	buf    bytes.Buffer
 }
 
-func join(parts []*synthesizer.TTSDataPart, suffix []byte) (string, float64, error) {
+func (wr *wavWriter) SampleRate() uint32 {
+	if wr.header == nil {
+		return 0
+	}
+	return wav.GetSampleRate(wr.header)
+}
+
+func (wr *wavWriter) BitsPerSample() uint16 {
+	if wr.header == nil {
+		return 0
+	}
+	return wav.GetBitsPerSample(wr.header)
+}
+
+func join(parts []*synthesizer.TTSDataPart, suffix []byte) (string, float64, uint32 /*sampleRate*/, error) {
 	res := &wavWriter{}
 	nextStartSil := 0
 	for i, part := range parts {
 		decoded, err := base64.StdEncoding.DecodeString(part.Audio)
 		if err != nil {
-			return "", 0, err
+			return "", 0, 0, err
 		}
 		startSil, endSil := nextStartSil, 0
 		if i == 0 {
@@ -86,16 +101,21 @@ func join(parts []*synthesizer.TTSDataPart, suffix []byte) (string, float64, err
 			endSil, nextStartSil, _ = calcPauseWithEnds(endSil, nextStartSil, part.DefaultSilence)
 		}
 		startSkip, endSkip := startSil*part.Step, endSil*part.Step
+		lenBefore := res.buf.Len()
 		if err := appendWav(res, decoded, startSkip, endSkip); err != nil {
-			return "", 0, err
+			return "", 0, 0, err
+		}
+		part.AudioDurations = &synthesizer.AudioDurations{
+			Shift:    -startSil,
+			Duration: calculateDurations(res.buf.Len()-lenBefore, res.SampleRate()*uint32(res.BitsPerSample())/uint32(8)),
 		}
 	}
 	if res.size == 0 {
-		return "", 0, errors.New("no wav data")
+		return "", 0, 0, errors.New("no wav data")
 	}
 	if suffix != nil {
 		if err := appendWav(res, suffix, 0, 0); err != nil {
-			return "", 0, errors.Wrapf(err, "can't append suffix")
+			return "", 0, 0, errors.Wrapf(err, "can't append suffix")
 		}
 	}
 	var bufRes bytes.Buffer
@@ -106,13 +126,21 @@ func join(parts []*synthesizer.TTSDataPart, suffix []byte) (string, float64, err
 	_, _ = enc.Write(wav.SizeBytes(res.size))
 	_, _ = enc.Write(res.buf.Bytes())
 	if err := enc.Close(); err != nil {
-		return "", 0, err
+		return "", 0, 0, err
 	}
 	bitsRate := wav.GetBitsRateCalc(res.header)
 	if bitsRate == 0 {
-		return "", 0, errors.New("can't extract bits rate from header")
+		return "", 0, 0, errors.New("can't extract bits rate from header")
 	}
-	return bufRes.String(), float64(res.size) / float64(bitsRate), nil
+	os.WriteFile("testout..wav.base64", bufRes.Bytes(), 0644)
+	return bufRes.String(), float64(res.size) / float64(bitsRate), wav.GetSampleRate(res.header), nil
+}
+
+func calculateDurations(aLen int, samplesPerSec uint32) time.Duration {
+	if samplesPerSec == 0 {
+		return 0
+	}
+	return time.Duration(float64(aLen) * 1000/float64(samplesPerSec)) * time.Millisecond
 }
 
 func getStartSilSize(phones []string, durations []int) int {
@@ -153,6 +181,7 @@ func appendWav(res *wavWriter, wavData []byte, startSkip, endSkip int) error {
 	if !wav.IsValid(wavData) {
 		return errors.New("no valid audio wave data")
 	}
+	os.WriteFile("test.wav", wavData, 0644)
 	header := wav.TakeHeader(wavData)
 	if res.header == nil {
 		res.header = header
@@ -165,14 +194,20 @@ func appendWav(res *wavWriter, wavData []byte, startSkip, endSkip int) error {
 		}
 	}
 	bData := wav.TakeData(wavData)
-	es := len(bData) - endSkip
-	if es < startSkip {
+	bps := res.BitsPerSample()
+	fix := 1
+	if bps != 0 {
+		fix = int(bps / 8)
+	}
+	es := len(bData) - (endSkip * fix)
+	if es < (startSkip * fix) {
 		return errors.Errorf("audio start pos > end: %d vs %d", startSkip, es)
 	}
 
-	res.size += uint32(es - startSkip) // wav.GetSize(wavData)
+	res.size += uint32(es - (startSkip * fix)) // wav.GetSize(wavData)
 
-	_, err := res.buf.Write(bData[startSkip:es])
+	from, to := startSkip*fix, es
+	_, err := res.buf.Write(bData[from:to])
 	return err
 }
 
@@ -208,23 +243,27 @@ func (p *joinSSMLAudio) Process(data *synthesizer.TTSData) error {
 			}
 		}
 	}
-	data.Audio, data.AudioLenSeconds, err = joinSSML(data, suffix)
+	data.Audio, data.AudioLenSeconds, data.SampleRate, err = joinSSML(data, suffix)
 	if err != nil {
 		return errors.Wrap(err, "can't join audio")
+	}
+	for _, dp := range data.SSMLParts {
+		dp.SampleRate = data.SampleRate
 	}
 	utils.LogData("Output: ", fmt.Sprintf("audio len %d", len(data.Audio)))
 	return nil
 }
 
 type nextWriteData struct {
-	part      *synthesizer.TTSDataPart
-	data      []byte
-	startSkip int
-	pause     time.Duration // pause that should be written after data
-	isPause   bool
+	part        *synthesizer.TTSDataPart
+	data        []byte
+	startSkip   int
+	pause       time.Duration // pause that should be written after data
+	isPause     bool
+	durationAdd time.Duration // time to add to the part
 }
 
-func joinSSML(data *synthesizer.TTSData, suffix []byte) (string, float64, error) {
+func joinSSML(data *synthesizer.TTSData, suffix []byte) (string, float64 /*sampleRate*/, uint32, error) {
 	res := &wavWriter{}
 	wd := &nextWriteData{}
 	wd.pause = time.Duration(0)
@@ -244,32 +283,43 @@ func joinSSML(data *synthesizer.TTSData, suffix []byte) (string, float64, error)
 			if res.header == nil {
 				res.header = wav.TakeHeader(decoded)
 			}
-			endSil = getEndSilSize(part.TranscribedSymbols, part.Durations)
+			startSil = getStartSilSize(part.TranscribedSymbols, part.Durations)
+			// endSil = getEndSilSize(part.TranscribedSymbols, part.Durations)
 			step = part.Step
 			defaultSil = part.DefaultSilence
 		}
 		if wd.part != nil {
-			startSil = getStartSilSize(wd.part.TranscribedSymbols, wd.part.Durations)
+			endSil = getEndSilSize(wd.part.TranscribedSymbols, wd.part.Durations)
+			// startSil = getStartSilSize(wd.part.TranscribedSymbols, wd.part.Durations)
 			step = wd.part.Step
 			defaultSil = wd.part.DefaultSilence
 		}
 		pause = 0
 		if wd.isPause {
-			startSil, endSil, pause = fixPause(endSil, startSil, wd.pause, step)
+			startSil, endSil, pause = fixPause(startSil, endSil, wd.pause, step)
 		} else {
-			startSil, endSil, _ = calcPauseWithEnds(endSil, startSil, defaultSil)
+			startSil, endSil, _ = calcPauseWithEnds(startSil, endSil, defaultSil)
 		}
 
 		startSkip, endSkip := startSil*step, endSil*step
 		if wd.part != nil {
+			lenBefore := res.buf.Len()
 			if err := appendWav(res, wd.data, wd.startSkip, endSkip); err != nil {
 				return err
 			}
+			wd.part.AudioDurations = &synthesizer.AudioDurations{
+				Shift:    -wd.startSkip / step,
+				Duration: calculateDurations(res.buf.Len()-lenBefore, res.SampleRate()*uint32(res.BitsPerSample())/uint32(8)),
+			}
+			wd.part.AudioDurations.Shift += utils.ToTTSSteps(wd.durationAdd, wav.GetSampleRate(res.header), step)
+			wd.part.AudioDurations.Duration += wd.durationAdd
+			wd.durationAdd = 0
 		}
 		if pause > 0 {
 			if err := appendPause(res, pause); err != nil {
 				return err
 			}
+			wd.durationAdd = pause
 			wd.pause = 0
 		}
 		wd.isPause = false
@@ -288,20 +338,20 @@ func joinSSML(data *synthesizer.TTSData, suffix []byte) (string, float64, error)
 			for _, part := range dp.Parts {
 				err := writeF(part)
 				if err != nil {
-					return "", 0, err
+					return "", 0, 0, err
 				}
 			}
 		}
 	}
 	if err := writeF(nil); err != nil {
-		return "", 0, err
+		return "", 0, 0, err
 	}
 	if res.size == 0 {
-		return "", 0, errors.New("no audio")
+		return "", 0, 0, errors.New("no audio")
 	}
 	if suffix != nil {
 		if err := appendWav(res, suffix, wd.startSkip, 0); err != nil {
-			return "", 0, errors.Wrapf(err, "can't append suffix")
+			return "", 0, 0, errors.Wrapf(err, "can't append suffix")
 		}
 	}
 
@@ -314,13 +364,13 @@ func joinSSML(data *synthesizer.TTSData, suffix []byte) (string, float64, error)
 	_, _ = enc.Write(res.buf.Bytes())
 
 	if err := enc.Close(); err != nil {
-		return "", 0, err
+		return "", 0, 0, err
 	}
 	bitsRate := wav.GetBitsRateCalc(res.header)
 	if bitsRate == 0 {
-		return "", 0, errors.New("can't extract bits rate from header")
+		return "", 0, 0, errors.New("can't extract bits rate from header")
 	}
-	return bufRes.String(), float64(res.size) / float64(bitsRate), nil
+	return bufRes.String(), float64(res.size) / float64(bitsRate), wav.GetSampleRate(res.header), nil
 }
 
 func calcPauseWithEnds(s1, s2, pause int) (int, int, int) {

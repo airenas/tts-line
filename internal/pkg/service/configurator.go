@@ -25,7 +25,7 @@ const (
 	defaultVoiceKey = "default"
 )
 
-//TTSConfigutaror tts request configuration
+// TTSConfigutaror tts request configuration
 type TTSConfigutaror struct {
 	defaultOutputFormat api.AudioFormatEnum
 	outputMetadata      []string
@@ -33,7 +33,7 @@ type TTSConfigutaror struct {
 	noSSML              bool
 }
 
-//NewTTSConfigurator creates the initial request configuration
+// NewTTSConfigurator creates the initial request configuration
 func NewTTSConfigurator(cfg *viper.Viper) (*TTSConfigutaror, error) {
 	if cfg == nil {
 		return nil, errors.New("no request config 'options'")
@@ -69,7 +69,7 @@ func NewTTSConfigurator(cfg *viper.Viper) (*TTSConfigutaror, error) {
 	return res, nil
 }
 
-//NewTTSConfiguratorNoSSML creates the initial request configuration with no SSML allowed
+// NewTTSConfiguratorNoSSML creates the initial request configuration with no SSML allowed
 func NewTTSConfiguratorNoSSML(cfg *viper.Viper) (*TTSConfigutaror, error) {
 	res, err := NewTTSConfigurator(cfg)
 	if err != nil {
@@ -100,7 +100,7 @@ func getVoice(voices map[string]string, voiceKey string) (string, error) {
 	return res, nil
 }
 
-//Configure prepares request configuration
+// Configure prepares request configuration
 func (c *TTSConfigutaror) Configure(r *http.Request, inText *api.Input) (*api.TTSRequestConfig, error) {
 	res := &api.TTSRequestConfig{}
 	res.Text = inText.Text
@@ -134,6 +134,10 @@ func (c *TTSConfigutaror) Configure(r *http.Request, inText *api.Input) (*api.TT
 	if err != nil {
 		return nil, err
 	}
+	res.SpeechMarkTypes, err = getSpeechMarkTypes(inText.SpeechMarkTypes)
+	if err != nil {
+		return nil, err
+	}
 	goapp.Log.Infof("Voice '%s' -> '%s'", goapp.Sanitize(inText.Voice), res.Voice)
 	if inText.Priority < 0 {
 		return nil, errors.Errorf("wrong priority (>=0) value: %d", inText.Priority)
@@ -155,6 +159,17 @@ func (c *TTSConfigutaror) Configure(r *http.Request, inText *api.Input) (*api.TT
 		if err != nil {
 			return nil, err
 		}
+	}
+	return res, nil
+}
+
+func getSpeechMarkTypes(s []string) (map[string]bool, error) {
+	res := make(map[string]bool)
+	for _, v := range s {
+		if v != api.SpeechMarkTypeWord {
+			return nil, errors.Errorf("Unknown speech mark type '%s'", v)
+		}
+		res[v] = true
 	}
 	return res, nil
 }

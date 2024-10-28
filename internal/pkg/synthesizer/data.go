@@ -28,6 +28,7 @@ type TTSData struct {
 	Audio           string
 	AudioMP3        string
 	AudioLenSeconds float64
+	SampleRate      uint32
 
 	OriginalTextParts []*TTSTextPart
 	SSMLParts         []*TTSData
@@ -64,6 +65,18 @@ type TTSDataPart struct {
 	Durations      []int
 	DefaultSilence int
 	Step           int
+	AudioDurations *AudioDurations
+}
+
+type SynthesizedPos struct {
+	// in tts steps
+	From, To int
+}
+
+type AudioDurations struct {
+	// in tts steps
+	Shift    int
+	Duration time.Duration
 }
 
 // ProcessedWord keeps one word info
@@ -78,6 +91,7 @@ type ProcessedWord struct {
 	Transcription     string
 	Obscene           bool
 	TextPart          *TTSTextPart
+	SynthesizedPos    *SynthesizedPos
 }
 
 // CliticAccentEnum contains types of possible clitics

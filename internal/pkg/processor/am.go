@@ -69,21 +69,27 @@ func NewAcousticModel(config *viper.Viper) (synthesizer.PartProcessor, error) {
 func (p *amodel) Process(data *synthesizer.TTSDataPart) error {
 	if data.Cfg.Input.OutputFormat == api.AudioNone {
 		if data.Cfg.Input.OutputTextFormat == api.TextTranscribed {
-			data.TranscribedText = p.mapAMInput(data).Text
+			inData, _ := p.mapAMInput(data)
+			data.TranscribedText = inData.Text
 		}
 		return nil
 	}
 
-	inData := p.mapAMInput(data)
+	inData, inIndexes := p.mapAMInput(data)
 	data.TranscribedText = inData.Text
 	var output amOutput
 	err := p.httpWrap.InvokeJSONU(getVoiceURL(p.url, data.Cfg.Voice), inData, &output)
 	if err != nil {
 		return err
 	}
-	data.DefaultSilence = output.SilDuration
+	// bug in am model
+	fixSilDuration := 2
+	data.DefaultSilence = output.SilDuration * fixSilDuration 
 	data.Step = output.Step
 	data.Durations = output.Durations
+	if err := mapAMOutputDurations(data, output.Durations, inIndexes); err != nil {
+		return err
+	}
 
 	if p.hasVocoder {
 		data.Audio = output.Data
@@ -107,21 +113,38 @@ type amOutput struct {
 	Step        int    `json:"step,omitempty"`
 }
 
-func (p *amodel) mapAMInput(data *synthesizer.TTSDataPart) *amInput {
+func mapAMOutputDurations(data *synthesizer.TTSDataPart, durations []int, indRes []*synthesizer.SynthesizedPos) error {
+	sums := make([]int, len(durations) + 1)
+	for i := 0; i < len(durations); i++ {
+		sums[i+1] = sums[i] + durations[i]
+	}
+	for i, w := range data.Words {
+		w.SynthesizedPos = &synthesizer.SynthesizedPos{
+			From: sums[indRes[i].From],
+			To:   sums[indRes[i].To],
+		}
+	}
+	return nil
+}
+
+func (p *amodel) mapAMInput(data *synthesizer.TTSDataPart) (*amInput, []*synthesizer.SynthesizedPos) {
 	res := &amInput{}
 	res.Speed = data.Cfg.Speed
 	res.Voice = data.Cfg.Voice
 	res.Priority = data.Cfg.Input.Priority
 	if data.Cfg.JustAM {
 		res.Text = data.Text
-		return res
+		return res, nil
 	}
 	sb := make([]string, 0)
 	//sb := &strings.Builder{}
 	pause := p.spaceSymbol
 	sb = append(sb, pause)
 	lastSep := ""
+	indRes := make([]*synthesizer.SynthesizedPos, len(data.Words))
 	for i, w := range data.Words {
+		indRes[i] = &synthesizer.SynthesizedPos{}
+		indRes[i].From = len(sb)
 		tgw := w.Tagged
 		if tgw.Space {
 		} else if tgw.Separator != "" {
@@ -152,6 +175,7 @@ func (p *amodel) mapAMInput(data *synthesizer.TTSDataPart) *amInput {
 				}
 			}
 		}
+		indRes[i].To = len(sb)
 	}
 
 	l := len(sb)
@@ -164,8 +188,14 @@ func (p *amodel) mapAMInput(data *synthesizer.TTSDataPart) *amInput {
 			}
 		}
 	}
+	if len(indRes) > 0 {
+		lEnd := len(strings.Split(p.endSymbol, " "))
+		if lEnd > 1 {
+			indRes[len(indRes)-1].To += (lEnd - 1)
+		}
+	}
 	res.Text = strings.Join(sb, " ")
-	return res
+	return res, indRes
 }
 
 func getSep(s string, words []*synthesizer.ProcessedWord, pos int) string {
