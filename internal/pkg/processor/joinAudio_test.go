@@ -117,7 +117,7 @@ func TestJoinSSMLAudio(t *testing.T) {
 	pr := NewJoinSSMLAudio(loaderMock)
 	d := synthesizer.TTSData{Input: &api.TTSRequestConfig{OutputFormat: api.AudioMP3}}
 	strA := getTestEncAudio(t)
-	d.Parts = []*synthesizer.TTSDataPart{{Audio: strA}}
+	d.Parts = []*synthesizer.TTSDataPart{{Audio: strA, Step: 256}}
 	d.Cfg.Type = synthesizer.SSMLText
 	da := &synthesizer.TTSData{Input: d.Input, SSMLParts: []*synthesizer.TTSData{&d}}
 	err := pr.Process(da)
@@ -144,8 +144,8 @@ func TestJoinSSMLAudio_Several(t *testing.T) {
 	pr := NewJoinSSMLAudio(loaderMock)
 	d := synthesizer.TTSData{Input: &api.TTSRequestConfig{OutputFormat: api.AudioMP3}}
 	strA := getTestEncAudio(t)
-	d.Parts = []*synthesizer.TTSDataPart{{Audio: strA}, {Audio: strA},
-		{Audio: strA}}
+	d.Parts = []*synthesizer.TTSDataPart{{Audio: strA, Step: 256}, {Audio: strA, Step: 256},
+		{Audio: strA, Step: 256}}
 	d.Cfg.Type = synthesizer.SSMLText
 	da := &synthesizer.TTSData{Input: d.Input, SSMLParts: []*synthesizer.TTSData{&d, &d}}
 	err := pr.Process(da)
@@ -173,7 +173,7 @@ func TestJoinSSMLAudio_EmptyFail(t *testing.T) {
 	pr := NewJoinSSMLAudio(loaderMock)
 	d := synthesizer.TTSData{Input: &api.TTSRequestConfig{OutputFormat: api.AudioMP3}}
 	strA := getTestEncAudio(t)
-	d.Parts = []*synthesizer.TTSDataPart{{Audio: strA}, {Audio: ""}}
+	d.Parts = []*synthesizer.TTSDataPart{{Audio: strA, Step: 256}, {Audio: "", Step: 256}}
 	da := &synthesizer.TTSData{Input: d.Input, SSMLParts: []*synthesizer.TTSData{&d}}
 	err := pr.Process(da)
 	assert.NotNil(t, err)
@@ -183,7 +183,7 @@ func TestJoinSSMLAudio_AddPause(t *testing.T) {
 	pr := NewJoinSSMLAudio(loaderMock)
 	d := &synthesizer.TTSData{Input: &api.TTSRequestConfig{OutputFormat: api.AudioMP3}}
 	strA := getTestEncAudio(t)
-	d.Parts = []*synthesizer.TTSDataPart{{Audio: strA}}
+	d.Parts = []*synthesizer.TTSDataPart{{Audio: strA, Step: 256}}
 	d.Cfg.Type = synthesizer.SSMLText
 	dp := &synthesizer.TTSData{}
 	dp.Cfg.Type = synthesizer.SSMLPause
@@ -200,8 +200,8 @@ func TestJoinSSMLAudio_AddPause(t *testing.T) {
 		wantLen  float64
 		wantErr  bool
 	}{
-		{name: "simple", args: []*synthesizer.TTSData{d}, wantSize: as, wantLen: al, wantErr: false},
 		{name: "pause start", args: []*synthesizer.TTSData{dp, d}, wantSize: as + ps, wantLen: al + 5, wantErr: false},
+		{name: "simple", args: []*synthesizer.TTSData{d}, wantSize: as, wantLen: al, wantErr: false},
 		{name: "pause end", args: []*synthesizer.TTSData{d, dp}, wantSize: as + ps, wantLen: al + 5, wantErr: false},
 		{name: "pause middle", args: []*synthesizer.TTSData{d, dp, d}, wantSize: as*2 + ps, wantLen: al*2 + 5, wantErr: false},
 		{name: "max 10 sec", args: []*synthesizer.TTSData{d, dp, dp, dp}, wantSize: as + ps*2, wantLen: al + 10, wantErr: false},
@@ -213,7 +213,7 @@ func TestJoinSSMLAudio_AddPause(t *testing.T) {
 			err := pr.Process(da)
 			require.Equal(t, tt.wantErr, err != nil)
 			if !tt.wantErr {
-				assert.Equal(t, tt.wantSize, getTestAudioSize(da.Audio))
+				assert.Equal(t, int(tt.wantSize), int(getTestAudioSize(da.Audio)))
 				assert.InDelta(t, tt.wantLen, da.AudioLenSeconds, 0.001)
 			}
 		})
@@ -226,7 +226,7 @@ func TestJoinSSMLAudio_Suffix(t *testing.T) {
 	pr := NewJoinSSMLAudio(loaderMock)
 	d := synthesizer.TTSData{Input: &api.TTSRequestConfig{OutputFormat: api.AudioMP3}}
 	strA := getTestEncAudio(t)
-	d.Parts = []*synthesizer.TTSDataPart{{Audio: strA}}
+	d.Parts = []*synthesizer.TTSDataPart{{Audio: strA, Step: 256}}
 	d.Cfg.Type = synthesizer.SSMLText
 	da := &synthesizer.TTSData{Input: d.Input, SSMLParts: []*synthesizer.TTSData{&d}, AudioSuffix: "oo.wav"}
 	loaderMock.On("TakeWav", mock.Anything).Return(getWaveData(t), nil)
@@ -240,7 +240,7 @@ func TestJoinSSMLAudio_SuffixFail(t *testing.T) {
 	pr := NewJoinSSMLAudio(loaderMock)
 	d := synthesizer.TTSData{Input: &api.TTSRequestConfig{OutputFormat: api.AudioMP3}}
 	strA := getTestEncAudio(t)
-	d.Parts = []*synthesizer.TTSDataPart{{Audio: strA}}
+	d.Parts = []*synthesizer.TTSDataPart{{Audio: strA, Step: 256}}
 	d.Cfg.Type = synthesizer.SSMLText
 	da := &synthesizer.TTSData{Input: d.Input, SSMLParts: []*synthesizer.TTSData{&d}, AudioSuffix: "oo.wav"}
 	loaderMock.On("TakeWav", mock.Anything).Return(nil, errors.New("fail"))

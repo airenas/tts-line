@@ -98,7 +98,7 @@ func TestAddSSMLProcessors(t *testing.T) {
 		"SSMLPartRunner",
 		"cleaner(HTTPBackoff(HTTPWrap(http://cl.su, tm: 10s)))",
 		"normalizer(HTTPBackoff(HTTPWrap(http://norm.su, tm: 10s)))",
-		"SSMLNumberReplace(HTTPBackoff(HTTPWrap(http://nr.su, tm: 10s)))",
+		"SSMLNumberReplace(HTTPBackoff(HTTPWrap(http://nr.su, tm: 20s)))",
 		"SSMLTagger(", "joinSSMLAudio(audioLoader(./))",
 		"audioConverter", "addMetrics"}
 	infos := strings.Split(info, "\n")

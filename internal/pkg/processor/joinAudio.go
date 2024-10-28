@@ -298,6 +298,10 @@ func joinSSML(data *synthesizer.TTSData, suffix []byte) (string, float64 /*sampl
 			startSil, endSil, _ = calcPauseWithEnds(startSil, endSil, defaultSil)
 		}
 
+		if step == 0 {
+			return fmt.Errorf("no step")
+		}
+
 		startSkip, endSkip := startSil*step, endSil*step
 		if wd.part != nil {
 			lenBefore := res.buf.Len()
