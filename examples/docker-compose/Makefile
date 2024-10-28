@@ -16,7 +16,15 @@ clean: stop
 	cat $< | envsubst > $@
 #####################################################################################
 test:
-	curl -i -X POST http://localhost:$(SERVICE_PORT)/synthesize -H 'Content-type: application/json' -d '{"text": "laba diena", "speed": 0.75}'
+	curl -i -X POST http://localhost:$(service_port)/synthesize -H 'Content-type: application/json' -d '{"text": "laba diena", "speed": 0.75}'
+
+
+test/ssml:
+	curl -i -X POST http://localhost:$(service_port)/synthesize -H 'Content-type: application/json' -d '{"text": "<speak>laba diena</speak>"}'	
+
+install/data/ml-tagger:
+	mkdir -p ./ml-tagger
+	scp -r airenas@$(c8):/home/airenas/service_data/tagger/models/* ./ml-tagger/	
 
 .EXPORT_ALL_VARIABLES:
 	

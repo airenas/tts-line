@@ -14,6 +14,7 @@ options:
     voices: 
       - default:astra
       - astra:astra.v04
+      - laimis:laimis.v02a1
 
 mongo:
    url: 
@@ -69,13 +70,13 @@ obscene:
   url: http://localhost:8016/obscene-filter    
 
 cache:
-  duration: 30s
+  duration: 0s
   cleanDuration: 30s
   maxMB: 50
   maxTextLen: 80
 
 splitter:
-  maxChars: 200
+  maxChars: 50
 
 partRunner:
   workers: 1  

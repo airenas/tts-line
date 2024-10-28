@@ -32,3 +32,4 @@ build/am-voc-wrapper/Makefile.options
 examples/docker-compose/sample.json
 deploy/am-voc-wrapper/Makefile.options
 testing/integration/Makefile.options.local
+examples/docker-compose/ml-tagger/
