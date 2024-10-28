@@ -1,7 +1,6 @@
 package processor
 
 import (
-	"fmt"
 	"reflect"
 	"testing"
 
@@ -203,22 +202,6 @@ func Test_mapAccentsBack(t *testing.T) {
 			}
 		})
 	}
-}
-
-func makeTestStr(pr string, n int) []string {
-	res := []string{}
-	for i := 0; i < n; i++ {
-		res = append(res, fmt.Sprintf("%s-%d", pr, i))
-	}
-	return res
-}
-
-func makeTestInt(from, n int) []int {
-	res := []int{}
-	for i := from; i < n; i++ {
-		res = append(res, i)
-	}
-	return res
 }
 
 type mockHTTPInvoker struct{ mock.Mock }

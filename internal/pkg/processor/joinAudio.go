@@ -5,7 +5,6 @@ import (
 	"encoding/base64"
 	"fmt"
 	"math"
-	"os"
 	"strings"
 	"time"
 	"unicode"
@@ -132,7 +131,6 @@ func join(parts []*synthesizer.TTSDataPart, suffix []byte) (string, float64, uin
 	if bitsRate == 0 {
 		return "", 0, 0, errors.New("can't extract bits rate from header")
 	}
-	os.WriteFile("testout..wav.base64", bufRes.Bytes(), 0644)
 	return bufRes.String(), float64(res.size) / float64(bitsRate), wav.GetSampleRate(res.header), nil
 }
 
@@ -140,7 +138,7 @@ func calculateDurations(aLen int, samplesPerSec uint32) time.Duration {
 	if samplesPerSec == 0 {
 		return 0
 	}
-	return time.Duration(float64(aLen) * 1000/float64(samplesPerSec)) * time.Millisecond
+	return time.Duration(float64(aLen)*1000/float64(samplesPerSec)) * time.Millisecond
 }
 
 func getStartSilSize(phones []string, durations []int) int {
@@ -181,7 +179,6 @@ func appendWav(res *wavWriter, wavData []byte, startSkip, endSkip int) error {
 	if !wav.IsValid(wavData) {
 		return errors.New("no valid audio wave data")
 	}
-	os.WriteFile("test.wav", wavData, 0644)
 	header := wav.TakeHeader(wavData)
 	if res.header == nil {
 		res.header = header
