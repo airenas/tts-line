@@ -109,11 +109,11 @@ func TestTranscriberAccent(t *testing.T) {
 		args args
 		want string
 	}{
-		{name: "none", args:  args{acc: 0}, want: ""},
-		{name: "3", args:  args{acc: 3}, want: "3"},
-		{name: "9", args:  args{acc: 2}, want: "9"},
-		{name: "4", args:  args{acc: 1}, want: "4"},
-		{name: "other", args:  args{acc: 10}, want: ""},
+		{name: "none", args: args{acc: 0}, want: ""},
+		{name: "3", args: args{acc: 3}, want: "3"},
+		{name: "9", args: args{acc: 2}, want: "9"},
+		{name: "4", args: args{acc: 1}, want: "4"},
+		{name: "other", args: args{acc: 10}, want: ""},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

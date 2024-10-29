@@ -4,7 +4,7 @@ import "testing"
 
 func TestErrTextTooLong_Error(t *testing.T) {
 	type fields struct {
-		Max   int
+		Max int
 		Len int
 	}
 	tests := []struct {
@@ -17,7 +17,7 @@ func TestErrTextTooLong_Error(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			r := &ErrTextTooLong{
-				Max:   tt.fields.Max,
+				Max: tt.fields.Max,
 				Len: tt.fields.Len,
 			}
 			if got := r.Error(); got != tt.want {

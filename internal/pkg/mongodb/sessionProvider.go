@@ -13,26 +13,26 @@ import (
 	"go.mongodb.org/mongo-driver/x/bsonx"
 )
 
-//IndexData keeps index creation data
+// IndexData keeps index creation data
 type IndexData struct {
 	Table  string
 	Fields []string
 	Unique bool
 }
 
-//NewIndexData creates index data
+// NewIndexData creates index data
 func newIndexData(table string, fields []string, unique bool) IndexData {
 	return IndexData{Table: table, Fields: fields, Unique: unique}
 }
 
-//SessionProvider connects and provides session for mongo DB
+// SessionProvider connects and provides session for mongo DB
 type SessionProvider struct {
 	client *mongo.Client
 	URL    string
 	m      sync.Mutex // struct field mutex
 }
 
-//NewSessionProvider creates Mongo session provider
+// NewSessionProvider creates Mongo session provider
 func NewSessionProvider(url string) (*SessionProvider, error) {
 	if url == "" {
 		return nil, errors.New("No Mongo url provided")
@@ -41,7 +41,7 @@ func NewSessionProvider(url string) (*SessionProvider, error) {
 	return res, nil
 }
 
-//Close closes mongo session
+// Close closes mongo session
 func (sp *SessionProvider) Close() {
 	if sp.client != nil {
 		ctx, cancel := mongoContext()
@@ -50,7 +50,7 @@ func (sp *SessionProvider) Close() {
 	}
 }
 
-//NewSession creates mongo session
+// NewSession creates mongo session
 func (sp *SessionProvider) NewSession() (mongo.Session, error) {
 	sp.m.Lock()
 	defer sp.m.Unlock()

@@ -331,7 +331,6 @@ func TestInvokeSSMLTagger(t *testing.T) {
 	assert.Equal(t, "mi", d.Words[4].Tagged.Mi)
 	assert.True(t, d.Words[4].Tagged.IsWord())
 
-
 	assert.True(t, d.Words[5].Tagged.SentenceEnd)
 	assert.False(t, d.Words[5].Tagged.IsWord())
 }

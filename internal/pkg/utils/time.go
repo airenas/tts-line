@@ -13,5 +13,5 @@ func ToTTSSteps(duration time.Duration, sampleRate uint32, step int) int {
 	if step <= 1 {
 		return 0
 	}
-	return int(float64(duration.Milliseconds()) * float64(sampleRate)/float64(step * 1000))
+	return int(float64(duration.Milliseconds()) * float64(sampleRate) / float64(step*1000))
 }

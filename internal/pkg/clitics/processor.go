@@ -4,7 +4,7 @@ import (
 	"github.com/airenas/tts-line/internal/pkg/clitics/service/api"
 )
 
-//Processor processes words
+// Processor processes words
 type Processor struct {
 	clitics map[string]bool
 	phrases *Phrases

@@ -84,7 +84,7 @@ func (p *amodel) Process(data *synthesizer.TTSDataPart) error {
 	}
 	// bug in am model
 	fixSilDuration := 2
-	data.DefaultSilence = output.SilDuration * fixSilDuration 
+	data.DefaultSilence = output.SilDuration * fixSilDuration
 	data.Step = output.Step
 	data.Durations = output.Durations
 	if err := mapAMOutputDurations(data, output.Durations, inIndexes); err != nil {
@@ -114,7 +114,7 @@ type amOutput struct {
 }
 
 func mapAMOutputDurations(data *synthesizer.TTSDataPart, durations []int, indRes []*synthesizer.SynthesizedPos) error {
-	sums := make([]int, len(durations) + 1)
+	sums := make([]int, len(durations)+1)
 	for i := 0; i < len(durations); i++ {
 		sums[i+1] = sums[i] + durations[i]
 	}

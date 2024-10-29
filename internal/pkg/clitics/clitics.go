@@ -10,7 +10,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-//ReadClitics from a file
+// ReadClitics from a file
 func ReadClitics(fStr string) (map[string]bool, error) {
 	file, err := os.Open(fStr)
 	if err != nil {

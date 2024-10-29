@@ -140,17 +140,17 @@ func TestParse(t *testing.T) {
 		{name: "fail <w> in <break>", xml: `<speak><break time="10s"><intelektika:w acc="g{a/}li">gali</intelektika:w></break></speak>`,
 			want: nil, wantErr: true},
 		{name: "parses sylls", xml: `<speak><intelektika:w acc="g{a/}li" syll="ga-li">gali</intelektika:w></speak>`,
-		want: []Part{
-			&Text{Voice: "aa", Speed: 1, Texts: []TextPart{{Text: "gali", Accented: "g{a/}li", Syllables: "ga-li"}}},
-		}, wantErr: false},
+			want: []Part{
+				&Text{Voice: "aa", Speed: 1, Texts: []TextPart{{Text: "gali", Accented: "g{a/}li", Syllables: "ga-li"}}},
+			}, wantErr: false},
 		{name: "parses OE", xml: `<speak><intelektika:w acc="ole" syll="o-le" user="O*l'E">olia</intelektika:w></speak>`,
-		want: []Part{
-			&Text{Voice: "aa", Speed: 1, Texts: []TextPart{{Text: "olia", Accented: "ole", Syllables: "o-le",UserOEPal: "O*l'E"}}},
-		}, wantErr: false},
+			want: []Part{
+				&Text{Voice: "aa", Speed: 1, Texts: []TextPart{{Text: "olia", Accented: "ole", Syllables: "o-le", UserOEPal: "O*l'E"}}},
+			}, wantErr: false},
 		{name: "fails OE", xml: `<speak><intelektika:w acc="ole" syll="o-le" user="OlEe">olia</intelektika:w></speak>`,
-		want: nil, wantErr: true},
+			want: nil, wantErr: true},
 		{name: "fails sylls", xml: `<speak><intelektika:w acc="ole" syll="oo-le" user="OlE">olia</intelektika:w></speak>`,
-		want: nil, wantErr: true},
+			want: nil, wantErr: true},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -322,4 +322,3 @@ func Test_clearUserOE(t *testing.T) {
 		})
 	}
 }
-

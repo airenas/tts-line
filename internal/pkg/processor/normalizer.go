@@ -60,11 +60,11 @@ func processNormalizedOutput(output normResponseData, input []string) ([]string,
 	for i := range input {
 		resR[i] = []rune(input[i])
 	}
-	
+
 	shift := 0
 	for _, rep := range output.Rep {
-		atI, fromI, err := getNextStr(resR, rep.Beg - shift)
-		if (err != nil) {
+		atI, fromI, err := getNextStr(resR, rep.Beg-shift)
+		if err != nil {
 			return nil, fmt.Errorf("err replace %v: %w", rep, err)
 		}
 		rns := resR[fromI]
@@ -74,7 +74,7 @@ func processNormalizedOutput(output normResponseData, input []string) ([]string,
 		end := (rep.End - rep.Beg) + atI
 		if end < len(rns) {
 			rnsNew = append(rnsNew, rns[end:]...)
-		} 
+		}
 		resR[fromI] = rnsNew
 		rem := end - len(rns)
 		for rem > 0 {
@@ -89,15 +89,15 @@ func processNormalizedOutput(output normResponseData, input []string) ([]string,
 		}
 		shift += (rep.End - rep.Beg) - len(repRns)
 	}
-	
-	res := make ([]string, len(resR))
+
+	res := make([]string, len(resR))
 	for i := range input {
 		res[i] = string(resR[i])
 	}
 	return res, nil
 }
 
-func getNextStr(resR [][]rune, at int) (int, int, error){
+func getNextStr(resR [][]rune, at int) (int, int, error) {
 	for i := 0; i < len(resR); i++ {
 		res := resR[i]
 		l := len(res)
@@ -122,8 +122,8 @@ type normResponseData struct {
 }
 
 type normResponseDataRep struct {
-	Beg  int  `json:"beg"`
-	End  int  `json:"end"`
+	Beg  int    `json:"beg"`
+	End  int    `json:"end"`
 	Text string `json:"text"`
 }
 

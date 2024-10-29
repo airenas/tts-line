@@ -12,6 +12,7 @@ import (
 )
 
 var multiSpaceRegexp *regexp.Regexp
+
 // var multiNewLineRegexp *regexp.Regexp
 
 func init() {
@@ -19,7 +20,7 @@ func init() {
 	// multiNewLineRegexp = regexp.MustCompile("[\n]{2,}")
 }
 
-//Text removes html tags from text
+// Text removes html tags from text
 func Text(text string) string {
 	return cleanHTML(text)
 }

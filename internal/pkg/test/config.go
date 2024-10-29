@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-//NewConfig creates new config from yaml
+// NewConfig creates new config from yaml
 func NewConfig(t *testing.T, yaml string) *viper.Viper {
 	t.Helper()
 	res := viper.New()

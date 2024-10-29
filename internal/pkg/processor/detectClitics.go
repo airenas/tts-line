@@ -14,7 +14,7 @@ type cliticDetector struct {
 	httpWrap HTTPInvokerJSON
 }
 
-//NewClitics creates new processor
+// NewClitics creates new processor
 func NewClitics(urlStr string) (synthesizer.PartProcessor, error) {
 	res := &cliticDetector{}
 	var err error

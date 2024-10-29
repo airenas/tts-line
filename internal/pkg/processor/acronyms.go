@@ -11,7 +11,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-//HTTPInvokerJSON invoker for json input
+// HTTPInvokerJSON invoker for json input
 type HTTPInvokerJSON interface {
 	InvokeJSON(interface{}, interface{}) error
 	InvokeJSONU(URL string, dataIn interface{}, dataOut interface{}) error
@@ -22,7 +22,7 @@ type acronyms struct {
 	httpWrap HTTPInvokerJSON
 }
 
-//NewAcronyms creates new processor
+// NewAcronyms creates new processor
 func NewAcronyms(urlStr string) (synthesizer.PartProcessor, error) {
 	res := &acronyms{}
 	var err error

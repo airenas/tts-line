@@ -23,7 +23,7 @@ type (
 	}
 )
 
-//StartWebServer starts the HTTP service and listens for the convert requests
+// StartWebServer starts the HTTP service and listens for the convert requests
 func StartWebServer(data *Data) error {
 	goapp.Log.Infof("Starting HTTP service at %d", data.Port)
 	portStr := strconv.Itoa(data.Port)

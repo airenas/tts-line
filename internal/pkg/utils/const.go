@@ -2,7 +2,7 @@ package utils
 
 import "strconv"
 
-//RequestTypeEnum represent possible request types
+// RequestTypeEnum represent possible request types
 type RequestTypeEnum int
 
 const (

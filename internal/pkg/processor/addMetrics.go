@@ -33,7 +33,7 @@ type addMetrics struct {
 	mFunc func(data *synthesizer.TTSData)
 }
 
-//NewAddMetrics creates new processor to fill metrics
+// NewAddMetrics creates new processor to fill metrics
 func NewAddMetrics(mFunc func(data *synthesizer.TTSData)) (synthesizer.Processor, error) {
 	if mFunc == nil {
 		return nil, errors.New("no metric function")
@@ -41,7 +41,7 @@ func NewAddMetrics(mFunc func(data *synthesizer.TTSData)) (synthesizer.Processor
 	return &addMetrics{mFunc: mFunc}, nil
 }
 
-//Process main processor method
+// Process main processor method
 func (p *addMetrics) Process(data *synthesizer.TTSData) error {
 	p.mFunc(data)
 	return nil
@@ -56,14 +56,14 @@ func getChars(data *synthesizer.TTSData) float64 {
 	return float64(utf8.RuneCountInString(data.OriginalText))
 }
 
-//NewMetricsCharsFunc creates func for adding symbols count
+// NewMetricsCharsFunc creates func for adding symbols count
 func NewMetricsCharsFunc(url string) func(data *synthesizer.TTSData) {
 	return func(data *synthesizer.TTSData) {
 		totalCharMetrics.WithLabelValues(url).Add(getChars(data))
 	}
 }
 
-//NewMetricsWaveLenFunc creates func for add audiolen metric
+// NewMetricsWaveLenFunc creates func for add audiolen metric
 func NewMetricsWaveLenFunc(url string) func(data *synthesizer.TTSData) {
 	return func(data *synthesizer.TTSData) {
 		totalDurationMetrics.WithLabelValues(url).Add(data.AudioLenSeconds)

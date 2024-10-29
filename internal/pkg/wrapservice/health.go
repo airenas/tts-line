@@ -10,7 +10,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-//NewHealthHandler creates new health handler
+// NewHealthHandler creates new health handler
 func NewHealthHandler(amURL, vocURL string) (http.Handler, error) {
 	if amURL == "" {
 		return nil, errors.New("No AM URL")

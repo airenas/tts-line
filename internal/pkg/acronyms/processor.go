@@ -7,7 +7,7 @@ import (
 	"github.com/airenas/tts-line/internal/pkg/acronyms/service/api"
 )
 
-//Processor processes word
+// Processor processes word
 type Processor struct {
 	acronyms service.Worker
 	letters  service.Worker

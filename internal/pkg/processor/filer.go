@@ -18,7 +18,7 @@ type filer struct {
 	fFile func(string) (io.WriteCloser, error)
 }
 
-//NewFiler creates new processor that save file for testing purposes
+// NewFiler creates new processor that save file for testing purposes
 func NewFiler(dir string) (synthesizer.Processor, error) {
 	res := &filer{}
 	res.dir = dir

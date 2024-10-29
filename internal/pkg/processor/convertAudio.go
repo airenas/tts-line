@@ -13,7 +13,7 @@ type audioConverter struct {
 	httpWrap HTTPInvokerJSON
 }
 
-//NewConverter creates new processor for wav to mp3/m4a conversion
+// NewConverter creates new processor for wav to mp3/m4a conversion
 func NewConverter(urlStr string) (synthesizer.Processor, error) {
 	res := &audioConverter{}
 	var err error

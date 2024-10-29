@@ -12,14 +12,14 @@ import (
 	"github.com/pkg/errors"
 )
 
-//HTTPInvokerJSON http POST invoker with JSON in, out params
+// HTTPInvokerJSON http POST invoker with JSON in, out params
 type HTTPInvokerJSON interface {
 	InvokeJSONU(string, interface{}, interface{}) error
 	InvokeJSON(interface{}, interface{}) error
 	InvokeText(string, interface{}) error
 }
 
-//HTTPBackoff http call with backoff
+// HTTPBackoff http call with backoff
 type HTTPBackoff struct {
 	HTTPClient          HTTPInvokerJSON
 	backoffF            func() backoff.BackOff
@@ -28,27 +28,27 @@ type HTTPBackoff struct {
 	RetryIndicatorFunc  func(interface{})
 }
 
-//NewHTTPBackoff creates new wrapper with backoff
-//errF must return same error or wrap to backoff.PermanentError to stop backoff
+// NewHTTPBackoff creates new wrapper with backoff
+// errF must return same error or wrap to backoff.PermanentError to stop backoff
 func NewHTTPBackoff(realWrapper HTTPInvokerJSON, backoffF func() backoff.BackOff, retryF func(error) bool) (*HTTPBackoff, error) {
 	return &HTTPBackoff{HTTPClient: realWrapper, backoffF: backoffF, retryF: retryF}, nil
 }
 
-//InvokeJSON makes http call with json
+// InvokeJSON makes http call with json
 func (hw *HTTPBackoff) InvokeJSON(dataIn interface{}, dataOut interface{}) error {
 	return hw.invoke(func() error {
 		return hw.HTTPClient.InvokeJSON(dataIn, dataOut)
 	}, dataIn)
 }
 
-//InvokeText makes http call with text input
+// InvokeText makes http call with text input
 func (hw *HTTPBackoff) InvokeText(dataIn string, dataOut interface{}) error {
 	return hw.invoke(func() error {
 		return hw.HTTPClient.InvokeText(dataIn, dataOut)
 	}, dataIn)
 }
 
-//InvokeJSONU makes call to URL wits JSON
+// InvokeJSONU makes call to URL wits JSON
 func (hw *HTTPBackoff) InvokeJSONU(URL string, dataIn interface{}, dataOut interface{}) error {
 	return hw.invoke(func() error {
 		return hw.HTTPClient.InvokeJSONU(URL, dataIn, dataOut)
@@ -82,12 +82,12 @@ func (hw *HTTPBackoff) invoke(f func() error, dataIn interface{}) error {
 	return err
 }
 
-//RetryAll - retries all errors
+// RetryAll - retries all errors
 func RetryAll(err error) bool {
 	return err != nil
 }
 
-//IsRetryable - check if error is retryable io.EOF or timeout
+// IsRetryable - check if error is retryable io.EOF or timeout
 func IsRetryable(err error) bool {
 	return errors.Is(err, io.EOF) || errors.Is(err, context.DeadlineExceeded) ||
 		errors.Is(err, syscall.EPIPE) || errors.Is(err, syscall.ECONNRESET) ||

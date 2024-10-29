@@ -50,7 +50,7 @@ type (
 	}
 )
 
-//StartWebServer starts the HTTP service and listens for the admin requests
+// StartWebServer starts the HTTP service and listens for the admin requests
 func StartWebServer(data *Data) error {
 	goapp.Log.Infof("Starting HTTP TTS Line service at %d", data.Port)
 

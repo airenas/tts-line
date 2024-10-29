@@ -12,14 +12,14 @@ import (
 	"github.com/spf13/viper"
 )
 
-//BigCacher keeps cached results
+// BigCacher keeps cached results
 type BigCacher struct {
 	realSynt   service.Synthesizer
 	cache      *bigcache.BigCache
 	maxTextLen int // do not add to cache bigger results
 }
 
-//NewCacher creates cached worker
+// NewCacher creates cached worker
 func NewCacher(rw service.Synthesizer, config *viper.Viper) (*BigCacher, error) {
 	if rw == nil {
 		return nil, errors.New("No synthesizer")
@@ -53,7 +53,7 @@ func NewCacher(rw service.Synthesizer, config *viper.Viper) (*BigCacher, error) 
 	return res, nil
 }
 
-//Work try find data in the cache or invoke a real worker
+// Work try find data in the cache or invoke a real worker
 func (c *BigCacher) Work(inp *api.TTSRequestConfig) (*api.Result, error) {
 	if c.cache == nil || !c.isOK(inp) {
 		return c.realSynt.Work(inp)

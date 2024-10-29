@@ -35,7 +35,7 @@ type sData struct {
 	d    []*mongodb.TextRecord
 }
 
-//Export loads data and saves to writer
+// Export loads data and saves to writer
 // does deletion if param indicates it
 func Export(p Params) error {
 	goapp.Log.Infof("Exporting data")

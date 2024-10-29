@@ -7,7 +7,7 @@ import (
 	"github.com/airenas/tts-line/internal/pkg/acronyms/service/api"
 )
 
-//Letters processes letter abbreviation
+// Letters processes letter abbreviation
 type Letters struct {
 }
 

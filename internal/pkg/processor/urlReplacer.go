@@ -40,7 +40,7 @@ func (p *urlReplacer) Process(data *synthesizer.TTSData) error {
 	text := strings.Join(data.NormalizedText, " ")
 	utils.LogData("Input: ", text)
 	data.Text = nil
-	for _, s := range data.NormalizedText{
+	for _, s := range data.NormalizedText {
 		data.Text = append(data.Text, p.replaceURLs(s))
 	}
 	utils.LogData("Output: ", strings.Join(data.Text, " "))

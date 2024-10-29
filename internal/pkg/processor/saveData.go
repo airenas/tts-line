@@ -12,7 +12,7 @@ import (
 	"github.com/airenas/tts-line/internal/pkg/utils"
 )
 
-//SaverDB interface for text saving
+// SaverDB interface for text saving
 type SaverDB interface {
 	Save(req, text string, reqType utils.RequestTypeEnum, tags []string) error
 }
@@ -22,7 +22,7 @@ type saver struct {
 	tType utils.RequestTypeEnum
 }
 
-//NewSaver creates new text to db processor
+// NewSaver creates new text to db processor
 func NewSaver(s SaverDB, t utils.RequestTypeEnum) (synthesizer.Processor, error) {
 	if s == nil {
 		return nil, errors.New("No Saver")

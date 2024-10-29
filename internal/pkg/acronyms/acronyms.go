@@ -11,7 +11,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-//Acronyms keeps acronyms processor
+// Acronyms keeps acronyms processor
 type Acronyms struct {
 	d map[string][]*data
 }

@@ -1,6 +1,6 @@
 package api
 
-//CliticsInput is input structure
+// CliticsInput is input structure
 type CliticsInput struct {
 	Type   string `json:"type,omitempty"`
 	String string `json:"string,omitempty"`
@@ -9,7 +9,7 @@ type CliticsInput struct {
 	ID     int    `json:"id,omitempty"`
 }
 
-//CliticsOutput is output result
+// CliticsOutput is output result
 type CliticsOutput struct {
 	ID         int    `json:"id,omitempty"`
 	Type       string `json:"type,omitempty"`

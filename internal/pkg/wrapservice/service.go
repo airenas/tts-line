@@ -30,7 +30,7 @@ type (
 	}
 )
 
-//StartWebServer starts the HTTP service and listens for synthesize requests
+// StartWebServer starts the HTTP service and listens for synthesize requests
 func StartWebServer(data *Data) error {
 	goapp.Log.Infof("Starting HTTP TTS AM-VOC Wrapper Service at %d", data.Port)
 	portStr := strconv.Itoa(data.Port)

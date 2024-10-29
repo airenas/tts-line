@@ -14,7 +14,7 @@ type vocoder struct {
 	url      string
 }
 
-//NewVocoder creates new processor
+// NewVocoder creates new processor
 func NewVocoder(urlStr string) (synthesizer.PartProcessor, error) {
 	res := &vocoder{}
 

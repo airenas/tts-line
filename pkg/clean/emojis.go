@@ -6,7 +6,7 @@ import (
 	emoji "github.com/tmdvs/Go-Emoji-Utils"
 )
 
-//DropEmojis replaces emojis to a space in a line
+// DropEmojis replaces emojis to a space in a line
 func DropEmojis(s string) string {
 	matches := emoji.FindAll(s)
 

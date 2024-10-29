@@ -6,18 +6,18 @@ import (
 	"github.com/pkg/errors"
 )
 
-//PartProcessor interface
+// PartProcessor interface
 type PartProcessor interface {
 	Process(*TTSDataPart) error
 }
 
-//PartRunner runs parts of the job
+// PartRunner runs parts of the job
 type PartRunner struct {
 	processors     []PartProcessor
 	parallelWorker int
 }
 
-//NewPartRunner creates parallel runner
+// NewPartRunner creates parallel runner
 func NewPartRunner(parallelWorker int) *PartRunner {
 	if parallelWorker < 1 {
 		parallelWorker = 3
@@ -25,7 +25,7 @@ func NewPartRunner(parallelWorker int) *PartRunner {
 	return &PartRunner{parallelWorker: parallelWorker}
 }
 
-//Process is main method
+// Process is main method
 func (p *PartRunner) Process(data *TTSData) error {
 	workerQueueLimit := make(chan bool, p.parallelWorker)
 	errCh := make(chan error, 1)
@@ -68,7 +68,7 @@ func (p *PartRunner) Process(data *TTSData) error {
 	return nil
 }
 
-//Add adds a processor to the end
+// Add adds a processor to the end
 func (p *PartRunner) Add(pr PartProcessor) {
 	p.processors = append(p.processors, pr)
 }

@@ -203,7 +203,7 @@ func mapSpeechMarksInt(data *TTSData, from time.Duration) ([]*api.SpeechMark, ti
 				(utils.ToDuration(md.pw.SynthesizedPos.From+md.shift, data.SampleRate, md.part.Step) + md.start)).Milliseconds(),
 		}
 		goapp.Log.Debugf("Word: %s, from: %d, to: %d, shift: %d, start: %d, from %d, res: %d-%d (%d)",
-			w, md.pw.SynthesizedPos.From, to.Milliseconds(), md.shift, md.start.Milliseconds(), from.Milliseconds(), sm.TimeInMillis, sm.TimeInMillis + sm.Duration, sm.Duration)
+			w, md.pw.SynthesizedPos.From, to.Milliseconds(), md.shift, md.start.Milliseconds(), from.Milliseconds(), sm.TimeInMillis, sm.TimeInMillis+sm.Duration, sm.Duration)
 		res = append(res, sm)
 	}
 	return res, calcDuration(data.Parts), nil

@@ -52,7 +52,7 @@ func init() {
 	letters["ch"] = makeLD("chą3")
 	letters["dz"] = makeLD("dzė3")
 	letters["dž"] = makeLD("džė3")
-	
+
 	wl = makeLD("ta3-škas")
 	wl.newWord = true
 	letters["."] = wl

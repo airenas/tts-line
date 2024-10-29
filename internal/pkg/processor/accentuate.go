@@ -14,7 +14,7 @@ type accentuator struct {
 	httpWrap HTTPInvokerJSON
 }
 
-//NewAccentuator creates new processor
+// NewAccentuator creates new processor
 func NewAccentuator(urlStr string) (synthesizer.PartProcessor, error) {
 	res := &accentuator{}
 	var err error
@@ -50,8 +50,8 @@ func (p *accentuator) Process(data *synthesizer.TTSDataPart) error {
 
 type accentOutputElement struct {
 	Accent []accentInfo `json:"accent"`
-	Word   string   `json:"word"`
-	Error  string   `json:"error"`
+	Word   string       `json:"word"`
+	Error  string       `json:"error"`
 }
 
 type accentInfo struct {

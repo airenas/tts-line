@@ -14,7 +14,7 @@ type comparator struct {
 	httpWrap HTTPInvokerJSON
 }
 
-//NewComparator creates new text comparator processor
+// NewComparator creates new text comparator processor
 func NewComparator(urlStr string) (synthesizer.Processor, error) {
 	res := &comparator{}
 	var err error

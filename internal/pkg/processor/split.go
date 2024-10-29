@@ -13,7 +13,7 @@ type splitter struct {
 	maxChars int
 }
 
-//NewSplitter split text into batches
+// NewSplitter split text into batches
 func NewSplitter(maxChars int) synthesizer.Processor {
 	if maxChars < 1 {
 		maxChars = 400
