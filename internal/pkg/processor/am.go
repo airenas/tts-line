@@ -119,9 +119,15 @@ func mapAMOutputDurations(data *synthesizer.TTSDataPart, durations []int, indRes
 		sums[i+1] = sums[i] + durations[i]
 	}
 	for i, w := range data.Words {
+		fromI := indRes[i].From
+		toI := indRes[i].To
+		if fromI < 0 || fromI >= len(sums) || toI < 0 || toI >= len(sums) {
+			goapp.Log.Warnf("Invalid duration index %d %d %d %d", fromI, toI, len(sums), len(indRes))
+			continue
+		}
 		w.SynthesizedPos = &synthesizer.SynthesizedPos{
-			From: sums[indRes[i].From],
-			To:   sums[indRes[i].To],
+			From: sums[fromI],
+			To:   sums[toI],
 		}
 	}
 	return nil

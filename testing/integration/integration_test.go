@@ -238,7 +238,7 @@ func startMockService(port int) (net.Listener, *httptest.Server) {
 			if err != nil {
 				log.Printf(err.Error())
 			}
-			io.Copy(w, strings.NewReader(fmt.Sprintf(`{"data":"%s"}`, base64.StdEncoding.EncodeToString(b))))
+			io.Copy(w, strings.NewReader(fmt.Sprintf(`{"data":"%s","step":256}`, base64.StdEncoding.EncodeToString(b))))
 		}
 	}))
 
