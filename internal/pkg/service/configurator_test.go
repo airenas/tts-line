@@ -9,6 +9,7 @@ import (
 	"github.com/airenas/tts-line/internal/pkg/service/api"
 	"github.com/airenas/tts-line/internal/pkg/test"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestNewTTSConfigurator(t *testing.T) {
@@ -202,7 +203,8 @@ func TestConfigure_Voice(t *testing.T) {
 }
 
 func TestConfigure_Priority(t *testing.T) {
-	c, _ := NewTTSConfigurator(test.NewConfig(t, "output:\n  defaultFormat: mp3\n  voices:\n   - aaa1\n  voices:\n   - default:aaa"))
+	c, _ := NewTTSConfigurator(test.NewConfig(t, "output:\n  defaultFormat: mp3\n  voices:\n   - default:aaa"))
+	require.NotNil(t, c)
 	req := httptest.NewRequest("POST", "/synthesize", strings.NewReader("text"))
 	res, err := c.Configure(req, &api.Input{Text: "olia", Priority: 10})
 	assert.Nil(t, err)
