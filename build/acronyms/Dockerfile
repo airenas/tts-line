@@ -1,7 +1,7 @@
 #########################################################################################
 ## docker will invoke this file from ../.. dir in order to access code
 #########################################################################################
-FROM golang:1.21-alpine as builder
+FROM golang:1.21-alpine AS builder
 
 ARG BUILD_VERSION=0.1
 
@@ -16,7 +16,7 @@ RUN --mount=type=cache,target=/root/.cache/go-build \
 
 #########################################################################################
 ## encrypt file
-FROM airenas/secure-file:0.1.2 as encryptor
+FROM airenas/secure-file:0.1.2 AS encryptor
 WORKDIR /app
 COPY build/acronyms/data/acronyms.txt /app/
 ARG SECRET
@@ -26,7 +26,7 @@ RUN ./encrypt-file -f acronyms.txt -s $SECRET > acronyms.txt.aes
 
 #########################################################################################
 ## final image
-FROM alpine:3.15 as runner
+FROM alpine:3.15 AS runner
 
 ARG BUILD_VERSION=0.1
 
