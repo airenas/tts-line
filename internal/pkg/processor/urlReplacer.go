@@ -33,7 +33,7 @@ func NewURLReplacer() synthesizer.Processor {
 
 func (p *urlReplacer) Process(data *synthesizer.TTSData) error {
 	if p.skip(data) {
-		goapp.Log.Info("Skip url replace")
+		goapp.Log.Info().Msg("Skip url replace")
 		return nil
 	}
 	defer goapp.Estimate("URL replace")()

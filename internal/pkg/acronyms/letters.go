@@ -39,7 +39,7 @@ func (s *Letters) Process(word, mi string) ([]api.ResultWord, error) {
 			step = 2
 		}
 		if !ok {
-			goapp.Log.Warnf("Unknown letter: '%s'", goapp.Sanitize(string(wr[i])))
+			goapp.Log.Warn().Msgf("Unknown letter: '%s'", goapp.Sanitize(string(wr[i])))
 			continue
 		}
 		if wr[i] == '.' && !ad {

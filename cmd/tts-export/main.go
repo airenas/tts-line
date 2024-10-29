@@ -27,7 +27,7 @@ func main() {
 	takeParams(fs, ap)
 	goapp.StartWithFlags(fs, os.Args)
 
-	goapp.Log.Info("Starting")
+	goapp.Log.Info().Msg("Starting")
 
 	printBanner()
 
@@ -35,20 +35,20 @@ func main() {
 
 	sp, err := mongodb.NewSessionProvider(goapp.Config.GetString("mongo.url"))
 	if err != nil {
-		goapp.Log.Fatal(errors.Wrap(err, "can't init mongo session provider"))
+		goapp.Log.Fatal().Err(errors.Wrap(err, "can't init mongo session provider")).Send()
 	}
 	defer sp.Close()
 	ts, err := mongodb.NewTextSaver(sp)
 	if err != nil {
-		goapp.Log.Fatal(errors.Wrap(err, "can't init DB exporter"))
+		goapp.Log.Fatal().Err(errors.Wrap(err, "can't init DB exporter")).Send()
 	}
 
 	p := exporter.Params{To: ap.to, Delete: ap.delete, Out: os.Stdout, Exporter: ts}
 	err = exporter.Export(p)
 	if err != nil {
-		goapp.Log.Fatal(errors.Wrap(err, "can't start the service"))
+		goapp.Log.Fatal().Err(errors.Wrap(err, "can't start the service")).Send()
 	}
-	goapp.Log.Info("Finished")
+	goapp.Log.Info().Msg("Finished")
 }
 
 var (

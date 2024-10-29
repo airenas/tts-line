@@ -28,7 +28,7 @@ func NewValidator(defaultMaxLen int) (synthesizer.Processor, error) {
 
 func (p *validator) Process(data *synthesizer.TTSData) error {
 	if skip(data) {
-		goapp.Log.Info("Skip validator")
+		goapp.Log.Info().Msg("Skip validator")
 		return nil
 	}
 	return validate(getLen(data.Input.Text), getMaxLen(p.defaultMax, data.Input.AllowedMaxLen))
@@ -75,7 +75,7 @@ func NewSSMLValidator(defaultMaxLen int) (synthesizer.Processor, error) {
 
 func (p *ssmlValidator) Process(data *synthesizer.TTSData) error {
 	if skip(data) {
-		goapp.Log.Info("Skip validator")
+		goapp.Log.Info().Msg("Skip validator")
 		return nil
 	}
 	return validate(getSSMLTextLen(data), getMaxLen(p.defaultMax, data.Input.AllowedMaxLen))

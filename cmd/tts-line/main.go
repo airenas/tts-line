@@ -31,16 +31,16 @@ func main() {
 	synt.AllowCustomCode = goapp.Config.GetBool("allowCustom")
 	sp, err := mongodb.NewSessionProvider(goapp.Config.GetString("mongo.url"))
 	if err != nil {
-		goapp.Log.Fatal(errors.Wrap(err, "can't init mongo session provider"))
+		goapp.Log.Fatal().Err(errors.Wrap(err, "can't init mongo session provider")).Send()
 	}
 	defer sp.Close()
 
 	if err = addProcessors(synt, sp, goapp.Config); err != nil {
-		goapp.Log.Fatal(errors.Wrap(err, "can't init processors"))
+		goapp.Log.Fatal().Err(errors.Wrap(err, "can't init processors")).Send()
 	}
 
 	if err = addSSMLProcessors(synt, sp, goapp.Config); err != nil {
-		goapp.Log.Fatal(errors.Wrap(err, "can't init SSML processors"))
+		goapp.Log.Fatal().Err(errors.Wrap(err, "can't init SSML processors")).Send()
 	}
 
 	//cache
@@ -48,33 +48,33 @@ func main() {
 	if cc != nil {
 		data.SyntData.Processor, err = cache.NewCacher(synt, cc)
 		if err != nil {
-			goapp.Log.Fatal(errors.Wrap(err, "can't init cache"))
+			goapp.Log.Fatal().Err(errors.Wrap(err, "can't init cache")).Send()
 		}
 	} else {
-		goapp.Log.Info("No cache will be used")
+		goapp.Log.Info().Msg("No cache will be used")
 		data.SyntData.Processor = synt
 	}
 
 	// input configuration
 	data.SyntData.Configurator, err = service.NewTTSConfigurator(goapp.Sub(goapp.Config, "options"))
 	if err != nil {
-		goapp.Log.Fatal(errors.Wrap(err, "can't init configurator"))
+		goapp.Log.Fatal().Err(errors.Wrap(err, "can't init configurator")).Send()
 	}
 
 	// init custom synthesize method
 	data.SyntCustomData.Configurator, err = service.NewTTSConfiguratorNoSSML(goapp.Sub(goapp.Config, "options"))
 	if err != nil {
-		goapp.Log.Fatal(errors.Wrap(err, "can't init custom configurator"))
+		goapp.Log.Fatal().Err(errors.Wrap(err, "can't init custom configurator")).Send()
 	}
 	syntC := &synthesizer.MainWorker{}
 	err = addCustomProcessors(syntC, sp, goapp.Config)
 	if err != nil {
-		goapp.Log.Fatal(errors.Wrap(err, "can't init custom processors"))
+		goapp.Log.Fatal().Err(errors.Wrap(err, "can't init custom processors")).Send()
 	}
 	data.SyntCustomData.Processor = syntC
 	data.InfoGetterData, err = prepareInfoGetter(sp)
 	if err != nil {
-		goapp.Log.Fatal(errors.Wrap(err, "can't init info getter"))
+		goapp.Log.Fatal().Err(errors.Wrap(err, "can't init info getter")).Send()
 	}
 	printBanner()
 
@@ -82,7 +82,7 @@ func main() {
 
 	err = service.StartWebServer(&data)
 	if err != nil {
-		goapp.Log.Fatal(errors.Wrap(err, "can't start the service"))
+		goapp.Log.Fatal().Err(errors.Wrap(err, "can't start the service")).Send()
 	}
 }
 
@@ -410,11 +410,11 @@ func prepareInfoGetter(sp *mongodb.SessionProvider) (*infoGetter, error) {
 func startPerfEndpoint() {
 	port := goapp.Config.GetInt("debug.port")
 	if port > 0 {
-		goapp.Log.Infof("Starting Debug http endpoint at [::]:%d", port)
+		goapp.Log.Info().Msgf("Starting Debug http endpoint at [::]:%d", port)
 		portStr := strconv.Itoa(port)
 		err := http.ListenAndServe(":"+portStr, nil)
 		if err != nil {
-			goapp.Log.Error(errors.Wrap(err, "can't start Debug endpoint at "+portStr))
+			goapp.Log.Error().Err(errors.Wrap(err, "can't start Debug endpoint at "+portStr)).Send()
 		}
 	}
 }

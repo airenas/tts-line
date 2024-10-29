@@ -31,7 +31,7 @@ func NewTagger(urlStr string) (synthesizer.Processor, error) {
 
 func (p *tagger) Process(data *synthesizer.TTSData) error {
 	if p.skip(data) {
-		goapp.Log.Info("Skip tagger")
+		goapp.Log.Info().Msg("Skip tagger")
 		return nil
 	}
 	var output []*TaggedWord

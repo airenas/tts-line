@@ -20,7 +20,7 @@ type Processor struct {
 // NewProcessor creates new processor
 func NewProcessor(amURL, vocURL string) (*Processor, error) {
 	res := &Processor{}
-	goapp.Log.Infof("AM URL: %s", amURL+"/model")
+	goapp.Log.Info().Msgf("AM URL: %s", amURL+"/model")
 	am, err := utils.NewHTTPWrapT(amURL+"/model", time.Minute*2)
 	if err != nil {
 		return nil, errors.Wrap(err, "can't init AM client")
@@ -37,7 +37,7 @@ func NewProcessor(amURL, vocURL string) (*Processor, error) {
 	}
 	res.amWrap = amService
 
-	goapp.Log.Infof("Vocoder URL: %s", vocURL+"/model")
+	goapp.Log.Info().Msgf("Vocoder URL: %s", vocURL+"/model")
 	voc, err := utils.NewHTTPWrapT(vocURL+"/model", time.Minute*2)
 	if err != nil {
 		return nil, errors.Wrap(err, "can't init Vocoder client")

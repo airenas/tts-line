@@ -35,7 +35,7 @@ func NewAcronyms(urlStr string) (synthesizer.PartProcessor, error) {
 
 func (p *acronyms) Process(data *synthesizer.TTSDataPart) error {
 	if p.skip(data) {
-		goapp.Log.Info("Skip acronyms")
+		goapp.Log.Info().Msg("Skip acronyms")
 		return nil
 	}
 	inData := mapAbbrInput(data)
@@ -47,7 +47,7 @@ func (p *acronyms) Process(data *synthesizer.TTSDataPart) error {
 		}
 		return mapAbbrOutput(data, outData)
 	} else {
-		goapp.Log.Debug("Skip abbreviation - no data in")
+		goapp.Log.Debug().Msg("Skip abbreviation - no data in")
 	}
 	return nil
 }

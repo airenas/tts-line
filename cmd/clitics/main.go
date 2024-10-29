@@ -18,14 +18,14 @@ func main() {
 	var err error
 	data.Worker, err = provider()
 	if err != nil {
-		goapp.Log.Fatal(errors.Wrap(err, "Can't init provider"))
+		goapp.Log.Fatal().Err(errors.Wrap(err, "Can't init provider")).Send()
 	}
 
 	printBanner()
 
 	err = service.StartWebServer(&data)
 	if err != nil {
-		goapp.Log.Fatal(errors.Wrap(err, "Can't start the service"))
+		goapp.Log.Fatal().Err(errors.Wrap(err, "Can't start the service")).Send()
 	}
 }
 

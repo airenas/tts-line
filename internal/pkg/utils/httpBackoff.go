@@ -70,14 +70,14 @@ func (hw *HTTPBackoff) invoke(f func() error, dataIn interface{}) error {
 			if !hw.retryF(err) {
 				return backoff.Permanent(err)
 			}
-			goapp.Log.Warn(errors.Wrapf(err, "failed %d time(s)", failC))
+			goapp.Log.Warn().Err(errors.Wrapf(err, "failed %d time(s)", failC)).Send()
 			return err
 		}
 		return nil
 	}
 	err := backoff.Retry(op, hw.backoffF())
 	if err == nil && failC > 0 {
-		goapp.Log.Infof("Success after retrying %d time(s)", failC)
+		goapp.Log.Info().Msgf("Success after retrying %d time(s)", failC)
 	}
 	return err
 }

@@ -202,7 +202,7 @@ func mapSpeechMarksInt(data *TTSData, from time.Duration) ([]*api.SpeechMark, ti
 			Duration: (getLastWordTo(aligned, i, maps, data.SampleRate, md.part.Step) -
 				(utils.ToDuration(md.pw.SynthesizedPos.From+md.shift, data.SampleRate, md.part.Step) + md.start)).Milliseconds(),
 		}
-		goapp.Log.Debugf("Word: %s, from: %d, to: %d, shift: %d, start: %d, from %d, res: %d-%d (%d)",
+		goapp.Log.Debug().Msgf("Word: %s, from: %d, to: %d, shift: %d, start: %d, from %d, res: %d-%d (%d)",
 			w, md.pw.SynthesizedPos.From, to.Milliseconds(), md.shift, md.start.Milliseconds(), from.Milliseconds(), sm.TimeInMillis, sm.TimeInMillis+sm.Duration, sm.Duration)
 		res = append(res, sm)
 	}
@@ -266,7 +266,7 @@ func tryCustomCode(data *TTSData) {
 	if strings.HasPrefix(data.OriginalText, "##AM:") {
 		data.OriginalText = data.OriginalText[len("##AM:"):]
 		data.Cfg.JustAM = true
-		goapp.Log.Infof("Start from AM")
+		goapp.Log.Info().Msgf("Start from AM")
 	}
 }
 

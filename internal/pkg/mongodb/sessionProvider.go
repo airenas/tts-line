@@ -56,7 +56,7 @@ func (sp *SessionProvider) NewSession() (mongo.Session, error) {
 	defer sp.m.Unlock()
 
 	if sp.client == nil {
-		goapp.Log.Info("Dial mongo: " + goapp.HidePass(sp.URL))
+		goapp.Log.Info().Msg("Dial mongo: " + goapp.HidePass(sp.URL))
 		ctx, cancel := mongoContext()
 		defer cancel()
 		client, err := mongo.Connect(ctx, options.Client().ApplyURI(sp.URL))
@@ -75,7 +75,7 @@ func (sp *SessionProvider) NewSession() (mongo.Session, error) {
 }
 
 func (sp *SessionProvider) checkIndexes(c *mongo.Client, database string) error {
-	goapp.Log.Infof("Check indexes in %s", database)
+	goapp.Log.Info().Msgf("Check indexes in %s", database)
 	err := checkIndexes(c, indexData, database)
 	if err != nil {
 		return errors.Wrap(err, "Can't create indexes")

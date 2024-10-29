@@ -27,7 +27,7 @@ func NewTextSaver(sessionProvider *SessionProvider) (*TextSaver, error) {
 
 // Save text to DB
 func (ss *TextSaver) Save(req, text string, reqType utils.RequestTypeEnum, tags []string) error {
-	goapp.Log.Infof("Saving ID %s", req)
+	goapp.Log.Info().Msgf("Saving ID %s", req)
 
 	ctx, cancel := mongoContext()
 	defer cancel()

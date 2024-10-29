@@ -26,7 +26,7 @@ func NewObsceneFilter(urlStr string) (synthesizer.PartProcessor, error) {
 
 func (p *obscene) Process(data *synthesizer.TTSDataPart) error {
 	if p.skip(data) {
-		goapp.Log.Info("Skip obscene filter")
+		goapp.Log.Info().Msg("Skip obscene filter")
 		return nil
 	}
 	inData := mapObsceneInput(data)
@@ -42,7 +42,7 @@ func (p *obscene) Process(data *synthesizer.TTSDataPart) error {
 			return err
 		}
 	} else {
-		goapp.Log.Debug("Skip obscene filter - no data in")
+		goapp.Log.Debug().Msg("Skip obscene filter - no data in")
 	}
 	return nil
 }

@@ -35,7 +35,7 @@ func NewNumberReplace(urlStr string) (synthesizer.Processor, error) {
 
 func (p *numberReplace) Process(data *synthesizer.TTSData) error {
 	if p.skip(data) {
-		goapp.Log.Info("Skip numberReplace")
+		goapp.Log.Info().Msg("Skip numberReplace")
 		return nil
 	}
 	res := ""
@@ -74,7 +74,7 @@ func NewSSMLNumberReplace(urlStr string) (synthesizer.Processor, error) {
 
 func (p *ssmlNumberReplace) Process(data *synthesizer.TTSData) error {
 	if p.skip(data) {
-		goapp.Log.Info("Skip numberReplace")
+		goapp.Log.Info().Msg("Skip numberReplace")
 		return nil
 	}
 	res := ""

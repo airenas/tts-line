@@ -32,7 +32,7 @@ func NewSaver(s SaverDB, t utils.RequestTypeEnum) (synthesizer.Processor, error)
 
 func (p *saver) Process(data *synthesizer.TTSData) error {
 	if !data.Input.AllowCollectData {
-		goapp.Log.Info("Skip saving to DB")
+		goapp.Log.Info().Msg("Skip saving to DB")
 		return nil
 	}
 	defer goapp.Estimate("SaveToDB " + p.tType.String())()
@@ -53,7 +53,7 @@ func getText(data *synthesizer.TTSData, t utils.RequestTypeEnum) string {
 	case utils.RequestOriginalSSML:
 		return data.OriginalText
 	}
-	goapp.Log.Warnf("Not configured RequestTypeEnum %v", t)
+	goapp.Log.Warn().Msgf("Not configured RequestTypeEnum %v", t)
 	return data.OriginalText
 }
 

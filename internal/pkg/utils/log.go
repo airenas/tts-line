@@ -7,7 +7,7 @@ var MaxLogDataSize = 100
 
 // LogData logs data to debug
 func LogData(st string, data string) {
-	goapp.Log.Debugf("%s %s", st, goapp.Sanitize(trimString(data, MaxLogDataSize)))
+	goapp.Log.Debug().Msgf("%s %s", st, goapp.Sanitize(trimString(data, MaxLogDataSize)))
 }
 
 func trimString(data string, size int) string {

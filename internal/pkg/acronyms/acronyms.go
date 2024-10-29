@@ -42,7 +42,7 @@ func New(r io.Reader) (*Acronyms, error) {
 	if len(acr) == 0 {
 		return nil, errors.New("No acronyms loaded")
 	}
-	goapp.Log.Infof("Loaded %d acronyms", len(acr))
+	goapp.Log.Info().Msgf("Loaded %d acronyms", len(acr))
 	return &Acronyms{d: acr}, nil
 }
 

@@ -43,7 +43,7 @@ func (p *filer) save(data string) error {
 	}
 
 	fn := path.Join(p.dir, "out.mp3")
-	goapp.Log.Debug("Saving " + fn)
+	goapp.Log.Debug().Msg("Saving " + fn)
 	f, err := p.fFile(fn)
 	if err != nil {
 		return errors.Wrapf(err, "Can't open %s", fn)

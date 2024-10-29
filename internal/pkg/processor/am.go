@@ -61,8 +61,8 @@ func NewAcousticModel(config *viper.Viper) (synthesizer.PartProcessor, error) {
 		res.endSymbol = res.spaceSymbol
 	}
 	res.hasVocoder = config.GetBool("hasVocoder")
-	goapp.Log.Infof("AM pause: '%s', end symbol: '%s'", res.spaceSymbol, res.endSymbol)
-	goapp.Log.Infof("AM hasVocoder: %t", res.hasVocoder)
+	goapp.Log.Info().Msgf("AM pause: '%s', end symbol: '%s'", res.spaceSymbol, res.endSymbol)
+	goapp.Log.Info().Msgf("AM hasVocoder: %t", res.hasVocoder)
 	return res, nil
 }
 
@@ -122,7 +122,7 @@ func mapAMOutputDurations(data *synthesizer.TTSDataPart, durations []int, indRes
 		fromI := indRes[i].From
 		toI := indRes[i].To
 		if fromI < 0 || fromI >= len(sums) || toI < 0 || toI >= len(sums) {
-			goapp.Log.Warnf("Invalid duration index %d %d %d %d", fromI, toI, len(sums), len(indRes))
+			goapp.Log.Warn().Msgf("Invalid duration index %d %d %d %d", fromI, toI, len(sums), len(indRes))
 			continue
 		}
 		w.SynthesizedPos = &synthesizer.SynthesizedPos{

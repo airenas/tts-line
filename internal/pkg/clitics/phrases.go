@@ -55,7 +55,7 @@ func readPhrases(r io.Reader) (*Phrases, error) {
 		sort.Slice(v, func(i, j int) bool { return len(v[i]) > len(v[j]) })
 		res.wordMap[k] = v
 	}
-	goapp.Log.Infof("Loaded %d phrases", pc)
+	goapp.Log.Info().Msgf("Loaded %d phrases", pc)
 	return res, nil
 }
 

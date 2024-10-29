@@ -32,7 +32,7 @@ type (
 
 // StartWebServer starts the HTTP service and listens for synthesize requests
 func StartWebServer(data *Data) error {
-	goapp.Log.Infof("Starting HTTP TTS AM-VOC Wrapper Service at %d", data.Port)
+	goapp.Log.Info().Msgf("Starting HTTP TTS AM-VOC Wrapper Service at %d", data.Port)
 	portStr := strconv.Itoa(data.Port)
 
 	e := initRoutes(data)
@@ -43,9 +43,7 @@ func StartWebServer(data *Data) error {
 	e.Server.ReadTimeout = 60 * time.Second
 	e.Server.WriteTimeout = 180 * time.Second
 
-	w := goapp.Log.Writer()
-	defer w.Close()
-	gracehttp.SetLogger(log.New(w, "", 0))
+	gracehttp.SetLogger(log.New(goapp.Log, "", 0))
 
 	return gracehttp.Serve(e.Server)
 }
@@ -62,9 +60,9 @@ func initRoutes(data *Data) *echo.Echo {
 	e.POST("/synthesize", handleSynthesize(data))
 	e.GET("/live", live(data))
 
-	goapp.Log.Info("Routes:")
+	goapp.Log.Info().Msg("Routes:")
 	for _, r := range e.Routes() {
-		goapp.Log.Infof("  %s %s", r.Method, r.Path)
+		goapp.Log.Info().Msgf("  %s %s", r.Method, r.Path)
 	}
 	return e
 }
@@ -75,26 +73,26 @@ func handleSynthesize(data *Data) func(echo.Context) error {
 
 		ctype := c.Request().Header.Get(echo.HeaderContentType)
 		if !strings.HasPrefix(ctype, echo.MIMEApplicationJSON) {
-			goapp.Log.Error("Wrong content type")
+			goapp.Log.Error().Msg("Wrong content type")
 			return echo.NewHTTPError(http.StatusBadRequest, "Wrong content type. Expected '"+echo.MIMEApplicationJSON+"'")
 		}
 		var input api.Input
 		if err := c.Bind(&input); err != nil {
-			goapp.Log.Error(err)
+			goapp.Log.Error().Err(err).Send()
 			return echo.NewHTTPError(http.StatusBadRequest, "Can read data")
 		}
 		if input.Text == "" {
-			goapp.Log.Error("No text")
+			goapp.Log.Error().Msg("No text")
 			return echo.NewHTTPError(http.StatusBadRequest, "No text")
 		}
 		if input.Voice == "" {
-			goapp.Log.Error("No voice")
+			goapp.Log.Error().Msg("No voice")
 			return echo.NewHTTPError(http.StatusBadRequest, "No voice")
 		}
 
 		res, err := data.Processor.Work(&api.Params{Text: input.Text, Speed: input.Speed, Voice: input.Voice, Priority: input.Priority})
 		if err != nil {
-			goapp.Log.Error(errors.Wrap(err, "cannot process text"))
+			goapp.Log.Error().Err(errors.Wrap(err, "cannot process text")).Send()
 			return echo.NewHTTPError(http.StatusInternalServerError, "Cannot process text")
 		}
 		c.Response().Header().Set(echo.HeaderContentType, echo.MIMEApplicationJSONCharsetUTF8)

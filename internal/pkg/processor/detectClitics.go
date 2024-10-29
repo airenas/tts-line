@@ -27,7 +27,7 @@ func NewClitics(urlStr string) (synthesizer.PartProcessor, error) {
 
 func (p *cliticDetector) Process(data *synthesizer.TTSDataPart) error {
 	if p.skip(data) {
-		goapp.Log.Info("Skip clitics")
+		goapp.Log.Info().Msg("Skip clitics")
 		return nil
 	}
 	inData, err := mapCliticsInput(data)
@@ -45,7 +45,7 @@ func (p *cliticDetector) Process(data *synthesizer.TTSDataPart) error {
 			return err
 		}
 	} else {
-		goapp.Log.Debug("Skip clitics - no data in")
+		goapp.Log.Debug().Msg("Skip clitics - no data in")
 	}
 	return nil
 }

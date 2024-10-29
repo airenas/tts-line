@@ -25,7 +25,7 @@ type (
 
 // StartWebServer starts the HTTP service and listens for the convert requests
 func StartWebServer(data *Data) error {
-	goapp.Log.Infof("Starting HTTP service at %d", data.Port)
+	goapp.Log.Info().Msgf("Starting HTTP service at %d", data.Port)
 	portStr := strconv.Itoa(data.Port)
 
 	e := initRoutes(data)
@@ -35,9 +35,7 @@ func StartWebServer(data *Data) error {
 	e.Server.ReadTimeout = 10 * time.Second
 	e.Server.WriteTimeout = 10 * time.Second
 
-	w := goapp.Log.Writer()
-	defer w.Close()
-	gracehttp.SetLogger(log.New(w, "", 0))
+	gracehttp.SetLogger(log.New(goapp.Log, "", 0))
 
 	return gracehttp.Serve(e.Server)
 }
@@ -51,9 +49,9 @@ func initRoutes(data *Data) *echo.Echo {
 	e.POST("/clean", handleClean(data))
 	e.GET("/live", live(data))
 
-	goapp.Log.Info("Routes:")
+	goapp.Log.Info().Msg("Routes:")
 	for _, r := range e.Routes() {
-		goapp.Log.Infof("  %s %s", r.Method, r.Path)
+		goapp.Log.Info().Msgf("  %s %s", r.Method, r.Path)
 	}
 	return e
 }
@@ -72,12 +70,12 @@ func handleClean(data *Data) func(echo.Context) error {
 
 		ctype := c.Request().Header.Get(echo.HeaderContentType)
 		if !strings.HasPrefix(ctype, echo.MIMEApplicationJSON) {
-			goapp.Log.Error("Wrong content type")
+			goapp.Log.Error().Msg("Wrong content type")
 			return echo.NewHTTPError(http.StatusBadRequest, "Wrong content type. Expected '"+echo.MIMEApplicationJSON+"'")
 		}
 		inp := new(input)
 		if err := c.Bind(inp); err != nil {
-			goapp.Log.Error(err)
+			goapp.Log.Error().Err(err).Send()
 			return echo.NewHTTPError(http.StatusBadRequest, "Can get data")
 		}
 

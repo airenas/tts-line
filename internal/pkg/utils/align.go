@@ -10,7 +10,7 @@ func Align(s1 []string, s2 []string) ([]int, error) {
 	var err error
 	for i, alignBuffer := range [...]int{20, 40, 80, 120, 240} {
 		if i > 0 {
-			goapp.Log.Infof("increase align size to %d", alignBuffer)
+			goapp.Log.Info().Msgf("increase align size to %d", alignBuffer)
 		}
 		res, err = align(s1, s2, alignBuffer)
 		if err == nil {
@@ -40,7 +40,7 @@ func align(oStrs []string, nStrs []string, step int) ([]int, error) {
 		}
 		nextI, err := findLastConsequtiveAlign(partlyAl, oStrs[i:], nStrs[j:])
 		if err != nil {
-			goapp.Log.Infof("try alternative alignment")
+			goapp.Log.Info().Msgf("try alternative alignment")
 			if partlyAlAlt != nil {
 				partlyAl = partlyAlAlt
 				nextI, err = findLastConsequtiveAlign(partlyAl, oStrs[i:], nStrs[j:])

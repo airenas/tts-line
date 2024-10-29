@@ -36,6 +36,6 @@ func readClitics(r io.Reader) (map[string]bool, error) {
 	if len(res) == 0 {
 		return nil, errors.New("no clitics loaded")
 	}
-	goapp.Log.Infof("Loaded %d clitics", len(res))
+	goapp.Log.Info().Msgf("Loaded %d clitics", len(res))
 	return res, nil
 }

@@ -32,17 +32,14 @@ type (
 
 // StartWebServer starts the HTTP service and listens for the requests
 func StartWebServer(data *Data) error {
-	goapp.Log.Infof("Starting HTTP service at %d", data.Port)
+	goapp.Log.Info().Msgf("Starting HTTP service at %d", data.Port)
 	portStr := strconv.Itoa(data.Port)
 
 	e := initRoutes(data)
 
 	e.Server.Addr = ":" + portStr
 
-	w := goapp.Log.Writer()
-	defer w.Close()
-	l := log.New(w, "", 0)
-	gracehttp.SetLogger(l)
+	gracehttp.SetLogger(log.New(goapp.Log, "", 0))
 
 	return gracehttp.Serve(e.Server)
 }
@@ -57,9 +54,9 @@ func initRoutes(data *Data) *echo.Echo {
 	e.GET("/acronym/:word", handleOne(data))
 	e.GET("/live", live(data))
 
-	goapp.Log.Info("Routes:")
+	goapp.Log.Info().Msg("Routes:")
 	for _, r := range e.Routes() {
-		goapp.Log.Infof("  %s %s", r.Method, r.Path)
+		goapp.Log.Info().Msgf("  %s %s", r.Method, r.Path)
 	}
 	return e
 }
@@ -70,13 +67,13 @@ func handleOne(data *Data) func(echo.Context) error {
 
 		word := c.Param("word")
 		if word == "" {
-			goapp.Log.Error("No word")
+			goapp.Log.Error().Msg("No word")
 			return echo.NewHTTPError(http.StatusBadRequest, "No word")
 		}
 
 		res, err := data.Worker.Process(word, "")
 		if err != nil {
-			goapp.Log.Error(errors.Wrap(err, "Cannot process "+word))
+			goapp.Log.Error().Err(errors.Wrap(err, "Cannot process "+word)).Send()
 			return echo.NewHTTPError(http.StatusInternalServerError, "Cannot process "+word)
 		}
 		return c.JSON(http.StatusOK, res)
@@ -95,12 +92,12 @@ func handleList(data *Data) func(echo.Context) error {
 
 		ctype := c.Request().Header.Get(echo.HeaderContentType)
 		if !strings.HasPrefix(ctype, echo.MIMEApplicationJSON) {
-			goapp.Log.Error("Wrong content type")
+			goapp.Log.Error().Msg("Wrong content type")
 			return echo.NewHTTPError(http.StatusBadRequest, "Wrong content type. Expected '"+echo.MIMEApplicationJSON+"'")
 		}
 		var input []api.WordInput
 		if err := c.Bind(&input); err != nil {
-			goapp.Log.Error(err)
+			goapp.Log.Error().Err(err).Send()
 			return echo.NewHTTPError(http.StatusBadRequest, "Can get data")
 		}
 
@@ -108,7 +105,7 @@ func handleList(data *Data) func(echo.Context) error {
 		for _, wi := range input {
 			wl, err := data.Worker.Process(wi.Word, wi.MI)
 			if err != nil {
-				goapp.Log.Error("Cannot process "+goapp.Sanitize(wi.Word), err)
+				goapp.Log.Error().Err(err).Msg("Cannot process " + goapp.Sanitize(wi.Word))
 				return echo.NewHTTPError(http.StatusInternalServerError, "Cannot process "+wi.Word)
 			}
 			var wo api.WordOutput

@@ -28,7 +28,7 @@ func Text(text string) string {
 func cleanHTML(text string) string {
 	nText, err := skipIgnoreTags(text)
 	if err != nil {
-		goapp.Log.Error(err)
+		goapp.Log.Error().Err(err).Send()
 		nText = text
 	}
 	p := bluemonday.StrictPolicy().AddSpaceWhenStrippingTag(true)

@@ -28,7 +28,7 @@ func NewNormalizer(urlStr string) (synthesizer.Processor, error) {
 
 func (p *normalizer) Process(data *synthesizer.TTSData) error {
 	if p.skip(data) {
-		goapp.Log.Info("Skip normalize")
+		goapp.Log.Info().Msg("Skip normalize")
 		return nil
 	}
 	defer goapp.Estimate("Normalize")()

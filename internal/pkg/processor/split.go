@@ -24,7 +24,7 @@ func NewSplitter(maxChars int) synthesizer.Processor {
 func (p *splitter) Process(data *synthesizer.TTSData) error {
 	var err error
 	if p.custom(data) {
-		goapp.Log.Info("Custom split")
+		goapp.Log.Info().Msg("Custom split")
 		data.Parts, err = splitCustom(data)
 		if err != nil {
 			return err

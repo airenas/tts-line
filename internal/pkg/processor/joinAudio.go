@@ -161,7 +161,7 @@ func isSil(ph string) bool {
 func getEndSilSize(phones []string, durations []int) int {
 	l := len(phones)
 	if len(durations) != l+1 {
-		goapp.Log.Warn("Duration size don't match phone list")
+		goapp.Log.Warn().Msg("Duration size don't match phone list")
 		return 0
 	}
 	res := durations[l]
@@ -410,7 +410,7 @@ func appendPause(res *wavWriter, pause time.Duration) error {
 
 func writePause(buf *bytes.Buffer, sampleRate uint32, bitsPerSample uint16, pause time.Duration) (uint32, error) {
 	if pause > time.Second*10 {
-		goapp.Log.Warnf("Too long pause %v", pause)
+		goapp.Log.Warn().Msgf("Too long pause %v", pause)
 		pause = time.Second * 10
 	}
 	if pause < 0 {

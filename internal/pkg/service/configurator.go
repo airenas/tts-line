@@ -48,14 +48,14 @@ func NewTTSConfigurator(cfg *viper.Viper) (*TTSConfigutaror, error) {
 		return nil, errors.New("no output.defaultFormat configured")
 	}
 
-	goapp.Log.Infof("Default output format: %s", res.defaultOutputFormat.String())
+	goapp.Log.Info().Msgf("Default output format: %s", res.defaultOutputFormat.String())
 	res.outputMetadata = cfg.GetStringSlice("output.metadata")
 	for _, m := range res.outputMetadata {
 		if !strings.Contains(m, "=") {
 			return nil, errors.Errorf("metadata must contain '='. Value: '%s'", m)
 		}
 	}
-	goapp.Log.Infof("Metadata: %v", res.outputMetadata)
+	goapp.Log.Info().Msgf("Metadata: %v", res.outputMetadata)
 
 	res.availableVoices, err = initVoices(cfg.GetStringSlice("output.voices"))
 	if err != nil {
@@ -65,7 +65,7 @@ func NewTTSConfigurator(cfg *viper.Viper) (*TTSConfigutaror, error) {
 	if err != nil {
 		return nil, errors.Wrap(err, "no default voice")
 	}
-	goapp.Log.Infof("Voices. Default: %s, all: %v", dVoice, res.availableVoices)
+	goapp.Log.Info().Msgf("Voices. Default: %s, all: %v", dVoice, res.availableVoices)
 	return res, nil
 }
 
@@ -138,7 +138,7 @@ func (c *TTSConfigutaror) Configure(r *http.Request, inText *api.Input) (*api.TT
 	if err != nil {
 		return nil, err
 	}
-	goapp.Log.Infof("Voice '%s' -> '%s'", goapp.Sanitize(inText.Voice), res.Voice)
+	goapp.Log.Info().Msgf("Voice '%s' -> '%s'", goapp.Sanitize(inText.Voice), res.Voice)
 	if inText.Priority < 0 {
 		return nil, errors.Errorf("wrong priority (>=0) value: %d", inText.Priority)
 	}

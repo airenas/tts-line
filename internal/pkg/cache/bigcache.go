@@ -2,6 +2,7 @@ package cache
 
 import (
 	"fmt"
+	"log"
 	"time"
 
 	"github.com/airenas/go-app/pkg/goapp"
@@ -30,7 +31,8 @@ func NewCacher(rw service.Synthesizer, config *viper.Viper) (*BigCacher, error) 
 	if dur > 0 {
 		cfg := bigcache.DefaultConfig(dur)
 		cfg.CleanWindow = getCleanDuration(config.GetDuration("cleanDuration"))
-		cfg.Logger = goapp.Log
+		cfg.Logger = log.New(goapp.Log, "", 0)
+
 		cfg.Shards = 64
 		cfg.HardMaxCacheSize = config.GetInt("maxMB")
 		if cfg.HardMaxCacheSize > 0 {
@@ -42,13 +44,13 @@ func NewCacher(rw service.Synthesizer, config *viper.Viper) (*BigCacher, error) 
 			return nil, errors.Wrap(err, "Can't init cache")
 		}
 		res.maxTextLen = config.GetInt("maxTextLen")
-		goapp.Log.Infof("Cache initialized with duration: %s, clean duration: %s", dur.String(), cfg.CleanWindow.String())
+		goapp.Log.Info().Msgf("Cache initialized with duration: %s, clean duration: %s", dur.String(), cfg.CleanWindow.String())
 		if cfg.HardMaxCacheSize > 0 {
-			goapp.Log.Infof("Cache max memomy in MB %d", cfg.HardMaxCacheSize)
+			goapp.Log.Info().Msgf("Cache max memomy in MB %d", cfg.HardMaxCacheSize)
 		}
-		goapp.Log.Infof("Cache max len for caching text %d", res.maxTextLen)
+		goapp.Log.Info().Msgf("Cache max len for caching text %d", res.maxTextLen)
 	} else {
-		goapp.Log.Infof("No cache initialized")
+		goapp.Log.Info().Msgf("No cache initialized")
 	}
 	return res, nil
 }
@@ -61,10 +63,10 @@ func (c *BigCacher) Work(inp *api.TTSRequestConfig) (*api.Result, error) {
 
 	entry, err := c.cache.Get(key(inp))
 	if err == nil {
-		goapp.Log.Debug("Found in cache")
+		goapp.Log.Debug().Msg("Found in cache")
 		return &api.Result{AudioAsString: string(entry)}, nil
 	}
-	goapp.Log.Debug("Not found in cache")
+	goapp.Log.Debug().Msg("Not found in cache")
 	res, err := c.realSynt.Work(inp)
 	if res != nil && err == nil {
 		_ = c.cache.Set(key(inp), []byte(res.AudioAsString))

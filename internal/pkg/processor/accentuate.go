@@ -27,7 +27,7 @@ func NewAccentuator(urlStr string) (synthesizer.PartProcessor, error) {
 
 func (p *accentuator) Process(data *synthesizer.TTSDataPart) error {
 	if p.skip(data) {
-		goapp.Log.Info("Skip accentuator")
+		goapp.Log.Info().Msg("Skip accentuator")
 		return nil
 	}
 	inData := mapAccentInput(data)
@@ -43,7 +43,7 @@ func (p *accentuator) Process(data *synthesizer.TTSDataPart) error {
 			return err
 		}
 	} else {
-		goapp.Log.Debug("Skip accenter - no data in")
+		goapp.Log.Debug().Msg("Skip accenter - no data in")
 	}
 	return nil
 }

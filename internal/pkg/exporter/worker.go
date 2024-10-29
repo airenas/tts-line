@@ -38,23 +38,23 @@ type sData struct {
 // Export loads data and saves to writer
 // does deletion if param indicates it
 func Export(p Params) error {
-	goapp.Log.Infof("Exporting data")
-	goapp.Log.Infof("Loading data")
+	goapp.Log.Info().Msgf("Exporting data")
+	goapp.Log.Info().Msgf("Loading data")
 	data, err := p.Exporter.All()
 	if err != nil {
 		return errors.Wrap(err, "can't load data")
 	}
-	goapp.Log.Infof("Filtering data")
+	goapp.Log.Info().Msgf("Filtering data")
 	data = filterData(data, p.To)
-	goapp.Log.Infof("Sorting data")
+	goapp.Log.Info().Msgf("Sorting data")
 	data = sortData(data)
-	goapp.Log.Infof("Writing data. %d items", len(data))
+	goapp.Log.Info().Msgf("Writing data. %d items", len(data))
 
 	if err = writeData(data, p.Out); err != nil {
 		return errors.Wrap(err, "can't write data")
 	}
 	if p.Delete {
-		goapp.Log.Infof("Deleting data")
+		goapp.Log.Info().Msgf("Deleting data")
 		if err = deleteData(data, p.Exporter.Delete); err != nil {
 			return errors.Wrap(err, "can't delete records")
 		}
@@ -91,10 +91,10 @@ func sortData(data []*mongodb.TextRecord) []*mongodb.TextRecord {
 
 func filterData(data []*mongodb.TextRecord, to time.Time) []*mongodb.TextRecord {
 	if to.IsZero() {
-		goapp.Log.Info("No filter")
+		goapp.Log.Info().Msg("No filter")
 		return data
 	}
-	goapp.Log.Infof("Filter records older than '%s'", to.Format("2006-01-02"))
+	goapp.Log.Info().Msgf("Filter records older than '%s'", to.Format("2006-01-02"))
 	tm := make(map[string]bool)
 	for _, d := range data {
 		if utils.RequestTypeEnum(d.Type) == utils.RequestOriginal && to.After(d.Created) {
@@ -123,7 +123,7 @@ func deleteData(data []*mongodb.TextRecord, deleteFunc func(string) (int, error)
 			tm[d.ID] = true
 		}
 	}
-	goapp.Log.Infof("Deleted %d records", c)
+	goapp.Log.Info().Msgf("Deleted %d records", c)
 	return nil
 }
 

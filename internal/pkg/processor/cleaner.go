@@ -29,7 +29,7 @@ func NewCleaner(urlStr string) (synthesizer.Processor, error) {
 
 func (p *cleaner) Process(data *synthesizer.TTSData) error {
 	if p.skip(data) {
-		goapp.Log.Info("Skip clean")
+		goapp.Log.Info().Msg("Skip clean")
 		return nil
 	}
 	defer goapp.Estimate("Clean")()

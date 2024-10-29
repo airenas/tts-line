@@ -16,7 +16,7 @@ func main() {
 	printBanner()
 	err := service.StartWebServer(&data)
 	if err != nil {
-		goapp.Log.Fatal(errors.Wrap(err, "Can't start the service"))
+		goapp.Log.Fatal().Err(errors.Wrap(err, "Can't start the service")).Send()
 	}
 }
 

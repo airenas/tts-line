@@ -29,7 +29,7 @@ func NewTranscriber(urlStr string) (synthesizer.PartProcessor, error) {
 
 func (p *transcriber) Process(data *synthesizer.TTSDataPart) error {
 	if skipTranscribe(data.Cfg) {
-		goapp.Log.Info("Skip transcriber")
+		goapp.Log.Info().Msg("Skip transcriber")
 		return nil
 	}
 
@@ -48,7 +48,7 @@ func (p *transcriber) Process(data *synthesizer.TTSDataPart) error {
 			return err
 		}
 	} else {
-		goapp.Log.Debug("Skip transcriber - no data in")
+		goapp.Log.Debug().Msg("Skip transcriber - no data in")
 	}
 	return nil
 }
