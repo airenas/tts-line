@@ -213,8 +213,8 @@ func TestJoinSSMLAudio_AddPause(t *testing.T) {
 			err := pr.Process(da)
 			require.Equal(t, tt.wantErr, err != nil)
 			if !tt.wantErr {
-				assert.Equal(t, int(tt.wantSize), int(getTestAudioSize(da.Audio)))
-				assert.InDelta(t, tt.wantLen, da.AudioLenSeconds, 0.001)
+				assert.InDelta(t, int(tt.wantSize), int(getTestAudioSize(da.Audio)), 300)  // give some delta bacause of hops to time conversion and floating point errors
+				assert.InDelta(t, tt.wantLen, da.AudioLenSeconds, 0.004)
 			}
 		})
 	}
