@@ -81,7 +81,7 @@ func GetBitsRate(data []byte) uint32 {
 	return binary.LittleEndian.Uint32(data[28:32])
 }
 
-// GetBitsRateCalc calculates bits per sample - sometimes there is incorect value for bitsrate in header
+// GetBitsRateCalc calculates bits per sample - sometimes there is incorrect value for bitsrate in header
 func GetBitsRateCalc(data []byte) uint32 {
 	return uint32(GetSampleRate(data) * uint32(GetChannels(data)) * uint32(GetBitsPerSample(data)/8))
 }

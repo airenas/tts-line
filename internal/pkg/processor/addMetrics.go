@@ -20,7 +20,7 @@ var totalCharMetrics = prometheus.NewCounterVec(
 var totalDurationMetrics = prometheus.NewCounterVec(
 	prometheus.CounterOpts{
 		Name: "tts_output_wave_len_seconds_total",
-		Help: "The total number of outputed audio len",
+		Help: "The total number of outputted audio len",
 	},
 	[]string{"url"},
 )

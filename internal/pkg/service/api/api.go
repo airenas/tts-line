@@ -40,7 +40,7 @@ type Result struct {
 	SpeechMarks   []*SpeechMark `json:"speechMarks,omitempty"`
 }
 
-// InfoResult is a responce for /synthesizeInfo request
+// InfoResult is a response for /synthesizeInfo request
 type InfoResult struct {
 	Count int64 `json:"count"`
 }

@@ -194,5 +194,5 @@ func findLastConsequtiveAlign(partlyAl []int, oStrs []string, nStrs []string) (i
 			}
 		}
 	}
-	return -1, errors.New("no consequtive match found in partly aligned sequences")
+	return -1, errors.New("no consecutive match found in partly aligned sequences")
 }
