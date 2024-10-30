@@ -31,16 +31,16 @@ func main() {
 	synt.AllowCustomCode = goapp.Config.GetBool("allowCustom")
 	sp, err := mongodb.NewSessionProvider(goapp.Config.GetString("mongo.url"))
 	if err != nil {
-		goapp.Log.Fatal().Err(errors.Wrap(err, "can't init mongo session provider")).Send()
+		goapp.Log.Fatal().Err(err).Msg("init mongo session provider")
 	}
 	defer sp.Close()
 
 	if err = addProcessors(synt, sp, goapp.Config); err != nil {
-		goapp.Log.Fatal().Err(errors.Wrap(err, "can't init processors")).Send()
+		goapp.Log.Fatal().Err(err).Msg("init processors")
 	}
 
 	if err = addSSMLProcessors(synt, sp, goapp.Config); err != nil {
-		goapp.Log.Fatal().Err(errors.Wrap(err, "can't init SSML processors")).Send()
+		goapp.Log.Fatal().Err(err).Msg("init SSML processors")
 	}
 
 	//cache
@@ -48,7 +48,7 @@ func main() {
 	if cc != nil {
 		data.SyntData.Processor, err = cache.NewCacher(synt, cc)
 		if err != nil {
-			goapp.Log.Fatal().Err(errors.Wrap(err, "can't init cache")).Send()
+			goapp.Log.Fatal().Err(err).Msg("init cache")
 		}
 	} else {
 		goapp.Log.Info().Msg("No cache will be used")
@@ -58,23 +58,23 @@ func main() {
 	// input configuration
 	data.SyntData.Configurator, err = service.NewTTSConfigurator(goapp.Sub(goapp.Config, "options"))
 	if err != nil {
-		goapp.Log.Fatal().Err(errors.Wrap(err, "can't init configurator")).Send()
+		goapp.Log.Fatal().Err(err).Msg("init configurator")
 	}
 
 	// init custom synthesize method
 	data.SyntCustomData.Configurator, err = service.NewTTSConfiguratorNoSSML(goapp.Sub(goapp.Config, "options"))
 	if err != nil {
-		goapp.Log.Fatal().Err(errors.Wrap(err, "can't init custom configurator")).Send()
+		goapp.Log.Fatal().Err(err).Msg("init custom configurator")
 	}
 	syntC := &synthesizer.MainWorker{}
 	err = addCustomProcessors(syntC, sp, goapp.Config)
 	if err != nil {
-		goapp.Log.Fatal().Err(errors.Wrap(err, "can't init custom processors")).Send()
+		goapp.Log.Fatal().Err(err).Msg("init custom processors")
 	}
 	data.SyntCustomData.Processor = syntC
 	data.InfoGetterData, err = prepareInfoGetter(sp)
 	if err != nil {
-		goapp.Log.Fatal().Err(errors.Wrap(err, "can't init info getter")).Send()
+		goapp.Log.Fatal().Err(err).Msg("init info getter")
 	}
 	printBanner()
 
@@ -82,7 +82,7 @@ func main() {
 
 	err = service.StartWebServer(&data)
 	if err != nil {
-		goapp.Log.Fatal().Err(errors.Wrap(err, "can't start the service")).Send()
+		goapp.Log.Fatal().Err(err).Msg("start the service")
 	}
 }
 
