@@ -17,7 +17,8 @@ type Input struct {
 	Voice            string  `json:"voice,omitempty"`
 	Priority         int     `json:"priority,omitempty"`
 	//Possible values are: word
-	SpeechMarkTypes []string `json:"speechMarkTypes,omitempty"`
+	SpeechMarkTypes      []string `json:"speechMarkTypes,omitempty"`
+	MaxEdgeSilenceMillis *int64   `json:"maxEdgeSilenceMillis,omitempty"`
 }
 
 // SpeechMark

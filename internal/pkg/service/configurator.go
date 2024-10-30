@@ -134,11 +134,16 @@ func (c *TTSConfigutaror) Configure(r *http.Request, inText *api.Input) (*api.TT
 	if err != nil {
 		return nil, err
 	}
+	goapp.Log.Info().Str("in", goapp.Sanitize(inText.Voice)).Str("mapped", res.Voice).Msg("voice")
 	res.SpeechMarkTypes, err = getSpeechMarkTypes(inText.SpeechMarkTypes)
 	if err != nil {
 		return nil, err
 	}
-	goapp.Log.Info().Msgf("Voice '%s' -> '%s'", goapp.Sanitize(inText.Voice), res.Voice)
+	res.MaxEdgeSilenceMillis, err = getMaxEdgeSilence(inText.MaxEdgeSilenceMillis)
+	if err != nil {
+		return nil, err
+	}
+	goapp.Log.Info().Int64("edgeSil", res.MaxEdgeSilenceMillis).Any("speechMarks", res.SpeechMarkTypes).Send()
 	if inText.Priority < 0 {
 		return nil, errors.Errorf("wrong priority (>=0) value: %d", inText.Priority)
 	}
@@ -161,6 +166,16 @@ func (c *TTSConfigutaror) Configure(r *http.Request, inText *api.Input) (*api.TT
 		}
 	}
 	return res, nil
+}
+
+func getMaxEdgeSilence(value *int64) (int64, error) {
+	if value == nil {
+		return -1, nil
+	}
+	if *value < 0 {
+		return -1, errors.Errorf("maxEdgeSilenceMillis must be >= 0")
+	}
+	return *value, nil
 }
 
 func getSpeechMarkTypes(s []string) (map[string]bool, error) {

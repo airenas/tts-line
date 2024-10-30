@@ -3,6 +3,7 @@ package service
 import (
 	"fmt"
 	"net/http/httptest"
+	"reflect"
 	"strings"
 	"testing"
 
@@ -398,6 +399,62 @@ func Test_getMaxLen(t *testing.T) {
 			}
 			if got != tt.want {
 				t.Errorf("getMaxLen() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func Test_getSpeechMarkTypes(t *testing.T) {
+	type args struct {
+		s []string
+	}
+	tests := []struct {
+		name    string
+		args    args
+		want    map[string]bool
+		wantErr bool
+	}{
+		{name: "OK", args: args{s: []string{"word"}}, want: map[string]bool{"word": true}, wantErr: false},
+		{name: "Fail", args: args{s: []string{"word1"}}, want: nil, wantErr: true},
+		{name: "Empty", args: args{s: nil}, want: map[string]bool{}, wantErr: false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := getSpeechMarkTypes(tt.args.s)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("getSpeechMarkTypes() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("getSpeechMarkTypes() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func Test_getMaxEdgeSilence(t *testing.T) {
+	type args struct {
+		value *int64
+	}
+	tests := []struct {
+		name    string
+		args    args
+		want    int64
+		wantErr bool
+	}{
+		{name: "OK", args: args{value: nil}, want: -1, wantErr: false},
+		{name: "OK", args: args{value: &[]int64{10}[0]}, want: 10, wantErr: false},
+		{name: "Fail", args: args{value: &[]int64{-10}[0]}, want: -1, wantErr: true},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := getMaxEdgeSilence(tt.args.value)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("getMaxEdgeSilence() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if got != tt.want {
+				t.Errorf("getMaxEdgeSilence() = %v, want %v", got, tt.want)
 			}
 		})
 	}

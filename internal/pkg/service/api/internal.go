@@ -50,18 +50,19 @@ func (e AudioFormatEnum) String() string {
 
 // TTSRequestConfig config for request
 type TTSRequestConfig struct {
-	Text             string
-	RequestID        string
-	OutputFormat     AudioFormatEnum
-	OutputTextFormat TextFormatEnum
-	OutputMetadata   []string
-	AllowCollectData bool
-	SaveTags         []string
-	Speed            float32
-	Voice            string
-	Priority         int
-	AllowedMaxLen    int
-	SSMLParts        []ssml.Part
-	AudioSuffix      string
-	SpeechMarkTypes  map[string]bool
+	Text                 string
+	RequestID            string
+	OutputFormat         AudioFormatEnum
+	OutputTextFormat     TextFormatEnum
+	OutputMetadata       []string
+	AllowCollectData     bool
+	SaveTags             []string
+	Speed                float32
+	Voice                string
+	Priority             int
+	AllowedMaxLen        int
+	SSMLParts            []ssml.Part
+	AudioSuffix          string
+	SpeechMarkTypes      map[string]bool
+	MaxEdgeSilenceMillis int64
 }
