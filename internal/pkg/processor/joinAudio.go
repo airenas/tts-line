@@ -46,7 +46,7 @@ func (p *joinAudio) Process(data *synthesizer.TTSData) error {
 		p.TranscribedSymbols = strings.Split(p.TranscribedText, " ")
 	}
 
-	data.Audio, data.AudioLenSeconds, data.SampleRate, err = join(data.Parts, suffix)
+	data.Audio, data.AudioLenSeconds, data.SampleRate, err = join(data.Parts, suffix, data.Input.MaxEdgeSilenceMillis)
 	if err != nil {
 		return errors.Wrap(err, "can't join audio")
 	}
@@ -55,26 +55,43 @@ func (p *joinAudio) Process(data *synthesizer.TTSData) error {
 }
 
 type wavWriter struct {
-	header []byte
-	size   uint32
-	buf    bytes.Buffer
+	header         []byte
+	size           uint32
+	buf            bytes.Buffer
+	sampleRateV    uint32
+	bitsPerSampleV uint16
 }
 
-func (wr *wavWriter) SampleRate() uint32 {
+func (wr *wavWriter) init(wavData []byte) {
+	if wr.header != nil {
+		return
+	}
+	wr.header = wav.TakeHeader(wavData)
+}
+
+func (wr *wavWriter) sampleRate() uint32 {
+	if wr.sampleRateV != 0 {
+		return wr.sampleRateV
+	}
 	if wr.header == nil {
 		return 0
 	}
-	return wav.GetSampleRate(wr.header)
+	wr.sampleRateV = wav.GetSampleRate(wr.header)
+	return wr.sampleRateV
 }
 
-func (wr *wavWriter) BitsPerSample() uint16 {
+func (wr *wavWriter) bitsPerSample() uint16 {
+	if wr.bitsPerSampleV != 0 {
+		return wr.bitsPerSampleV
+	}
 	if wr.header == nil {
 		return 0
 	}
-	return wav.GetBitsPerSample(wr.header)
+	wr.bitsPerSampleV = wav.GetBitsPerSample(wr.header)
+	return wr.bitsPerSampleV
 }
 
-func join(parts []*synthesizer.TTSDataPart, suffix []byte) (string, float64, uint32 /*sampleRate*/, error) {
+func join(parts []*synthesizer.TTSDataPart, suffix []byte, maxEdgeSilenceMilis int64) (string, float64, uint32 /*sampleRate*/, error) {
 	res := &wavWriter{}
 	nextStartSil := 0
 	for i, part := range parts {
@@ -82,17 +99,26 @@ func join(parts []*synthesizer.TTSDataPart, suffix []byte) (string, float64, uin
 		if err != nil {
 			return "", 0, 0, err
 		}
+		res.init(decoded)
 		startSil, endSil := nextStartSil, 0
 		if i == 0 {
 			startSil = getStartSilSize(part.TranscribedSymbols, part.Durations)
-			startSil, _, _ = calcPauseWithEnds(startSil, 0, part.DefaultSilence/2)
+			startDurHops := part.DefaultSilence / 2
+			if maxEdgeSilenceMilis > -1 {
+				startDurHops = min(startDurHops, toHops(maxEdgeSilenceMilis, part.Step, res.sampleRate()))
+			}
+			startSil, _, _ = calcPauseWithEnds(startSil, 0, startDurHops)
 		}
 		if i == len(parts)-1 {
 			endSil = getEndSilSize(part.TranscribedSymbols, part.Durations)
 			if suffix != nil {
 				_, endSil, _ = calcPauseWithEnds(0, endSil, part.DefaultSilence)
 			} else {
-				_, endSil, _ = calcPauseWithEnds(0, endSil, part.DefaultSilence/2)
+				endDurHops := part.DefaultSilence / 2
+				if maxEdgeSilenceMilis > -1 {
+					endDurHops = min(endDurHops, toHops(maxEdgeSilenceMilis, part.Step, res.sampleRate()))
+				}	
+				_, endSil, _ = calcPauseWithEnds(0, endSil, endDurHops)
 			}
 		} else if i < len(parts)-1 {
 			endSil = getEndSilSize(part.TranscribedSymbols, part.Durations)
@@ -106,7 +132,7 @@ func join(parts []*synthesizer.TTSDataPart, suffix []byte) (string, float64, uin
 		}
 		part.AudioDurations = &synthesizer.AudioDurations{
 			Shift:    -startSil,
-			Duration: calculateDurations(res.buf.Len()-lenBefore, res.SampleRate()*uint32(res.BitsPerSample())/uint32(8)),
+			Duration: calculateDurations(res.buf.Len()-lenBefore, res.sampleRate()*uint32(res.bitsPerSample())/uint32(8)),
 		}
 	}
 	if res.size == 0 {
@@ -131,7 +157,15 @@ func join(parts []*synthesizer.TTSDataPart, suffix []byte) (string, float64, uin
 	if bitsRate == 0 {
 		return "", 0, 0, errors.New("can't extract bits rate from header")
 	}
-	return bufRes.String(), float64(res.size) / float64(bitsRate), wav.GetSampleRate(res.header), nil
+	return bufRes.String(), float64(res.size) / float64(bitsRate), res.sampleRate(), nil
+}
+
+func toHops(maxEdgeSilenceMilis int64, step int, sampleRate uint32) int {
+	if step == 0 {
+		return 0
+	}
+	res := int(float64(maxEdgeSilenceMilis) * float64(sampleRate) / 1000 / float64(step))
+	return res
 }
 
 func calculateDurations(aLen int, samplesPerSec uint32) time.Duration {
@@ -180,28 +214,23 @@ func appendWav(res *wavWriter, wavData []byte, startSkip, endSkip int) error {
 		return errors.New("no valid audio wave data")
 	}
 	header := wav.TakeHeader(wavData)
-	if res.header == nil {
-		res.header = header
-	} else {
-		if wav.GetSampleRate(res.header) != wav.GetSampleRate(header) {
-			return errors.Errorf("differs sample rate %d vs %d", wav.GetSampleRate(res.header), wav.GetSampleRate(header))
+	if res.header != nil {
+		if res.sampleRate() != wav.GetSampleRate(header) {
+			return errors.Errorf("differs sample rate %d vs %d", res.sampleRate(), wav.GetSampleRate(header))
 		}
-		if wav.GetBitsPerSample(res.header) != wav.GetBitsPerSample(header) {
-			return errors.Errorf("differs bits per sample %d vs %d", wav.GetBitsPerSample(res.header), wav.GetBitsPerSample(header))
+		if res.bitsPerSample() != wav.GetBitsPerSample(header) {
+			return errors.Errorf("differs bits per sample %d vs %d", res.bitsPerSample(), wav.GetBitsPerSample(header))
 		}
 	}
 	bData := wav.TakeData(wavData)
-	bps := res.BitsPerSample()
-	fix := 1
-	if bps != 0 {
-		fix = int(bps / 8)
-	}
+	bps := res.bitsPerSample()
+	fix := int(bps / 8)
 	es := len(bData) - (endSkip * fix)
 	if es < (startSkip * fix) {
 		return errors.Errorf("audio start pos > end: %d vs %d", startSkip, es)
 	}
 
-	res.size += uint32(es - (startSkip * fix)) // wav.GetSize(wavData)
+	res.size += uint32(es - (startSkip * fix))
 
 	from, to := startSkip*fix, es
 	_, err := res.buf.Write(bData[from:to])
@@ -310,7 +339,7 @@ func joinSSML(data *synthesizer.TTSData, suffix []byte) (string, float64 /*sampl
 			}
 			wd.part.AudioDurations = &synthesizer.AudioDurations{
 				Shift:    -wd.startSkip / step,
-				Duration: calculateDurations(res.buf.Len()-lenBefore, res.SampleRate()*uint32(res.BitsPerSample())/uint32(8)),
+				Duration: calculateDurations(res.buf.Len()-lenBefore, res.sampleRate()*uint32(res.bitsPerSample())/uint32(8)),
 			}
 			wd.part.AudioDurations.Shift += utils.ToTTSSteps(wd.durationAdd, wav.GetSampleRate(res.header), step)
 			wd.part.AudioDurations.Duration += wd.durationAdd

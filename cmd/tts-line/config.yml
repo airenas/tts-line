@@ -59,9 +59,6 @@ audioConvert:
 
 clitics:
   url: http://localhost:8015/clitics 
-  
-clean:
-  url: http://localhost:8011/clean    
 
 filer:
   dir: /home/airenas/projects/tts-line
