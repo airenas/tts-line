@@ -117,7 +117,7 @@ func join(parts []*synthesizer.TTSDataPart, suffix []byte, maxEdgeSilenceMilis i
 				endDurHops := part.DefaultSilence / 2
 				if maxEdgeSilenceMilis > -1 {
 					endDurHops = min(endDurHops, toHops(maxEdgeSilenceMilis, part.Step, res.sampleRate()))
-				}	
+				}
 				_, endSil, _ = calcPauseWithEnds(0, endSil, endDurHops)
 			}
 		} else if i < len(parts)-1 {
@@ -158,14 +158,6 @@ func join(parts []*synthesizer.TTSDataPart, suffix []byte, maxEdgeSilenceMilis i
 		return "", 0, 0, errors.New("can't extract bits rate from header")
 	}
 	return bufRes.String(), float64(res.size) / float64(bitsRate), res.sampleRate(), nil
-}
-
-func toHops(maxEdgeSilenceMilis int64, step int, sampleRate uint32) int {
-	if step == 0 {
-		return 0
-	}
-	res := int(float64(maxEdgeSilenceMilis) * float64(sampleRate) / 1000 / float64(step))
-	return res
 }
 
 func calculateDurations(aLen int, samplesPerSec uint32) time.Duration {
@@ -269,7 +261,7 @@ func (p *joinSSMLAudio) Process(data *synthesizer.TTSData) error {
 			}
 		}
 	}
-	data.Audio, data.AudioLenSeconds, data.SampleRate, err = joinSSML(data, suffix)
+	data.Audio, data.AudioLenSeconds, data.SampleRate, err = joinSSML(data, suffix, data.Input.MaxEdgeSilenceMillis)
 	if err != nil {
 		return errors.Wrap(err, "can't join audio")
 	}
@@ -289,17 +281,19 @@ type nextWriteData struct {
 	durationAdd time.Duration // time to add to the part
 }
 
-func joinSSML(data *synthesizer.TTSData, suffix []byte) (string, float64 /*sampleRate*/, uint32, error) {
+func joinSSML(data *synthesizer.TTSData, suffix []byte, maxEdgeSilenceMillis int64) (string, float64 /*len*/, uint32 /*sampleRate*/, error) {
 	res := &wavWriter{}
 	wd := &nextWriteData{}
 	wd.pause = time.Duration(0)
-	writeF := func(part *synthesizer.TTSDataPart) error {
+	first := true
+	writeF := func(part *synthesizer.TTSDataPart, last bool) error {
 		step, defaultSil, pause := 0, 0, time.Duration(0)
 		endSil, startSil := 0, 0
 		var decoded []byte
 		var err error
 		if part != nil {
 			decoded, err = base64.StdEncoding.DecodeString(part.Audio)
+			res.init(decoded)
 			if err != nil {
 				return err
 			}
@@ -310,19 +304,24 @@ func joinSSML(data *synthesizer.TTSData, suffix []byte) (string, float64 /*sampl
 				res.header = wav.TakeHeader(decoded)
 			}
 			startSil = getStartSilSize(part.TranscribedSymbols, part.Durations)
-			// endSil = getEndSilSize(part.TranscribedSymbols, part.Durations)
 			step = part.Step
 			defaultSil = part.DefaultSilence
+			if first && maxEdgeSilenceMillis > -1 {
+				defaultSil = min(defaultSil, toHops(maxEdgeSilenceMillis, part.Step, res.sampleRate()))
+			}
+			first = false
 		}
 		if wd.part != nil {
 			endSil = getEndSilSize(wd.part.TranscribedSymbols, wd.part.Durations)
-			// startSil = getStartSilSize(wd.part.TranscribedSymbols, wd.part.Durations)
 			step = wd.part.Step
 			defaultSil = wd.part.DefaultSilence
+			if last && maxEdgeSilenceMillis > -1 {
+				defaultSil = min(defaultSil, toHops(maxEdgeSilenceMillis, wd.part.Step, res.sampleRate()))
+			}
 		}
 		pause = 0
 		if wd.isPause {
-			startSil, endSil, pause = fixPause(startSil, endSil, wd.pause, step)
+			startSil, endSil, pause = fixPause(startSil, endSil, wd.pause, step, res.sampleRate())
 		} else {
 			startSil, endSil, _ = calcPauseWithEnds(startSil, endSil, defaultSil)
 		}
@@ -366,14 +365,14 @@ func joinSSML(data *synthesizer.TTSData, suffix []byte) (string, float64 /*sampl
 			wd.isPause = true
 		case synthesizer.SSMLText:
 			for _, part := range dp.Parts {
-				err := writeF(part)
+				err := writeF(part, false /*last*/)
 				if err != nil {
 					return "", 0, 0, err
 				}
 			}
 		}
 	}
-	if err := writeF(nil); err != nil {
+	if err := writeF(nil, suffix == nil /*last*/); err != nil {
 		return "", 0, 0, err
 	}
 	if res.size == 0 {
@@ -400,7 +399,7 @@ func joinSSML(data *synthesizer.TTSData, suffix []byte) (string, float64 /*sampl
 	if bitsRate == 0 {
 		return "", 0, 0, errors.New("can't extract bits rate from header")
 	}
-	return bufRes.String(), float64(res.size) / float64(bitsRate), wav.GetSampleRate(res.header), nil
+	return bufRes.String(), float64(res.size) / float64(bitsRate), res.sampleRate(), nil
 }
 
 func calcPauseWithEnds(s1, s2, pause int) (int, int, int) {
@@ -415,21 +414,29 @@ func calcPauseWithEnds(s1, s2, pause int) (int, int, int) {
 	return s1 - max(pause-r, 0), s2 - r, 0
 }
 
-func fixPause(s1, s2 int, pause time.Duration, step int) (int, int, time.Duration) {
+func fixPause(s1, s2 int, pause time.Duration, step int, sampleRate uint32) (int, int, time.Duration) {
 	if step == 0 {
 		return s1, s2, pause
 	}
-	millisInHops := float64(step) / float64(22.050)
-	pauseHops := int(math.Round(float64(pause.Milliseconds()) / millisInHops))
+	millisInHops := 1000 * float64(step) / float64(sampleRate)
+	pauseHops := toHops(pause.Milliseconds(), step, sampleRate)
 	r1, r2, rp := calcPauseWithEnds(s1, s2, pauseHops)
 	return r1, r2, time.Millisecond * time.Duration(int(float64(rp)*millisInHops))
+}
+
+func toHops(millis int64, step int, sampleRate uint32) int {
+	if step == 0 {
+		return 0
+	}
+	res := int(math.Round(float64(millis) * float64(sampleRate) / 1000 / float64(step)))
+	return res
 }
 
 func appendPause(res *wavWriter, pause time.Duration) error {
 	if res.header == nil {
 		return errors.New("no wav data before pause")
 	}
-	c, err := writePause(&res.buf, wav.GetSampleRate(res.header), wav.GetBitsPerSample(res.header), pause)
+	c, err := writePause(&res.buf, res.sampleRate(), res.bitsPerSample(), pause)
 	if err != nil {
 		return err
 	}

@@ -371,7 +371,7 @@ func Test_fixPause(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, got1, got2 := fixPause(tt.args.s1, tt.args.s2, tt.args.pause, tt.args.step)
+			got, got1, got2 := fixPause(tt.args.s1, tt.args.s2, tt.args.pause, tt.args.step, 22050)
 			if got != tt.want {
 				t.Errorf("fixPause() got = %v, want %v", got, tt.want)
 			}
@@ -462,6 +462,33 @@ func Test_isSil(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := isSil(tt.args.ph); got != tt.want {
 				t.Errorf("isSil() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func Test_toHops(t *testing.T) {
+	type args struct {
+		millis     int64
+		step       int
+		sampleRate uint32
+	}
+	tests := []struct {
+		name string
+		args args
+		want int
+	}{
+		{name: "1s", args: args{millis: 1000, step: 256, sampleRate: 22050}, want: 86},
+		{name: "0.5s", args: args{millis: 500, step: 256, sampleRate: 22050}, want: 43},
+		{name: "0s", args: args{millis: 0, step: 256, sampleRate: 22050}, want: 0},
+		{name: "10ms", args: args{millis: 10, step: 256, sampleRate: 22050}, want: 1},
+		{name: "40ms round", args: args{millis: 40, step: 256, sampleRate: 22050}, want: 3},
+		{name: "30ms round", args: args{millis: 30, step: 256, sampleRate: 22050}, want: 3},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := toHops(tt.args.millis, tt.args.step, tt.args.sampleRate); got != tt.want {
+				t.Errorf("toHops() = %v, want %v", got, tt.want)
 			}
 		})
 	}
