@@ -222,7 +222,7 @@ func calcDuration(tTSDataPart []*TTSDataPart) time.Duration {
 func getLastWordTo(aligned []int, i int, maps []*wordMapData, sampleRate uint32, step int) time.Duration {
 	c := aligned[i]
 	var upTo int
-	if c < len(aligned)-1 {
+	if i < len(aligned)-1 {
 		upTo = aligned[i+1]
 	} else {
 		upTo = len(maps)
