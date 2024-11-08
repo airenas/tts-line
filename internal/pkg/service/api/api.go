@@ -24,7 +24,7 @@ type Input struct {
 // SpeechMark
 type SpeechMark struct {
 	//In Millis from the start of the audio
-	TimeInMillis int64 `json:"timeMillis,omitempty"`
+	TimeInMillis int64 `json:"timeMillis"`
 	//In Millis
 	Duration int64 `json:"durationMillis,omitempty"`
 	//Possible values are: word
