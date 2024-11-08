@@ -5,13 +5,12 @@ import (
 	"testing"
 	"time"
 
+	"github.com/airenas/tts-line/internal/pkg/service/api"
+	"github.com/airenas/tts-line/internal/pkg/test/mocks"
 	"github.com/pkg/errors"
 	"github.com/spf13/viper"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
-
-	"github.com/airenas/tts-line/internal/pkg/service/api"
-	"github.com/airenas/tts-line/internal/pkg/test/mocks"
 )
 
 var (
@@ -112,17 +111,6 @@ func TestWork_Key(t *testing.T) {
 	synthesizerMock.AssertNumberOfCalls(t, "Work", 3)
 }
 
-func Test_Key(t *testing.T) {
-	initTest(t)
-	assert.Equal(t, "olia_mp3_0.0000_", key(&api.TTSRequestConfig{Text: "olia", OutputFormat: api.AudioMP3}))
-	assert.Equal(t, "olia1_m4a_0.0000_aaa", key(&api.TTSRequestConfig{Text: "olia1", OutputFormat: api.AudioM4A,
-		OutputTextFormat: api.TextAccented, Voice: "aaa"}))
-	assert.Equal(t, "olia1_m4a_0.5600_aa", key(&api.TTSRequestConfig{Text: "olia1", OutputFormat: api.AudioM4A,
-		OutputTextFormat: api.TextAccented, Speed: 0.56, Voice: "aa"}))
-	assert.Equal(t, "olia1_m4a_0.5600_aaa", key(&api.TTSRequestConfig{Text: "olia1", OutputFormat: api.AudioM4A,
-		OutputTextFormat: api.TextAccented, Speed: 0.56, Voice: "aaa"}))
-}
-
 func Test_MaxMB(t *testing.T) {
 	initTest(t)
 	c, _ := NewCacher(synthesizerMock, newTestConfig("duration: 10s\nmaxMB: 1"))
@@ -154,22 +142,6 @@ func Test_MaxTextLen(t *testing.T) {
 	synthesizerMock.AssertNumberOfCalls(t, "Work", 3)
 }
 
-func TestIsOK(t *testing.T) {
-	initTest(t)
-	c, _ := NewCacher(synthesizerMock, newTestConfig("duration: 10s\nmaxTextLen: 10"))
-	d := &api.TTSRequestConfig{}
-	d.Text = "aaa"
-	d.OutputTextFormat = api.TextNone
-	assert.True(t, c.isOK(d))
-	d.OutputTextFormat = api.TextAccented
-	assert.False(t, c.isOK(d))
-	d.OutputTextFormat = api.TextNormalized
-	assert.False(t, c.isOK(d))
-	d.OutputTextFormat = api.TextNone
-	d.Text = "111111111111111"
-	assert.False(t, c.isOK(d))
-}
-
 func newTestConfig(yaml string) *viper.Viper {
 	res := viper.New()
 	res.SetConfigType("yaml")
@@ -183,4 +155,57 @@ func newtestInput(txt string) *api.TTSRequestConfig {
 
 func strOfSize(s int) string {
 	return string(make([]byte, s))
+}
+
+func TestBigCacher_isOK(t *testing.T) {
+	c, _ := NewCacher(synthesizerMock, newTestConfig("duration: 10s\nmaxTextLen: 10"))
+	type args struct {
+		inp *api.TTSRequestConfig
+	}
+	tests := []struct {
+		name string
+		args args
+		want bool
+	}{
+		{"OK", args{&api.TTSRequestConfig{Text: "aaa", OutputTextFormat: api.TextNone}}, true},
+		{"Accented", args{&api.TTSRequestConfig{Text: "aaa", OutputTextFormat: api.TextAccented}}, false},
+		{"Normalized", args{&api.TTSRequestConfig{Text: "aaa", OutputTextFormat: api.TextNormalized}}, false},
+		{"Long", args{&api.TTSRequestConfig{Text: "111111111111111", OutputTextFormat: api.TextNone}}, false},
+		{"tags", args{&api.TTSRequestConfig{Text: "aaa", OutputTextFormat: api.TextNone, SpeechMarkTypes: map[string]bool{"word": true}}}, false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := c.isOK(tt.args.inp); got != tt.want {
+				t.Errorf("BigCacher.isOK() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func Test_key(t *testing.T) {
+	type args struct {
+		inp *api.TTSRequestConfig
+	}
+	tests := []struct {
+		name string
+		args args
+		want string
+	}{
+		{"mp3", args{&api.TTSRequestConfig{Text: "olia", OutputFormat: api.AudioMP3}}, "olia_mp3_0.0000__0"},
+		{"voice", args{&api.TTSRequestConfig{Text: "olia1", OutputFormat: api.AudioM4A,
+			OutputTextFormat: api.TextAccented, Voice: "aaa"}}, "olia1_m4a_0.0000_aaa_0"},
+		{"speed", args{&api.TTSRequestConfig{Text: "olia1", OutputFormat: api.AudioM4A,
+			OutputTextFormat: api.TextAccented, Speed: 0.56, Voice: "aa"}}, "olia1_m4a_0.5600_aa_0"},
+		{"test 2", args{&api.TTSRequestConfig{Text: "olia1", OutputFormat: api.AudioM4A,
+			OutputTextFormat: api.TextAccented, Speed: 0.56, Voice: "aaa"}}, "olia1_m4a_0.5600_aaa_0"},
+		{"max sil duration", args{&api.TTSRequestConfig{Text: "olia1", OutputFormat: api.AudioM4A,
+			OutputTextFormat: api.TextAccented, Speed: 0.56, Voice: "aaa", MaxEdgeSilenceMillis: 50}}, "olia1_m4a_0.5600_aaa_50"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := key(tt.args.inp); got != tt.want {
+				t.Errorf("key() = %v, want %v", got, tt.want)
+			}
+		})
+	}
 }

@@ -3,6 +3,7 @@ package cache
 import (
 	"fmt"
 	"log"
+	"strconv"
 	"time"
 
 	"github.com/airenas/go-app/pkg/goapp"
@@ -75,7 +76,7 @@ func (c *BigCacher) Work(inp *api.TTSRequestConfig) (*api.Result, error) {
 }
 
 func (c *BigCacher) isOK(inp *api.TTSRequestConfig) bool {
-	return (c.maxTextLen == 0 || len(inp.Text) <= c.maxTextLen) && inp.OutputTextFormat == api.TextNone
+	return (c.maxTextLen == 0 || len(inp.Text) <= c.maxTextLen) && inp.OutputTextFormat == api.TextNone && len(inp.SpeechMarkTypes) == 0
 }
 
 func getCleanDuration(dur time.Duration) time.Duration {
@@ -86,5 +87,5 @@ func getCleanDuration(dur time.Duration) time.Duration {
 }
 
 func key(inp *api.TTSRequestConfig) string {
-	return inp.Text + "_" + inp.OutputFormat.String() + "_" + fmt.Sprintf("%.4f", inp.Speed) + "_" + inp.Voice
+	return inp.Text + "_" + inp.OutputFormat.String() + "_" + fmt.Sprintf("%.4f", inp.Speed) + "_" + inp.Voice + "_" + strconv.FormatInt(inp.MaxEdgeSilenceMillis, 10)
 }
