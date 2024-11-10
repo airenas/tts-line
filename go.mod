@@ -5,7 +5,7 @@ go 1.22.0
 toolchain go1.22.5
 
 require (
-	github.com/airenas/go-app v1.1.0
+	github.com/airenas/go-app v1.1.1
 	github.com/allegro/bigcache v1.2.1
 	github.com/cenkalti/backoff/v4 v4.3.0
 	github.com/facebookgo/grace v0.0.0-20180706040059-75cf19382434
