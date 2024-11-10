@@ -32,14 +32,14 @@ func TestInvokeText(t *testing.T) {
 	defer server.Close()
 	hw, _ := NewHTTPWrap(server.URL)
 	lg := ""
-	hw.flog = func(st, data string, err error) {
-		lg = lg + st + data
+	hw.flog = func(st, data string, _ error) {
+		lg = lg + st + ": " + data
 	}
 	var tt testType
 	err := hw.InvokeText("olia", &tt)
 	assert.Nil(t, err)
 	assert.Equal(t, "respo", tt.Test)
-	assert.Equal(t, "Input : oliaCall : "+server.URL+"Output: {\"test\":\"respo\"}", lg)
+	assert.Equal(t, "Input: oliaCall: "+server.URL+"Output: {\"test\":\"respo\"}", lg)
 }
 
 func TestInvokeJSON(t *testing.T) {
@@ -52,14 +52,14 @@ func TestInvokeJSON(t *testing.T) {
 	defer server.Close()
 	hw, _ := NewHTTPWrap(server.URL)
 	lg := ""
-	hw.flog = func(st, data string, err error) {
-		lg = lg + st + data
+	hw.flog = func(st, data string, _ error) {
+		lg = lg + st + ": " + data
 	}
 	var tt testType
 	err := hw.InvokeJSON(testType{Test: "haha"}, &tt)
 	assert.Nil(t, err)
 	assert.Equal(t, "respo", tt.Test)
-	assert.Equal(t, "Input : {\"test\":\"haha\"}\nCall : "+server.URL+"Output: {\"test\":\"respo\"}", lg)
+	assert.Equal(t, "Input: {\"test\":\"haha\"}\nCall: "+server.URL+"Output: {\"test\":\"respo\"}", lg)
 }
 
 func TestInvokeFail_Server(t *testing.T) {
