@@ -50,7 +50,7 @@ func (p *joinAudio) Process(data *synthesizer.TTSData) error {
 	if err != nil {
 		return errors.Wrap(err, "can't join audio")
 	}
-	utils.LogData("Output: ", fmt.Sprintf("audio len %d", len(data.Audio)))
+	utils.LogData("Output", fmt.Sprintf("audio len %d", len(data.Audio)), nil)
 	return nil
 }
 
@@ -268,7 +268,7 @@ func (p *joinSSMLAudio) Process(data *synthesizer.TTSData) error {
 	for _, dp := range data.SSMLParts {
 		dp.SampleRate = data.SampleRate
 	}
-	utils.LogData("Output: ", fmt.Sprintf("audio len %d", len(data.Audio)))
+	utils.LogData("Output", fmt.Sprintf("audio len %d", len(data.Audio)), nil)
 	return nil
 }
 

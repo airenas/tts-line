@@ -34,7 +34,7 @@ func (p *cleaner) Process(data *synthesizer.TTSData) error {
 	}
 	defer goapp.Estimate("Clean")()
 	txt := getNormText(data)
-	utils.LogData("Input: ", txt)
+	utils.LogData("Input", txt, nil)
 	inData := &normData{Text: txt}
 	var output normData
 	err := p.httpWrap.InvokeJSON(inData, &output)
@@ -49,7 +49,7 @@ func (p *cleaner) Process(data *synthesizer.TTSData) error {
 	if emptyStrArr(data.CleanedText) {
 		return utils.ErrNoInput
 	}
-	utils.LogData("Output: ", strings.Join(data.CleanedText, " "))
+	utils.LogData("Output", strings.Join(data.CleanedText, " "), nil)
 	return nil
 }
 

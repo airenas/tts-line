@@ -27,8 +27,8 @@ func NewComparator(urlStr string) (synthesizer.Processor, error) {
 
 func (p *comparator) Process(data *synthesizer.TTSData) error {
 	defer goapp.Estimate("Compare")()
-	utils.LogData("Input: ", data.OriginalText)
-	utils.LogData("Input previous: ", data.PreviousText)
+	utils.LogData("Input", data.OriginalText, nil)
+	utils.LogData("Input previous", data.PreviousText, nil)
 	inData := &compIn{Original: data.PreviousText, Modified: data.OriginalText}
 	var output compOut
 	err := p.httpWrap.InvokeJSON(inData, &output)

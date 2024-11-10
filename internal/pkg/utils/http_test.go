@@ -32,7 +32,7 @@ func TestInvokeText(t *testing.T) {
 	defer server.Close()
 	hw, _ := NewHTTPWrap(server.URL)
 	lg := ""
-	hw.flog = func(st, data string) {
+	hw.flog = func(st, data string, err error) {
 		lg = lg + st + data
 	}
 	var tt testType
@@ -52,7 +52,7 @@ func TestInvokeJSON(t *testing.T) {
 	defer server.Close()
 	hw, _ := NewHTTPWrap(server.URL)
 	lg := ""
-	hw.flog = func(st, data string) {
+	hw.flog = func(st, data string, err error) {
 		lg = lg + st + data
 	}
 	var tt testType

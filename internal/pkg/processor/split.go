@@ -39,7 +39,7 @@ func (p *splitter) Process(data *synthesizer.TTSData) error {
 		p.Cfg = &data.Cfg
 	}
 
-	utils.LogData("Output: ", fmt.Sprintf("split into %d", len(data.Parts)))
+	utils.LogData("Output", fmt.Sprintf("split into %d", len(data.Parts)), nil)
 	return nil
 }
 

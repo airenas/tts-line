@@ -38,12 +38,12 @@ func (p *urlReplacer) Process(data *synthesizer.TTSData) error {
 	}
 	defer goapp.Estimate("URL replace")()
 	text := strings.Join(data.NormalizedText, " ")
-	utils.LogData("Input: ", text)
+	utils.LogData("Input", text, nil)
 	data.Text = nil
 	for _, s := range data.NormalizedText {
 		data.Text = append(data.Text, p.replaceURLs(s))
 	}
-	utils.LogData("Output: ", strings.Join(data.Text, " "))
+	utils.LogData("Output", strings.Join(data.Text, " "), nil)
 	return nil
 }
 

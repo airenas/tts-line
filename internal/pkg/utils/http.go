@@ -19,7 +19,7 @@ type HTTPWrap struct {
 	HTTPClient *http.Client
 	URL        string
 	Timeout    time.Duration
-	flog       func(string, string)
+	flog       func(string, string, error)
 }
 
 // NewHTTPWrap creates new wrapper
@@ -37,7 +37,7 @@ func NewHTTPWrapT(urlStr string, timeout time.Duration) (*HTTPWrap, error) {
 	}
 	res.HTTPClient = &http.Client{Transport: newTransport()}
 	res.Timeout = timeout
-	res.flog = func(st, data string) { LogData(st, data) }
+	res.flog = func(st, data string, err error) { LogData(st, data, err) }
 	return res, nil
 }
 
@@ -56,9 +56,13 @@ func (hw *HTTPWrap) InvokeText(dataIn string, dataOut interface{}) error {
 	if err != nil {
 		return errors.Wrapf(err, "can't prepare request to '%s'", hw.URL)
 	}
-	hw.flog("Input : ", dataIn)
+	hw.flog("Input", dataIn, nil)
 	req.Header.Set("Content-Type", "text/plain")
-	return hw.invoke(req, dataOut)
+	err = hw.invoke(req, dataOut)
+	if err != nil {
+		hw.flog("Input", dataIn, err)
+	}
+	return err
 }
 
 // InvokeJSON makes http call with json
@@ -75,13 +79,17 @@ func (hw *HTTPWrap) InvokeJSONU(URL string, dataIn interface{}, dataOut interfac
 	if err != nil {
 		return err
 	}
-	hw.flog("Input : ", b.String())
+	hw.flog("Input", b.String(), nil)
 	req, err := http.NewRequest(http.MethodPost, URL, b)
 	if err != nil {
 		return errors.Wrapf(err, "can't prepare request to '%s'", URL)
 	}
 	req.Header.Set("Content-Type", "application/json")
-	return hw.invoke(req, dataOut)
+	err = hw.invoke(req, dataOut)
+	if err != nil {
+		hw.flog("Input", b.String(), err)
+	}
+	return err
 }
 
 func (hw *HTTPWrap) invoke(req *http.Request, dataOut interface{}) error {
@@ -90,7 +98,7 @@ func (hw *HTTPWrap) invoke(req *http.Request, dataOut interface{}) error {
 		defer cancelF()
 		req = req.WithContext(ctx)
 	}
-	hw.flog("Call : ", req.URL.String())
+	hw.flog("Call", req.URL.String(), nil)
 	resp, err := hw.HTTPClient.Do(req)
 	if err != nil {
 		return errors.Wrapf(err, "can't call '%s'", req.URL.String())
@@ -107,7 +115,7 @@ func (hw *HTTPWrap) invoke(req *http.Request, dataOut interface{}) error {
 	if err != nil {
 		return errors.Wrap(err, "can't read body")
 	}
-	hw.flog("Output: ", string(br))
+	hw.flog("Output", string(br), nil)
 	err = json.Unmarshal(br, dataOut)
 	if err != nil {
 		return errors.Wrap(err, "can't decode response")
