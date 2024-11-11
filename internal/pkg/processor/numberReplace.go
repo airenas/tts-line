@@ -9,7 +9,6 @@ import (
 	"github.com/airenas/tts-line/internal/pkg/accent"
 	"github.com/airenas/tts-line/internal/pkg/synthesizer"
 	"github.com/airenas/tts-line/internal/pkg/utils"
-	"github.com/pkg/errors"
 )
 
 // HTTPInvoker makes http call
@@ -28,7 +27,7 @@ func NewNumberReplace(urlStr string) (synthesizer.Processor, error) {
 	res.httpWrap, err = newHTTPWrapBackoff(urlStr, time.Second*20)
 
 	if err != nil {
-		return nil, errors.Wrap(err, "can't init http client")
+		return nil, fmt.Errorf("init http client: %w", err)
 	}
 	return res, nil
 }
@@ -67,7 +66,7 @@ func NewSSMLNumberReplace(urlStr string) (synthesizer.Processor, error) {
 	res.httpWrap, err = newHTTPWrapBackoff(urlStr, time.Second*20)
 
 	if err != nil {
-		return nil, errors.Wrap(err, "can't init http client")
+		return nil, fmt.Errorf("init http client: %w", err)
 	}
 	return res, nil
 }
@@ -101,15 +100,15 @@ func mapAccentsBack(new string, origArr []string) ([]string, error) {
 
 	alignIDs, err := utils.Align(ocStrs, nStrs)
 	if err != nil {
-		return nil, errors.Wrapf(err, "can't align")
+		return nil, fmt.Errorf("align: %w", err)
 	}
 	for k := range accWrds {
 		nID := alignIDs[k]
 		if nID == -1 {
-			return nil, errors.Errorf("no word alignment for %s, ID: %d", oStrs[k], k)
+			return nil, fmt.Errorf("no word alignment for %s, ID: %d", oStrs[k], k)
 		}
 		if nStrs[nID] != ocStrs[k] {
-			return nil, errors.Errorf("no word alignment for %s, ID: %d, got %s", oStrs[k], k, nStrs[nID])
+			return nil, fmt.Errorf("no word alignment for %s, ID: %d, got %s", oStrs[k], k, nStrs[nID])
 		}
 		nStrs[nID] = oStrs[k]
 	}
@@ -127,7 +126,7 @@ func mapAccentsBack(new string, origArr []string) ([]string, error) {
 			nTo = alignIDs[wTo]
 		}
 		if nTo == -1 {
-			return nil, errors.Errorf("no word alignment for %v", s)
+			return nil, fmt.Errorf("no word alignment for %v", s)
 		}
 		res = append(res, strings.Join(nStrs[nFrom:nTo], " "))
 		wFrom += l
