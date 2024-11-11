@@ -125,7 +125,7 @@ func TestAddProcessors(t *testing.T) {
 		"cleaner(HTTPBackoff(HTTPWrap(http://cl.su, tm: 10s)))",
 		"normalizer(HTTPBackoff(HTTPWrap(http://norm.su, tm: 10s)))",
 		"saver(cleaned)",
-		"numberReplace(HTTPBackoff(HTTPWrap(http://nr.su, tm: 10s)))",
+		"numberReplace(HTTPBackoff(HTTPWrap(http://nr.su, tm: 20s)))",
 		"saver(normalized)",
 		"tagger(", "joinAudio(audioLoader(./))",
 		"audioConverter", "addMetrics"}
