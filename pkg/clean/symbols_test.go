@@ -64,6 +64,7 @@ func TestChangeLetters(t *testing.T) {
 	ts(t, "Brulard", "Brûlard")
 	ts(t, "saugios", "saugios֤")
 	ts(t, "saugios\"", "saugios″")
+	ts(t, "ATRAMOS", "𝗔𝗧𝗥𝗔𝗠𝗢𝗦")
 }
 
 func TestChangeSymbols(t *testing.T) {
