@@ -62,3 +62,39 @@ func TestAccent(t *testing.T) {
 	assert.Equal(t, 0, accent(&phrase{word: "koks", isLemma: true, accent: 0}))
 	assert.Equal(t, 0, accent(&phrase{word: "koks", isLemma: false, accent: 0}))
 }
+
+func Test_getAccent(t *testing.T) {
+	type args struct {
+		w string
+	}
+	tests := []struct {
+		name       string
+		args       args
+		wantWord   string
+		wantAccent int
+		wantErr    bool
+	}{
+		{name: "koks", args: args{w: "koks"}, wantWord: "koks", wantAccent: 0, wantErr: false},
+		{name: "ko9ks", args: args{w: "ko9ks"}, wantWord: "koks", wantAccent: 202, wantErr: false},
+		{name: "šiai3p", args: args{w: "šiai3p"}, wantWord: "šiaip", wantAccent: 304, wantErr: false},
+		{name: "ššiai3p", args: args{w: "ššiai3p"}, wantWord: "ššiaip", wantAccent: 305, wantErr: false},
+		{name: "pa4t", args: args{w: "pa4t"}, wantWord: "pat", wantAccent: 102, wantErr: false},
+		{name: "several", args: args{w: "pa4t3"}, wantWord: "", wantAccent: 0, wantErr: true},
+		{name: "at start", args: args{w: "4pat"}, wantWord: "", wantAccent: 0, wantErr: true},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			gotWord, gotAccent, err := getAccent(tt.args.w)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("getAccent() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if gotWord != tt.wantWord {
+				t.Errorf("getAccent() gotWord = %v, want %v", gotWord, tt.wantWord)
+			}
+			if gotAccent != tt.wantAccent {
+				t.Errorf("getAccent() gotAccent = %v, want %v", gotAccent, tt.wantAccent)
+			}
+		})
+	}
+}

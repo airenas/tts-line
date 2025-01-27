@@ -2,6 +2,7 @@ package clitics
 
 import (
 	"bufio"
+	"fmt"
 	"io"
 	"os"
 	"sort"
@@ -89,11 +90,23 @@ func parse(w string) (word string, lemma bool, accent int, err error) {
 }
 
 func getAccent(w string) (word string, accent int, err error) {
-	for i, a := range "493" {
-		in := strings.Index(w, string(a))
-		if in > -1 {
-			return w[:in] + w[in+1:], (i+1)*100 + in, nil
+	runes := []rune(w)
+	word, accent = w, 0
+	was := false
+	for i, r := range runes {
+		for ia, a := range "493" {
+			if r == a {
+				if was {
+					return "", 0, fmt.Errorf("too many accents: %s", w)
+				}
+				if i == 0 {
+					return "", 0, fmt.Errorf("accent at the beginning: %s", w)
+				}
+				was = true
+				word = string(runes[:i]) + string(runes[i+1:])
+				accent = (ia+1)*100 + i
+			}
 		}
 	}
-	return w, 0, nil
+	return word, accent, nil
 }
