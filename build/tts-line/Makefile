@@ -1,7 +1,6 @@
--include ../../version 
 #####################################################################################
 service=airenas/tts-line
-version=$(tts_version)
+version?=dev
 debug?=
 ########### DOCKER ##################################################################
 tag=$(service):$(version)

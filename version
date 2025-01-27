@@ -1,8 +1,0 @@
-commit_count=$(shell git rev-list --count HEAD)
-rev_id=$(shell git rev-parse --short HEAD)
-
-clean_version?=0.2.$(commit_count)-$(rev_id)
-tts_version?=0.19.$(commit_count)-$(rev_id)
-acronyms_version?=0.1.$(commit_count)-$(rev_id)
-## tts-library version used by big-tts
-version?=v0.3.$(commit_count)

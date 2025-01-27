@@ -1,7 +1,7 @@
 services:
 
   tts-line:
-    image: airenas/tts-line:${tts_version}
+    image: airenas/tts-line:${version}
     environment:
       - LOGGER_LEVEL=DEBUG
       - CLEAN_URL=http://text-clean:8000/clean
@@ -26,7 +26,7 @@ services:
     restart: on-failure     
 
   text-clean:
-    image: airenas/tts-text-clean:${clean_version}
+    image: airenas/tts-text-clean:${version}
 
   tagger:
     image: airenas/tagger:0.6.61
@@ -50,7 +50,7 @@ services:
 
   clitics:
     container_name: clitics
-    image: airenas/clitics:${tts_version}
+    image: airenas/clitics:${version}
     environment:
       - SECRET=${CLITICS_SECRET} 
     restart: on-failure 
@@ -90,7 +90,7 @@ services:
   
   acronyms:
     container_name: acronyms
-    image: airenas/acronyms:${acronyms_version}
+    image: airenas/acronyms:${version}
     restart: on-failure 
     environment:
      - SECRET=${ACRONYMS_SECRET}      

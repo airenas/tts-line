@@ -1,5 +1,5 @@
--include ../../version
 -include Makefile.options.local
+version?=dev
 #####################################################################################
 ## print usage information
 help:

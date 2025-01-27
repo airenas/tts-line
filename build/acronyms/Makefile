@@ -1,8 +1,7 @@
--include ../../version 
 -include Makefile.options 
 #####################################################################################
 service=airenas/acronyms
-version=$(acronyms_version)
+version?=dev
 ########### DOCKER ##################################################################
 tag=$(service):$(version)
 

@@ -10,9 +10,11 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: Build containers
-        run: make docker/build acronyms_data_dir=../../testing/integration/data
+        run: make docker/build acronyms_data_dir=../../testing/integration/data version=latest
         env:
           ACRONYMS_SECRET: ${{ secrets.ACRONYMS_SECRET }}
+          CLITICS_SECRET: ${{ secrets.CLITICS_SECRET }}
+          CLITICS_SECRET_FROM: ${{ secrets.CLITICS_SECRET_FROM }}
       - name: Login to dockerhub
         run: echo "${{ secrets.INTELEKTIKALT_DOCKERHUB_PASS }}" | docker login -u intelektikalt --password-stdin
       - name: Run integration tests
@@ -21,4 +23,4 @@ jobs:
           ACCENTER_SECRET: ${{ secrets.ACCENTER_SECRET }}
           TRANSCRIBER_SECRET: ${{ secrets.TRANSCRIBER_SECRET }}
           CLITICS_SECRET: ${{ secrets.CLITICS_SECRET }}
-        run: make test/integration 
+        run: make test/integration version=latest

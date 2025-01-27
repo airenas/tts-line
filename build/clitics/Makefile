@@ -1,7 +1,7 @@
 -include Makefile.options
 #####################################################################################
 service=airenas/clitics
-version=dev
+version?=dev
 ########### DOCKER ##################################################################
 tag=$(service):$(version)
 
