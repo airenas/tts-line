@@ -50,7 +50,7 @@ services:
 
   clitics:
     container_name: clitics
-    image: airenas/clitics:0.1.206
+    image: airenas/clitics:${tts_version}
     environment:
       - SECRET=${CLITICS_SECRET} 
     restart: on-failure 
