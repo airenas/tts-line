@@ -1,34 +1,21 @@
 -include Makefile.options
 #####################################################################################
-dist_dir=$(CURDIR)/data
-executable_name=clitics
-main_dir=../../cmd
 service=airenas/clitics
-version=0.1
-commit_count=$(shell git rev-list --count HEAD)
-go_build_cmd=CGO_ENABLED=0 go build -ldflags "-X main.version=$(version).$(commit_count)" 
-#####################################################################################
-$(dist_dir):
-	mkdir -p $@
-$(dist_dir)/$(executable_name): | $(dist_dir)
-	cd $(main_dir)/$(executable_name) && $(go_build_cmd) -o $@
-$(dist_dir)/clitics.txt: $(main_dir)/clitics/clitics.txt | $(dist_dir)
-	cp $< $@
-$(dist_dir)/phrases.txt: $(main_dir)/clitics/phrases.txt | $(dist_dir)
-	cp $< $@	 	
-#####################################################################################
-build: $(dist_dir)/$(executable_name) $(dist_dir)/clitics.txt $(dist_dir)/phrases.txt
+version=dev
 ########### DOCKER ##################################################################
-tag=$(service):$(version).$(commit_count)
+tag=$(service):$(version)
 
-dbuild: build
-	docker build -t $(tag) --build-arg SECRET=$(secret) ./
+dbuild:
+	docker buildx build -t $(tag) \
+		--build-arg BUILD_VERSION=$(version) \
+		--build-arg SECRET=$(CLITICS_SECRET) \
+		--build-arg SECRET_FROM=$(CLITICS_SECRET_FROM) \
+		-f Dockerfile ../../
 
 dpush: dbuild
 	docker push $(tag)
-#####################################################################################
-clean:
-	rm -rf $(dist_dir)
 
-.PHONY:
-	clean build dbuild dpush
+dscan: dbuild
+	docker scan --accept-license $(tag)	
+#####################################################################################
+.PHONY: dbuild dpush
