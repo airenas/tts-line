@@ -79,6 +79,7 @@ func Test_getAccent(t *testing.T) {
 		{name: "šiai3p", args: args{w: "šiai3p"}, wantWord: "šiaip", wantAccent: 304, wantErr: false},
 		{name: "ššiai3p", args: args{w: "ššiai3p"}, wantWord: "ššiaip", wantAccent: 305, wantErr: false},
 		{name: "pa4t", args: args{w: "pa4t"}, wantWord: "pat", wantAccent: 102, wantErr: false},
+		{name: "ši4t", args: args{w: "ši4t"}, wantWord: "šit", wantAccent: 102, wantErr: false},
 		{name: "several", args: args{w: "pa4t3"}, wantWord: "", wantAccent: 0, wantErr: true},
 		{name: "at start", args: args{w: "4pat"}, wantWord: "", wantAccent: 0, wantErr: true},
 	}
