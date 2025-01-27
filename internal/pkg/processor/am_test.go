@@ -409,8 +409,11 @@ func TestChangePhn(t *testing.T) {
 		{v: "\"ou", e: "\"o: u"},
 		{v: "^Oi", e: "\"o i"},
 		{v: "\"iui", e: "\"iu i"},
-		{v: "^Oi", e: "\"o i"},
 		{v: "\"oi", e: "\"o: i"},
+		{v: "\"iOi", e: "\"io i"},
+		{v: "\"ioi", e: "\"io: i"},
+		{v: "iOi", e: "io i"},
+		{v: "ioi", e: "io: i"},
 	}
 
 	for i, tc := range tests {

@@ -32,6 +32,10 @@ func init() {
 		`"ou`: `"o: u`, `"Ou`: `"o u`, `^ou`: `"o u`, `^Ou`: `"o u`,
 		`ou`: `o u`, `Ou`: `o u`,
 		`"iui`: `"iu i`,
+		`"ioi`: `"io: i`,
+		`"iOi`: `"io i`,
+		`ioi`: `io: i`,
+		`iOi`: `io i`,
 	}
 }
 
