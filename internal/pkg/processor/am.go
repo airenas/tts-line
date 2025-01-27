@@ -34,8 +34,8 @@ func init() {
 		`"iui`: `"iu i`,
 		`"ioi`: `"io: i`,
 		`"iOi`: `"io i`,
-		`ioi`: `io: i`,
-		`iOi`: `io i`,
+		`ioi`:  `io: i`,
+		`iOi`:  `io i`,
 	}
 }
 
