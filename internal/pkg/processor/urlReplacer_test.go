@@ -1,6 +1,7 @@
 package processor
 
 import (
+	"context"
 	"testing"
 
 	"github.com/airenas/tts-line/internal/pkg/synthesizer"
@@ -21,7 +22,7 @@ func TestReplacerProcess(t *testing.T) {
 	d.NormalizedText = []string{" a a www.delfi.lt"}
 	pr := NewURLReplacer()
 	require.NotNil(t, pr)
-	err := pr.Process(d)
+	err := pr.Process(context.TODO(), d)
 	assert.Nil(t, err)
 	assert.Equal(t, []string{" a a Internetinis adresas"}, d.Text)
 }
@@ -32,7 +33,7 @@ func TestReplacerProcess_several(t *testing.T) {
 	d.NormalizedText = []string{" a a www.delfi.lt", " a a www.delfi.lt", "ooo"}
 	pr := NewURLReplacer()
 	require.NotNil(t, pr)
-	err := pr.Process(d)
+	err := pr.Process(context.TODO(), d)
 	assert.Nil(t, err)
 	assert.Equal(t, []string{" a a Internetinis adresas", " a a Internetinis adresas", "ooo"}, d.Text)
 }
@@ -42,7 +43,7 @@ func TestReplacer_Skip(t *testing.T) {
 	d.Cfg.JustAM = true
 	d.CleanedText = []string{"text"}
 	pr := NewURLReplacer()
-	err := pr.Process(d)
+	err := pr.Process(context.TODO(), d)
 	require.Nil(t, err)
 	assert.Nil(t, d.Text)
 }

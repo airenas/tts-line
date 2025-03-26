@@ -1,6 +1,7 @@
 package wrapservice
 
 import (
+	"context"
 	"encoding/json"
 	"log"
 	"net/http"
@@ -20,7 +21,7 @@ import (
 type (
 	//WaveSynthesizer main sythesis processor
 	WaveSynthesizer interface {
-		Work(params *api.Params) (*api.Result, error)
+		Work(ctx context.Context, params *api.Params) (*api.Result, error)
 	}
 	//Data is service operation data
 	Data struct {
@@ -69,6 +70,7 @@ func initRoutes(data *Data) *echo.Echo {
 
 func handleSynthesize(data *Data) func(echo.Context) error {
 	return func(c echo.Context) error {
+		ctx := c.Request().Context()
 		defer goapp.Estimate("Service method: synthesize")()
 
 		ctype := c.Request().Header.Get(echo.HeaderContentType)
@@ -90,12 +92,12 @@ func handleSynthesize(data *Data) func(echo.Context) error {
 			return echo.NewHTTPError(http.StatusBadRequest, "No voice")
 		}
 
-		res, err := data.Processor.Work(&api.Params{Text: input.Text, Speed: input.Speed, Voice: input.Voice, Priority: input.Priority})
+		res, err := data.Processor.Work(ctx, &api.Params{Text: input.Text, Speed: input.Speed, Voice: input.Voice, Priority: input.Priority})
 		if err != nil {
 			goapp.Log.Error().Err(errors.Wrap(err, "cannot process text")).Send()
 			return echo.NewHTTPError(http.StatusInternalServerError, "Cannot process text")
 		}
-		c.Response().Header().Set(echo.HeaderContentType, echo.MIMEApplicationJSONCharsetUTF8)
+		c.Response().Header().Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
 		c.Response().WriteHeader(http.StatusOK)
 		return json.NewEncoder(c.Response()).Encode(res)
 	}

@@ -1,6 +1,7 @@
 package wrapservice
 
 import (
+	"context"
 	"testing"
 
 	"github.com/pkg/errors"
@@ -56,7 +57,7 @@ func TestInvokeProcessor(t *testing.T) {
 		func(params mock.Arguments) {
 			*params[1].(*output) = output{Data: "audio"}
 		}).Return(nil)
-	res, err := pr.Work(&api.Params{Text: "olia", Speed: 0.9, Voice: "voice", Priority: 10})
+	res, err := pr.Work(context.TODO(), &api.Params{Text: "olia", Speed: 0.9, Voice: "voice", Priority: 10})
 	assert.Nil(t, err)
 	assert.Equal(t, &api.Result{Data: "audio", Durations: []int{10, 12}, SilDuration: 15}, res)
 
@@ -83,7 +84,7 @@ func TestInvokeProcessor_FailAM(t *testing.T) {
 		func(params mock.Arguments) {
 			*params[1].(*output) = output{Data: "audio"}
 		}).Return(nil)
-	_, err := pr.Work(&api.Params{Text: "olia", Speed: 1, Voice: "voice", Priority: 10})
+	_, err := pr.Work(context.TODO(), &api.Params{Text: "olia", Speed: 1, Voice: "voice", Priority: 10})
 	assert.NotNil(t, err)
 	assert.InDelta(t, 1.0, testutil.ToFloat64(totalFailureMetrics.WithLabelValues("am", "voice")), 0.000001)
 }
@@ -100,7 +101,7 @@ func TestInvokeProcessor_FailVoc(t *testing.T) {
 			*params[1].(*amOutput) = amOutput{Data: "audio"}
 		}).Return(nil)
 	httpVocMock.On("InvokeJSON", mock.Anything, mock.Anything).Return(errors.New("haha"))
-	_, err := pr.Work(&api.Params{Text: "olia", Speed: 1, Voice: "voice", Priority: 10})
+	_, err := pr.Work(context.TODO(), &api.Params{Text: "olia", Speed: 1, Voice: "voice", Priority: 10})
 	assert.NotNil(t, err)
 	assert.InDelta(t, 1.0, testutil.ToFloat64(totalFailureMetrics.WithLabelValues("vocoder", "voice")), 0.000001)
 }

@@ -1,6 +1,7 @@
 package synthesizer
 
 import (
+	"context"
 	"testing"
 	"time"
 
@@ -29,7 +30,7 @@ func TestWork(t *testing.T) {
 		d.AudioMP3 = "mp3"
 		return nil
 	}
-	res, err := worker.Work(&api.TTSRequestConfig{Text: "olia"})
+	res, err := worker.Work(context.TODO(), &api.TTSRequestConfig{Text: "olia"})
 	assert.Nil(t, err)
 	assert.NotNil(t, res)
 	assert.Equal(t, "mp3", res.AudioAsString)
@@ -40,7 +41,7 @@ func TestWork_Fails(t *testing.T) {
 	processorMock.f = func(d *TTSData) error {
 		return errors.New("olia")
 	}
-	res, err := worker.Work(&api.TTSRequestConfig{Text: "olia"})
+	res, err := worker.Work(context.TODO(), &api.TTSRequestConfig{Text: "olia"})
 	assert.NotNil(t, err)
 	assert.Nil(t, res)
 }
@@ -56,17 +57,17 @@ func TestWork_Several(t *testing.T) {
 		return nil
 	}}
 	worker.Add(processorMock1)
-	res, _ := worker.Work(&api.TTSRequestConfig{Text: "olia"})
+	res, _ := worker.Work(context.TODO(), &api.TTSRequestConfig{Text: "olia"})
 	assert.Equal(t, "wavmp3", res.AudioAsString)
 }
 
 func TestWork_HasUUID(t *testing.T) {
 	initTest(t)
-	res, _ := worker.Work(&api.TTSRequestConfig{Text: "olia", AllowCollectData: true, OutputTextFormat: api.TextNormalized})
+	res, _ := worker.Work(context.TODO(), &api.TTSRequestConfig{Text: "olia", AllowCollectData: true, OutputTextFormat: api.TextNormalized})
 	assert.NotEqual(t, "", res.RequestID)
-	res, _ = worker.Work(&api.TTSRequestConfig{Text: "olia", AllowCollectData: true, OutputTextFormat: api.TextNone})
+	res, _ = worker.Work(context.TODO(), &api.TTSRequestConfig{Text: "olia", AllowCollectData: true, OutputTextFormat: api.TextNone})
 	assert.Equal(t, "", res.RequestID)
-	res, _ = worker.Work(&api.TTSRequestConfig{Text: "olia", AllowCollectData: false, OutputTextFormat: api.TextNormalized})
+	res, _ = worker.Work(context.TODO(), &api.TTSRequestConfig{Text: "olia", AllowCollectData: false, OutputTextFormat: api.TextNormalized})
 	assert.Equal(t, "", res.RequestID)
 }
 
@@ -76,9 +77,9 @@ func TestWork_ReturnText(t *testing.T) {
 		d.TextWithNumbers = []string{"olia lia"}
 		return nil
 	}
-	res, _ := worker.Work(&api.TTSRequestConfig{Text: "olia", OutputTextFormat: api.TextNormalized})
+	res, _ := worker.Work(context.TODO(), &api.TTSRequestConfig{Text: "olia", OutputTextFormat: api.TextNormalized})
 	assert.Equal(t, "olia lia", res.Text)
-	res, _ = worker.Work(&api.TTSRequestConfig{Text: "olia", OutputTextFormat: api.TextNone})
+	res, _ = worker.Work(context.TODO(), &api.TTSRequestConfig{Text: "olia", OutputTextFormat: api.TextNone})
 	assert.Equal(t, "", res.Text)
 }
 
@@ -91,7 +92,7 @@ func TestWork_SSML(t *testing.T) {
 	}
 	worker.processors = nil
 	worker.AddSSML(processorMock)
-	res, err := worker.Work(&api.TTSRequestConfig{Text: "<speak>olia</speak>", OutputTextFormat: api.TextNormalized,
+	res, err := worker.Work(context.TODO(), &api.TTSRequestConfig{Text: "<speak>olia</speak>", OutputTextFormat: api.TextNormalized,
 		SSMLParts: []ssml.Part{&ssml.Text{Texts: []ssml.TextPart{{Text: "Olia"}}}, &ssml.Text{Texts: []ssml.TextPart{{Text: "Olia"}}},
 			&ssml.Pause{Duration: 10 * time.Second}}})
 	assert.Nil(t, err)
@@ -105,7 +106,7 @@ func TestWork_SSML_Fail(t *testing.T) {
 	}
 	worker.processors = nil
 	worker.AddSSML(processorMock)
-	_, err := worker.Work(&api.TTSRequestConfig{Text: "<speak>olia</speak>", OutputTextFormat: api.TextNormalized,
+	_, err := worker.Work(context.TODO(), &api.TTSRequestConfig{Text: "<speak>olia</speak>", OutputTextFormat: api.TextNormalized,
 		SSMLParts: []ssml.Part{&ssml.Text{Texts: []ssml.TextPart{{Text: "Olia"}}}}})
 	assert.NotNil(t, err)
 }
@@ -117,7 +118,7 @@ func TestMapResult_Accented(t *testing.T) {
 		AccentVariant: &AccentVariant{Accent: 101}},
 		{Tagged: TaggedWord{Space: true}}, {Tagged: TaggedWord{Separator: ","}},
 		{Tagged: TaggedWord{Word: "ai"}, AccentVariant: &AccentVariant{Accent: 302}}}}}
-	res, err := mapResult(d)
+	res, err := mapResult(context.TODO(), d)
 	assert.Nil(t, err)
 	assert.Equal(t, "{a\\}a ,a{i~}", res.Text)
 }
@@ -126,7 +127,7 @@ func TestMapResult_Normalized(t *testing.T) {
 	d := &TTSData{}
 	d.Input = &api.TTSRequestConfig{OutputTextFormat: api.TextNormalized}
 	d.TextWithNumbers = []string{"oo"}
-	res, err := mapResult(d)
+	res, err := mapResult(context.TODO(), d)
 	assert.Nil(t, err)
 	assert.Equal(t, "oo", res.Text)
 }
@@ -135,7 +136,7 @@ func TestMapResult_Transcribed(t *testing.T) {
 	d := &TTSData{}
 	d.Input = &api.TTSRequestConfig{OutputTextFormat: api.TextTranscribed}
 	d.Parts = []*TTSDataPart{{TranscribedText: "a b c sil"}, {TranscribedText: "d sil"}}
-	res, err := mapResult(d)
+	res, err := mapResult(context.TODO(), d)
 	assert.Nil(t, err)
 	assert.Equal(t, "a b c sil d sil", res.Text)
 }
@@ -145,7 +146,7 @@ func TestMapResult_Transcribed_SSML(t *testing.T) {
 	d.Input = &api.TTSRequestConfig{OutputTextFormat: api.TextTranscribed}
 	d.SSMLParts = []*TTSData{{Parts: []*TTSDataPart{{TranscribedText: "a b c sil"}, {TranscribedText: "d sil"}}},
 		{Parts: []*TTSDataPart{{TranscribedText: "c , sil"}}}}
-	res, err := mapResult(d)
+	res, err := mapResult(context.TODO(), d)
 	assert.Nil(t, err)
 	assert.Equal(t, "a b c sil d sil c , sil", res.Text)
 }
@@ -155,14 +156,14 @@ func TestMapResult_AccentedFail(t *testing.T) {
 	d.Input = &api.TTSRequestConfig{OutputTextFormat: api.TextAccented}
 	d.Parts = []*TTSDataPart{{Words: []*ProcessedWord{{Tagged: TaggedWord{Word: "aa"},
 		AccentVariant: &AccentVariant{Accent: 401}}}}}
-	_, err := mapResult(d)
+	_, err := mapResult(context.TODO(), d)
 	assert.NotNil(t, err)
 }
 
 func TestMapResult_FailOutputTextType(t *testing.T) {
 	d := &TTSData{}
 	d.Input = &api.TTSRequestConfig{OutputTextFormat: api.TextFormatEnum(10)}
-	_, err := mapResult(d)
+	_, err := mapResult(context.TODO(), d)
 	assert.NotNil(t, err)
 }
 
@@ -170,7 +171,7 @@ type procMock struct {
 	f func(res *TTSData) error
 }
 
-func (pr *procMock) Process(d *TTSData) error {
+func (pr *procMock) Process(ctx context.Context, d *TTSData) error {
 	return pr.f(d)
 }
 

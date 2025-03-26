@@ -2,6 +2,7 @@ package processor
 
 import (
 	"bytes"
+	"context"
 	"encoding/base64"
 	"errors"
 	"os"
@@ -37,7 +38,7 @@ func TestJoinAudio(t *testing.T) {
 	d := synthesizer.TTSData{Input: &api.TTSRequestConfig{OutputFormat: api.AudioMP3}}
 	strA := getTestEncAudio(t)
 	d.Parts = []*synthesizer.TTSDataPart{{Audio: strA}}
-	err := pr.Process(&d)
+	err := pr.Process(context.TODO(), &d)
 	assert.Nil(t, err)
 	assert.Equal(t, strA, d.Audio)
 	assert.InDelta(t, 0.5572, d.AudioLenSeconds, 0.001)
@@ -48,7 +49,7 @@ func TestJoinAudio_Skip(t *testing.T) {
 	d := synthesizer.TTSData{Input: &api.TTSRequestConfig{OutputFormat: api.AudioNone}}
 	strA := getTestEncAudio(t)
 	d.Parts = []*synthesizer.TTSDataPart{{Audio: strA}}
-	err := pr.Process(&d)
+	err := pr.Process(context.TODO(), &d)
 	assert.Nil(t, err)
 	assert.Equal(t, "", d.Audio)
 	assert.InDelta(t, 0.0, d.AudioLenSeconds, 0.001)
@@ -61,7 +62,7 @@ func TestJoinAudio_Several(t *testing.T) {
 	strA := getTestEncAudio(t)
 	d.Parts = []*synthesizer.TTSDataPart{{Audio: strA}, {Audio: strA},
 		{Audio: strA}}
-	err := pr.Process(&d)
+	err := pr.Process(context.TODO(), &d)
 	assert.Nil(t, err)
 
 	as := getTestAudioSize(strA)
@@ -76,7 +77,7 @@ func TestJoinAudio_DecodeFail(t *testing.T) {
 	d := synthesizer.TTSData{Input: &api.TTSRequestConfig{OutputFormat: api.AudioMP3}}
 	strA := getTestEncAudio(t)
 	d.Parts = []*synthesizer.TTSDataPart{{Audio: strA}, {Audio: "aaa"}}
-	err := pr.Process(&d)
+	err := pr.Process(context.TODO(), &d)
 	assert.NotNil(t, err)
 }
 
@@ -86,7 +87,7 @@ func TestJoinAudio_EmptyFail(t *testing.T) {
 	d := synthesizer.TTSData{Input: &api.TTSRequestConfig{OutputFormat: api.AudioMP3}}
 	strA := getTestEncAudio(t)
 	d.Parts = []*synthesizer.TTSDataPart{{Audio: strA}, {Audio: ""}}
-	err := pr.Process(&d)
+	err := pr.Process(context.TODO(), &d)
 	assert.NotNil(t, err)
 }
 
@@ -97,7 +98,7 @@ func TestJoinAudio_SuffixFail(t *testing.T) {
 	strA := getTestEncAudio(t)
 	d.Parts = []*synthesizer.TTSDataPart{{Audio: strA}}
 	loaderMock.On("TakeWav", mock.Anything).Return(nil, errors.New("fail"))
-	err := pr.Process(&d)
+	err := pr.Process(context.TODO(), &d)
 	assert.NotNil(t, err)
 }
 
@@ -108,7 +109,7 @@ func TestJoinAudio_Suffix(t *testing.T) {
 	strA := getTestEncAudio(t)
 	d.Parts = []*synthesizer.TTSDataPart{{Audio: strA}}
 	loaderMock.On("TakeWav", mock.Anything).Return(getWaveData(t), nil)
-	err := pr.Process(&d)
+	err := pr.Process(context.TODO(), &d)
 	assert.Nil(t, err)
 	assert.InDelta(t, 0.5572*2, d.AudioLenSeconds, 0.001)
 }
@@ -120,7 +121,7 @@ func TestJoinSSMLAudio(t *testing.T) {
 	d.Parts = []*synthesizer.TTSDataPart{{Audio: strA, Step: 256}}
 	d.Cfg.Type = synthesizer.SSMLText
 	da := &synthesizer.TTSData{Input: d.Input, SSMLParts: []*synthesizer.TTSData{&d}}
-	err := pr.Process(da)
+	err := pr.Process(context.TODO(), da)
 	assert.Nil(t, err)
 	assert.Equal(t, strA, da.Audio)
 	assert.InDelta(t, 0.5572, da.AudioLenSeconds, 0.001)
@@ -133,7 +134,7 @@ func TestJoinSSMLAudio_Skip(t *testing.T) {
 	d.Parts = []*synthesizer.TTSDataPart{{Audio: strA}}
 	d.Cfg.Type = synthesizer.SSMLText
 	da := &synthesizer.TTSData{Input: d.Input, SSMLParts: []*synthesizer.TTSData{&d}}
-	err := pr.Process(da)
+	err := pr.Process(context.TODO(), da)
 	assert.Nil(t, err)
 	assert.Equal(t, "", da.Audio)
 	assert.InDelta(t, 0.0, da.AudioLenSeconds, 0.001)
@@ -148,7 +149,7 @@ func TestJoinSSMLAudio_Several(t *testing.T) {
 		{Audio: strA, Step: 256}}
 	d.Cfg.Type = synthesizer.SSMLText
 	da := &synthesizer.TTSData{Input: d.Input, SSMLParts: []*synthesizer.TTSData{&d, &d}}
-	err := pr.Process(da)
+	err := pr.Process(context.TODO(), da)
 	assert.Nil(t, err)
 
 	as := getTestAudioSize(strA)
@@ -164,7 +165,7 @@ func TestJoinSSMLAudio_DecodeFail(t *testing.T) {
 	strA := getTestEncAudio(t)
 	d.Parts = []*synthesizer.TTSDataPart{{Audio: strA}, {Audio: "aaa"}}
 	da := &synthesizer.TTSData{Input: d.Input, SSMLParts: []*synthesizer.TTSData{&d}}
-	err := pr.Process(da)
+	err := pr.Process(context.TODO(), da)
 	assert.NotNil(t, err)
 }
 
@@ -175,7 +176,7 @@ func TestJoinSSMLAudio_EmptyFail(t *testing.T) {
 	strA := getTestEncAudio(t)
 	d.Parts = []*synthesizer.TTSDataPart{{Audio: strA, Step: 256}, {Audio: "", Step: 256}}
 	da := &synthesizer.TTSData{Input: d.Input, SSMLParts: []*synthesizer.TTSData{&d}}
-	err := pr.Process(da)
+	err := pr.Process(context.TODO(), da)
 	assert.NotNil(t, err)
 }
 
@@ -210,7 +211,7 @@ func TestJoinSSMLAudio_AddPause(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			da := &synthesizer.TTSData{Input: d.Input, SSMLParts: tt.args}
-			err := pr.Process(da)
+			err := pr.Process(context.TODO(), da)
 			require.Equal(t, tt.wantErr, err != nil)
 			if !tt.wantErr {
 				assert.InDelta(t, int(tt.wantSize), int(getTestAudioSize(da.Audio)), 300) // give some delta bacause of hops to time conversion and floating point errors
@@ -230,7 +231,7 @@ func TestJoinSSMLAudio_Suffix(t *testing.T) {
 	d.Cfg.Type = synthesizer.SSMLText
 	da := &synthesizer.TTSData{Input: d.Input, SSMLParts: []*synthesizer.TTSData{&d}, AudioSuffix: "oo.wav"}
 	loaderMock.On("TakeWav", mock.Anything).Return(getWaveData(t), nil)
-	err := pr.Process(da)
+	err := pr.Process(context.TODO(), da)
 	assert.Nil(t, err)
 	assert.InDelta(t, 0.5572*2, da.AudioLenSeconds, 0.001)
 }
@@ -244,7 +245,7 @@ func TestJoinSSMLAudio_SuffixFail(t *testing.T) {
 	d.Cfg.Type = synthesizer.SSMLText
 	da := &synthesizer.TTSData{Input: d.Input, SSMLParts: []*synthesizer.TTSData{&d}, AudioSuffix: "oo.wav"}
 	loaderMock.On("TakeWav", mock.Anything).Return(nil, errors.New("fail"))
-	err := pr.Process(da)
+	err := pr.Process(context.TODO(), da)
 	assert.NotNil(t, err)
 }
 
@@ -293,7 +294,7 @@ func Test_writePause(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			buf := bytes.Buffer{}
-			got, _ := writePause(&buf, tt.args.sampleRate, tt.args.bitsPerSample, tt.args.pause)
+			got, _ := writePause(context.TODO(), &buf, tt.args.sampleRate, tt.args.bitsPerSample, tt.args.pause)
 			assert.Equal(t, tt.want, got)
 			require.Equal(t, int(tt.want), len(buf.Bytes()))
 			for _, b := range buf.Bytes() {
@@ -429,7 +430,7 @@ func Test_getEndSilSize(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := getEndSilSize(tt.args.phones, tt.args.durations); got != tt.want {
+			if got := getEndSilSize(context.TODO(), tt.args.phones, tt.args.durations); got != tt.want {
 				t.Errorf("getEndSilSize() = %v, want %v", got, tt.want)
 			}
 		})

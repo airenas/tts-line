@@ -1,6 +1,7 @@
 package processor
 
 import (
+	"context"
 	"testing"
 
 	"github.com/pkg/errors"
@@ -40,7 +41,7 @@ func TestSave_Ignore(t *testing.T) {
 	assert.NotNil(t, pr)
 	d := &synthesizer.TTSData{}
 	d.Input = &api.TTSRequestConfig{AllowCollectData: false}
-	err := pr.Process(d)
+	err := pr.Process(context.TODO(), d)
 	assert.Nil(t, err)
 	dbMock.AssertNumberOfCalls(t, "Save", 0)
 }
@@ -55,7 +56,7 @@ func TestSave_Call(t *testing.T) {
 	d.Input = &api.TTSRequestConfig{AllowCollectData: true, SaveTags: []string{"olia"}}
 	dbMock.On("Save", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
-	err := pr.Process(d)
+	err := pr.Process(context.TODO(), d)
 	assert.Nil(t, err)
 	dbMock.AssertNumberOfCalls(t, "Save", 1)
 	cRID := mocks.To[string](dbMock.Calls[0].Arguments[0])
@@ -78,7 +79,7 @@ func TestSave_Normalized(t *testing.T) {
 	d.Input = &api.TTSRequestConfig{AllowCollectData: true}
 	dbMock.On("Save", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
-	err := pr.Process(d)
+	err := pr.Process(context.TODO(), d)
 	assert.Nil(t, err)
 	dbMock.AssertNumberOfCalls(t, "Save", 1)
 	cRID := mocks.To[string](dbMock.Calls[0].Arguments[0])
@@ -98,7 +99,7 @@ func TestSave_Fail(t *testing.T) {
 	d.OriginalText = "tata"
 	d.Input = &api.TTSRequestConfig{AllowCollectData: true}
 	dbMock.On("Save", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(errors.New("haha"))
-	err := pr.Process(d)
+	err := pr.Process(context.TODO(), d)
 	assert.NotNil(t, err)
 }
 
@@ -108,11 +109,11 @@ func TestGetText(t *testing.T) {
 	d.OriginalText = "tata"
 	d.Text = []string{"cleaned"}
 	d.TextWithNumbers = []string{"t numbers"}
-	assert.Equal(t, "tata", getText(d, utils.RequestOriginal))
-	assert.Equal(t, "cleaned", getText(d, utils.RequestCleaned))
-	assert.Equal(t, "t numbers", getText(d, utils.RequestNormalized))
-	assert.Equal(t, "tata", getText(d, utils.RequestUser))
-	assert.Equal(t, "tata", getText(d, utils.RequestOriginalSSML))
+	assert.Equal(t, "tata", getText(context.TODO(), d, utils.RequestOriginal))
+	assert.Equal(t, "cleaned", getText(context.TODO(), d, utils.RequestCleaned))
+	assert.Equal(t, "t numbers", getText(context.TODO(), d, utils.RequestNormalized))
+	assert.Equal(t, "tata", getText(context.TODO(), d, utils.RequestUser))
+	assert.Equal(t, "tata", getText(context.TODO(), d, utils.RequestOriginalSSML))
 }
 
 type mockSaverDB struct{ mock.Mock }

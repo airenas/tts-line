@@ -1,6 +1,7 @@
 package processor
 
 import (
+	"context"
 	"testing"
 
 	"github.com/pkg/errors"
@@ -42,7 +43,7 @@ func TestLoad(t *testing.T) {
 	d.Input = &api.TTSRequestConfig{RequestID: "i1"}
 	loadMock.On("LoadText", mock.Anything, mock.Anything).Return("olia", nil)
 
-	err := pr.Process(d)
+	err := pr.Process(context.TODO(), d)
 
 	assert.Nil(t, err)
 	assert.Equal(t, "olia", d.PreviousText)
@@ -63,7 +64,7 @@ func TestLoad_Fail(t *testing.T) {
 	d.Input = &api.TTSRequestConfig{RequestID: "i1"}
 	loadMock.On("LoadText", mock.Anything, mock.Anything).Return("", errors.New("olia"))
 
-	err := pr.Process(d)
+	err := pr.Process(context.TODO(), d)
 
 	assert.NotNil(t, err)
 }

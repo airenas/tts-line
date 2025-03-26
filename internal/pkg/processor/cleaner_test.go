@@ -1,6 +1,7 @@
 package processor
 
 import (
+	"context"
 	"reflect"
 	"testing"
 
@@ -36,7 +37,7 @@ func TestCleanProcess(t *testing.T) {
 		func(params mock.Arguments) {
 			*params[1].(*normData) = normData{Text: "clean text"}
 		}).Return(nil)
-	err := pr.Process(d)
+	err := pr.Process(context.TODO(), d)
 	assert.Nil(t, err)
 	httpJSONMock.AssertNumberOfCalls(t, "InvokeJSON", 1)
 	cp1 := httpJSONMock.Calls[0].Arguments[0]
@@ -52,7 +53,7 @@ func TestCleanProcess_Fail(t *testing.T) {
 	assert.NotNil(t, pr)
 	pr.(*cleaner).httpWrap = httpJSONMock
 	httpJSONMock.On("InvokeJSON", mock.Anything, mock.Anything).Return(errors.New("olia"))
-	err := pr.Process(d)
+	err := pr.Process(context.TODO(), d)
 	assert.NotNil(t, err)
 }
 
@@ -67,7 +68,7 @@ func TestCleanProcess_NoText(t *testing.T) {
 		func(params mock.Arguments) {
 			*params[1].(*normData) = normData{Text: ""}
 		}).Return(nil)
-	err := pr.Process(d)
+	err := pr.Process(context.TODO(), d)
 	assert.Equal(t, utils.ErrNoInput, err)
 }
 
@@ -75,7 +76,7 @@ func TestClean_Skip(t *testing.T) {
 	d := &synthesizer.TTSData{}
 	d.Cfg.JustAM = true
 	pr, _ := NewCleaner("http://server")
-	err := pr.Process(d)
+	err := pr.Process(context.TODO(), d)
 	assert.Nil(t, err)
 }
 

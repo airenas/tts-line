@@ -235,7 +235,7 @@ func takeInput(c echo.Context) (*api.Input, error) {
 }
 
 func writeResponse(c echo.Context, resp interface{}) error {
-	c.Response().Header().Set(echo.HeaderContentType, echo.MIMEApplicationJSONCharsetUTF8)
+	c.Response().Header().Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
 	c.Response().WriteHeader(http.StatusOK)
 	enc := json.NewEncoder(c.Response())
 	enc.SetEscapeHTML(false)

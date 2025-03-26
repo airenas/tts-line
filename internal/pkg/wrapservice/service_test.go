@@ -1,6 +1,7 @@
 package wrapservice
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"io"
@@ -122,7 +123,7 @@ func testCode(t *testing.T, req *http.Request, code int) *httptest.ResponseRecor
 
 type mockWaveSynthesizer struct{ mock.Mock }
 
-func (m *mockWaveSynthesizer) Work(in *api.Params) (*api.Result, error) {
+func (m *mockWaveSynthesizer) Work(ctx context.Context, in *api.Params) (*api.Result, error) {
 	args := m.Called(in)
 	return mocks.To[*api.Result](args.Get(0)), args.Error(1)
 }

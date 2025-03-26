@@ -1,6 +1,7 @@
 package processor
 
 import (
+	"context"
 	"testing"
 
 	"github.com/airenas/tts-line/internal/pkg/synthesizer"
@@ -36,7 +37,7 @@ func TestCompareProcess(t *testing.T) {
 		func(params mock.Arguments) {
 			*params[1].(*compOut) = compOut{BadAccents: []string{}, RC: 1}
 		}).Return(nil)
-	err := pr.Process(d)
+	err := pr.Process(context.TODO(), d)
 	assert.Nil(t, err)
 	httpJSONMock.AssertNumberOfCalls(t, "InvokeJSON", 1)
 	cp1 := httpJSONMock.Calls[0].Arguments[0]
@@ -50,7 +51,7 @@ func TestCpmpareProcess_Fail(t *testing.T) {
 	assert.NotNil(t, pr)
 	pr.(*comparator).httpWrap = httpJSONMock
 	httpJSONMock.On("InvokeJSON", mock.Anything, mock.Anything).Return(errors.New("olia"))
-	err := pr.Process(d)
+	err := pr.Process(context.TODO(), d)
 	assert.NotNil(t, err)
 }
 
@@ -64,7 +65,7 @@ func TestCpmpareProcess_NoMatch(t *testing.T) {
 		func(params mock.Arguments) {
 			*params[1].(*compOut) = compOut{BadAccents: []string{"a{x}"}, RC: 1}
 		}).Return(nil)
-	err := pr.Process(d)
+	err := pr.Process(context.TODO(), d)
 	assert.Equal(t, utils.NewErrBadAccent([]string{"a{x}"}), err)
 }
 
@@ -78,6 +79,6 @@ func TestCpmpareProcess_BadAccents(t *testing.T) {
 		func(params mock.Arguments) {
 			*params[1].(*compOut) = compOut{BadAccents: []string{}, RC: 0}
 		}).Return(nil)
-	err := pr.Process(d)
+	err := pr.Process(context.TODO(), d)
 	assert.Equal(t, utils.ErrTextDoesNotMatch, err)
 }

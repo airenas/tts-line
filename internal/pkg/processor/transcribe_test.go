@@ -1,6 +1,7 @@
 package processor
 
 import (
+	"context"
 	"testing"
 
 	"github.com/airenas/tts-line/internal/pkg/service/api"
@@ -38,7 +39,7 @@ func TestInvokeTranscriber(t *testing.T) {
 			*params[1].(*[]transOutput) = []transOutput{{Word: "word",
 				Transcription: []trans{{Transcription: "w o r d"}}}}
 		}).Return(nil)
-	err := pr.Process(d)
+	err := pr.Process(context.TODO(), d)
 	assert.Nil(t, err)
 	assert.Equal(t, "w o r d", d.Words[0].Transcription)
 }
@@ -51,7 +52,7 @@ func TestInvokeTranscriber_SkipFormat(t *testing.T) {
 		AccentVariant: &synthesizer.AccentVariant{Accent: 103}})
 	pr, _ := NewTranscriber("http://server")
 	pr.(*transcriber).httpWrap = httpJSONMock
-	err := pr.Process(d)
+	err := pr.Process(context.TODO(), d)
 	assert.Nil(t, err)
 	httpJSONMock.AssertNumberOfCalls(t, "InvokeJSON", 0)
 }
@@ -65,7 +66,7 @@ func TestInvokeTranscriber_FailInput(t *testing.T) {
 	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Word: "word"},
 		AccentVariant: nil})
 	httpJSONMock.On("InvokeJSON", mock.Anything, mock.Anything).Return(errors.New("haha"))
-	err := pr.Process(d)
+	err := pr.Process(context.TODO(), d)
 	assert.NotNil(t, err)
 }
 
@@ -78,7 +79,7 @@ func TestInvokeTranscriber_Fail(t *testing.T) {
 	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Word: "word"},
 		AccentVariant: &synthesizer.AccentVariant{Accent: 103}})
 	httpJSONMock.On("InvokeJSON", mock.Anything, mock.Anything).Return(errors.New("haha"))
-	err := pr.Process(d)
+	err := pr.Process(context.TODO(), d)
 	assert.NotNil(t, err)
 }
 
@@ -87,7 +88,7 @@ func TestInvokeTranscriber_NoData(t *testing.T) {
 	pr, _ := NewTranscriber("http://server")
 	assert.NotNil(t, pr)
 	d := newTestTTSDataPart()
-	err := pr.Process(d)
+	err := pr.Process(context.TODO(), d)
 	assert.Nil(t, err)
 }
 
@@ -99,7 +100,7 @@ func TestInvokeTranscriber_Skip(t *testing.T) {
 		AccentVariant: &synthesizer.AccentVariant{Accent: 103}})
 	pr, _ := NewTranscriber("http://server")
 	pr.(*transcriber).httpWrap = httpJSONMock
-	err := pr.Process(d)
+	err := pr.Process(context.TODO(), d)
 	assert.Nil(t, err)
 	httpJSONMock.AssertNumberOfCalls(t, "InvokeJSON", 0)
 }
@@ -116,7 +117,7 @@ func TestInvokeTranscriber_FailOutput(t *testing.T) {
 		func(params mock.Arguments) {
 			*params[1].(*[]transOutput) = []transOutput{}
 		}).Return(nil)
-	err := pr.Process(d)
+	err := pr.Process(context.TODO(), d)
 	assert.NotNil(t, err)
 }
 

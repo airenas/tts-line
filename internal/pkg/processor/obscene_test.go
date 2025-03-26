@@ -1,6 +1,7 @@
 package processor
 
 import (
+	"context"
 	"reflect"
 	"testing"
 
@@ -46,7 +47,7 @@ func TestInvokeObscene(t *testing.T) {
 		func(params mock.Arguments) {
 			*params[1].(*[]obsceneResultToken) = []obsceneResultToken{{Token: "word", Obscene: 1}}
 		}).Return(nil)
-	err := pr.Process(d)
+	err := pr.Process(context.TODO(), d)
 	assert.Nil(t, err)
 	assert.Equal(t, true, d.Words[0].Obscene)
 }
@@ -62,7 +63,7 @@ func TestInvokeObscene_FailOutput(t *testing.T) {
 		func(params mock.Arguments) {
 			*params[1].(*[]obsceneResultToken) = []obsceneResultToken{}
 		}).Return(nil)
-	err := pr.Process(d)
+	err := pr.Process(context.TODO(), d)
 	assert.NotNil(t, err)
 }
 
@@ -74,7 +75,7 @@ func TestInvokeObscene_Skip(t *testing.T) {
 	d := newTestTTSDataPart()
 	d.Cfg.JustAM = true
 	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Word: "word"}})
-	err := pr.Process(d)
+	err := pr.Process(context.TODO(), d)
 	assert.Nil(t, err)
 	httpJSONMock.AssertNumberOfCalls(t, "InvokeJSON", 0)
 }
@@ -87,7 +88,7 @@ func TestInvokeObscene_FailError(t *testing.T) {
 	d := newTestTTSDataPart()
 	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Word: "word"}})
 	httpJSONMock.On("InvokeJSON", mock.Anything, mock.Anything).Return(errors.New("err"))
-	err := pr.Process(d)
+	err := pr.Process(context.TODO(), d)
 	assert.NotNil(t, err)
 }
 

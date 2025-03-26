@@ -1,6 +1,7 @@
 package processor
 
 import (
+	"context"
 	"testing"
 
 	"github.com/pkg/errors"
@@ -38,7 +39,7 @@ func TestInvokeAccentuator(t *testing.T) {
 			*params[1].(*[]accentOutputElement) = []accentOutputElement{{Word: "word",
 				Accent: []accentInfo{{Mi: "mi", Variants: []synthesizer.AccentVariant{{Accent: 101}}}}}}
 		}).Return(nil)
-	err := pr.Process(d)
+	err := pr.Process(context.TODO(), d)
 	assert.Nil(t, err)
 	assert.Equal(t, 101, d.Words[0].AccentVariant.Accent)
 }
@@ -54,7 +55,7 @@ func TestInvokeAccentuator_FailOutput(t *testing.T) {
 		func(params mock.Arguments) {
 			*params[1].(*[]accentOutputElement) = []accentOutputElement{}
 		}).Return(nil)
-	err := pr.Process(d)
+	err := pr.Process(context.TODO(), d)
 	assert.NotNil(t, err)
 }
 
@@ -66,7 +67,7 @@ func TestInvokeAccentuator_Fail(t *testing.T) {
 	d := newTestTTSDataPart()
 	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Word: "word"}})
 	httpJSONMock.On("InvokeJSON", mock.Anything, mock.Anything).Return(errors.New("haha"))
-	err := pr.Process(d)
+	err := pr.Process(context.TODO(), d)
 	assert.NotNil(t, err)
 }
 
@@ -75,7 +76,7 @@ func TestInvokeAccentuator_NoData(t *testing.T) {
 	pr, _ := NewAccentuator("http://server")
 	assert.NotNil(t, pr)
 	d := newTestTTSDataPart()
-	err := pr.Process(d)
+	err := pr.Process(context.TODO(), d)
 	assert.Nil(t, err)
 }
 
@@ -83,7 +84,7 @@ func TestInvokeAccentuator_Skip(t *testing.T) {
 	d := newTestTTSDataPart()
 	d.Cfg.JustAM = true
 	pr, _ := NewAccentuator("http://server")
-	err := pr.Process(d)
+	err := pr.Process(context.TODO(), d)
 	assert.Nil(t, err)
 }
 

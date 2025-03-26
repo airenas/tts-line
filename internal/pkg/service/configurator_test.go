@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"fmt"
 	"net/http/httptest"
 	"reflect"
@@ -62,7 +63,7 @@ func TestNewTTSConfigurator_Fail(t *testing.T) {
 func TestConfigure_Text(t *testing.T) {
 	c, _ := NewTTSConfigurator(test.NewConfig(t, "output:\n  defaultFormat: mp3\n  metadata:\n   - r=a\n  voices:\n   - default:aaa"))
 	req := httptest.NewRequest("POST", "/synthesize", strings.NewReader("text"))
-	res, err := c.Configure(req, &api.Input{Text: "olia"})
+	res, err := c.Configure(context.TODO(), req, &api.Input{Text: "olia"})
 	assert.Nil(t, err)
 	if assert.NotNil(t, res) {
 		assert.Equal(t, "olia", res.Text)
@@ -75,7 +76,7 @@ func TestConfigure_Text(t *testing.T) {
 func TestConfigure_Format(t *testing.T) {
 	c, _ := NewTTSConfigurator(test.NewConfig(t, "output:\n  defaultFormat: mp3\n  metadata:\n   - r=a\n  voices:\n   - default:aaa"))
 	req := httptest.NewRequest("POST", "/synthesize", strings.NewReader("text"))
-	res, err := c.Configure(req, &api.Input{Text: "olia", OutputFormat: "m4a"})
+	res, err := c.Configure(context.TODO(), req, &api.Input{Text: "olia", OutputFormat: "m4a"})
 	assert.Nil(t, err)
 	if assert.NotNil(t, res) {
 		assert.Equal(t, "m4a", res.OutputFormat.String())
@@ -86,7 +87,7 @@ func TestConfigure_FormatHeader(t *testing.T) {
 	c, _ := NewTTSConfigurator(test.NewConfig(t, "output:\n  defaultFormat: mp3\n  metadata:\n   - r=a\n  voices:\n   - default:aaa"))
 	req := httptest.NewRequest("POST", "/synthesize", strings.NewReader("text"))
 	req.Header.Add(headerDefaultFormat, "m4a")
-	res, err := c.Configure(req, &api.Input{Text: "olia"})
+	res, err := c.Configure(context.TODO(), req, &api.Input{Text: "olia"})
 	assert.Nil(t, err)
 	if assert.NotNil(t, res) {
 		assert.Equal(t, "m4a", res.OutputFormat.String())
@@ -97,7 +98,7 @@ func TestConfigure_MaxTextLen(t *testing.T) {
 	c, _ := NewTTSConfigurator(test.NewConfig(t, "output:\n  defaultFormat: mp3\n  metadata:\n   - r=a\n  voices:\n   - default:aaa"))
 	req := httptest.NewRequest("POST", "/synthesize", strings.NewReader("text"))
 	req.Header.Add(headerMaxTextLen, "102")
-	res, err := c.Configure(req, &api.Input{Text: "olia"})
+	res, err := c.Configure(context.TODO(), req, &api.Input{Text: "olia"})
 	assert.Nil(t, err)
 	if assert.NotNil(t, res) {
 		assert.Equal(t, 102, res.AllowedMaxLen)
@@ -108,7 +109,7 @@ func TestConfigure_MaxTextLenFail(t *testing.T) {
 	c, _ := NewTTSConfigurator(test.NewConfig(t, "output:\n  defaultFormat: mp3\n  metadata:\n   - r=a\n  voices:\n   - default:aaa"))
 	req := httptest.NewRequest("POST", "/synthesize", strings.NewReader("text"))
 	req.Header.Add(headerMaxTextLen, "a102")
-	_, err := c.Configure(req, &api.Input{Text: "olia"})
+	_, err := c.Configure(context.TODO(), req, &api.Input{Text: "olia"})
 	assert.NotNil(t, err)
 }
 
@@ -116,7 +117,7 @@ func TestConfigure_Tags(t *testing.T) {
 	c, _ := NewTTSConfigurator(test.NewConfig(t, "output:\n  defaultFormat: mp3\n  voices:\n   - default:aaa"))
 	req := httptest.NewRequest("POST", "/synthesize", strings.NewReader("text"))
 	req.Header.Add(headerSaveTags, "olia,hola")
-	res, err := c.Configure(req, &api.Input{Text: "olia"})
+	res, err := c.Configure(context.TODO(), req, &api.Input{Text: "olia"})
 	assert.Nil(t, err)
 	if assert.NotNil(t, res) {
 		assert.Equal(t, []string{"olia", "hola"}, res.SaveTags)
@@ -126,7 +127,7 @@ func TestConfigure_Tags(t *testing.T) {
 func TestConfigure_NoTags(t *testing.T) {
 	c, _ := NewTTSConfigurator(test.NewConfig(t, "output:\n  defaultFormat: mp3\n  voices:\n   - default:aaa"))
 	req := httptest.NewRequest("POST", "/synthesize", strings.NewReader("text"))
-	res, err := c.Configure(req, &api.Input{Text: "olia"})
+	res, err := c.Configure(context.TODO(), req, &api.Input{Text: "olia"})
 	assert.Nil(t, err)
 	if assert.NotNil(t, res) {
 		assert.Equal(t, 0, len(res.SaveTags))
@@ -136,17 +137,17 @@ func TestConfigure_NoTags(t *testing.T) {
 func TestConfigure_FailFormat(t *testing.T) {
 	c, _ := NewTTSConfigurator(test.NewConfig(t, "output:\n  defaultFormat: mp3\n  metadata:\n   - r=a\n  voices:\n   - default:aaa"))
 	req := httptest.NewRequest("POST", "/synthesize", strings.NewReader("text"))
-	_, err := c.Configure(req, &api.Input{Text: "olia", OutputFormat: "m4aa"})
+	_, err := c.Configure(context.TODO(), req, &api.Input{Text: "olia", OutputFormat: "m4aa"})
 	assert.NotNil(t, err)
 	req.Header.Add(headerDefaultFormat, "aaa")
-	_, err = c.Configure(req, &api.Input{Text: "olia"})
+	_, err = c.Configure(context.TODO(), req, &api.Input{Text: "olia"})
 	assert.NotNil(t, err)
 }
 
 func TestConfigure_NoneFormat(t *testing.T) {
 	c, _ := NewTTSConfigurator(test.NewConfig(t, "output:\n  defaultFormat: mp3\n  metadata:\n   - r=a\n  voices:\n   - default:aaa"))
 	req := httptest.NewRequest("POST", "/synthesize", strings.NewReader("text"))
-	res, err := c.Configure(req, &api.Input{Text: "olia", OutputFormat: "none"})
+	res, err := c.Configure(context.TODO(), req, &api.Input{Text: "olia", OutputFormat: "none"})
 	assert.Nil(t, err)
 	assert.Equal(t, api.AudioNone, res.OutputFormat)
 }
@@ -155,51 +156,51 @@ func TestConfigure_FailCollect(t *testing.T) {
 	c, _ := NewTTSConfigurator(test.NewConfig(t, "output:\n  defaultFormat: mp3\n\n  voices:\n   - default:aaa"))
 	req := httptest.NewRequest("POST", "/synthesize", strings.NewReader("text"))
 	b := true
-	_, err := c.Configure(req, &api.Input{Text: "olia", AllowCollectData: &b})
+	_, err := c.Configure(context.TODO(), req, &api.Input{Text: "olia", AllowCollectData: &b})
 	assert.Nil(t, err)
 	req.Header.Add(headerCollectData, "never")
-	_, err = c.Configure(req, &api.Input{Text: "olia", AllowCollectData: &b})
+	_, err = c.Configure(context.TODO(), req, &api.Input{Text: "olia", AllowCollectData: &b})
 	assert.NotNil(t, err)
 }
 
 func TestConfigure_FailTextFormat(t *testing.T) {
 	c, _ := NewTTSConfigurator(test.NewConfig(t, "output:\n  defaultFormat: mp3\n\n  voices:\n   - default:aaa"))
 	req := httptest.NewRequest("POST", "/synthesize", strings.NewReader("text"))
-	_, err := c.Configure(req, &api.Input{Text: "olia", OutputFormat: "m4a", OutputTextFormat: "ooo"})
+	_, err := c.Configure(context.TODO(), req, &api.Input{Text: "olia", OutputFormat: "m4a", OutputTextFormat: "ooo"})
 	assert.NotNil(t, err)
 }
 
 func TestConfigure_FailSpeed(t *testing.T) {
 	c, _ := NewTTSConfigurator(test.NewConfig(t, "output:\n  defaultFormat: mp3\n\n  voices:\n   - default:aaa"))
 	req := httptest.NewRequest("POST", "/synthesize", strings.NewReader("text"))
-	_, err := c.Configure(req, &api.Input{Text: "olia", Speed: 0.4})
+	_, err := c.Configure(context.TODO(), req, &api.Input{Text: "olia", Speed: 0.4})
 	assert.NotNil(t, err)
 }
 
 func TestConfigure_Voice(t *testing.T) {
 	c, _ := NewTTSConfigurator(test.NewConfig(t, "output:\n  defaultFormat: mp3\n  voices:\n   - aaa1:aaa2\n   - aaa:aaa\n   - default:aaa"))
 	req := httptest.NewRequest("POST", "/synthesize", strings.NewReader("text"))
-	res, err := c.Configure(req, &api.Input{Text: "olia"})
+	res, err := c.Configure(context.TODO(), req, &api.Input{Text: "olia"})
 	assert.Nil(t, err)
 	if assert.NotNil(t, res) {
 		assert.Equal(t, "aaa", res.Voice)
 	}
-	res, err = c.Configure(req, &api.Input{Text: "olia", Voice: "aaa"})
+	res, err = c.Configure(context.TODO(), req, &api.Input{Text: "olia", Voice: "aaa"})
 	assert.Nil(t, err)
 	if assert.NotNil(t, res) {
 		assert.Equal(t, "aaa", res.Voice)
 	}
-	res, err = c.Configure(req, &api.Input{Text: "olia", Voice: "aaa1"})
+	res, err = c.Configure(context.TODO(), req, &api.Input{Text: "olia", Voice: "aaa1"})
 	assert.Nil(t, err)
 	if assert.NotNil(t, res) {
 		assert.Equal(t, "aaa2", res.Voice)
 	}
-	res, err = c.Configure(req, &api.Input{Text: "olia", Voice: "aaa2"})
+	res, err = c.Configure(context.TODO(), req, &api.Input{Text: "olia", Voice: "aaa2"})
 	assert.Nil(t, err)
 	if assert.NotNil(t, res) {
 		assert.Equal(t, "aaa2", res.Voice)
 	}
-	_, err = c.Configure(req, &api.Input{Text: "olia", Voice: "aaa3"})
+	_, err = c.Configure(context.TODO(), req, &api.Input{Text: "olia", Voice: "aaa3"})
 	assert.NotNil(t, err)
 }
 
@@ -207,12 +208,12 @@ func TestConfigure_Priority(t *testing.T) {
 	c, _ := NewTTSConfigurator(test.NewConfig(t, "output:\n  defaultFormat: mp3\n  voices:\n   - default:aaa"))
 	require.NotNil(t, c)
 	req := httptest.NewRequest("POST", "/synthesize", strings.NewReader("text"))
-	res, err := c.Configure(req, &api.Input{Text: "olia", Priority: 10})
+	res, err := c.Configure(context.TODO(), req, &api.Input{Text: "olia", Priority: 10})
 	assert.Nil(t, err)
 	if assert.NotNil(t, res) {
 		assert.Equal(t, 10, res.Priority)
 	}
-	res, err = c.Configure(req, &api.Input{Text: "olia", Priority: -1})
+	res, err = c.Configure(context.TODO(), req, &api.Input{Text: "olia", Priority: -1})
 	assert.NotNil(t, err)
 	assert.Nil(t, res)
 }
@@ -221,7 +222,7 @@ func TestConfigure_AudioSuffix(t *testing.T) {
 	c, _ := NewTTSConfigurator(test.NewConfig(t, "output:\n  defaultFormat: mp3\n  voices:\n   - default:aaa"))
 	req := httptest.NewRequest("POST", "/synthesize", strings.NewReader("text"))
 	req.Header.Add(headerAudioSuffix, "olia.wav")
-	res, err := c.Configure(req, &api.Input{Text: "olia"})
+	res, err := c.Configure(context.TODO(), req, &api.Input{Text: "olia"})
 	assert.Nil(t, err)
 	if assert.NotNil(t, res) {
 		assert.Equal(t, "olia.wav", res.AudioSuffix)
@@ -231,7 +232,7 @@ func TestConfigure_AudioSuffix(t *testing.T) {
 func TestConfigure_SSML(t *testing.T) {
 	c, _ := NewTTSConfigurator(test.NewConfig(t, "output:\n  defaultFormat: mp3\n  voices:\n   - default:aaa"))
 	req := httptest.NewRequest("POST", "/synthesize", strings.NewReader("text"))
-	res, err := c.Configure(req, &api.Input{Text: "<speak>olia</speak>"})
+	res, err := c.Configure(context.TODO(), req, &api.Input{Text: "<speak>olia</speak>"})
 	assert.Nil(t, err)
 	if assert.NotNil(t, res) {
 		assert.Equal(t, 1, len(res.SSMLParts))
@@ -241,21 +242,21 @@ func TestConfigure_SSML(t *testing.T) {
 func TestConfigure_SSML_Fail_NoSSML(t *testing.T) {
 	c, _ := NewTTSConfigurator(test.NewConfig(t, "output:\n  defaultFormat: mp3\n  voices:\n   - default:aaa"))
 	req := httptest.NewRequest("POST", "/synthesize", strings.NewReader("text"))
-	_, err := c.Configure(req, &api.Input{Text: "olia", TextType: "ssml"})
+	_, err := c.Configure(context.TODO(), req, &api.Input{Text: "olia", TextType: "ssml"})
 	assert.NotNil(t, err)
 }
 
 func TestConfigure_SSML_Fail_BadSSML(t *testing.T) {
 	c, _ := NewTTSConfigurator(test.NewConfig(t, "output:\n  defaultFormat: mp3\n  voices:\n   - default:aaa"))
 	req := httptest.NewRequest("POST", "/synthesize", strings.NewReader("text"))
-	_, err := c.Configure(req, &api.Input{Text: "<speak><k></k></speak>", TextType: "ssml"})
+	_, err := c.Configure(context.TODO(), req, &api.Input{Text: "<speak><k></k></speak>", TextType: "ssml"})
 	assert.NotNil(t, err)
 }
 
 func TestConfigure_SSML_NoAllowed(t *testing.T) {
 	c, _ := NewTTSConfiguratorNoSSML(test.NewConfig(t, "output:\n  defaultFormat: mp3\n  voices:\n   - default:aaa"))
 	req := httptest.NewRequest("POST", "/synthesize", strings.NewReader("text"))
-	_, err := c.Configure(req, &api.Input{Text: "<speak>olia</speak>", TextType: "ssml"})
+	_, err := c.Configure(context.TODO(), req, &api.Input{Text: "<speak>olia</speak>", TextType: "ssml"})
 	assert.NotNil(t, err)
 }
 

@@ -36,7 +36,7 @@ func TestInvokeJSON(t *testing.T) {
 	pr, _ := utils.NewHTTPBackoff(testHTTPWrap, func() backoff.BackOff { return backoff.NewExponentialBackOff() }, utils.RetryAll)
 	testHTTPWrap.On("InvokeJSON", mock.Anything, mock.Anything).Return(nil)
 
-	err := pr.InvokeJSON("olia", "")
+	err := pr.InvokeJSON(context.TODO(), "olia", "")
 	assert.Nil(t, err)
 	testHTTPWrap.AssertNumberOfCalls(t, "InvokeJSON", 1)
 }
@@ -48,7 +48,7 @@ func TestInvokeText(t *testing.T) {
 		utils.RetryAll)
 	testHTTPWrap.On("InvokeText", mock.Anything, mock.Anything).Return(nil)
 
-	err := pr.InvokeText("olia", "")
+	err := pr.InvokeText(context.TODO(), "olia", "")
 	assert.Nil(t, err)
 	testHTTPWrap.AssertNumberOfCalls(t, "InvokeText", 1)
 }
@@ -61,7 +61,7 @@ func TestInvokeText_Retry(t *testing.T) {
 		}, utils.RetryAll)
 	testHTTPWrap.On("InvokeText", mock.Anything, mock.Anything).Return(errors.New("olia"))
 
-	err := pr.InvokeText("olia", "")
+	err := pr.InvokeText(context.TODO(), "olia", "")
 	assert.NotNil(t, err)
 	testHTTPWrap.AssertNumberOfCalls(t, "InvokeText", 4)
 }
@@ -73,7 +73,7 @@ func TestInvokeRetry(t *testing.T) {
 	}, utils.RetryAll)
 	testHTTPWrap.On("InvokeJSON", mock.Anything, mock.Anything).Return(errors.New("olia"))
 
-	err := pr.InvokeJSON("olia", "")
+	err := pr.InvokeJSON(context.TODO(), "olia", "")
 	assert.NotNil(t, err)
 	testHTTPWrap.AssertNumberOfCalls(t, "InvokeJSON", 4)
 }
@@ -95,7 +95,7 @@ func TestCallbacks(t *testing.T) {
 	}
 	testHTTPWrap.On("InvokeJSON", mock.Anything, mock.Anything).Return(errors.New("olia"))
 
-	err := pr.InvokeJSON("olia", "")
+	err := pr.InvokeJSON(context.TODO(), "olia", "")
 	assert.NotNil(t, err)
 	testHTTPWrap.AssertNumberOfCalls(t, "InvokeJSON", 4)
 	assert.Equal(t, 4, ic)
@@ -108,7 +108,7 @@ func TestRetry_StopsNonEOF(t *testing.T) {
 		return backoff.WithMaxRetries(&backoff.ZeroBackOff{}, 4)
 	}, utils.IsRetryable)
 	testHTTPWrap.On("InvokeJSON", mock.Anything, mock.Anything).Return(errors.New("olia"))
-	err := pr.InvokeJSON("olia", "")
+	err := pr.InvokeJSON(context.TODO(), "olia", "")
 	require.NotNil(t, err)
 	testHTTPWrap.AssertNumberOfCalls(t, "InvokeJSON", 1)
 }
@@ -119,7 +119,7 @@ func TestRetry_ContinueEOF(t *testing.T) {
 		return backoff.WithMaxRetries(&backoff.ZeroBackOff{}, 4)
 	}, utils.IsRetryable)
 	testHTTPWrap.On("InvokeJSON", mock.Anything, mock.Anything).Return(io.EOF)
-	err := pr.InvokeJSON("olia", "")
+	err := pr.InvokeJSON(context.TODO(), "olia", "")
 	require.NotNil(t, err)
 	testHTTPWrap.AssertNumberOfCalls(t, "InvokeJSON", 5)
 }

@@ -1,6 +1,7 @@
 package processor
 
 import (
+	"context"
 	"reflect"
 	"testing"
 
@@ -42,7 +43,7 @@ func TestInvokeNumberReplace(t *testing.T) {
 		func(params mock.Arguments) {
 			*params[1].(*string) = "trys"
 		}).Return(nil)
-	err := pr.Process(&d)
+	err := pr.Process(context.TODO(), &d)
 	assert.Nil(t, err)
 	assert.Equal(t, []string{"trys"}, d.TextWithNumbers)
 }
@@ -54,7 +55,7 @@ func TestInvokeNumberReplace_Fail(t *testing.T) {
 	pr.(*numberReplace).httpWrap = httpInvokerMock
 	d := synthesizer.TTSData{}
 	httpInvokerMock.On("InvokeText", mock.Anything, mock.Anything).Return(errors.New("haha"))
-	err := pr.Process(&d)
+	err := pr.Process(context.TODO(), &d)
 	assert.NotNil(t, err)
 }
 
@@ -62,7 +63,7 @@ func TestInvokeNumberReplace_Skip(t *testing.T) {
 	d := &synthesizer.TTSData{}
 	d.Cfg.JustAM = true
 	pr, _ := NewNumberReplace("http://server")
-	err := pr.Process(d)
+	err := pr.Process(context.TODO(), d)
 	assert.Nil(t, err)
 }
 
@@ -90,7 +91,7 @@ func TestInvokeSSMLNumberReplace(t *testing.T) {
 		func(params mock.Arguments) {
 			*params[1].(*string) = "trys olia keturi"
 		}).Return(nil)
-	err := pr.Process(&d)
+	err := pr.Process(context.TODO(), &d)
 	assert.Nil(t, err)
 	assert.Equal(t, []string{"trys oli{a/} keturi"}, d.TextWithNumbers)
 }
@@ -160,7 +161,7 @@ func TestInvokeSSMLNumberReplace_Real3(t *testing.T) {
 				func(params mock.Arguments) {
 					*params[1].(*string) = tt.out
 				}).Return(nil)
-			err := pr.Process(&d)
+			err := pr.Process(context.TODO(), &d)
 			assert.Equal(t, tt.wantErr, err != nil, "err on "+tt.name+":%v", err)
 			if tt.wantString != "" {
 				assert.Equal(t, []string{tt.wantString}, d.TextWithNumbers, "err on "+tt.name)
@@ -206,7 +207,7 @@ func Test_mapAccentsBack(t *testing.T) {
 
 type mockHTTPInvoker struct{ mock.Mock }
 
-func (m *mockHTTPInvoker) InvokeText(in string, out interface{}) error {
+func (m *mockHTTPInvoker) InvokeText(ctx context.Context, in string, out interface{}) error {
 	args := m.Called(in, out)
 	return args.Error(0)
 }

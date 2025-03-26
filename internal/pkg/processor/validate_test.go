@@ -1,6 +1,7 @@
 package processor
 
 import (
+	"context"
 	"strings"
 	"testing"
 
@@ -36,7 +37,7 @@ func TestInvokeValidator(t *testing.T) {
 	assert.NotNil(t, pr)
 	d := synthesizer.TTSData{}
 	d.Input = &api.TTSRequestConfig{Text: "olia"}
-	err := pr.Process(&d)
+	err := pr.Process(context.TODO(), &d)
 	assert.Nil(t, err)
 }
 
@@ -46,7 +47,7 @@ func TestInvokeValidator_Fail(t *testing.T) {
 	assert.NotNil(t, pr)
 	d := synthesizer.TTSData{}
 	d.Input = &api.TTSRequestConfig{Text: strings.Repeat("olia-", 100)}
-	err := pr.Process(&d)
+	err := pr.Process(context.TODO(), &d)
 	errTL, ok := err.(*utils.ErrTextTooLong)
 	if assert.True(t, ok) {
 		assert.Equal(t, 100, errTL.Max)
@@ -58,7 +59,7 @@ func TestInvokeValidator_Skip(t *testing.T) {
 	d := &synthesizer.TTSData{}
 	d.Cfg.JustAM = true
 	pr, _ := NewValidator(100)
-	err := pr.Process(d)
+	err := pr.Process(context.TODO(), d)
 	assert.Nil(t, err)
 }
 
@@ -126,7 +127,7 @@ func TestInvokeSSMLValidator(t *testing.T) {
 	assert.NotNil(t, pr)
 	d := synthesizer.TTSData{SSMLParts: []*synthesizer.TTSData{{OriginalTextParts: []*synthesizer.TTSTextPart{{Text: "Olia"}}}}}
 	d.Input = &api.TTSRequestConfig{Text: "olia"}
-	err := pr.Process(&d)
+	err := pr.Process(context.TODO(), &d)
 	assert.Nil(t, err)
 }
 
@@ -136,7 +137,7 @@ func TestInvokeSSMLValidator_Fail(t *testing.T) {
 	assert.NotNil(t, pr)
 	d := synthesizer.TTSData{SSMLParts: []*synthesizer.TTSData{{OriginalTextParts: []*synthesizer.TTSTextPart{{Text: strings.Repeat("olia-", 100)}}}}}
 	d.Input = &api.TTSRequestConfig{Text: "olia"}
-	err := pr.Process(&d)
+	err := pr.Process(context.TODO(), &d)
 	errTL, ok := err.(*utils.ErrTextTooLong)
 	if assert.True(t, ok) {
 		assert.Equal(t, 100, errTL.Max)

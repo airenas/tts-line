@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"context"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -32,11 +33,11 @@ func TestInvokeText(t *testing.T) {
 	defer server.Close()
 	hw, _ := NewHTTPWrap(server.URL)
 	lg := ""
-	hw.flog = func(st, data string, _ error) {
+	hw.flog = func(ctx context.Context, st, data string, _ error) {
 		lg = lg + st + ": " + data
 	}
 	var tt testType
-	err := hw.InvokeText("olia", &tt)
+	err := hw.InvokeText(context.TODO(), "olia", &tt)
 	assert.Nil(t, err)
 	assert.Equal(t, "respo", tt.Test)
 	assert.Equal(t, "Input: oliaCall: "+server.URL+"Output: {\"test\":\"respo\"}", lg)
@@ -52,11 +53,11 @@ func TestInvokeJSON(t *testing.T) {
 	defer server.Close()
 	hw, _ := NewHTTPWrap(server.URL)
 	lg := ""
-	hw.flog = func(st, data string, _ error) {
+	hw.flog = func(ctx context.Context, st, data string, _ error) {
 		lg = lg + st + ": " + data
 	}
 	var tt testType
-	err := hw.InvokeJSON(testType{Test: "haha"}, &tt)
+	err := hw.InvokeJSON(context.TODO(), testType{Test: "haha"}, &tt)
 	assert.Nil(t, err)
 	assert.Equal(t, "respo", tt.Test)
 	assert.Equal(t, "Input: {\"test\":\"haha\"}\nCall: "+server.URL+"Output: {\"test\":\"respo\"}", lg)
@@ -69,7 +70,7 @@ func TestInvokeFail_Server(t *testing.T) {
 	defer server.Close()
 	hw, _ := NewHTTPWrap(server.URL)
 	var tt testType
-	err := hw.InvokeText("olia", &tt)
+	err := hw.InvokeText(context.TODO(), "olia", &tt)
 	assert.NotNil(t, err)
 }
 
@@ -80,7 +81,7 @@ func TestInvokeFail_Response(t *testing.T) {
 	defer server.Close()
 	hw, _ := NewHTTPWrap(server.URL)
 	var tt testType
-	err := hw.InvokeText("olia", &tt)
+	err := hw.InvokeText(context.TODO(), "olia", &tt)
 	assert.NotNil(t, err)
 }
 
@@ -92,9 +93,9 @@ func TestTimeout(t *testing.T) {
 	hw, _ := NewHTTPWrap(server.URL)
 	hw.Timeout = time.Millisecond * 50
 	var tt testType
-	err := hw.InvokeText("olia", &tt)
+	err := hw.InvokeText(context.TODO(), "olia", &tt)
 	assert.Nil(t, err)
-	err = hw.InvokeJSON(testType{Test: "haha"}, &tt)
+	err = hw.InvokeJSON(context.TODO(), testType{Test: "haha"}, &tt)
 	assert.Nil(t, err)
 }
 
@@ -107,8 +108,8 @@ func TestTimeout_Fail(t *testing.T) {
 	hw, _ := NewHTTPWrap(server.URL)
 	hw.Timeout = time.Millisecond * 50
 	var tt testType
-	err := hw.InvokeText("olia", &tt)
+	err := hw.InvokeText(context.TODO(), "olia", &tt)
 	assert.NotNil(t, err)
-	err = hw.InvokeJSON(testType{Test: "haha"}, &tt)
+	err = hw.InvokeJSON(context.TODO(), testType{Test: "haha"}, &tt)
 	assert.NotNil(t, err)
 }

@@ -1,6 +1,7 @@
 package processor
 
 import (
+	"context"
 	"reflect"
 	"testing"
 
@@ -46,7 +47,7 @@ func TestInvokeNewAbbreviator(t *testing.T) {
 			*params[1].(*[]acrWordOutput) = []acrWordOutput{{ID: "0",
 				Words: []acrResultWord{{Word: "olia", WordTrans: "oolia", UserTrans: "o l i a", Syll: "o-lia"}}}}
 		}).Return(nil)
-	err := pr.Process(d)
+	err := pr.Process(context.TODO(), d)
 	assert.Nil(t, err)
 	assert.Equal(t, "o l i a", d.Words[0].UserTranscription)
 	assert.Equal(t, "o-lia", d.Words[0].UserSyllables)
@@ -61,14 +62,14 @@ func TestInvokeNewAbbreviator_Fail(t *testing.T) {
 	d := newTestTTSDataPart()
 	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Mi: "Y"}})
 	httpJSONMock.On("InvokeJSON", mock.Anything, mock.Anything).Return(errors.New("haha"))
-	err := pr.Process(d)
+	err := pr.Process(context.TODO(), d)
 	assert.NotNil(t, err)
 }
 func TestInvokeAbbr_Skip(t *testing.T) {
 	d := newTestTTSDataPart()
 	d.Cfg.JustAM = true
 	pr, _ := NewAcronyms("http://server")
-	err := pr.Process(d)
+	err := pr.Process(context.TODO(), d)
 	assert.Nil(t, err)
 }
 
