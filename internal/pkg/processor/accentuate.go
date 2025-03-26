@@ -1,13 +1,14 @@
 package processor
 
 import (
+	"context"
 	"time"
 
-	"github.com/airenas/go-app/pkg/goapp"
 	"github.com/airenas/tts-line/internal/pkg/synthesizer"
 	"github.com/airenas/tts-line/internal/pkg/utils"
 	"github.com/cenkalti/backoff/v4"
 	"github.com/pkg/errors"
+	"github.com/rs/zerolog/log"
 )
 
 type accentuator struct {
@@ -25,16 +26,19 @@ func NewAccentuator(urlStr string) (synthesizer.PartProcessor, error) {
 	return res, nil
 }
 
-func (p *accentuator) Process(data *synthesizer.TTSDataPart) error {
+func (p *accentuator) Process(ctx context.Context, data *synthesizer.TTSDataPart) error {
+	ctx, span := utils.StartSpan(ctx, "accentuator.Process")
+	defer span.End()
+
 	if p.skip(data) {
-		goapp.Log.Info().Msg("Skip accentuator")
+		log.Ctx(ctx).Info().Msg("Skip accentuator")
 		return nil
 	}
 	inData := mapAccentInput(data)
 	if len(inData) > 0 {
 
 		var output []accentOutputElement
-		err := p.httpWrap.InvokeJSON(inData, &output)
+		err := p.httpWrap.InvokeJSON(ctx, inData, &output)
 		if err != nil {
 			return err
 		}
@@ -43,7 +47,7 @@ func (p *accentuator) Process(data *synthesizer.TTSDataPart) error {
 			return err
 		}
 	} else {
-		goapp.Log.Debug().Msg("Skip accenter - no data in")
+		log.Ctx(ctx).Debug().Msg("Skip accenter - no data in")
 	}
 	return nil
 }

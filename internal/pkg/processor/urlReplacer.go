@@ -1,10 +1,12 @@
 package processor
 
 import (
+	"context"
 	"regexp"
 	"strings"
 
 	"github.com/airenas/go-app/pkg/goapp"
+	"github.com/rs/zerolog/log"
 	"mvdan.cc/xurls/v2"
 
 	"github.com/airenas/tts-line/internal/pkg/synthesizer"
@@ -31,19 +33,19 @@ func NewURLReplacer() synthesizer.Processor {
 	return res
 }
 
-func (p *urlReplacer) Process(data *synthesizer.TTSData) error {
+func (p *urlReplacer) Process(ctx context.Context, data *synthesizer.TTSData) error {
 	if p.skip(data) {
-		goapp.Log.Info().Msg("Skip url replace")
+		log.Ctx(ctx).Info().Msg("Skip url replace")
 		return nil
 	}
 	defer goapp.Estimate("URL replace")()
 	text := strings.Join(data.NormalizedText, " ")
-	utils.LogData("Input", text, nil)
+	utils.LogData(ctx, "Input", text, nil)
 	data.Text = nil
 	for _, s := range data.NormalizedText {
 		data.Text = append(data.Text, p.replaceURLs(s))
 	}
-	utils.LogData("Output", strings.Join(data.Text, " "), nil)
+	utils.LogData(ctx, "Output", strings.Join(data.Text, " "), nil)
 	return nil
 }
 

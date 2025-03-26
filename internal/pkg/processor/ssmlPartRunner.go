@@ -1,6 +1,7 @@
 package processor
 
 import (
+	"context"
 	"fmt"
 	"strings"
 
@@ -19,12 +20,15 @@ func NewSSMLPartRunner(processors []synthesizer.Processor) *SSMLPartRunner {
 }
 
 // Process main method
-func (p *SSMLPartRunner) Process(data *synthesizer.TTSData) error {
+func (p *SSMLPartRunner) Process(ctx context.Context, data *synthesizer.TTSData) error {
+	ctx, span := utils.StartSpan(ctx, "SSMLPartRunner.Process")
+	defer span.End()
+
 	for _, part := range data.SSMLParts {
 		switch part.Cfg.Type {
 		case synthesizer.SSMLText:
 			for _, pr := range p.processors {
-				if err := pr.Process(part); err != nil {
+				if err := pr.Process(ctx, part); err != nil {
 					return err
 				}
 			}

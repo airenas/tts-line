@@ -1,11 +1,13 @@
 package processor
 
 import (
+	"context"
 	"fmt"
 	"strings"
 
 	"github.com/airenas/go-app/pkg/goapp"
 	"github.com/pkg/errors"
+	"github.com/rs/zerolog/log"
 
 	"github.com/airenas/tts-line/internal/pkg/service/api"
 	"github.com/airenas/tts-line/internal/pkg/synthesizer"
@@ -30,17 +32,17 @@ func NewSaver(s SaverDB, t utils.RequestTypeEnum) (synthesizer.Processor, error)
 	return &saver{sDB: s, tType: t}, nil
 }
 
-func (p *saver) Process(data *synthesizer.TTSData) error {
+func (p *saver) Process(ctx context.Context, data *synthesizer.TTSData) error {
 	if !data.Input.AllowCollectData {
-		goapp.Log.Info().Msg("Skip saving to DB")
+		log.Ctx(ctx).Info().Msg("Skip saving to DB")
 		return nil
 	}
 	defer goapp.Estimate("SaveToDB " + p.tType.String())()
 
-	return p.sDB.Save(data.RequestID, getText(data, p.tType), p.tType, getTags(data.Input))
+	return p.sDB.Save(data.RequestID, getText(ctx, data, p.tType), p.tType, getTags(data.Input))
 }
 
-func getText(data *synthesizer.TTSData, t utils.RequestTypeEnum) string {
+func getText(ctx context.Context, data *synthesizer.TTSData, t utils.RequestTypeEnum) string {
 	switch t {
 	case utils.RequestOriginal:
 		return data.OriginalText
@@ -53,7 +55,7 @@ func getText(data *synthesizer.TTSData, t utils.RequestTypeEnum) string {
 	case utils.RequestOriginalSSML:
 		return data.OriginalText
 	}
-	goapp.Log.Warn().Msgf("Not configured RequestTypeEnum %v", t)
+	log.Ctx(ctx).Warn().Msgf("Not configured RequestTypeEnum %v", t)
 	return data.OriginalText
 }
 

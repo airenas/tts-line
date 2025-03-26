@@ -7,16 +7,16 @@ import (
 	"net"
 	"syscall"
 
-	"github.com/airenas/go-app/pkg/goapp"
 	"github.com/cenkalti/backoff/v4"
 	"github.com/pkg/errors"
+	"github.com/rs/zerolog/log"
 )
 
 // HTTPInvokerJSON http POST invoker with JSON in, out params
 type HTTPInvokerJSON interface {
-	InvokeJSONU(string, interface{}, interface{}) error
-	InvokeJSON(interface{}, interface{}) error
-	InvokeText(string, interface{}) error
+	InvokeJSONU(context.Context, string, interface{}, interface{}) error
+	InvokeJSON(context.Context, interface{}, interface{}) error
+	InvokeText(context.Context, string, interface{}) error
 }
 
 // HTTPBackoff http call with backoff
@@ -35,27 +35,30 @@ func NewHTTPBackoff(realWrapper HTTPInvokerJSON, backoffF func() backoff.BackOff
 }
 
 // InvokeJSON makes http call with json
-func (hw *HTTPBackoff) InvokeJSON(dataIn interface{}, dataOut interface{}) error {
-	return hw.invoke(func() error {
-		return hw.HTTPClient.InvokeJSON(dataIn, dataOut)
+func (hw *HTTPBackoff) InvokeJSON(ctx context.Context, dataIn interface{}, dataOut interface{}) error {
+	return hw.invoke(ctx, func() error {
+		return hw.HTTPClient.InvokeJSON(ctx, dataIn, dataOut)
 	}, dataIn)
 }
 
 // InvokeText makes http call with text input
-func (hw *HTTPBackoff) InvokeText(dataIn string, dataOut interface{}) error {
-	return hw.invoke(func() error {
-		return hw.HTTPClient.InvokeText(dataIn, dataOut)
+func (hw *HTTPBackoff) InvokeText(ctx context.Context, dataIn string, dataOut interface{}) error {
+	return hw.invoke(ctx, func() error {
+		return hw.HTTPClient.InvokeText(ctx, dataIn, dataOut)
 	}, dataIn)
 }
 
 // InvokeJSONU makes call to URL wits JSON
-func (hw *HTTPBackoff) InvokeJSONU(URL string, dataIn interface{}, dataOut interface{}) error {
-	return hw.invoke(func() error {
-		return hw.HTTPClient.InvokeJSONU(URL, dataIn, dataOut)
+func (hw *HTTPBackoff) InvokeJSONU(ctx context.Context, URL string, dataIn interface{}, dataOut interface{}) error {
+	return hw.invoke(ctx, func() error {
+		return hw.HTTPClient.InvokeJSONU(ctx, URL, dataIn, dataOut)
 	}, dataIn)
 }
 
-func (hw *HTTPBackoff) invoke(f func() error, dataIn interface{}) error {
+func (hw *HTTPBackoff) invoke(ctx context.Context, f func() error, dataIn interface{}) error {
+	ctx, span := StartSpan(ctx, "HTTPBackoff.invoke")
+	defer span.End()
+
 	failC := 0
 	op := func() error {
 		if hw.InvokeIndicatorFunc != nil {
@@ -70,14 +73,14 @@ func (hw *HTTPBackoff) invoke(f func() error, dataIn interface{}) error {
 			if !hw.retryF(err) {
 				return backoff.Permanent(err)
 			}
-			goapp.Log.Warn().Err(errors.Wrapf(err, "failed %d time(s)", failC)).Send()
+			log.Ctx(ctx).Warn().Err(errors.Wrapf(err, "failed %d time(s)", failC)).Send()
 			return err
 		}
 		return nil
 	}
 	err := backoff.Retry(op, hw.backoffF())
 	if err == nil && failC > 0 {
-		goapp.Log.Info().Msgf("Success after retrying %d time(s)", failC)
+		log.Ctx(ctx).Info().Msgf("Success after retrying %d time(s)", failC)
 	}
 	return err
 }

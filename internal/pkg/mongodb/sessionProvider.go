@@ -8,6 +8,7 @@ import (
 
 	"github.com/airenas/go-app/pkg/goapp"
 	"github.com/pkg/errors"
+	"github.com/rs/zerolog/log"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.mongodb.org/mongo-driver/x/bsonx"
@@ -75,7 +76,7 @@ func (sp *SessionProvider) NewSession() (mongo.Session, error) {
 }
 
 func (sp *SessionProvider) checkIndexes(c *mongo.Client, database string) error {
-	goapp.Log.Info().Msgf("Check indexes in %s", database)
+	log.Info().Msgf("Check indexes in %s", database)
 	err := checkIndexes(c, indexData, database)
 	if err != nil {
 		return errors.Wrap(err, "Can't create indexes")

@@ -1,6 +1,7 @@
 package processor
 
 import (
+	"context"
 	"time"
 
 	"github.com/airenas/tts-line/internal/pkg/service/api"
@@ -24,14 +25,17 @@ func NewConverter(urlStr string) (synthesizer.Processor, error) {
 	return res, nil
 }
 
-func (p *audioConverter) Process(data *synthesizer.TTSData) error {
+func (p *audioConverter) Process(ctx context.Context, data *synthesizer.TTSData) error {
+	ctx, span := utils.StartSpan(ctx, "audioConverter.Process")
+	defer span.End()
+
 	if data.Input.OutputFormat == api.AudioNone {
 		return nil
 	}
 	inData := audioConvertInput{Data: data.Audio, Format: data.Input.OutputFormat.String(),
 		Metadata: data.Input.OutputMetadata}
 	var output audioConvertOutput
-	err := p.httpWrap.InvokeJSON(inData, &output)
+	err := p.httpWrap.InvokeJSON(ctx, inData, &output)
 	if err != nil {
 		return err
 	}

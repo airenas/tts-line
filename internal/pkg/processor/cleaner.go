@@ -1,12 +1,14 @@
 package processor
 
 import (
+	"context"
 	"fmt"
 	"strings"
 	"time"
 
 	"github.com/airenas/go-app/pkg/goapp"
 	"github.com/pkg/errors"
+	"github.com/rs/zerolog/log"
 
 	"github.com/airenas/tts-line/internal/pkg/synthesizer"
 	"github.com/airenas/tts-line/internal/pkg/utils"
@@ -27,17 +29,17 @@ func NewCleaner(urlStr string) (synthesizer.Processor, error) {
 	return res, nil
 }
 
-func (p *cleaner) Process(data *synthesizer.TTSData) error {
+func (p *cleaner) Process(ctx context.Context, data *synthesizer.TTSData) error {
 	if p.skip(data) {
-		goapp.Log.Info().Msg("Skip clean")
+		log.Ctx(ctx).Info().Msg("Skip clean")
 		return nil
 	}
 	defer goapp.Estimate("Clean")()
 	txt := getNormText(data)
-	utils.LogData("Input", txt, nil)
+	utils.LogData(ctx, "Input", txt, nil)
 	inData := &normData{Text: txt}
 	var output normData
-	err := p.httpWrap.InvokeJSON(inData, &output)
+	err := p.httpWrap.InvokeJSON(ctx, inData, &output)
 	if err != nil {
 		return err
 	}
@@ -49,7 +51,7 @@ func (p *cleaner) Process(data *synthesizer.TTSData) error {
 	if emptyStrArr(data.CleanedText) {
 		return utils.ErrNoInput
 	}
-	utils.LogData("Output", strings.Join(data.CleanedText, " "), nil)
+	utils.LogData(ctx, "Output", strings.Join(data.CleanedText, " "), nil)
 	return nil
 }
 

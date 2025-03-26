@@ -1,11 +1,13 @@
 package processor
 
 import (
+	"context"
 	"time"
 
-	"github.com/airenas/go-app/pkg/goapp"
 	"github.com/airenas/tts-line/internal/pkg/synthesizer"
+	"github.com/airenas/tts-line/internal/pkg/utils"
 	"github.com/pkg/errors"
+	"github.com/rs/zerolog/log"
 )
 
 type obscene struct {
@@ -24,16 +26,19 @@ func NewObsceneFilter(urlStr string) (synthesizer.PartProcessor, error) {
 	return res, nil
 }
 
-func (p *obscene) Process(data *synthesizer.TTSDataPart) error {
+func (p *obscene) Process(ctx context.Context, data *synthesizer.TTSDataPart) error {
+	ctx, span := utils.StartSpan(ctx, "obscene.Process")
+	defer span.End()
+
 	if p.skip(data) {
-		goapp.Log.Info().Msg("Skip obscene filter")
+		log.Ctx(ctx).Info().Msg("Skip obscene filter")
 		return nil
 	}
 	inData := mapObsceneInput(data)
 	if len(inData) > 0 {
 
 		var output []obsceneResultToken
-		err := p.httpWrap.InvokeJSON(inData, &output)
+		err := p.httpWrap.InvokeJSON(ctx, inData, &output)
 		if err != nil {
 			return err
 		}
@@ -42,7 +47,7 @@ func (p *obscene) Process(data *synthesizer.TTSDataPart) error {
 			return err
 		}
 	} else {
-		goapp.Log.Debug().Msg("Skip obscene filter - no data in")
+		log.Ctx(ctx).Debug().Msg("Skip obscene filter - no data in")
 	}
 	return nil
 }

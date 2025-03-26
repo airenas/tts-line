@@ -1,13 +1,14 @@
 package processor
 
 import (
+	"context"
 	"fmt"
 	"strings"
 	"unicode/utf8"
 
 	"github.com/airenas/tts-line/internal/pkg/utils"
+	"github.com/rs/zerolog/log"
 
-	"github.com/airenas/go-app/pkg/goapp"
 	"github.com/airenas/tts-line/internal/pkg/synthesizer"
 	"github.com/pkg/errors"
 )
@@ -26,9 +27,9 @@ func NewValidator(defaultMaxLen int) (synthesizer.Processor, error) {
 	return res, nil
 }
 
-func (p *validator) Process(data *synthesizer.TTSData) error {
+func (p *validator) Process(ctx context.Context, data *synthesizer.TTSData) error {
 	if skip(data) {
-		goapp.Log.Info().Msg("Skip validator")
+		log.Ctx(ctx).Info().Msg("Skip validator")
 		return nil
 	}
 	return validate(getLen(data.Input.Text), getMaxLen(p.defaultMax, data.Input.AllowedMaxLen))
@@ -73,9 +74,9 @@ func NewSSMLValidator(defaultMaxLen int) (synthesizer.Processor, error) {
 	return res, nil
 }
 
-func (p *ssmlValidator) Process(data *synthesizer.TTSData) error {
+func (p *ssmlValidator) Process(ctx context.Context, data *synthesizer.TTSData) error {
 	if skip(data) {
-		goapp.Log.Info().Msg("Skip validator")
+		log.Ctx(ctx).Info().Msg("Skip validator")
 		return nil
 	}
 	return validate(getSSMLTextLen(data), getMaxLen(p.defaultMax, data.Input.AllowedMaxLen))

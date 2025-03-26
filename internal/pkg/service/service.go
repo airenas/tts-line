@@ -1,10 +1,11 @@
 package service
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
-	"log"
+	slog "log"
 	"net/http"
 	"strconv"
 	"strings"
@@ -13,23 +14,27 @@ import (
 	"github.com/airenas/tts-line/internal/pkg/service/api"
 	"github.com/airenas/tts-line/internal/pkg/utils"
 	"github.com/facebookgo/grace/gracehttp"
+	"github.com/rs/zerolog"
+	"github.com/rs/zerolog/log"
 
 	"github.com/airenas/go-app/pkg/goapp"
 
 	"github.com/labstack/echo-contrib/prometheus"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
+	"go.opentelemetry.io/contrib/instrumentation/github.com/labstack/echo/otelecho"
+	"go.opentelemetry.io/otel/trace"
 )
 
 type (
 	//Configurator configures request from header and request and configuration
 	Configurator interface {
-		Configure(*http.Request, *api.Input) (*api.TTSRequestConfig, error)
+		Configure(context.Context, *http.Request, *api.Input) (*api.TTSRequestConfig, error)
 	}
 
 	//Synthesizer main sythesis processor
 	Synthesizer interface {
-		Work(*api.TTSRequestConfig) (*api.Result, error)
+		Work(context.Context, *api.TTSRequestConfig) (*api.Result, error)
 	}
 	InfoGetter interface {
 		Provide(ID string) (*api.InfoResult, error)
@@ -68,7 +73,7 @@ func StartWebServer(data *Data) error {
 	e.Server.ReadTimeout = 60 * time.Second
 	e.Server.WriteTimeout = 900 * time.Second
 
-	gracehttp.SetLogger(log.New(goapp.Log, "", 0))
+	gracehttp.SetLogger(slog.New(goapp.Log, "", 0))
 
 	return gracehttp.Serve(e.Server)
 }
@@ -96,6 +101,8 @@ func initRoutes(data *Data) *echo.Echo {
 	e := echo.New()
 	e.Use(middleware.Logger())
 	promMdlw.Use(e)
+	e.Use(otelecho.Middleware(utils.ServiceName, otelecho.WithSkipper(skipper)))
+	e.Use(addTraceToLogContext())
 
 	e.POST("/synthesize", synthesizeText(&data.SyntData))
 	e.POST("/synthesizeCustom", synthesizeCustom(&data.SyntCustomData))
@@ -109,29 +116,34 @@ func initRoutes(data *Data) *echo.Echo {
 	return e
 }
 
+func skipper(c echo.Context) bool {
+	return c.Request().RequestURI == "/live"
+}
+
 func synthesizeText(data *PrData) func(echo.Context) error {
 	return func(c echo.Context) error {
+		ctx := c.Request().Context()
 		defer goapp.Estimate("Service synthesize method")()
 
 		inp, err := takeInput(c)
 		if err != nil {
-			goapp.Log.Warn().Err(err).Send()
+			log.Ctx(ctx).Warn().Err(err).Send()
 			return err
 		}
 
-		cfg, err := data.Configurator.Configure(c.Request(), inp)
+		cfg, err := data.Configurator.Configure(ctx, c.Request(), inp)
 		if err != nil {
-			goapp.Log.Warn().Msg("Cannot prepare request config " + err.Error())
+			log.Ctx(ctx).Warn().Msg("Cannot prepare request config " + err.Error())
 			return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 		}
 
-		resp, err := data.Processor.Work(cfg)
+		resp, err := data.Processor.Work(ctx, cfg)
 		if err != nil {
 			if d, msg := badReqError(err); d {
-				goapp.Log.Warn().Err(err).Msg("can't process")
+				log.Ctx(ctx).Warn().Err(err).Msg("can't process")
 				return echo.NewHTTPError(http.StatusBadRequest, msg)
 			}
-			goapp.Log.Error().Err(err).Msg("can't process")
+			log.Ctx(ctx).Error().Err(err).Msg("can't process")
 			return echo.NewHTTPError(http.StatusInternalServerError)
 		}
 
@@ -141,40 +153,42 @@ func synthesizeText(data *PrData) func(echo.Context) error {
 
 func synthesizeCustom(data *PrData) func(echo.Context) error {
 	return func(c echo.Context) error {
+		ctx := c.Request().Context()
+
 		defer goapp.Estimate("Service synthesize custom method")()
 
 		rID := c.QueryParam("requestID")
 		if rID == "" {
-			goapp.Log.Warn().Msg("No requestID")
+			log.Ctx(ctx).Warn().Msg("No requestID")
 			return echo.NewHTTPError(http.StatusBadRequest, "No requestID")
 		}
 
 		inp, err := takeInput(c)
 		if err != nil {
-			goapp.Log.Warn().Err(err).Send()
+			log.Ctx(ctx).Warn().Err(err).Send()
 			return err
 		}
 
 		if inp.AllowCollectData != nil && !*inp.AllowCollectData {
-			goapp.Log.Warn().Msg("Can't call with inp.AllowCollectData=false")
+			log.Ctx(ctx).Warn().Msg("Can't call with inp.AllowCollectData=false")
 			return echo.NewHTTPError(http.StatusBadRequest, "Method does not allow 'saveRequest=false'")
 		}
 
-		cfg, err := data.Configurator.Configure(c.Request(), inp)
+		cfg, err := data.Configurator.Configure(ctx, c.Request(), inp)
 		if err != nil {
-			goapp.Log.Warn().Msg("Cannot prepare request config " + err.Error())
+			log.Ctx(ctx).Warn().Msg("Cannot prepare request config " + err.Error())
 			return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 		}
 		cfg.RequestID = rID
 		cfg.AllowCollectData = true // turn collect data to true as it is mandatory for this request
 
-		resp, err := data.Processor.Work(cfg)
+		resp, err := data.Processor.Work(ctx, cfg)
 		if err != nil {
 			if d, msg := badReqError(err); d {
-				goapp.Log.Warn().Err(err).Msg("can't process")
+				log.Ctx(ctx).Warn().Err(err).Msg("can't process")
 				return echo.NewHTTPError(http.StatusBadRequest, msg)
 			}
-			goapp.Log.Error().Err(err).Msg("can't process")
+			log.Ctx(ctx).Error().Err(err).Msg("can't process")
 			return echo.NewHTTPError(http.StatusInternalServerError)
 		}
 		resp.RequestID = ""
@@ -185,21 +199,23 @@ func synthesizeCustom(data *PrData) func(echo.Context) error {
 
 func synthesizeInfo(data InfoGetter) func(echo.Context) error {
 	return func(c echo.Context) error {
+		ctx := c.Request().Context()
+
 		defer goapp.Estimate("Service request info method")()
 
 		rID := c.Param("requestID")
 		if rID == "" {
-			goapp.Log.Warn().Msg("No requestID")
+			log.Ctx(ctx).Warn().Msg("No requestID")
 			return echo.NewHTTPError(http.StatusBadRequest, "No requestID")
 		}
 
 		resp, err := data.Provide(rID)
 		if err != nil {
 			if d, msg := badReqError(err); d {
-				goapp.Log.Warn().Err(err).Msg("can't process")
+				log.Ctx(ctx).Warn().Err(err).Msg("can't process")
 				return echo.NewHTTPError(http.StatusBadRequest, msg)
 			}
-			goapp.Log.Error().Err(err).Msg("can't process")
+			log.Ctx(ctx).Error().Err(err).Msg("can't process")
 			return echo.NewHTTPError(http.StatusInternalServerError)
 		}
 		return writeResponse(c, resp)
@@ -259,4 +275,25 @@ func live(data *Data) func(echo.Context) error {
 	return func(c echo.Context) error {
 		return c.JSONBlob(http.StatusOK, []byte(`{"service":"OK"}`))
 	}
+}
+
+func addTraceToLogContext() echo.MiddlewareFunc {
+	return func(next echo.HandlerFunc) echo.HandlerFunc {
+		return func(c echo.Context) error {
+			request := c.Request()
+			ctx := request.Context()
+			ctx = loggerWithTrace(ctx).WithContext(ctx)
+			c.SetRequest(request.WithContext(ctx))
+			return next(c)
+		}
+	}
+}
+
+func loggerWithTrace(ctx context.Context) zerolog.Logger {
+	span := trace.SpanFromContext(ctx)
+	traceID := span.SpanContext().TraceID().String()
+	if traceID == "" {
+		return log.Logger
+	}
+	return log.With().Str("traceID", traceID).Logger()
 }
