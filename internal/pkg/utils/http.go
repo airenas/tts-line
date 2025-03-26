@@ -132,7 +132,7 @@ func (hw *HTTPWrap) invoke(ctx context.Context, req *http.Request, dataOut inter
 		span.SetStatus(codes.Error, "can't decode response")
 		return errors.Wrap(err, "can't decode response")
 	}
-	span.SetStatus(codes.Ok, "")	
+	span.SetStatus(codes.Ok, "")
 	return nil
 }
 
