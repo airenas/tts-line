@@ -18,6 +18,7 @@ services:
       - VOCODER_URL=http://192.168.1.77:8001/model    
       - COMPARATOR_URL=http://comparator:3000/resynthvalid
       - MONGO_URL=mongodb://tts:Ui3Ic5Meej8Ki8tohxawe7jei3iaci@mongo:27017
+      - TRANSLITERATOR_URL=http://transliterator:3000/transliterate
     volumes:
       - ./config.yaml:/app/config.yaml:ro
     ports:
@@ -58,6 +59,10 @@ services:
   normalizer:
     image: intelektikalt/text-normalizer:0.1.28
     restart: on-failure  
+
+  transliterator:
+    image: intelektikalt/transliterator:0.2.0
+    restart: on-failure    
 
   comparator:
     image: intelektikalt/resynth-validator:0.1.8
