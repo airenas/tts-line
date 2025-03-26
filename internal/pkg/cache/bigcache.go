@@ -1,16 +1,19 @@
 package cache
 
 import (
+	"context"
 	"fmt"
-	"log"
+	slog "log"
 	"strconv"
 	"time"
 
 	"github.com/airenas/go-app/pkg/goapp"
 	"github.com/airenas/tts-line/internal/pkg/service"
 	"github.com/airenas/tts-line/internal/pkg/service/api"
+	"github.com/airenas/tts-line/internal/pkg/utils"
 	"github.com/allegro/bigcache"
 	"github.com/pkg/errors"
+	"github.com/rs/zerolog/log"
 	"github.com/spf13/viper"
 )
 
@@ -32,7 +35,7 @@ func NewCacher(rw service.Synthesizer, config *viper.Viper) (*BigCacher, error) 
 	if dur > 0 {
 		cfg := bigcache.DefaultConfig(dur)
 		cfg.CleanWindow = getCleanDuration(config.GetDuration("cleanDuration"))
-		cfg.Logger = log.New(goapp.Log, "", 0)
+		cfg.Logger = slog.New(goapp.Log, "", 0)
 
 		cfg.Shards = 64
 		cfg.HardMaxCacheSize = config.GetInt("maxMB")
@@ -57,18 +60,21 @@ func NewCacher(rw service.Synthesizer, config *viper.Viper) (*BigCacher, error) 
 }
 
 // Work try find data in the cache or invoke a real worker
-func (c *BigCacher) Work(inp *api.TTSRequestConfig) (*api.Result, error) {
+func (c *BigCacher) Work(ctx context.Context, inp *api.TTSRequestConfig) (*api.Result, error) {
+	ctx, span := utils.StartSpan(ctx, "BigCacher.Work")
+	defer span.End()
+
 	if c.cache == nil || !c.isOK(inp) {
-		return c.realSynt.Work(inp)
+		return c.realSynt.Work(ctx, inp)
 	}
 
 	entry, err := c.cache.Get(key(inp))
 	if err == nil {
-		goapp.Log.Debug().Msg("Found in cache")
+		log.Ctx(ctx).Debug().Msg("Found in cache")
 		return &api.Result{AudioAsString: string(entry)}, nil
 	}
-	goapp.Log.Debug().Msg("Not found in cache")
-	res, err := c.realSynt.Work(inp)
+	log.Ctx(ctx).Debug().Msg("Not found in cache")
+	res, err := c.realSynt.Work(ctx, inp)
 	if res != nil && err == nil {
 		_ = c.cache.Set(key(inp), []byte(res.AudioAsString))
 	}

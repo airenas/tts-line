@@ -1,15 +1,17 @@
 package processor
 
 import (
+	"context"
 	"strings"
 	"time"
 	"unicode"
 
-	"github.com/airenas/go-app/pkg/goapp"
 	"github.com/airenas/tts-line/internal/pkg/accent"
 	"github.com/airenas/tts-line/internal/pkg/service/api"
 	"github.com/airenas/tts-line/internal/pkg/synthesizer"
+	"github.com/airenas/tts-line/internal/pkg/utils"
 	"github.com/pkg/errors"
+	"github.com/rs/zerolog/log"
 )
 
 type transcriber struct {
@@ -27,9 +29,12 @@ func NewTranscriber(urlStr string) (synthesizer.PartProcessor, error) {
 	return res, nil
 }
 
-func (p *transcriber) Process(data *synthesizer.TTSDataPart) error {
+func (p *transcriber) Process(ctx context.Context, data *synthesizer.TTSDataPart) error {
+	ctx, span := utils.StartSpan(ctx, "transcriber.Process")
+	defer span.End()
+
 	if skipTranscribe(data.Cfg) {
-		goapp.Log.Info().Msg("Skip transcriber")
+		log.Ctx(ctx).Info().Msg("Skip transcriber")
 		return nil
 	}
 
@@ -39,7 +44,7 @@ func (p *transcriber) Process(data *synthesizer.TTSDataPart) error {
 	}
 	if len(inData) > 0 {
 		var output []transOutput
-		err := p.httpWrap.InvokeJSON(inData, &output)
+		err := p.httpWrap.InvokeJSON(ctx, inData, &output)
 		if err != nil {
 			return err
 		}
@@ -48,7 +53,7 @@ func (p *transcriber) Process(data *synthesizer.TTSDataPart) error {
 			return err
 		}
 	} else {
-		goapp.Log.Debug().Msg("Skip transcriber - no data in")
+		log.Ctx(ctx).Debug().Msg("Skip transcriber - no data in")
 	}
 	return nil
 }

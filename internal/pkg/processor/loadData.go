@@ -1,6 +1,8 @@
 package processor
 
 import (
+	"context"
+
 	"github.com/airenas/go-app/pkg/goapp"
 	"github.com/pkg/errors"
 
@@ -25,7 +27,7 @@ func NewLoader(s LoadDB) (synthesizer.Processor, error) {
 	return &loader{sDB: s}, nil
 }
 
-func (p *loader) Process(data *synthesizer.TTSData) error {
+func (p *loader) Process(ctx context.Context, data *synthesizer.TTSData) error {
 	defer goapp.Estimate("LoadDB")()
 
 	var err error

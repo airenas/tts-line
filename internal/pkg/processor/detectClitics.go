@@ -1,13 +1,14 @@
 package processor
 
 import (
+	"context"
 	"strings"
 	"time"
 
-	"github.com/airenas/go-app/pkg/goapp"
 	"github.com/airenas/tts-line/internal/pkg/clitics/service/api"
 	"github.com/airenas/tts-line/internal/pkg/synthesizer"
 	"github.com/pkg/errors"
+	"github.com/rs/zerolog/log"
 )
 
 type cliticDetector struct {
@@ -25,9 +26,9 @@ func NewClitics(urlStr string) (synthesizer.PartProcessor, error) {
 	return res, nil
 }
 
-func (p *cliticDetector) Process(data *synthesizer.TTSDataPart) error {
+func (p *cliticDetector) Process(ctx context.Context, data *synthesizer.TTSDataPart) error {
 	if p.skip(data) {
-		goapp.Log.Info().Msg("Skip clitics")
+		log.Ctx(ctx).Info().Msg("Skip clitics")
 		return nil
 	}
 	inData, err := mapCliticsInput(data)
@@ -36,7 +37,7 @@ func (p *cliticDetector) Process(data *synthesizer.TTSDataPart) error {
 	}
 	if len(inData) > 0 {
 		var output []api.CliticsOutput
-		err := p.httpWrap.InvokeJSON(inData, &output)
+		err := p.httpWrap.InvokeJSON(ctx, inData, &output)
 		if err != nil {
 			return err
 		}
@@ -45,7 +46,7 @@ func (p *cliticDetector) Process(data *synthesizer.TTSDataPart) error {
 			return err
 		}
 	} else {
-		goapp.Log.Debug().Msg("Skip clitics - no data in")
+		log.Ctx(ctx).Debug().Msg("Skip clitics - no data in")
 	}
 	return nil
 }

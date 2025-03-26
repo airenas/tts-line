@@ -1,16 +1,17 @@
 package processor
 
 import (
+	"context"
 	"fmt"
 	"strings"
 	"time"
 
-	"github.com/airenas/go-app/pkg/goapp"
 	"github.com/airenas/tts-line/internal/pkg/accent"
 	accentI "github.com/airenas/tts-line/internal/pkg/accent"
 	"github.com/airenas/tts-line/internal/pkg/synthesizer"
 	"github.com/airenas/tts-line/internal/pkg/utils"
 	"github.com/pkg/errors"
+	"github.com/rs/zerolog/log"
 )
 
 type tagger struct {
@@ -29,13 +30,16 @@ func NewTagger(urlStr string) (synthesizer.Processor, error) {
 	return res, nil
 }
 
-func (p *tagger) Process(data *synthesizer.TTSData) error {
+func (p *tagger) Process(ctx context.Context, data *synthesizer.TTSData) error {
+	ctx, span := utils.StartSpan(ctx, "tagger.Process")
+	defer span.End()
+
 	if p.skip(data) {
-		goapp.Log.Info().Msg("Skip tagger")
+		log.Ctx(ctx).Info().Msg("Skip tagger")
 		return nil
 	}
 	var output []*TaggedWord
-	err := p.httpWrap.InvokeText(strings.Join(data.TextWithNumbers, ""), &output)
+	err := p.httpWrap.InvokeText(ctx, strings.Join(data.TextWithNumbers, ""), &output)
 	if err != nil {
 		return err
 	}
@@ -113,10 +117,13 @@ func NewTaggerAccents(urlStr string) (synthesizer.Processor, error) {
 	return res, nil
 }
 
-func (p *taggerAccents) Process(data *synthesizer.TTSData) error {
+func (p *taggerAccents) Process(ctx context.Context, data *synthesizer.TTSData) error {
+	ctx, span := utils.StartSpan(ctx, "taggerAccents.Process")
+	defer span.End()
+
 	var output []*TaggedWord
 	data.TextWithNumbers = []string{data.OriginalText}
-	err := p.httpWrap.InvokeText(accent.ClearAccents(strings.Join(data.TextWithNumbers, " ")), &output)
+	err := p.httpWrap.InvokeText(ctx, accent.ClearAccents(strings.Join(data.TextWithNumbers, " ")), &output)
 	if err != nil {
 		return err
 	}
@@ -226,11 +233,14 @@ func NewSSMLTagger(urlStr string) (synthesizer.Processor, error) {
 	return res, nil
 }
 
-func (p *ssmlTagger) Process(data *synthesizer.TTSData) error {
+func (p *ssmlTagger) Process(ctx context.Context, data *synthesizer.TTSData) error {
+	ctx, span := utils.StartSpan(ctx, "ssmlTagger.Process")
+	defer span.End()
+
 	var output []*TaggedWord
 	data.TextWithNumbers = addSpaces(data.TextWithNumbers)
 	txt := accent.ClearAccents(strings.Join(data.TextWithNumbers, " "))
-	err := p.httpWrap.InvokeText(txt, &output)
+	err := p.httpWrap.InvokeText(ctx, txt, &output)
 	if err != nil {
 		return err
 	}

@@ -1,21 +1,23 @@
 package processor
 
 import (
+	"context"
 	"strconv"
 	"strings"
 	"time"
 	"unicode"
 
-	"github.com/airenas/go-app/pkg/goapp"
 	"github.com/airenas/tts-line/internal/pkg/synthesizer"
+	"github.com/airenas/tts-line/internal/pkg/utils"
 	"github.com/pkg/errors"
+	"github.com/rs/zerolog/log"
 )
 
 // HTTPInvokerJSON invoker for json input
 type HTTPInvokerJSON interface {
-	InvokeJSON(interface{}, interface{}) error
-	InvokeJSONU(URL string, dataIn interface{}, dataOut interface{}) error
-	InvokeText(string, interface{}) error
+	InvokeJSON(context.Context, interface{}, interface{}) error
+	InvokeJSONU(ctx context.Context, URL string, dataIn interface{}, dataOut interface{}) error
+	InvokeText(context.Context, string, interface{}) error
 }
 
 type acronyms struct {
@@ -33,21 +35,24 @@ func NewAcronyms(urlStr string) (synthesizer.PartProcessor, error) {
 	return res, nil
 }
 
-func (p *acronyms) Process(data *synthesizer.TTSDataPart) error {
+func (p *acronyms) Process(ctx context.Context, data *synthesizer.TTSDataPart) error {
+	ctx, span := utils.StartSpan(ctx, "acronyms.Process")
+	defer span.End()
+
 	if p.skip(data) {
-		goapp.Log.Info().Msg("Skip acronyms")
+		log.Ctx(ctx).Info().Msg("Skip acronyms")
 		return nil
 	}
 	inData := mapAbbrInput(data)
 	if len(inData) > 0 {
 		var outData []acrWordOutput
-		err := p.httpWrap.InvokeJSON(inData, &outData)
+		err := p.httpWrap.InvokeJSON(ctx, inData, &outData)
 		if err != nil {
 			return err
 		}
 		return mapAbbrOutput(data, outData)
 	} else {
-		goapp.Log.Debug().Msg("Skip abbreviation - no data in")
+		log.Ctx(ctx).Debug().Msg("Skip abbreviation - no data in")
 	}
 	return nil
 }

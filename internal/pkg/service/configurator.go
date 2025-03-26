@@ -1,11 +1,13 @@
 package service
 
 import (
+	"context"
 	"net/http"
 	"strconv"
 	"strings"
 
 	"github.com/airenas/go-app/pkg/goapp"
+	"github.com/rs/zerolog/log"
 
 	"github.com/airenas/tts-line/internal/pkg/service/api"
 	"github.com/airenas/tts-line/internal/pkg/utils"
@@ -48,14 +50,14 @@ func NewTTSConfigurator(cfg *viper.Viper) (*TTSConfigutaror, error) {
 		return nil, errors.New("no output.defaultFormat configured")
 	}
 
-	goapp.Log.Info().Msgf("Default output format: %s", res.defaultOutputFormat.String())
+	log.Info().Msgf("Default output format: %s", res.defaultOutputFormat.String())
 	res.outputMetadata = cfg.GetStringSlice("output.metadata")
 	for _, m := range res.outputMetadata {
 		if !strings.Contains(m, "=") {
 			return nil, errors.Errorf("metadata must contain '='. Value: '%s'", m)
 		}
 	}
-	goapp.Log.Info().Msgf("Metadata: %v", res.outputMetadata)
+	log.Info().Msgf("Metadata: %v", res.outputMetadata)
 
 	res.availableVoices, err = initVoices(cfg.GetStringSlice("output.voices"))
 	if err != nil {
@@ -65,7 +67,7 @@ func NewTTSConfigurator(cfg *viper.Viper) (*TTSConfigutaror, error) {
 	if err != nil {
 		return nil, errors.Wrap(err, "no default voice")
 	}
-	goapp.Log.Info().Msgf("Voices. Default: %s, all: %v", dVoice, res.availableVoices)
+	log.Info().Msgf("Voices. Default: %s, all: %v", dVoice, res.availableVoices)
 	return res, nil
 }
 
@@ -101,7 +103,7 @@ func getVoice(voices map[string]string, voiceKey string) (string, error) {
 }
 
 // Configure prepares request configuration
-func (c *TTSConfigutaror) Configure(r *http.Request, inText *api.Input) (*api.TTSRequestConfig, error) {
+func (c *TTSConfigutaror) Configure(ctx context.Context, r *http.Request, inText *api.Input) (*api.TTSRequestConfig, error) {
 	res := &api.TTSRequestConfig{}
 	res.Text = inText.Text
 	var err error
@@ -134,7 +136,7 @@ func (c *TTSConfigutaror) Configure(r *http.Request, inText *api.Input) (*api.TT
 	if err != nil {
 		return nil, err
 	}
-	goapp.Log.Info().Str("in", goapp.Sanitize(inText.Voice)).Str("mapped", res.Voice).Msg("voice")
+	log.Ctx(ctx).Info().Str("in", goapp.Sanitize(inText.Voice)).Str("mapped", res.Voice).Msg("voice")
 	res.SpeechMarkTypes, err = getSpeechMarkTypes(inText.SpeechMarkTypes)
 	if err != nil {
 		return nil, err
@@ -143,7 +145,7 @@ func (c *TTSConfigutaror) Configure(r *http.Request, inText *api.Input) (*api.TT
 	if err != nil {
 		return nil, err
 	}
-	goapp.Log.Info().Int64("edgeSil", res.MaxEdgeSilenceMillis).Any("speechMarks", res.SpeechMarkTypes).Send()
+	log.Ctx(ctx).Info().Int64("edgeSil", res.MaxEdgeSilenceMillis).Any("speechMarks", res.SpeechMarkTypes).Send()
 	if inText.Priority < 0 {
 		return nil, errors.Errorf("wrong priority (>=0) value: %d", inText.Priority)
 	}

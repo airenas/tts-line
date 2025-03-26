@@ -1,6 +1,7 @@
 package wrapservice
 
 import (
+	"context"
 	"time"
 
 	"github.com/airenas/go-app/pkg/goapp"
@@ -57,17 +58,20 @@ func NewProcessor(amURL, vocURL string) (*Processor, error) {
 }
 
 // Work is main method
-func (p *Processor) Work(params *api.Params) (*api.Result, error) {
+func (p *Processor) Work(ctx context.Context, params *api.Params) (*api.Result, error) {
+	ctx, span := utils.StartSpan(ctx, "Processor.Work")
+	defer span.End()
+
 	amIn := amInput{Text: params.Text, Speed: params.Speed, Voice: params.Voice, Priority: params.Priority}
 	var amOut amOutput
-	err := p.amWrap.InvokeJSON(&amIn, &amOut)
+	err := p.amWrap.InvokeJSON(ctx, &amIn, &amOut)
 	if err != nil {
 		totalFailureMetrics.WithLabelValues("am", params.Voice).Add(1)
 		return nil, errors.Wrap(err, "can't invoke AM")
 	}
 	vocIn := vocInput{Data: amOut.Data, Voice: params.Voice, Priority: params.Priority}
 	var vocOut output
-	err = p.vocWrap.InvokeJSON(&vocIn, &vocOut)
+	err = p.vocWrap.InvokeJSON(ctx, &vocIn, &vocOut)
 	if err != nil {
 		totalFailureMetrics.WithLabelValues("vocoder", params.Voice).Add(1)
 		return nil, errors.Wrap(err, "can't invoke Vocoder")

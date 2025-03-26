@@ -1,6 +1,7 @@
 package processor
 
 import (
+	"context"
 	"time"
 
 	"github.com/airenas/tts-line/internal/pkg/service/api"
@@ -31,14 +32,17 @@ func NewVocoder(urlStr string) (synthesizer.PartProcessor, error) {
 	return res, nil
 }
 
-func (p *vocoder) Process(data *synthesizer.TTSDataPart) error {
+func (p *vocoder) Process(ctx context.Context, data *synthesizer.TTSDataPart) error {
+	ctx, span := utils.StartSpan(ctx, "vocoder.Process")
+	defer span.End()
+
 	if data.Cfg.Input.OutputFormat == api.AudioNone {
 		return nil
 	}
 
 	inData := vocInput{Data: data.Spectogram, Voice: data.Cfg.Input.Voice, Priority: data.Cfg.Input.Priority}
 	var output vocOutput
-	err := p.httpWrap.InvokeJSONU(getVoiceURL(p.url, data.Cfg.Input.Voice), inData, &output)
+	err := p.httpWrap.InvokeJSONU(ctx, getVoiceURL(p.url, data.Cfg.Input.Voice), inData, &output)
 	if err != nil {
 		return err
 	}

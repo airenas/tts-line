@@ -1,11 +1,12 @@
 package processor
 
 import (
+	"context"
 	"strings"
 	"time"
 
-	"github.com/airenas/go-app/pkg/goapp"
 	"github.com/cenkalti/backoff/v4"
+	"github.com/rs/zerolog/log"
 	"github.com/spf13/viper"
 
 	"github.com/airenas/tts-line/internal/pkg/service/api"
@@ -65,12 +66,15 @@ func NewAcousticModel(config *viper.Viper) (synthesizer.PartProcessor, error) {
 		res.endSymbol = res.spaceSymbol
 	}
 	res.hasVocoder = config.GetBool("hasVocoder")
-	goapp.Log.Info().Msgf("AM pause: '%s', end symbol: '%s'", res.spaceSymbol, res.endSymbol)
-	goapp.Log.Info().Msgf("AM hasVocoder: %t", res.hasVocoder)
+	log.Info().Msgf("AM pause: '%s', end symbol: '%s'", res.spaceSymbol, res.endSymbol)
+	log.Info().Msgf("AM hasVocoder: %t", res.hasVocoder)
 	return res, nil
 }
 
-func (p *amodel) Process(data *synthesizer.TTSDataPart) error {
+func (p *amodel) Process(ctx context.Context, data *synthesizer.TTSDataPart) error {
+	ctx, span := utils.StartSpan(ctx, "amodel.Process")
+	defer span.End()
+
 	if data.Cfg.Input.OutputFormat == api.AudioNone {
 		if data.Cfg.Input.OutputTextFormat == api.TextTranscribed {
 			inData, _ := p.mapAMInput(data)
@@ -82,7 +86,7 @@ func (p *amodel) Process(data *synthesizer.TTSDataPart) error {
 	inData, inIndexes := p.mapAMInput(data)
 	data.TranscribedText = inData.Text
 	var output amOutput
-	err := p.httpWrap.InvokeJSONU(getVoiceURL(p.url, data.Cfg.Voice), inData, &output)
+	err := p.httpWrap.InvokeJSONU(ctx, getVoiceURL(p.url, data.Cfg.Voice), inData, &output)
 	if err != nil {
 		return err
 	}
@@ -91,7 +95,7 @@ func (p *amodel) Process(data *synthesizer.TTSDataPart) error {
 	data.DefaultSilence = output.SilDuration * fixSilDuration
 	data.Step = output.Step
 	data.Durations = output.Durations
-	if err := mapAMOutputDurations(data, output.Durations, inIndexes); err != nil {
+	if err := mapAMOutputDurations(ctx, data, output.Durations, inIndexes); err != nil {
 		return err
 	}
 
@@ -117,7 +121,7 @@ type amOutput struct {
 	Step        int    `json:"step,omitempty"`
 }
 
-func mapAMOutputDurations(data *synthesizer.TTSDataPart, durations []int, indRes []*synthesizer.SynthesizedPos) error {
+func mapAMOutputDurations(ctx context.Context, data *synthesizer.TTSDataPart, durations []int, indRes []*synthesizer.SynthesizedPos) error {
 	sums := make([]int, len(durations)+1)
 	for i := 0; i < len(durations); i++ {
 		sums[i+1] = sums[i] + durations[i]
@@ -126,7 +130,7 @@ func mapAMOutputDurations(data *synthesizer.TTSDataPart, durations []int, indRes
 		fromI := indRes[i].From
 		toI := indRes[i].To
 		if fromI < 0 || fromI >= len(sums) || toI < 0 || toI >= len(sums) {
-			goapp.Log.Warn().Msgf("Invalid duration index %d %d %d %d", fromI, toI, len(sums), len(indRes))
+			log.Ctx(ctx).Warn().Msgf("Invalid duration index %d %d %d %d", fromI, toI, len(sums), len(indRes))
 			continue
 		}
 		w.SynthesizedPos = &synthesizer.SynthesizedPos{

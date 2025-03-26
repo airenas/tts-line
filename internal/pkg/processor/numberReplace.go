@@ -1,19 +1,20 @@
 package processor
 
 import (
+	"context"
 	"fmt"
 	"strings"
 	"time"
 
-	"github.com/airenas/go-app/pkg/goapp"
 	"github.com/airenas/tts-line/internal/pkg/accent"
 	"github.com/airenas/tts-line/internal/pkg/synthesizer"
 	"github.com/airenas/tts-line/internal/pkg/utils"
+	"github.com/rs/zerolog/log"
 )
 
 // HTTPInvoker makes http call
 type HTTPInvoker interface {
-	InvokeText(string, interface{}) error
+	InvokeText(context.Context, string, interface{}) error
 }
 
 type numberReplace struct {
@@ -32,13 +33,16 @@ func NewNumberReplace(urlStr string) (synthesizer.Processor, error) {
 	return res, nil
 }
 
-func (p *numberReplace) Process(data *synthesizer.TTSData) error {
+func (p *numberReplace) Process(ctx context.Context, data *synthesizer.TTSData) error {
+	ctx, span := utils.StartSpan(ctx, "numberReplace.Process")
+	defer span.End()
+
 	if p.skip(data) {
-		goapp.Log.Info().Msg("Skip numberReplace")
+		log.Ctx(ctx).Info().Msg("Skip numberReplace")
 		return nil
 	}
 	res := ""
-	err := p.httpWrap.InvokeText(accent.ClearAccents(strings.Join(data.Text, " ")), &res)
+	err := p.httpWrap.InvokeText(ctx, accent.ClearAccents(strings.Join(data.Text, " ")), &res)
 	if err != nil {
 		return err
 	}
@@ -71,13 +75,16 @@ func NewSSMLNumberReplace(urlStr string) (synthesizer.Processor, error) {
 	return res, nil
 }
 
-func (p *ssmlNumberReplace) Process(data *synthesizer.TTSData) error {
+func (p *ssmlNumberReplace) Process(ctx context.Context, data *synthesizer.TTSData) error {
+	ctx, span := utils.StartSpan(ctx, "ssmlNumberReplace.Process")
+	defer span.End()
+
 	if p.skip(data) {
-		goapp.Log.Info().Msg("Skip numberReplace")
+		log.Ctx(ctx).Info().Msg("Skip numberReplace")
 		return nil
 	}
 	res := ""
-	err := p.httpWrap.InvokeText(accent.ClearAccents(strings.Join(data.Text, " ")), &res)
+	err := p.httpWrap.InvokeText(ctx, accent.ClearAccents(strings.Join(data.Text, " ")), &res)
 	if err != nil {
 		return err
 	}

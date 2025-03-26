@@ -2,6 +2,7 @@ package processor
 
 import (
 	"bytes"
+	"context"
 	"encoding/base64"
 	"fmt"
 	"math"
@@ -9,12 +10,12 @@ import (
 	"time"
 	"unicode"
 
-	"github.com/airenas/go-app/pkg/goapp"
 	"github.com/airenas/tts-line/internal/pkg/service/api"
 	"github.com/airenas/tts-line/internal/pkg/synthesizer"
 	"github.com/airenas/tts-line/internal/pkg/utils"
 	"github.com/airenas/tts-line/internal/pkg/wav"
 	"github.com/pkg/errors"
+	"github.com/rs/zerolog/log"
 )
 
 // AudioLoader provides wav data by key
@@ -31,7 +32,10 @@ func NewJoinAudio(suffixProvider AudioLoader) synthesizer.Processor {
 	return &joinAudio{suffixProvider: suffixProvider}
 }
 
-func (p *joinAudio) Process(data *synthesizer.TTSData) error {
+func (p *joinAudio) Process(ctx context.Context, data *synthesizer.TTSData) error {
+	ctx, span := utils.StartSpan(ctx, "joinAudio.Process")
+	defer span.End()
+
 	if data.Input.OutputFormat == api.AudioNone {
 		return nil
 	}
@@ -46,11 +50,11 @@ func (p *joinAudio) Process(data *synthesizer.TTSData) error {
 		p.TranscribedSymbols = strings.Split(p.TranscribedText, " ")
 	}
 
-	data.Audio, data.AudioLenSeconds, data.SampleRate, err = join(data.Parts, suffix, data.Input.MaxEdgeSilenceMillis)
+	data.Audio, data.AudioLenSeconds, data.SampleRate, err = join(ctx, data.Parts, suffix, data.Input.MaxEdgeSilenceMillis)
 	if err != nil {
 		return errors.Wrap(err, "can't join audio")
 	}
-	utils.LogData("Output", fmt.Sprintf("audio len %d", len(data.Audio)), nil)
+	utils.LogData(ctx, "Output", fmt.Sprintf("audio len %d", len(data.Audio)), nil)
 	return nil
 }
 
@@ -91,7 +95,7 @@ func (wr *wavWriter) bitsPerSample() uint16 {
 	return wr.bitsPerSampleV
 }
 
-func join(parts []*synthesizer.TTSDataPart, suffix []byte, maxEdgeSilenceMilis int64) (string, float64, uint32 /*sampleRate*/, error) {
+func join(ctx context.Context, parts []*synthesizer.TTSDataPart, suffix []byte, maxEdgeSilenceMilis int64) (string, float64, uint32 /*sampleRate*/, error) {
 	res := &wavWriter{}
 	nextStartSil := 0
 	for i, part := range parts {
@@ -110,7 +114,7 @@ func join(parts []*synthesizer.TTSDataPart, suffix []byte, maxEdgeSilenceMilis i
 			startSil, _, _ = calcPauseWithEnds(startSil, 0, startDurHops)
 		}
 		if i == len(parts)-1 {
-			endSil = getEndSilSize(part.TranscribedSymbols, part.Durations)
+			endSil = getEndSilSize(ctx, part.TranscribedSymbols, part.Durations)
 			if suffix != nil {
 				_, endSil, _ = calcPauseWithEnds(0, endSil, part.DefaultSilence)
 			} else {
@@ -121,7 +125,7 @@ func join(parts []*synthesizer.TTSDataPart, suffix []byte, maxEdgeSilenceMilis i
 				_, endSil, _ = calcPauseWithEnds(0, endSil, endDurHops)
 			}
 		} else if i < len(parts)-1 {
-			endSil = getEndSilSize(part.TranscribedSymbols, part.Durations)
+			endSil = getEndSilSize(ctx, part.TranscribedSymbols, part.Durations)
 			nextStartSil = getStartSilSize(parts[i+1].TranscribedSymbols, parts[i+1].Durations)
 			endSil, nextStartSil, _ = calcPauseWithEnds(endSil, nextStartSil, part.DefaultSilence)
 		}
@@ -184,10 +188,10 @@ func isSil(ph string) bool {
 	return ph == "sil" || ph == "sp" || (len(ph) == 1 && unicode.IsPunct([]rune(ph)[0]))
 }
 
-func getEndSilSize(phones []string, durations []int) int {
+func getEndSilSize(ctx context.Context, phones []string, durations []int) int {
 	l := len(phones)
 	if len(durations) != l+1 {
-		goapp.Log.Warn().Msg("Duration size don't match phone list")
+		log.Ctx(ctx).Warn().Msg("Duration size don't match phone list")
 		return 0
 	}
 	res := durations[l]
@@ -243,7 +247,10 @@ func NewJoinSSMLAudio(suffixProvider AudioLoader) synthesizer.Processor {
 	return &joinSSMLAudio{suffixProvider: suffixProvider}
 }
 
-func (p *joinSSMLAudio) Process(data *synthesizer.TTSData) error {
+func (p *joinSSMLAudio) Process(ctx context.Context, data *synthesizer.TTSData) error {
+	ctx, span := utils.StartSpan(ctx, "joinSSMLAudio.Process")
+	defer span.End()
+
 	if data.Input.OutputFormat == api.AudioNone {
 		return nil
 	}
@@ -261,14 +268,14 @@ func (p *joinSSMLAudio) Process(data *synthesizer.TTSData) error {
 			}
 		}
 	}
-	data.Audio, data.AudioLenSeconds, data.SampleRate, err = joinSSML(data, suffix, data.Input.MaxEdgeSilenceMillis)
+	data.Audio, data.AudioLenSeconds, data.SampleRate, err = joinSSML(ctx, data, suffix, data.Input.MaxEdgeSilenceMillis)
 	if err != nil {
 		return errors.Wrap(err, "can't join audio")
 	}
 	for _, dp := range data.SSMLParts {
 		dp.SampleRate = data.SampleRate
 	}
-	utils.LogData("Output", fmt.Sprintf("audio len %d", len(data.Audio)), nil)
+	utils.LogData(ctx, "Output", fmt.Sprintf("audio len %d", len(data.Audio)), nil)
 	return nil
 }
 
@@ -281,7 +288,7 @@ type nextWriteData struct {
 	durationAdd time.Duration // time to add to the part
 }
 
-func joinSSML(data *synthesizer.TTSData, suffix []byte, maxEdgeSilenceMillis int64) (string, float64 /*len*/, uint32 /*sampleRate*/, error) {
+func joinSSML(ctx context.Context, data *synthesizer.TTSData, suffix []byte, maxEdgeSilenceMillis int64) (string, float64 /*len*/, uint32 /*sampleRate*/, error) {
 	res := &wavWriter{}
 	wd := &nextWriteData{}
 	wd.pause = time.Duration(0)
@@ -312,7 +319,7 @@ func joinSSML(data *synthesizer.TTSData, suffix []byte, maxEdgeSilenceMillis int
 			first = false
 		}
 		if wd.part != nil {
-			endSil = getEndSilSize(wd.part.TranscribedSymbols, wd.part.Durations)
+			endSil = getEndSilSize(ctx, wd.part.TranscribedSymbols, wd.part.Durations)
 			step = wd.part.Step
 			defaultSil = wd.part.DefaultSilence
 			if last && maxEdgeSilenceMillis > -1 {
@@ -345,7 +352,7 @@ func joinSSML(data *synthesizer.TTSData, suffix []byte, maxEdgeSilenceMillis int
 			wd.durationAdd = 0
 		}
 		if pause > 0 {
-			if err := appendPause(res, pause); err != nil {
+			if err := appendPause(ctx, res, pause); err != nil {
 				return err
 			}
 			wd.durationAdd = pause
@@ -432,11 +439,11 @@ func toHops(millis int64, step int, sampleRate uint32) int {
 	return res
 }
 
-func appendPause(res *wavWriter, pause time.Duration) error {
+func appendPause(ctx context.Context, res *wavWriter, pause time.Duration) error {
 	if res.header == nil {
 		return errors.New("no wav data before pause")
 	}
-	c, err := writePause(&res.buf, res.sampleRate(), res.bitsPerSample(), pause)
+	c, err := writePause(ctx, &res.buf, res.sampleRate(), res.bitsPerSample(), pause)
 	if err != nil {
 		return err
 	}
@@ -444,9 +451,9 @@ func appendPause(res *wavWriter, pause time.Duration) error {
 	return nil
 }
 
-func writePause(buf *bytes.Buffer, sampleRate uint32, bitsPerSample uint16, pause time.Duration) (uint32, error) {
+func writePause(ctx context.Context, buf *bytes.Buffer, sampleRate uint32, bitsPerSample uint16, pause time.Duration) (uint32, error) {
 	if pause > time.Second*10 {
-		goapp.Log.Warn().Msgf("Too long pause %v", pause)
+		log.Ctx(ctx).Warn().Msgf("Too long pause %v", pause)
 		pause = time.Second * 10
 	}
 	if pause < 0 {

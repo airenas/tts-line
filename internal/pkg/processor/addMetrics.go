@@ -1,6 +1,7 @@
 package processor
 
 import (
+	"context"
 	"unicode/utf8"
 
 	"github.com/pkg/errors"
@@ -42,7 +43,7 @@ func NewAddMetrics(mFunc func(data *synthesizer.TTSData)) (synthesizer.Processor
 }
 
 // Process main processor method
-func (p *addMetrics) Process(data *synthesizer.TTSData) error {
+func (p *addMetrics) Process(ctx context.Context, data *synthesizer.TTSData) error {
 	p.mFunc(data)
 	return nil
 }

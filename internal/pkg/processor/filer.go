@@ -1,16 +1,16 @@
 package processor
 
 import (
+	"context"
 	"encoding/base64"
 	"io"
 	"os"
 	"path"
 
-	"github.com/airenas/go-app/pkg/goapp"
-
 	"github.com/airenas/tts-line/internal/pkg/service/api"
 	"github.com/airenas/tts-line/internal/pkg/synthesizer"
 	"github.com/pkg/errors"
+	"github.com/rs/zerolog/log"
 )
 
 type filer struct {
@@ -29,21 +29,21 @@ func NewFiler(dir string) (synthesizer.Processor, error) {
 	return res, nil
 }
 
-func (p *filer) Process(data *synthesizer.TTSData) error {
+func (p *filer) Process(ctx context.Context, data *synthesizer.TTSData) error {
 	if data.Input.OutputFormat == api.AudioNone {
 		return nil
 	}
-	return p.save(data.AudioMP3)
+	return p.save(ctx, data.AudioMP3)
 }
 
-func (p *filer) save(data string) error {
+func (p *filer) save(ctx context.Context, data string) error {
 	decoded, err := base64.StdEncoding.DecodeString(data)
 	if err != nil {
 		return err
 	}
 
 	fn := path.Join(p.dir, "out.mp3")
-	goapp.Log.Debug().Msg("Saving " + fn)
+	log.Ctx(ctx).Debug().Msg("Saving " + fn)
 	f, err := p.fFile(fn)
 	if err != nil {
 		return errors.Wrapf(err, "Can't open %s", fn)

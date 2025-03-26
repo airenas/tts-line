@@ -1,7 +1,10 @@
 package main
 
 import (
+	"context"
+	"fmt"
 	"strconv"
+	"time"
 
 	"github.com/airenas/go-app/pkg/goapp"
 	"github.com/airenas/tts-line/internal/pkg/cache"
@@ -13,7 +16,15 @@ import (
 	"github.com/airenas/tts-line/internal/pkg/synthesizer"
 	"github.com/airenas/tts-line/internal/pkg/utils"
 	"github.com/labstack/gommon/color"
+	"github.com/rs/zerolog"
+	"github.com/rs/zerolog/log"
 	"github.com/spf13/viper"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp"
+	"go.opentelemetry.io/otel/propagation"
+	"go.opentelemetry.io/otel/sdk/resource"
+	"go.opentelemetry.io/otel/sdk/trace"
 
 	"net/http"
 	_ "net/http/pprof"
@@ -23,6 +34,29 @@ import (
 
 func main() {
 	goapp.StartWithDefault()
+	log.Logger = goapp.Log
+	zerolog.DefaultContextLogger = &goapp.Log
+
+	if err := mainInt(context.Background()); err != nil {
+		log.Fatal().Err(err).Send()
+	}
+}
+
+func mainInt(ctx context.Context) error {
+	tp, err := initTracer(ctx, goapp.Config.GetString("otel.exporter.otlp.endpoint"))
+	if err != nil {
+		return fmt.Errorf("init tracer: %w", err)
+	}
+	if tp != nil {
+		defer func() {
+			ctx, cf := context.WithTimeout(context.Background(), time.Second*5)
+			defer cf()
+			err := tp.Shutdown(ctx)
+			if err != nil {
+				log.Warn().Err(err).Msg("Failed to shutdown OpenTelemetry")
+			}
+		}()
+	}
 
 	data := service.Data{}
 	data.Port = goapp.Config.GetInt("port")
@@ -31,16 +65,16 @@ func main() {
 	synt.AllowCustomCode = goapp.Config.GetBool("allowCustom")
 	sp, err := mongodb.NewSessionProvider(goapp.Config.GetString("mongo.url"))
 	if err != nil {
-		goapp.Log.Fatal().Err(err).Msg("init mongo session provider")
+		return fmt.Errorf("init mongo session provider: %w", err)
 	}
 	defer sp.Close()
 
 	if err = addProcessors(synt, sp, goapp.Config); err != nil {
-		goapp.Log.Fatal().Err(err).Msg("init processors")
+		return fmt.Errorf("init processors: %w", err)
 	}
 
 	if err = addSSMLProcessors(synt, sp, goapp.Config); err != nil {
-		goapp.Log.Fatal().Err(err).Msg("init SSML processors")
+		return fmt.Errorf("init SSML processors: %w", err)
 	}
 
 	//cache
@@ -48,7 +82,7 @@ func main() {
 	if cc != nil {
 		data.SyntData.Processor, err = cache.NewCacher(synt, cc)
 		if err != nil {
-			goapp.Log.Fatal().Err(err).Msg("init cache")
+			return fmt.Errorf("init cache: %w", err)
 		}
 	} else {
 		goapp.Log.Info().Msg("No cache will be used")
@@ -58,23 +92,23 @@ func main() {
 	// input configuration
 	data.SyntData.Configurator, err = service.NewTTSConfigurator(goapp.Sub(goapp.Config, "options"))
 	if err != nil {
-		goapp.Log.Fatal().Err(err).Msg("init configurator")
+		return fmt.Errorf("init configurator: %w", err)
 	}
 
 	// init custom synthesize method
 	data.SyntCustomData.Configurator, err = service.NewTTSConfiguratorNoSSML(goapp.Sub(goapp.Config, "options"))
 	if err != nil {
-		goapp.Log.Fatal().Err(err).Msg("init custom configurator")
+		return fmt.Errorf("init custom configurator: %w", err)
 	}
 	syntC := &synthesizer.MainWorker{}
 	err = addCustomProcessors(syntC, sp, goapp.Config)
 	if err != nil {
-		goapp.Log.Fatal().Err(err).Msg("init custom processors")
+		return fmt.Errorf("init custom processors: %w", err)
 	}
 	data.SyntCustomData.Processor = syntC
 	data.InfoGetterData, err = prepareInfoGetter(sp)
 	if err != nil {
-		goapp.Log.Fatal().Err(err).Msg("init info getter")
+		return fmt.Errorf("init info getter: %w", err)
 	}
 	printBanner()
 
@@ -82,8 +116,9 @@ func main() {
 
 	err = service.StartWebServer(&data)
 	if err != nil {
-		goapp.Log.Fatal().Err(err).Msg("start the service")
+		return fmt.Errorf("start the service: %w", err)
 	}
+	return nil
 }
 
 func addProcessors(synt *synthesizer.MainWorker, sp *mongodb.SessionProvider, cfg *viper.Viper) error {
@@ -437,4 +472,34 @@ ________________________________________________________
 `
 	cl := color.New()
 	cl.Printf(banner, cl.Red(version), cl.Green("https://github.com/airenas/tts-line"))
+}
+
+func initTracer(ctx context.Context, tracerURL string) (*trace.TracerProvider, error) {
+	if tracerURL == "" {
+		log.Ctx(ctx).Warn().Msg("No tracer URL set, skipping OpenTelemetry initialization.")
+		return nil, nil
+	}
+
+	propagator := propagation.NewCompositeTextMapPropagator(propagation.Baggage{}, propagation.TraceContext{})
+	otel.SetTextMapPropagator(propagator)
+
+	log.Ctx(ctx).Info().Str("url", tracerURL).Msg("Setting up OpenTelemetry")
+	exporter, err := otlptracehttp.New(ctx,
+		otlptracehttp.WithEndpoint(tracerURL),
+		otlptracehttp.WithInsecure(),
+	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create OTLP HTTP exporter: %w", err)
+	}
+
+	tp := trace.NewTracerProvider(
+		trace.WithBatcher(exporter),
+		trace.WithResource(resource.NewSchemaless(
+			attribute.String("service.name", utils.ServiceName),
+			attribute.String("service.version", version),
+		)),
+	)
+
+	otel.SetTracerProvider(tp)
+	return tp, nil
 }

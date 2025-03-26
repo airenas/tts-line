@@ -1,14 +1,16 @@
 package synthesizer
 
 import (
+	"context"
 	"sync"
 
+	"github.com/airenas/tts-line/internal/pkg/utils"
 	"github.com/pkg/errors"
 )
 
 // PartProcessor interface
 type PartProcessor interface {
-	Process(*TTSDataPart) error
+	Process(context.Context, *TTSDataPart) error
 }
 
 // PartRunner runs parts of the job
@@ -26,7 +28,10 @@ func NewPartRunner(parallelWorker int) *PartRunner {
 }
 
 // Process is main method
-func (p *PartRunner) Process(data *TTSData) error {
+func (p *PartRunner) Process(ctx context.Context, data *TTSData) error {
+	ctx, span := utils.StartSpan(ctx, "PartRunner.Process")
+	defer span.End()
+
 	workerQueueLimit := make(chan bool, p.parallelWorker)
 	errCh := make(chan error, 1)
 	closeCh := make(chan bool, 1)
@@ -43,7 +48,7 @@ func (p *PartRunner) Process(data *TTSData) error {
 			go func(part *TTSDataPart) {
 				defer wg.Done()
 				defer func() { <-workerQueueLimit }()
-				err := p.process(part, closeCh)
+				err := p.process(ctx, part, closeCh)
 				if err != nil {
 					select {
 					case <-closeCh:
@@ -73,13 +78,13 @@ func (p *PartRunner) Add(pr PartProcessor) {
 	p.processors = append(p.processors, pr)
 }
 
-func (p *PartRunner) process(data *TTSDataPart, clCh <-chan bool) error {
+func (p *PartRunner) process(ctx context.Context, data *TTSDataPart, clCh <-chan bool) error {
 	for _, pr := range p.processors {
 		select {
 		case <-clCh:
 			return errors.New("unexpected work termination")
 		default:
-			err := pr.Process(data)
+			err := pr.Process(ctx, data)
 			if err != nil {
 				return err
 			}

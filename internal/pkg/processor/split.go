@@ -1,12 +1,13 @@
 package processor
 
 import (
+	"context"
 	"fmt"
 
-	"github.com/airenas/go-app/pkg/goapp"
 	"github.com/airenas/tts-line/internal/pkg/synthesizer"
 	"github.com/airenas/tts-line/internal/pkg/utils"
 	"github.com/pkg/errors"
+	"github.com/rs/zerolog/log"
 )
 
 type splitter struct {
@@ -21,10 +22,10 @@ func NewSplitter(maxChars int) synthesizer.Processor {
 	return &splitter{maxChars: maxChars}
 }
 
-func (p *splitter) Process(data *synthesizer.TTSData) error {
+func (p *splitter) Process(ctx context.Context, data *synthesizer.TTSData) error {
 	var err error
 	if p.custom(data) {
-		goapp.Log.Info().Msg("Custom split")
+		log.Ctx(ctx).Info().Msg("Custom split")
 		data.Parts, err = splitCustom(data)
 		if err != nil {
 			return err
@@ -39,7 +40,7 @@ func (p *splitter) Process(data *synthesizer.TTSData) error {
 		p.Cfg = &data.Cfg
 	}
 
-	utils.LogData("Output", fmt.Sprintf("split into %d", len(data.Parts)), nil)
+	utils.LogData(ctx, "Output", fmt.Sprintf("split into %d", len(data.Parts)), nil)
 	return nil
 }
 

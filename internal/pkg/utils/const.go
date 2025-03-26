@@ -24,3 +24,7 @@ func (e RequestTypeEnum) String() string {
 	}
 	return [...]string{"", "original", "normalized", "cleaned", "user", "originalSSML"}[e]
 }
+
+const (
+	ServiceName = "tts-line"
+)

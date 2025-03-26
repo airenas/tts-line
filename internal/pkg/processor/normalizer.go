@@ -1,11 +1,13 @@
 package processor
 
 import (
+	"context"
 	"fmt"
 	"strings"
 	"time"
 
 	"github.com/airenas/go-app/pkg/goapp"
+	"github.com/rs/zerolog/log"
 
 	"github.com/airenas/tts-line/internal/pkg/synthesizer"
 	"github.com/airenas/tts-line/internal/pkg/utils"
@@ -26,17 +28,17 @@ func NewNormalizer(urlStr string) (synthesizer.Processor, error) {
 	return res, nil
 }
 
-func (p *normalizer) Process(data *synthesizer.TTSData) error {
+func (p *normalizer) Process(ctx context.Context, data *synthesizer.TTSData) error {
 	if p.skip(data) {
-		goapp.Log.Info().Msg("Skip normalize")
+		log.Ctx(ctx).Info().Msg("Skip normalize")
 		return nil
 	}
 	defer goapp.Estimate("Normalize")()
 	txt := strings.Join(data.CleanedText, " ")
-	utils.LogData("Input", txt, nil)
+	utils.LogData(ctx, "Input", txt, nil)
 	inData := &normRequestData{Orig: txt}
 	var output normResponseData
-	err := p.httpWrap.InvokeJSON(inData, &output)
+	err := p.httpWrap.InvokeJSON(ctx, inData, &output)
 	if err != nil {
 		return fmt.Errorf("normalize (%s): %w", output.Err, err)
 	}
@@ -45,7 +47,7 @@ func (p *normalizer) Process(data *synthesizer.TTSData) error {
 	if err != nil {
 		return err
 	}
-	utils.LogData("Output", strings.Join(data.NormalizedText, " "), nil)
+	utils.LogData(ctx, "Output", strings.Join(data.NormalizedText, " "), nil)
 	return nil
 }
 

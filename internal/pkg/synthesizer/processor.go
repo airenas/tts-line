@@ -1,6 +1,7 @@
 package synthesizer
 
 import (
+	"context"
 	"fmt"
 	"strings"
 	"time"
@@ -17,7 +18,7 @@ import (
 
 // Processor interface
 type Processor interface {
-	Process(*TTSData) error
+	Process(context.Context, *TTSData) error
 }
 
 // MainWorker does synthesis work
@@ -28,7 +29,7 @@ type MainWorker struct {
 }
 
 // Work is main method
-func (mw *MainWorker) Work(input *api.TTSRequestConfig) (*api.Result, error) {
+func (mw *MainWorker) Work(ctx context.Context, input *api.TTSRequestConfig) (*api.Result, error) {
 	data := &TTSData{}
 	data.OriginalText = input.Text
 	data.Input = input
@@ -51,15 +52,15 @@ func (mw *MainWorker) Work(input *api.TTSRequestConfig) (*api.Result, error) {
 		if err != nil {
 			return nil, err
 		}
-		if err := mw.processAll(mw.ssmlProcessors, data); err != nil {
+		if err := mw.processAll(ctx, mw.ssmlProcessors, data); err != nil {
 			return nil, err
 		}
 	} else {
-		if err := mw.processAll(mw.processors, data); err != nil {
+		if err := mw.processAll(ctx, mw.processors, data); err != nil {
 			return nil, err
 		}
 	}
-	return mapResult(data)
+	return mapResult(ctx, data)
 }
 
 func makeSSMLParts(input *api.TTSRequestConfig) ([]*TTSData, error) {
@@ -109,9 +110,9 @@ func (mw *MainWorker) AddSSML(pr Processor) {
 	mw.ssmlProcessors = append(mw.ssmlProcessors, pr)
 }
 
-func (mw *MainWorker) processAll(processors []Processor, data *TTSData) error {
+func (mw *MainWorker) processAll(ctx context.Context, processors []Processor, data *TTSData) error {
 	for _, pr := range processors {
-		err := pr.Process(data)
+		err := pr.Process(ctx, data)
 		if err != nil {
 			return err
 		}
@@ -119,7 +120,7 @@ func (mw *MainWorker) processAll(processors []Processor, data *TTSData) error {
 	return nil
 }
 
-func mapResult(data *TTSData) (*api.Result, error) {
+func mapResult(ctx context.Context, data *TTSData) (*api.Result, error) {
 	res := &api.Result{}
 	res.AudioAsString = data.AudioMP3
 	if data.Input.OutputTextFormat != api.TextNone {
@@ -143,7 +144,7 @@ func mapResult(data *TTSData) (*api.Result, error) {
 	}
 	if data.Input.SpeechMarkTypes[api.SpeechMarkTypeWord] {
 		var err error
-		res.SpeechMarks, err = mapSpeechMarks(data)
+		res.SpeechMarks, err = mapSpeechMarks(ctx, data)
 		if err != nil {
 			return nil, err
 		}
@@ -158,16 +159,16 @@ type wordMapData struct {
 	shift int
 }
 
-func mapSpeechMarks(data *TTSData) ([]*api.SpeechMark, error) {
+func mapSpeechMarks(ctx context.Context, data *TTSData) ([]*api.SpeechMark, error) {
 	if len(data.SSMLParts) == 0 {
-		res, _, err := mapSpeechMarksInt(data, 0)
+		res, _, err := mapSpeechMarksInt(ctx, data, 0)
 		return res, err
 	}
 
 	var res []*api.SpeechMark
 	from := time.Duration(0)
 	for _, p := range data.SSMLParts {
-		pRes, dur, err := mapSpeechMarksInt(p, from)
+		pRes, dur, err := mapSpeechMarksInt(ctx, p, from)
 		if err != nil {
 			return nil, err
 		}
@@ -177,7 +178,7 @@ func mapSpeechMarks(data *TTSData) ([]*api.SpeechMark, error) {
 	return res, nil
 }
 
-func mapSpeechMarksInt(data *TTSData, from time.Duration) ([]*api.SpeechMark, time.Duration, error) {
+func mapSpeechMarksInt(ctx context.Context, data *TTSData, from time.Duration) ([]*api.SpeechMark, time.Duration, error) {
 	text := strings.Join(data.Text, " ")
 	if len(text) == 0 {
 		return nil, 0, nil

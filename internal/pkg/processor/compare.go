@@ -1,6 +1,7 @@
 package processor
 
 import (
+	"context"
 	"time"
 
 	"github.com/airenas/go-app/pkg/goapp"
@@ -25,13 +26,13 @@ func NewComparator(urlStr string) (synthesizer.Processor, error) {
 	return res, nil
 }
 
-func (p *comparator) Process(data *synthesizer.TTSData) error {
+func (p *comparator) Process(ctx context.Context, data *synthesizer.TTSData) error {
 	defer goapp.Estimate("Compare")()
-	utils.LogData("Input", data.OriginalText, nil)
-	utils.LogData("Input previous", data.PreviousText, nil)
+	utils.LogData(ctx, "Input", data.OriginalText, nil)
+	utils.LogData(ctx, "Input previous", data.PreviousText, nil)
 	inData := &compIn{Original: data.PreviousText, Modified: data.OriginalText}
 	var output compOut
-	err := p.httpWrap.InvokeJSON(inData, &output)
+	err := p.httpWrap.InvokeJSON(ctx, inData, &output)
 	if err != nil {
 		return err
 	}
