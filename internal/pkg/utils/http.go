@@ -13,6 +13,7 @@ import (
 	"github.com/airenas/go-app/pkg/goapp"
 	"github.com/pkg/errors"
 	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/codes"
 	"go.opentelemetry.io/otel/propagation"
 	"go.opentelemetry.io/otel/trace"
 )
@@ -108,6 +109,7 @@ func (hw *HTTPWrap) invoke(ctx context.Context, req *http.Request, dataOut inter
 	otel.GetTextMapPropagator().Inject(ctx, propagation.HeaderCarrier(req.Header))
 	resp, err := hw.HTTPClient.Do(req)
 	if err != nil {
+		span.SetStatus(codes.Error, fmt.Sprintf("can't call '%s'", req.URL.String()))
 		return errors.Wrapf(err, "can't call '%s'", req.URL.String())
 	}
 	defer func() {
@@ -116,17 +118,21 @@ func (hw *HTTPWrap) invoke(ctx context.Context, req *http.Request, dataOut inter
 	}()
 
 	if err := goapp.ValidateHTTPResp(resp, 100); err != nil {
+		span.SetStatus(codes.Error, fmt.Sprintf("can't invoke '%s'", req.URL.String()))
 		return errors.Wrapf(err, "can't invoke '%s'", req.URL.String())
 	}
 	br, err := io.ReadAll(resp.Body)
 	if err != nil {
+		span.SetStatus(codes.Error, "can't read body")
 		return errors.Wrap(err, "can't read body")
 	}
 	hw.flog(ctx, "Output", string(br), nil)
 	err = json.Unmarshal(br, dataOut)
 	if err != nil {
+		span.SetStatus(codes.Error, "can't decode response")
 		return errors.Wrap(err, "can't decode response")
 	}
+	span.SetStatus(codes.Ok, "")	
 	return nil
 }
 
