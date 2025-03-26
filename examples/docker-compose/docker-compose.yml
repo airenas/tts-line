@@ -137,6 +137,13 @@ services:
     ports:
       - "8021:8000"        
 
+  transliterator:
+    container_name: transliterator
+    image: intelektikalt/transliterator:0.2.0
+    restart: on-failure
+    ports:
+      - "8022:3000"     
+
   mongo:
     image: mongo:4.4.1
     environment:

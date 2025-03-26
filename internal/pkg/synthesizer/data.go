@@ -151,3 +151,16 @@ const (
 func (tw TaggedWord) IsWord() bool {
 	return !tw.SentenceEnd && tw.Separator == "" && !tw.Space
 }
+
+func (tw TaggedWord) TypeStr() string {
+	if tw.SentenceEnd {
+		return "SENTENCE_END"
+	}
+	if tw.Separator != "" {
+		return "SEPARATOR"
+	}
+	if tw.Space {
+		return "SPACE"
+	}
+	return "WORD"
+}

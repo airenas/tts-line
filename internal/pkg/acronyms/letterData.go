@@ -1,5 +1,7 @@
 package acronyms
 
+import "github.com/airenas/tts-line/internal/pkg/transcription"
+
 var letters map[string]*ldata
 
 type ldata struct {
@@ -65,6 +67,6 @@ func init() {
 func makeLD(ch string) *ldata {
 	var r ldata
 	r.chAccent = ch
-	r.ch = trimAccent(ch)
+	r.ch = transcription.TrimAccent(ch)
 	return &r
 }

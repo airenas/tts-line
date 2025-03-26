@@ -183,6 +183,12 @@ func addProcessors(synt *synthesizer.MainWorker, sp *mongodb.SessionProvider, cf
 	}
 	synt.Add(pr)
 
+	pr, err = processor.NewTransliterator(cfg.GetString("transliterator.url"))
+	if err != nil {
+		return fmt.Errorf("can't init transliterator: %w", err)
+	}
+	synt.Add(pr)
+
 	synt.Add(processor.NewSplitter(cfg.GetInt("splitter.maxChars")))
 
 	partRunner := synthesizer.NewPartRunner(cfg.GetInt("partRunner.workers"))
@@ -265,6 +271,13 @@ func addSSMLProcessors(synt *synthesizer.MainWorker, sp *mongodb.SessionProvider
 		return errors.Wrap(err, "can't init tagger")
 	}
 	processors = append(processors, pr)
+
+	pr, err = processor.NewTransliterator(cfg.GetString("transliterator.url"))
+	if err != nil {
+		return fmt.Errorf("can't init transliterator: %w", err)
+	}
+	processors = append(processors, pr)
+
 	processors = append(processors, processor.NewSplitter(cfg.GetInt("splitter.maxChars")))
 
 	partRunner := synthesizer.NewPartRunner(cfg.GetInt("partRunner.workers"))
@@ -339,6 +352,12 @@ func addCustomProcessors(synt *synthesizer.MainWorker, sp *mongodb.SessionProvid
 	pr, err = processor.NewTaggerAccents(cfg.GetString("tagger.url"))
 	if err != nil {
 		return errors.Wrap(err, "can't init tagger")
+	}
+	synt.Add(pr)
+
+	pr, err = processor.NewTransliterator(cfg.GetString("transliterator.url"))
+	if err != nil {
+		return fmt.Errorf("can't init transliterator: %w", err)
 	}
 	synt.Add(pr)
 

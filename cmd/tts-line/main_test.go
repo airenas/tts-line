@@ -23,6 +23,7 @@ const testValidatorCfg = "validator:\n  maxChars: 100\n"
 const testConvCfg = "audioConvert:\n  url: http://server\n"
 const testObsceneCfg = "obscene:\n  url: http://server\n"
 const testCleanCfg = "clean:\n  url: http://cl.su\n"
+const testTransliteratorCfg = "transliterator:\n  url: http://transl.su\n"
 const testNormalizeCfg = "normalize:\n  url: http://norm.su\n"
 const testNumberReplaceCfg = "numberReplace:\n  url: http://nr.su\n"
 const testSuffixLoaderCfg = "suffixLoader:\n  path: ./\n"
@@ -30,7 +31,7 @@ const testSuffixLoaderCfg = "suffixLoader:\n  path: ./\n"
 var testAllCfg = testCompCfg +
 	testAccenterCfg + testTransCfg + testAMCfg + testVocCfg + testTaggerCfg + testValidatorCfg +
 	testConvCfg + testAcrCfg + testCliticsCfg + testObsceneCfg + testCleanCfg +
-	testNumberReplaceCfg + testSuffixLoaderCfg + testNormalizeCfg
+	testNumberReplaceCfg + testSuffixLoaderCfg + testNormalizeCfg + testTransliteratorCfg
 
 var testDBSession *mongodb.SessionProvider
 

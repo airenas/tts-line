@@ -5,6 +5,7 @@ import (
 
 	"github.com/airenas/go-app/pkg/goapp"
 	"github.com/airenas/tts-line/internal/pkg/acronyms/service/api"
+	"github.com/airenas/tts-line/internal/pkg/transcription"
 )
 
 // Letters processes letter abbreviation
@@ -80,7 +81,7 @@ func makeResultWord(wr []*ldata) *api.ResultWord {
 		r.Word = "taškas"
 	}
 	r.UserTrans = strings.ReplaceAll(tr, "-", "")
-	r.Syll = trimAccent(strings.ToLower(tr))
+	r.Syll = transcription.TrimAccent(strings.ToLower(tr))
 	r.WordTrans = strings.ReplaceAll(r.Syll, "-", "")
 	return &r
 }

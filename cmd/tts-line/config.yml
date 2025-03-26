@@ -66,6 +66,9 @@ filer:
 obscene:
   url: http://localhost:8016/obscene-filter    
 
+transliterator:
+  url: http://localhost:8022/transliterate    
+
 cache:
   duration: 0s
   cleanDuration: 30s

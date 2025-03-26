@@ -7,6 +7,7 @@ import (
 
 	"github.com/airenas/go-app/pkg/goapp"
 	"github.com/airenas/tts-line/internal/pkg/acronyms/service/api"
+	"github.com/airenas/tts-line/internal/pkg/transcription"
 
 	"github.com/pkg/errors"
 )
@@ -49,27 +50,11 @@ func New(r io.Reader) (*Acronyms, error) {
 func parse(strs []string) []*data {
 	r := make([]*data, 0)
 	for _, l := range strs {
-		d := parseTrans(l)
+		d := transcription.Parse(l)
 		if d != nil {
-			r = append(r, d)
+			r = append(r, &data{word: d.Word, sylls: d.Sylls, tr: d.Transcription})
 		}
 	}
-	return r
-}
-
-func parseTrans(str string) *data {
-	var r data
-	r.tr = strings.ReplaceAll(str, "-", "")
-	r.sylls = trimAccent(str)
-	r.sylls = strings.ToLower(r.sylls)
-	r.word = strings.ReplaceAll(r.sylls, "-", "")
-	return &r
-}
-
-func trimAccent(s string) string {
-	r := strings.ReplaceAll(s, "3", "")
-	r = strings.ReplaceAll(r, "4", "")
-	r = strings.ReplaceAll(r, "9", "")
 	return r
 }
 
