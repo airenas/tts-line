@@ -1,6 +1,7 @@
 package processor
 
 import (
+	"context"
 	"testing"
 
 	"github.com/airenas/tts-line/internal/pkg/clitics/service/api"
@@ -37,7 +38,7 @@ func TestInvokeClitics(t *testing.T) {
 			*params[1].(*[]api.CliticsOutput) = []api.CliticsOutput{{ID: 0,
 				Type: "CLITIC", AccentType: api.TypeNone}}
 		}).Return(nil)
-	err := pr.Process(d)
+	err := pr.Process(context.TODO(), d)
 	assert.Nil(t, err)
 	assert.Equal(t, synthesizer.CliticsNone, d.Words[0].Clitic.Type)
 }
@@ -49,7 +50,7 @@ func TestInvokeClitics_Skip(t *testing.T) {
 	pr, _ := NewClitics("http://server")
 	httpJSONMock.On("InvokeJSON", mock.Anything, mock.Anything).Return(
 		errors.New("olia err"))
-	err := pr.Process(d)
+	err := pr.Process(context.TODO(), d)
 	assert.Nil(t, err)
 }
 
@@ -62,7 +63,7 @@ func TestInvokeClitics_Fail(t *testing.T) {
 	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Word: "word"}})
 	httpJSONMock.On("InvokeJSON", mock.Anything, mock.Anything).Return(
 		errors.New("olia err"))
-	err := pr.Process(d)
+	err := pr.Process(context.TODO(), d)
 	assert.NotNil(t, err)
 }
 

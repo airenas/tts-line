@@ -1,6 +1,7 @@
 package processor
 
 import (
+	"context"
 	"testing"
 
 	"github.com/airenas/tts-line/internal/pkg/synthesizer"
@@ -37,7 +38,7 @@ func TestInvokeTagger(t *testing.T) {
 				{Type: "SEPARATOR", String: ","}, {Type: "WORD", String: "word", Lemma: "lemma", Mi: "mi"},
 				{Type: "SENTENCE_END"}}
 		}).Return(nil)
-	err := pr.Process(&d)
+	err := pr.Process(context.TODO(), &d)
 	assert.Nil(t, err)
 	assert.Equal(t, 4, len(d.Words))
 	assert.Equal(t, true, d.Words[0].Tagged.Space)
@@ -67,7 +68,7 @@ func TestInvoke_NoWords(t *testing.T) {
 		func(params mock.Arguments) {
 			*params[1].(*[]*TaggedWord) = []*TaggedWord{{Type: "SPACE", String: " "}}
 		}).Return(nil)
-	err := pr.Process(&d)
+	err := pr.Process(context.TODO(), &d)
 	assert.Equal(t, utils.ErrNoInput, err)
 }
 
@@ -78,7 +79,7 @@ func TestInvokeTagger_Fail(t *testing.T) {
 	pr.(*tagger).httpWrap = httpInvokerMock
 	d := synthesizer.TTSData{}
 	httpInvokerMock.On("InvokeText", mock.Anything, mock.Anything).Return(errors.New("haha"))
-	err := pr.Process(&d)
+	err := pr.Process(context.TODO(), &d)
 	assert.NotNil(t, err)
 }
 
@@ -86,7 +87,7 @@ func TestInvokeTagger_Skip(t *testing.T) {
 	d := &synthesizer.TTSData{}
 	d.Cfg.JustAM = true
 	pr, _ := NewTagger("http://server")
-	err := pr.Process(d)
+	err := pr.Process(context.TODO(), d)
 	assert.Nil(t, err)
 }
 
@@ -117,7 +118,7 @@ func TestInvokeTaggerAccent(t *testing.T) {
 				{Type: "SEPARATOR", String: ","}, {Type: "WORD", String: "word", Lemma: "lemma", Mi: "mi"},
 				{Type: "SENTENCE_END"}}
 		}).Return(nil)
-	err := pr.Process(&d)
+	err := pr.Process(context.TODO(), &d)
 	assert.Nil(t, err)
 	assert.Equal(t, 4, len(d.Words))
 	assert.Equal(t, true, d.Words[0].Tagged.Space)
@@ -144,7 +145,7 @@ func TestInvokeTaggerAccent_Fail(t *testing.T) {
 	pr.(*taggerAccents).httpWrap = httpInvokerMock
 	d := synthesizer.TTSData{}
 	httpInvokerMock.On("InvokeText", mock.Anything, mock.Anything).Return(errors.New("haha"))
-	err := pr.Process(&d)
+	err := pr.Process(context.TODO(), &d)
 	assert.NotNil(t, err)
 }
 
@@ -161,7 +162,7 @@ func TestInvokeTaggerAccent_FailMap(t *testing.T) {
 				{Type: "SEPARATOR", String: ","}, {Type: "WORD", String: "word", Lemma: "lemma", Mi: "mi"},
 				{Type: "SENTENCE_END"}}
 		}).Return(nil)
-	err := pr.Process(&d)
+	err := pr.Process(context.TODO(), &d)
 	assert.NotNil(t, err)
 }
 
@@ -309,7 +310,7 @@ func TestInvokeSSMLTagger(t *testing.T) {
 				{Type: "WORD", String: "word2", Lemma: "lemma2", Mi: "mi"},
 				{Type: "SENTENCE_END"}}
 		}).Return(nil)
-	err := pr.Process(&d)
+	err := pr.Process(context.TODO(), &d)
 	assert.Nil(t, err)
 	assert.Equal(t, 6, len(d.Words))
 	assert.Equal(t, true, d.Words[0].Tagged.Space)

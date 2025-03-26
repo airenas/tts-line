@@ -1,6 +1,7 @@
 package synthesizer
 
 import (
+	"context"
 	"errors"
 	"sync/atomic"
 	"testing"
@@ -36,7 +37,7 @@ func TestPRProcess(t *testing.T) {
 		return nil
 	}
 	d.Parts = append(d.Parts, &TTSDataPart{Spectogram: "olia"})
-	err := runner.Process(d)
+	err := runner.Process(context.TODO(), d)
 	assert.Nil(t, err)
 	assert.Equal(t, "mp3", d.Parts[0].Audio)
 }
@@ -49,7 +50,7 @@ func TestPRProcess_Several(t *testing.T) {
 	}
 	d.Parts = append(d.Parts, &TTSDataPart{})
 	d.Parts = append(d.Parts, &TTSDataPart{})
-	err := runner.Process(d)
+	err := runner.Process(context.TODO(), d)
 	assert.Nil(t, err)
 	assert.Equal(t, "mp3", d.Parts[0].Audio)
 	assert.Equal(t, "mp3", d.Parts[1].Audio)
@@ -62,7 +63,7 @@ func TestPRProcess_Fail(t *testing.T) {
 	}
 	d.Parts = append(d.Parts, &TTSDataPart{})
 	d.Parts = append(d.Parts, &TTSDataPart{})
-	err := runner.Process(d)
+	err := runner.Process(context.TODO(), d)
 	assert.NotNil(t, err)
 }
 
@@ -76,7 +77,7 @@ func TestPRProcess_StopOnError(t *testing.T) {
 	}
 	d.Parts = append(d.Parts, &TTSDataPart{})
 	d.Parts = append(d.Parts, &TTSDataPart{})
-	err := runner.Process(d)
+	err := runner.Process(context.TODO(), d)
 	assert.NotNil(t, err)
 	assert.Equal(t, int32(1), c)
 }
@@ -98,7 +99,7 @@ func TestPRProcess_StopSeveralProcessors(t *testing.T) {
 
 	d.Parts = append(d.Parts, &TTSDataPart{})
 	d.Parts = append(d.Parts, &TTSDataPart{})
-	err := runner.Process(d)
+	err := runner.Process(context.TODO(), d)
 	assert.NotNil(t, err)
 	assert.Equal(t, int32(1), c)
 }
@@ -121,7 +122,7 @@ func TestPRProcess_StopSeveralProcessors2(t *testing.T) {
 
 	d.Parts = append(d.Parts, &TTSDataPart{})
 	d.Parts = append(d.Parts, &TTSDataPart{})
-	err := runner.Process(d)
+	err := runner.Process(context.TODO(), d)
 	assert.NotNil(t, err)
 	assert.Equal(t, int32(2), atomic.LoadInt32(&c))
 }
@@ -130,6 +131,6 @@ type partProcMock struct {
 	f func(res *TTSDataPart) error
 }
 
-func (pr *partProcMock) Process(d *TTSDataPart) error {
+func (pr *partProcMock) Process(ctx context.Context, d *TTSDataPart) error {
 	return pr.f(d)
 }

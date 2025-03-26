@@ -1,6 +1,7 @@
 package processor
 
 import (
+	"context"
 	"fmt"
 	"testing"
 
@@ -73,7 +74,7 @@ func TestInvokeAcousticModel(t *testing.T) {
 		func(params mock.Arguments) {
 			*params[2].(*amOutput) = amOutput{Data: "spec"}
 		}).Return(nil)
-	err := pr.Process(d)
+	err := pr.Process(context.TODO(), d)
 	assert.Nil(t, err)
 	assert.Equal(t, "spec", d.Spectogram)
 
@@ -96,7 +97,7 @@ func TestInvokeAcousticModel_Skip(t *testing.T) {
 	d := newTestTTSDataPart()
 	d.Cfg.Input.OutputFormat = api.AudioNone
 	d.Spectogram = ""
-	err := pr.Process(d)
+	err := pr.Process(context.TODO(), d)
 	assert.Nil(t, err)
 	httpJSONMock.AssertNumberOfCalls(t, "InvokeJSONU", 0)
 	assert.Equal(t, d.TranscribedText, "")
@@ -111,7 +112,7 @@ func TestInvokeAcousticModel_Skip_ReturnTranscribed(t *testing.T) {
 	d.Cfg.Input.OutputFormat = api.AudioNone
 	d.Cfg.Input.OutputTextFormat = api.TextTranscribed
 	d.Spectogram = ""
-	err := pr.Process(d)
+	err := pr.Process(context.TODO(), d)
 	assert.Nil(t, err)
 	assert.Equal(t, d.TranscribedText, "sil")
 }
@@ -127,7 +128,7 @@ func TestInvokeAcousticModel_WriteAudio(t *testing.T) {
 		func(params mock.Arguments) {
 			*params[2].(*amOutput) = amOutput{Data: "audio"}
 		}).Return(nil)
-	err := pr.Process(d)
+	err := pr.Process(context.TODO(), d)
 	assert.Nil(t, err)
 	assert.Equal(t, "spectogram", d.Spectogram)
 	assert.Equal(t, "audio", d.Audio)
@@ -142,7 +143,7 @@ func TestInvokeAcousticModel_Fail(t *testing.T) {
 	d := newTestTTSDataPart()
 	d.Spectogram = "spectogram"
 	httpJSONMock.On("InvokeJSONU", mock.Anything, mock.Anything, mock.Anything).Return(errors.New("haha"))
-	err := pr.Process(d)
+	err := pr.Process(context.TODO(), d)
 	assert.NotNil(t, err)
 }
 
@@ -155,7 +156,7 @@ func TestInvokeAcousticModel_FromAM(t *testing.T) {
 	d.Cfg.JustAM = true
 	d.Text = "olia"
 	httpJSONMock.On("InvokeJSONU", mock.Anything, mock.Anything, mock.Anything).Return(nil)
-	err := pr.Process(d)
+	err := pr.Process(context.TODO(), d)
 	assert.Nil(t, err)
 	httpJSONMock.AssertNumberOfCalls(t, "InvokeJSONU", 1)
 	cp1 := httpJSONMock.Calls[0].Arguments[1]

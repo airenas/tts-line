@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"encoding/json"
 	"io"
 	"net/http"
@@ -315,7 +316,7 @@ func Test_validate(t *testing.T) {
 
 type mockConfigurator struct{ mock.Mock }
 
-func (m *mockConfigurator) Configure(req *http.Request, in *api.Input) (*api.TTSRequestConfig, error) {
+func (m *mockConfigurator) Configure(ctx context.Context, req *http.Request, in *api.Input) (*api.TTSRequestConfig, error) {
 	args := m.Called(req, in)
 	return mocks.To[*api.TTSRequestConfig](args.Get(0)), args.Error(1)
 }

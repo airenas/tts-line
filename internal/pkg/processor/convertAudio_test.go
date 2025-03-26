@@ -1,6 +1,7 @@
 package processor
 
 import (
+	"context"
 	"testing"
 
 	"github.com/pkg/errors"
@@ -38,7 +39,7 @@ func TestInvokeConvert(t *testing.T) {
 		func(params mock.Arguments) {
 			*params[1].(*audioConvertOutput) = audioConvertOutput{Data: "mp3"}
 		}).Return(nil)
-	err := pr.Process(&d)
+	err := pr.Process(context.TODO(), &d)
 	assert.Nil(t, err)
 	assert.Equal(t, "mp3", d.AudioMP3)
 	httpJSONMock.AssertNumberOfCalls(t, "InvokeJSON", 1)
@@ -61,7 +62,7 @@ func TestInvokeConvert_Skip(t *testing.T) {
 		func(params mock.Arguments) {
 			*params[1].(*audioConvertOutput) = audioConvertOutput{Data: "mp3"}
 		}).Return(nil)
-	err := pr.Process(&d)
+	err := pr.Process(context.TODO(), &d)
 	assert.Nil(t, err)
 
 	httpJSONMock.AssertNumberOfCalls(t, "InvokeJSON", 0)
@@ -75,6 +76,6 @@ func TestInvokeConvert_Fail(t *testing.T) {
 	d := synthesizer.TTSData{}
 	d.Input = &api.TTSRequestConfig{OutputFormat: api.AudioMP3}
 	httpJSONMock.On("InvokeJSON", mock.Anything, mock.Anything).Return(errors.New("haha"))
-	err := pr.Process(&d)
+	err := pr.Process(context.TODO(), &d)
 	assert.NotNil(t, err)
 }

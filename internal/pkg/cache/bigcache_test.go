@@ -1,6 +1,7 @@
 package cache
 
 import (
+	"context"
 	"strings"
 	"testing"
 	"time"
@@ -54,15 +55,15 @@ func TestWork(t *testing.T) {
 	assert.NotNil(t, c)
 	synthesizerMock.On("Work", mock.Anything).Return(&api.Result{AudioAsString: "wav"}, nil)
 
-	res, err := c.Work(newtestInput("olia"))
+	res, err := c.Work(context.TODO(), newtestInput("olia"))
 	assert.Nil(t, err)
 	assert.Equal(t, "wav", res.AudioAsString)
 	synthesizerMock.AssertNumberOfCalls(t, "Work", 1)
-	res, err = c.Work(newtestInput("olia"))
+	res, err = c.Work(context.TODO(), newtestInput("olia"))
 	assert.Nil(t, err)
 	assert.Equal(t, "wav", res.AudioAsString)
 	synthesizerMock.AssertNumberOfCalls(t, "Work", 1)
-	res, err = c.Work(newtestInput("olia2"))
+	res, err = c.Work(context.TODO(), newtestInput("olia2"))
 	assert.Nil(t, err)
 	assert.NotNil(t, res)
 	synthesizerMock.AssertNumberOfCalls(t, "Work", 2)
@@ -74,10 +75,10 @@ func TestWork_Failure(t *testing.T) {
 	assert.NotNil(t, c)
 	synthesizerMock.On("Work", mock.Anything).Return(nil, errors.New("haha"))
 
-	_, err := c.Work(newtestInput("olia"))
+	_, err := c.Work(context.TODO(), newtestInput("olia"))
 	assert.NotNil(t, err)
 	synthesizerMock.AssertNumberOfCalls(t, "Work", 1)
-	_, err = c.Work(newtestInput("olia"))
+	_, err = c.Work(context.TODO(), newtestInput("olia"))
 	assert.NotNil(t, err)
 	synthesizerMock.AssertNumberOfCalls(t, "Work", 2)
 }
@@ -88,10 +89,10 @@ func TestWork_NoCache(t *testing.T) {
 	assert.NotNil(t, c)
 	synthesizerMock.On("Work", mock.Anything).Return(&api.Result{AudioAsString: "wav"}, nil)
 
-	_, err := c.Work(newtestInput("olia"))
+	_, err := c.Work(context.TODO(), newtestInput("olia"))
 	assert.Nil(t, err)
 	synthesizerMock.AssertNumberOfCalls(t, "Work", 1)
-	_, err = c.Work(newtestInput("olia"))
+	_, err = c.Work(context.TODO(), newtestInput("olia"))
 	assert.Nil(t, err)
 	synthesizerMock.AssertNumberOfCalls(t, "Work", 2)
 }
@@ -102,12 +103,12 @@ func TestWork_Key(t *testing.T) {
 	assert.NotNil(t, c)
 	synthesizerMock.On("Work", mock.Anything).Return(&api.Result{AudioAsString: "wav"}, nil)
 
-	_, _ = c.Work(newtestInput("olia"))
-	_, _ = c.Work(&api.TTSRequestConfig{Text: "olia", OutputFormat: api.AudioMP3})
+	_, _ = c.Work(context.TODO(), newtestInput("olia"))
+	_, _ = c.Work(context.TODO(), &api.TTSRequestConfig{Text: "olia", OutputFormat: api.AudioMP3})
 	synthesizerMock.AssertNumberOfCalls(t, "Work", 2)
-	_, _ = c.Work(&api.TTSRequestConfig{Text: "olia", OutputFormat: api.AudioMP3})
+	_, _ = c.Work(context.TODO(), &api.TTSRequestConfig{Text: "olia", OutputFormat: api.AudioMP3})
 	synthesizerMock.AssertNumberOfCalls(t, "Work", 2)
-	_, _ = c.Work(&api.TTSRequestConfig{Text: "olia", OutputFormat: api.AudioM4A})
+	_, _ = c.Work(context.TODO(), &api.TTSRequestConfig{Text: "olia", OutputFormat: api.AudioM4A})
 	synthesizerMock.AssertNumberOfCalls(t, "Work", 3)
 }
 
@@ -117,11 +118,11 @@ func Test_MaxMB(t *testing.T) {
 	assert.NotNil(t, c)
 	synthesizerMock.On("Work", mock.Anything).Return(&api.Result{AudioAsString: strOfSize(1024 * 1024 / 64)}, nil) // 64 shards in cache hardcoded
 
-	_, _ = c.Work(newtestInput("olia"))
+	_, _ = c.Work(context.TODO(), newtestInput("olia"))
 	synthesizerMock.AssertNumberOfCalls(t, "Work", 1)
-	_, _ = c.Work(newtestInput("olia"))
+	_, _ = c.Work(context.TODO(), newtestInput("olia"))
 	synthesizerMock.AssertNumberOfCalls(t, "Work", 2) //expected not to add
-	_, _ = c.Work(newtestInput("olia"))
+	_, _ = c.Work(context.TODO(), newtestInput("olia"))
 	synthesizerMock.AssertNumberOfCalls(t, "Work", 3)
 }
 
@@ -131,14 +132,14 @@ func Test_MaxTextLen(t *testing.T) {
 	assert.NotNil(t, c)
 	synthesizerMock.On("Work", mock.Anything).Return(&api.Result{AudioAsString: "wav"}, nil) // 64 shards in cache hardcoded
 
-	_, _ = c.Work(newtestInput("0123456789"))
+	_, _ = c.Work(context.TODO(), newtestInput("0123456789"))
 	synthesizerMock.AssertNumberOfCalls(t, "Work", 1)
-	_, _ = c.Work(newtestInput("0123456789"))
+	_, _ = c.Work(context.TODO(), newtestInput("0123456789"))
 	synthesizerMock.AssertNumberOfCalls(t, "Work", 1)
 
-	_, _ = c.Work(newtestInput("01234567891"))
+	_, _ = c.Work(context.TODO(), newtestInput("01234567891"))
 	synthesizerMock.AssertNumberOfCalls(t, "Work", 2)
-	_, _ = c.Work(newtestInput("01234567891"))
+	_, _ = c.Work(context.TODO(), newtestInput("01234567891"))
 	synthesizerMock.AssertNumberOfCalls(t, "Work", 3)
 }
 

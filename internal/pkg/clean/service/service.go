@@ -82,7 +82,7 @@ func handleClean(data *Data) func(echo.Context) error {
 		res := &output{}
 		res.Text = clean.Text(inp.Text)
 
-		c.Response().Header().Set(echo.HeaderContentType, echo.MIMEApplicationJSONCharsetUTF8)
+		c.Response().Header().Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
 		c.Response().WriteHeader(http.StatusOK)
 		enc := json.NewEncoder(c.Response())
 		enc.SetEscapeHTML(false)

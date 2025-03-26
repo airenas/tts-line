@@ -1,6 +1,7 @@
 package processor
 
 import (
+	"context"
 	"reflect"
 	"testing"
 
@@ -35,7 +36,7 @@ func TestNormalizeProcess(t *testing.T) {
 		func(params mock.Arguments) {
 			*params[1].(*normResponseData) = normResponseData{Res: "out text"}
 		}).Return(nil)
-	err := pr.Process(d)
+	err := pr.Process(context.TODO(), d)
 	assert.Nil(t, err)
 	httpJSONMock.AssertNumberOfCalls(t, "InvokeJSON", 1)
 	cp1 := httpJSONMock.Calls[0].Arguments[0]
@@ -51,7 +52,7 @@ func TestNormalizeProcess_Fail(t *testing.T) {
 	assert.NotNil(t, pr)
 	pr.(*normalizer).httpWrap = httpJSONMock
 	httpJSONMock.On("InvokeJSON", mock.Anything, mock.Anything).Return(errors.New("olia"))
-	err := pr.Process(d)
+	err := pr.Process(context.TODO(), d)
 	assert.NotNil(t, err)
 }
 
@@ -61,7 +62,7 @@ func TestNormalize_Skip(t *testing.T) {
 	d.Cfg.JustAM = true
 	pr, _ := NewNormalizer("http://server")
 	pr.(*normalizer).httpWrap = httpJSONMock
-	err := pr.Process(d)
+	err := pr.Process(context.TODO(), d)
 	assert.Nil(t, err)
 	httpJSONMock.AssertNumberOfCalls(t, "InvokeJSON", 0)
 }

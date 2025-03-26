@@ -2,6 +2,7 @@ package processor
 
 import (
 	"bytes"
+	"context"
 	"encoding/base64"
 	"io"
 	"testing"
@@ -30,7 +31,7 @@ func TestFilerSaves(t *testing.T) {
 	}
 	d := synthesizer.TTSData{Input: &api.TTSRequestConfig{OutputFormat: api.AudioMP3}}
 	d.AudioMP3 = base64.StdEncoding.EncodeToString([]byte("mp3"))
-	err := prf.Process(&d)
+	err := prf.Process(context.TODO(), &d)
 	assert.Nil(t, err)
 	assert.Equal(t, "mp3", b.String())
 }
@@ -45,7 +46,7 @@ func TestFiler_Skip(t *testing.T) {
 	}
 	d := synthesizer.TTSData{Input: &api.TTSRequestConfig{OutputFormat: api.AudioNone}}
 	d.AudioMP3 = base64.StdEncoding.EncodeToString([]byte("mp3"))
-	err := prf.Process(&d)
+	err := prf.Process(context.TODO(), &d)
 	assert.Nil(t, err)
 }
 
@@ -59,7 +60,7 @@ func TestFilerSaves_Fails(t *testing.T) {
 	}
 	d := synthesizer.TTSData{Input: &api.TTSRequestConfig{OutputFormat: api.AudioMP3}}
 	d.AudioMP3 = base64.StdEncoding.EncodeToString([]byte("mp3"))
-	err := prf.Process(&d)
+	err := prf.Process(context.TODO(), &d)
 	assert.NotNil(t, err)
 }
 
@@ -68,7 +69,7 @@ func TestFilerSaves_FailsDecode(t *testing.T) {
 	assert.NotNil(t, pr)
 	d := synthesizer.TTSData{Input: &api.TTSRequestConfig{OutputFormat: api.AudioMP3}}
 	d.AudioMP3 = "mp3"
-	err := pr.Process(&d)
+	err := pr.Process(context.TODO(), &d)
 	assert.NotNil(t, err)
 }
 

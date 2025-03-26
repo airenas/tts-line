@@ -1,6 +1,7 @@
 package processor
 
 import (
+	"context"
 	"testing"
 
 	"github.com/airenas/tts-line/internal/pkg/synthesizer"
@@ -27,7 +28,7 @@ func TestSplitter(t *testing.T) {
 	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Word: "0123456789"}})
 	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Separator: "?"}})
 	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{SentenceEnd: true}})
-	err := pr.Process(&d)
+	err := pr.Process(context.TODO(), &d)
 	assert.Nil(t, err)
 	assert.Equal(t, 1, len(d.Parts))
 }
@@ -36,7 +37,7 @@ func TestSplitter_NoData(t *testing.T) {
 	pr := NewSplitter(0)
 	d := synthesizer.TTSData{}
 
-	err := pr.Process(&d)
+	err := pr.Process(context.TODO(), &d)
 	assert.Nil(t, err)
 	assert.Equal(t, 0, len(d.Parts))
 }
@@ -49,7 +50,7 @@ func TestSplitter_Fail(t *testing.T) {
 	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Word: "0123456789"}})
 	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Separator: "?"}})
 	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{SentenceEnd: true}})
-	err := pr.Process(&d)
+	err := pr.Process(context.TODO(), &d)
 	assert.NotNil(t, err)
 }
 

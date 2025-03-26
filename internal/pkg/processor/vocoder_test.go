@@ -1,6 +1,7 @@
 package processor
 
 import (
+	"context"
 	"testing"
 
 	"github.com/airenas/tts-line/internal/pkg/service/api"
@@ -37,7 +38,7 @@ func TestInvokeVocoder(t *testing.T) {
 		func(params mock.Arguments) {
 			*params[2].(*vocOutput) = vocOutput{Data: "wav"}
 		}).Return(nil)
-	err := pr.Process(d)
+	err := pr.Process(context.TODO(), d)
 	assert.Nil(t, err)
 	assert.Equal(t, "wav", d.Audio)
 
@@ -58,7 +59,7 @@ func TestInvokeVocoder_Skip(t *testing.T) {
 	d := newTestTTSDataPart()
 	d.Cfg.Input.OutputFormat = api.AudioNone
 	d.Spectogram = "spectogram"
-	err := pr.Process(d)
+	err := pr.Process(context.TODO(), d)
 	assert.Nil(t, err)
 	httpJSONMock.AssertNumberOfCalls(t, "InvokeJSONU", 0)
 }
@@ -71,6 +72,6 @@ func TestInvokeVocoder_Fail(t *testing.T) {
 	d := newTestTTSDataPart()
 	d.Spectogram = "spectogram"
 	httpJSONMock.On("InvokeJSONU", mock.Anything, mock.Anything, mock.Anything).Return(errors.New("haha"))
-	err := pr.Process(d)
+	err := pr.Process(context.TODO(), d)
 	assert.NotNil(t, err)
 }
