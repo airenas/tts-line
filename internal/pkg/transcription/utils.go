@@ -12,8 +12,10 @@ type Data struct {
 
 func Parse(str string) *Data {
 	var res Data
-	res.Transcription = strings.ReplaceAll(str, "-", "")
-	res.Sylls = TrimAccent(str)
+	strTmp := strings.ReplaceAll(str, "Q", "O")
+
+	res.Transcription = strings.ReplaceAll(strTmp, "-", "")
+	res.Sylls = TrimAccent(strTmp)
 	res.Sylls = strings.ToLower(res.Sylls)
 	res.Word = strings.ReplaceAll(res.Sylls, "-", "")
 	return &res

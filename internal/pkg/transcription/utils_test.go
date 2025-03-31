@@ -40,6 +40,8 @@ func TestParse(t *testing.T) {
 		{"empty", args{""}, &Data{Word: "", Sylls: "", Transcription: ""}},
 		{"no accent", args{"abc"}, &Data{Word: "abc", Sylls: "abc", Transcription: "abc"}},
 		{"accent", args{"abc3-da"}, &Data{Word: "abcda", Sylls: "abc-da", Transcription: "abc3da"}},
+		{"accent", args{"Q-lium-pi-ja3-kQs"}, &Data{Word: "oliumpijakos", Sylls: "o-lium-pi-ja-kos",
+			Transcription: "Oliumpija3kOs"}},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

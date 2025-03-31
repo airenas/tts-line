@@ -81,11 +81,16 @@ func mapAbbrInput(data *synthesizer.TTSDataPart) []acrInput {
 		tgw := w.Tagged
 		if tgw.IsWord() &&
 			w.Obscene || (!isAccented(w) && // do not do acronyms change if user has provided accent
+			!hasUserTranscriptions(w) && 
 			isAbbr(tgw.Mi, tgw.Lemma)) {
 			res = append(res, acrInput{Word: tgw.Word, MI: tgw.Mi, ID: strconv.Itoa(i)})
 		}
 	}
 	return res
+}
+
+func hasUserTranscriptions(w *synthesizer.ProcessedWord) bool {
+	return w.UserTranscription != "" || w.UserSyllables != "" || w.UserAccent != 0
 }
 
 func isAccented(w *synthesizer.ProcessedWord) bool {

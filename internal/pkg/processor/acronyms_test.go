@@ -190,3 +190,26 @@ func Test_isAccented(t *testing.T) {
 		})
 	}
 }
+
+func Test_hasUserTranscriptions(t *testing.T) {
+	type args struct {
+		w *synthesizer.ProcessedWord
+	}
+	tests := []struct {
+		name string
+		args args
+		want bool
+	}{
+		{name: "transcription", args: args{w: &synthesizer.ProcessedWord{UserTranscription: "olia"}}, want: true},
+		{name: "syllables", args: args{w: &synthesizer.ProcessedWord{UserSyllables: "olia"}}, want: true},
+		{name: "accent", args: args{w: &synthesizer.ProcessedWord{UserAccent: 101}}, want: true},
+		{name: "empty", args: args{w: &synthesizer.ProcessedWord{UserAccent: 0}}, want: false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := hasUserTranscriptions(tt.args.w); got != tt.want {
+				t.Errorf("hasUserTranscriptions() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
