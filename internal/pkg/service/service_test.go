@@ -334,8 +334,8 @@ func Test_getTraceID(t *testing.T) {
 		ctx context.Context
 	}
 	tests := []struct {
-		name string
-		args args
+		name    string
+		args    args
 		wantLen int
 	}{
 		{name: "Trace", args: args{ctx: createOtelContextWithTrace()}, wantLen: 32},

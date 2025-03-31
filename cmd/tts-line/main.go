@@ -25,8 +25,8 @@ import (
 	"go.opentelemetry.io/otel/propagation"
 	"go.opentelemetry.io/otel/sdk/resource"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
-	"go.opentelemetry.io/otel/trace/noop"
 	"go.opentelemetry.io/otel/trace"
+	"go.opentelemetry.io/otel/trace/noop"
 
 	"net/http"
 	_ "net/http/pprof"
@@ -528,5 +528,5 @@ func initTracer(ctx context.Context, tracerURL string) (trace.TracerProvider, er
 }
 
 type shutdowner interface {
-    Shutdown(ctx context.Context) error
+	Shutdown(ctx context.Context) error
 }
