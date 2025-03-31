@@ -58,7 +58,6 @@ func parse(strs []string) []*data {
 	return r
 }
 
-// Process returns the next random saying
 func (s *Acronyms) Process(word, mi string) ([]api.ResultWord, error) {
 	var result []api.ResultWord
 	wl := strings.ToLower(word)
