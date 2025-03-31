@@ -3,6 +3,7 @@ package processor
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/airenas/tts-line/internal/pkg/synthesizer"
@@ -84,7 +85,7 @@ func mapTransliteratorRes(output []*transliteratorOutput, s []*synthesizer.Proce
 		w := s[i]
 		tw := w.Tagged
 		if tw.IsWord() {
-			if tw.Word != o.String {
+			if compareWords(tw.Word, o.String) {
 				return fmt.Errorf("different word: %s != %s", tw.Word, o.String)
 			}
 			if o.User != "" {
@@ -98,6 +99,17 @@ func mapTransliteratorRes(output []*transliteratorOutput, s []*synthesizer.Proce
 		}
 	}
 	return nil
+}
+
+func compareWords(old, new string) bool {
+	if old == new {
+		return true
+	}
+	// allow "’" change
+	if old == strings.ReplaceAll(new, "'", "’") {
+		return true
+	}
+	return false
 }
 
 func prepareSentences(processedWord []*synthesizer.ProcessedWord) ([][]*synthesizer.ProcessedWord, error) {
