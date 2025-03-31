@@ -85,7 +85,7 @@ func mapTransliteratorRes(output []*transliteratorOutput, s []*synthesizer.Proce
 		w := s[i]
 		tw := w.Tagged
 		if tw.IsWord() {
-			if compareWords(tw.Word, o.String) {
+			if !compareWords(tw.Word, o.String) {
 				return fmt.Errorf("different word: %s != %s", tw.Word, o.String)
 			}
 			if o.User != "" {
