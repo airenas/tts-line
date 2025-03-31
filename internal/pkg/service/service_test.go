@@ -17,6 +17,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
+	"go.opentelemetry.io/otel/trace"
 )
 
 var (
@@ -326,4 +327,34 @@ type mockInfoGetter struct{ mock.Mock }
 func (m *mockInfoGetter) Provide(ID string) (*api.InfoResult, error) {
 	args := m.Called(ID)
 	return mocks.To[*api.InfoResult](args.Get(0)), args.Error(1)
+}
+
+func Test_getTraceID(t *testing.T) {
+	type args struct {
+		ctx context.Context
+	}
+	tests := []struct {
+		name string
+		args args
+		wantLen int
+	}{
+		{name: "Trace", args: args{ctx: createOtelContextWithTrace()}, wantLen: 32},
+		{name: "Empty", args: args{ctx: context.Background()}, wantLen: 26},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := len(getTraceID(tt.args.ctx)); got != tt.wantLen {
+				t.Errorf("getTraceID() = %v, want %v", got, tt.wantLen)
+			}
+		})
+	}
+}
+
+func createOtelContextWithTrace() context.Context {
+	mockSpanContext := trace.NewSpanContext(trace.SpanContextConfig{
+		TraceID: [16]byte{0x12, 0x34, 0x56, 0x78, 0x90, 0xab, 0xcd, 0xef, 0x12, 0x34, 0x56, 0x78, 0x90, 0xab, 0xcd, 0xef},
+		SpanID:  [8]byte{0x12, 0x34, 0x56, 0x78, 0x90, 0xab, 0xcd, 0xef},
+	})
+
+	return trace.ContextWithSpanContext(context.TODO(), mockSpanContext)
 }

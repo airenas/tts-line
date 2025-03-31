@@ -14,6 +14,7 @@ import (
 	"github.com/airenas/tts-line/internal/pkg/service/api"
 	"github.com/airenas/tts-line/internal/pkg/utils"
 	"github.com/facebookgo/grace/gracehttp"
+	"github.com/oklog/ulid/v2"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 
@@ -290,10 +291,14 @@ func addTraceToLogContext() echo.MiddlewareFunc {
 }
 
 func loggerWithTrace(ctx context.Context) zerolog.Logger {
+	return log.With().Str("traceID", getTraceID(ctx)).Logger()
+}
+
+func getTraceID(ctx context.Context) string {
 	span := trace.SpanFromContext(ctx)
-	traceID := span.SpanContext().TraceID().String()
-	if traceID == "" {
-		return log.Logger
+	spanContext := span.SpanContext()
+	if spanContext.IsValid() {
+		return spanContext.TraceID().String()
 	}
-	return log.With().Str("traceID", traceID).Logger()
+	return ulid.Make().String()
 }
