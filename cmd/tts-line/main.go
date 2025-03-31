@@ -24,7 +24,9 @@ import (
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp"
 	"go.opentelemetry.io/otel/propagation"
 	"go.opentelemetry.io/otel/sdk/resource"
-	"go.opentelemetry.io/otel/sdk/trace"
+	sdktrace "go.opentelemetry.io/otel/sdk/trace"
+	"go.opentelemetry.io/otel/trace/noop"
+	"go.opentelemetry.io/otel/trace"
 
 	"net/http"
 	_ "net/http/pprof"
@@ -47,11 +49,11 @@ func mainInt(ctx context.Context) error {
 	if err != nil {
 		return fmt.Errorf("init tracer: %w", err)
 	}
-	if tp != nil {
+	if s, ok := tp.(shutdowner); ok {
 		defer func() {
 			ctx, cf := context.WithTimeout(context.Background(), time.Second*5)
 			defer cf()
-			err := tp.Shutdown(ctx)
+			err := s.Shutdown(ctx)
 			if err != nil {
 				log.Warn().Err(err).Msg("Failed to shutdown OpenTelemetry")
 			}
@@ -493,10 +495,12 @@ ________________________________________________________
 	cl.Printf(banner, cl.Red(version), cl.Green("https://github.com/airenas/tts-line"))
 }
 
-func initTracer(ctx context.Context, tracerURL string) (*trace.TracerProvider, error) {
+func initTracer(ctx context.Context, tracerURL string) (trace.TracerProvider, error) {
 	if tracerURL == "" {
 		log.Ctx(ctx).Warn().Msg("No tracer URL set, skipping OpenTelemetry initialization.")
-		return nil, nil
+		tp := noop.NewTracerProvider()
+		otel.SetTracerProvider(tp)
+		return tp, nil
 	}
 
 	propagator := propagation.NewCompositeTextMapPropagator(propagation.Baggage{}, propagation.TraceContext{})
@@ -511,9 +515,9 @@ func initTracer(ctx context.Context, tracerURL string) (*trace.TracerProvider, e
 		return nil, fmt.Errorf("failed to create OTLP HTTP exporter: %w", err)
 	}
 
-	tp := trace.NewTracerProvider(
-		trace.WithBatcher(exporter),
-		trace.WithResource(resource.NewSchemaless(
+	tp := sdktrace.NewTracerProvider(
+		sdktrace.WithBatcher(exporter),
+		sdktrace.WithResource(resource.NewSchemaless(
 			attribute.String("service.name", utils.ServiceName),
 			attribute.String("service.version", version),
 		)),
@@ -521,4 +525,8 @@ func initTracer(ctx context.Context, tracerURL string) (*trace.TracerProvider, e
 
 	otel.SetTracerProvider(tp)
 	return tp, nil
+}
+
+type shutdowner interface {
+    Shutdown(ctx context.Context) error
 }
