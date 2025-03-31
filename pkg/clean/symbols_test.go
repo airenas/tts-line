@@ -51,7 +51,7 @@ func TestChangeLetters(t *testing.T) {
 	ts(t, "Nasdaq\"", "Nasdaq¨")
 	ts(t, "Hustiu", "Huștiu")
 	ts(t, "Katerina", "Kateřina")
-	ts(t, "COVID", "СOVID")
+	// ts(t, "COVID", "СOVID")
 	ts(t, "Erdoganas", "Erdoğanas")
 	ts(t, "Zdenekas", "Zdeněkas")
 	ts(t, "mokesčiai,", "mokesčiai֧")
@@ -86,7 +86,7 @@ func TestChangeSymbols(t *testing.T) {
 		{name: "Đuričić", args: "Đuričić", want: "Duričic", up: true, lw: true},
 		{name: "pаgyvėjo", args: "pаgyvėjo", want: "pagyvėjo", up: true, lw: true},
 		{name: "Košťal", args: "Košťal", want: "Koštal", up: true, lw: true},
-		{name: "В.vieną", args: "В.vieną", want: "B.vieną", up: true, lw: true},
+		// {name: "В.vieną", args: "В.vieną", want: "B.vieną", up: true, lw: true},
 		{name: "pi̇̀š", args: "pi̇̀š", want: "piš", up: true, lw: true},
 		{name: "Moïsė", args: "Moïsė", want: "Moisė", up: true, lw: true},
 		{args: "Tonyʼis", want: "Tonyis", up: true, lw: true},
@@ -128,7 +128,7 @@ func TestChangeSymbols(t *testing.T) {
 		{args: "goumǎi", want: "goumai", up: true, lw: true},
 		{args: "Ysaÿe", want: "Ysaye", up: true, lw: true},
 		{args: "Νiekas", want: "Niekas", up: true, lw: false},
-		{args: "Нaрbe", want: "Hapbe", up: true, lw: false},
+		// {args: "Нaрbe", want: "Hapbe", up: true, lw: false},
 		{args: "Andruța", want: "Andruta", up: true, lw: true},
 		{args: "Dîner", want: "Diner", up: true, lw: true},
 		{args: "įtraukiájam", want: "įtraukiajam", up: true, lw: true},
@@ -138,6 +138,8 @@ func TestChangeSymbols(t *testing.T) {
 		{args: "ÖVP ÄVP", want: "OVP AVP", up: true, lw: true},
 		{args: "Kȩstutis", want: "Kęstutis", up: true, lw: true},
 		{args: "ʽačiū", want: "'ačiū", up: true, lw: true},
+		{args: "Дякую!", want: "Djakuju!", up: true, lw: true},
+		{args: "Кириллица!", want: "Kirillica!", up: true, lw: true},
 	}
 	for _, tt := range tests {
 		n := tt.name
