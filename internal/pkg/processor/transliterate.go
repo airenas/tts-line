@@ -110,7 +110,7 @@ func compareWords(old, new string) bool {
 		return true
 	}
 	// allow "‘" change
-	if old == strings.ReplaceAll(new, "'", "‘") {
+	if old == strings.ReplaceAll(new, "'", "`") {
 		return true
 	}
 	return false

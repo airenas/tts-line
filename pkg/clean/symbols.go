@@ -17,7 +17,7 @@ func init() {
 	}
 	replaceableSymbols['⎯'] = []rune("_")
 	replaceableSymbols['…'] = []rune("...")
-	replaceableSymbols['‘'] = []rune("`")
+	// replaceableSymbols['‘'] = []rune("`")
 	replaceableSymbols['\r'] = []rune("\n")
 	replaceableSymbols['℃'] = []rune("⁰C")
 	replaceableSymbols['ﬁ'] = []rune("fi")
@@ -35,7 +35,7 @@ func init() {
 func getMaps() map[rune]rune {
 	res := make(map[rune]rune)
 
-	addMap(res, "'ˈ‚ʼ′´ꞌꞋ`ʽ", '\'')
+	addMap(res, "'ˈ‚ʼ′´ꞌꞋ`ʽ‘", '\'')
 	addMap(res, "”‟¨″", '"')
 	addMap(res, "\u2028\uFEFF\u001e\x00\u007f\t•·­˚\u200c∙⋅‰", ' ')
 	addMap(res, "–—―‐‑‒→", '-')

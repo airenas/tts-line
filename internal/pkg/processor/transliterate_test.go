@@ -16,7 +16,7 @@ func Test_compareWords(t *testing.T) {
 		{name: "different", args: args{old: "hello", new: "world"}, want: false},
 		{name: "different with apostrophe", args: args{old: "hello", new: "he'llo"}, want: false},
 		{name: "same with apostrophe", args: args{old: "he’llo", new: "he'llo"}, want: true},
-		{name: "same with apostrophe 2", args: args{old: "he‘llo", new: "he'llo"}, want: true},
+		{name: "same with apostrophe 2", args: args{old: "he`llo", new: "he'llo"}, want: true},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
