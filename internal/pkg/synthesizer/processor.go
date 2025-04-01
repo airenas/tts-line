@@ -50,6 +50,7 @@ func (mw *MainWorker) Work(ctx context.Context, input *api.TTSRequestConfig) (*a
 		var err error
 		data.SSMLParts, err = makeSSMLParts(input)
 		if err != nil {
+			utils.LogData(ctx, "Error", getInputText(data), err)
 			return nil, err
 		}
 		if err := mw.processAll(ctx, mw.ssmlProcessors, data); err != nil {
@@ -114,10 +115,18 @@ func (mw *MainWorker) processAll(ctx context.Context, processors []Processor, da
 	for _, pr := range processors {
 		err := pr.Process(ctx, data)
 		if err != nil {
+			utils.LogData(ctx, "Error", getInputText(data), err)
 			return err
 		}
 	}
 	return nil
+}
+
+func getInputText(data *TTSData) string {
+	if data.Input == nil {
+		return ""
+	}
+	return data.Input.Text
 }
 
 func mapResult(ctx context.Context, data *TTSData) (*api.Result, error) {
