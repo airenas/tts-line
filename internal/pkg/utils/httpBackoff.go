@@ -76,7 +76,7 @@ func (hw *HTTPBackoff) invoke(ctx context.Context, f func(context.Context) error
 			select {
 			case <-ctx.Done(): // do not retry if context is done
 				errCtx := ctx.Err()
-				if errCtx != nil && err != errCtx{
+				if errCtx != nil && err != errCtx {
 					err = fmt.Errorf("%w: %w", errCtx, err)
 				}
 				return backoff.Permanent(err)

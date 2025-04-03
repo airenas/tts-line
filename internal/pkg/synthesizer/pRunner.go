@@ -38,7 +38,7 @@ func (p *PartRunner) Process(ctx context.Context, data *TTSData) error {
 	errCh := make(chan error, 1)
 	closeCh := make(chan bool, 1)
 	defer close(closeCh)
-	
+
 	var wg sync.WaitGroup
 
 	for _, part := range data.Parts {
