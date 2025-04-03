@@ -140,6 +140,8 @@ func TestChangeSymbols(t *testing.T) {
 		{args: "ʽačiū", want: "'ačiū", up: true, lw: true},
 		{args: "Дякую!", want: "Djakuju!", up: true, lw: true},
 		{args: "Кириллица!", want: "Kirillica!", up: true, lw: true},
+		{args: "H₂O", want: "H2O", up: true, lw: true},
+		{args: "H₂O₃", want: "H2O3", up: true, lw: true},
 	}
 	for _, tt := range tests {
 		n := tt.name
