@@ -31,13 +31,15 @@ func NewPartRunner(parallelWorker int) *PartRunner {
 func (p *PartRunner) Process(ctx context.Context, data *TTSData) error {
 	ctx, span := utils.StartSpan(ctx, "PartRunner.Process")
 	defer span.End()
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
 
 	workerQueueLimit := make(chan bool, p.parallelWorker)
 	errCh := make(chan error, 1)
 	closeCh := make(chan bool, 1)
-	var wg sync.WaitGroup
-
 	defer close(closeCh)
+	
+	var wg sync.WaitGroup
 
 	for _, part := range data.Parts {
 		select {

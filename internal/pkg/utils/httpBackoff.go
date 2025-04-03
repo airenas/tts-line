@@ -36,26 +36,26 @@ func NewHTTPBackoff(realWrapper HTTPInvokerJSON, backoffF func() backoff.BackOff
 
 // InvokeJSON makes http call with json
 func (hw *HTTPBackoff) InvokeJSON(ctx context.Context, dataIn interface{}, dataOut interface{}) error {
-	return hw.invoke(ctx, func() error {
-		return hw.HTTPClient.InvokeJSON(ctx, dataIn, dataOut)
+	return hw.invoke(ctx, func(_ctx context.Context) error {
+		return hw.HTTPClient.InvokeJSON(_ctx, dataIn, dataOut)
 	}, dataIn)
 }
 
 // InvokeText makes http call with text input
 func (hw *HTTPBackoff) InvokeText(ctx context.Context, dataIn string, dataOut interface{}) error {
-	return hw.invoke(ctx, func() error {
-		return hw.HTTPClient.InvokeText(ctx, dataIn, dataOut)
+	return hw.invoke(ctx, func(_ctx context.Context) error {
+		return hw.HTTPClient.InvokeText(_ctx, dataIn, dataOut)
 	}, dataIn)
 }
 
 // InvokeJSONU makes call to URL wits JSON
 func (hw *HTTPBackoff) InvokeJSONU(ctx context.Context, URL string, dataIn interface{}, dataOut interface{}) error {
-	return hw.invoke(ctx, func() error {
-		return hw.HTTPClient.InvokeJSONU(ctx, URL, dataIn, dataOut)
+	return hw.invoke(ctx, func(_ctx context.Context) error {
+		return hw.HTTPClient.InvokeJSONU(_ctx, URL, dataIn, dataOut)
 	}, dataIn)
 }
 
-func (hw *HTTPBackoff) invoke(ctx context.Context, f func() error, dataIn interface{}) error {
+func (hw *HTTPBackoff) invoke(ctx context.Context, f func(context.Context) error, dataIn interface{}) error {
 	ctx, span := StartSpan(ctx, "HTTPBackoff.invoke")
 	defer span.End()
 
@@ -67,11 +67,20 @@ func (hw *HTTPBackoff) invoke(ctx context.Context, f func() error, dataIn interf
 		if failC > 0 && hw.RetryIndicatorFunc != nil {
 			hw.RetryIndicatorFunc(dataIn)
 		}
-		err := f()
+		err := f(ctx)
 		if err != nil {
 			failC++
 			if !hw.retryF(err) {
 				return backoff.Permanent(err)
+			}
+			select {
+			case <-ctx.Done(): // do not retry if context is done
+				errCtx := ctx.Err()
+				if errCtx != nil && err != errCtx{
+					err = fmt.Errorf("%w: %w", errCtx, err)
+				}
+				return backoff.Permanent(err)
+			default:
 			}
 			log.Ctx(ctx).Warn().Err(errors.Wrapf(err, "failed %d time(s)", failC)).Send()
 			return err
