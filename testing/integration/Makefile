@@ -11,7 +11,7 @@ help:
 ## start all containers
 start: 
 	docker compose up -d --build tagger lex semantika tts-line text-clean \
-		acronyms accenter clitics transcriber audioconverter mongo normalizer \
+		acronyms accenter clitics transcriber audioconverter-rs mongo normalizer \
 		comparator transliterator
 .PHONY: start
 ## start tts-line container

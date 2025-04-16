@@ -13,7 +13,7 @@ services:
       - ACRONYMS_URL=http://acronyms:8000/acronyms
       - TRANSCRIBER_URL=http://transcriber:8000/transcription?gem=gem1&joinatsi=true
       - CLITICS_URL=http://clitics:8000/clitics
-      - AUDIOCONVERT_URL=http://audioconverter:8000/convert
+      - AUDIOCONVERT_URL=audioconverter-rs:50051
       - ACOUSTICMODEL_URL=http://integration-tests:9876/mock-am
       - VOCODER_URL=http://192.168.1.77:8001/model    
       - COMPARATOR_URL=http://comparator:3000/resynthvalid
@@ -68,14 +68,14 @@ services:
     image: intelektikalt/resynth-validator:0.1.8
     restart: on-failure 
 
-  audioconverter:
-    container_name: audioconverter
-    image: airenas/audio-convert-service:0.2.21
+  audioconverter-rs:
+    container_name: audioconverter-rs
+    image: airenas/audio-convert-rs:0.1.0
     restart: on-failure 
-    shm_size: 200mb
     environment:
-      - TEMPDIR=/dev/shm
-      - GODEBUG=madvdontneed=1  
+      - RUST_LOG=TRACE,h2=info
+      # - GODEBUG=madvdontneed=1  
+      # - OTEL_EXPORTER_OTLP_ENDPOINT=http://jaeger:4318
 
   transcriber:
     container_name: transcriber
