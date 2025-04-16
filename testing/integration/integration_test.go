@@ -236,7 +236,7 @@ func startMockService(port int) (net.Listener, *httptest.Server) {
 		case "/mock-am":
 			b, err := os.ReadFile("data/test.wav")
 			if err != nil {
-				log.Printf(err.Error())
+				log.Print(err.Error())
 			}
 			io.Copy(w, strings.NewReader(fmt.Sprintf(`{"data":"%s","step":256}`, base64.StdEncoding.EncodeToString(b))))
 		}
