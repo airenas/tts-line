@@ -18,7 +18,7 @@ func TestNewTTSConfigurator(t *testing.T) {
 	c, err := NewTTSConfigurator(test.NewConfig(t, "output:\n  defaultFormat: mp3\n  metadata:\n   - r=aaa\n  voices:\n   - default:astra"))
 	assert.Nil(t, err)
 	if assert.NotNil(t, c) {
-		assert.Equal(t, "mp3", c.defaultOutputFormat.String())
+		assert.Equal(t, api.AudioMP3.String(), c.defaultOutputFormat.String())
 		assert.Equal(t, []string{"r=aaa"}, c.outputMetadata)
 	}
 }
@@ -67,7 +67,7 @@ func TestConfigure_Text(t *testing.T) {
 	assert.Nil(t, err)
 	if assert.NotNil(t, res) {
 		assert.Equal(t, "olia", res.Text)
-		assert.Equal(t, "mp3", res.OutputFormat.String())
+		assert.Equal(t, api.AudioMP3, res.OutputFormat)
 		assert.Equal(t, []string{"r=a"}, res.OutputMetadata)
 		assert.Equal(t, 0, res.AllowedMaxLen)
 	}
@@ -79,7 +79,7 @@ func TestConfigure_Format(t *testing.T) {
 	res, err := c.Configure(context.TODO(), req, &api.Input{Text: "olia", OutputFormat: "m4a"})
 	assert.Nil(t, err)
 	if assert.NotNil(t, res) {
-		assert.Equal(t, "m4a", res.OutputFormat.String())
+		assert.Equal(t, api.AudioM4A, res.OutputFormat)
 	}
 }
 
@@ -90,8 +90,18 @@ func TestConfigure_FormatHeader(t *testing.T) {
 	res, err := c.Configure(context.TODO(), req, &api.Input{Text: "olia"})
 	assert.Nil(t, err)
 	if assert.NotNil(t, res) {
-		assert.Equal(t, "m4a", res.OutputFormat.String())
+		assert.Equal(t, api.AudioM4A, res.OutputFormat)
 	}
+}
+
+func TestConfigure_FormatHeaderWAV(t *testing.T) {
+	c, _ := NewTTSConfigurator(test.NewConfig(t, "output:\n  defaultFormat: mp3\n  metadata:\n   - r=a\n  voices:\n   - default:aaa"))
+	req := httptest.NewRequest("POST", "/synthesize", strings.NewReader("text"))
+	req.Header.Add(headerDefaultFormat, "wav")
+	res, err := c.Configure(context.TODO(), req, &api.Input{Text: "olia"})
+	assert.Nil(t, err)
+	require.NotNil(t, res)
+	assert.Equal(t, api.AudioWAV, res.OutputFormat)
 }
 
 func TestConfigure_MaxTextLen(t *testing.T) {

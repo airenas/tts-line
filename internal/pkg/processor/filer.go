@@ -2,7 +2,6 @@ package processor
 
 import (
 	"context"
-	"encoding/base64"
 	"io"
 	"os"
 	"path"
@@ -36,12 +35,7 @@ func (p *filer) Process(ctx context.Context, data *synthesizer.TTSData) error {
 	return p.save(ctx, data.AudioMP3)
 }
 
-func (p *filer) save(ctx context.Context, data string) error {
-	decoded, err := base64.StdEncoding.DecodeString(data)
-	if err != nil {
-		return err
-	}
-
+func (p *filer) save(ctx context.Context, data []byte) error {
 	fn := path.Join(p.dir, "out.mp3")
 	log.Ctx(ctx).Debug().Msg("Saving " + fn)
 	f, err := p.fFile(fn)
@@ -50,7 +44,7 @@ func (p *filer) save(ctx context.Context, data string) error {
 	}
 	defer f.Close()
 
-	if _, err := f.Write(decoded); err != nil {
+	if _, err := f.Write(data); err != nil {
 		return err
 	}
 	return nil

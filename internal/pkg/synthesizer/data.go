@@ -25,8 +25,8 @@ type TTSData struct {
 	Words []*ProcessedWord
 	Parts []*TTSDataPart
 
-	Audio           string
-	AudioMP3        string
+	Audio           []byte
+	AudioMP3        []byte
 	AudioLenSeconds float64
 	SampleRate      uint32
 

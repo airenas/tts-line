@@ -192,15 +192,15 @@ func Test_key(t *testing.T) {
 		args args
 		want string
 	}{
-		{"mp3", args{&api.TTSRequestConfig{Text: "olia", OutputFormat: api.AudioMP3}}, "olia_mp3_0.0000__0"},
+		{"mp3", args{&api.TTSRequestConfig{Text: "olia", OutputFormat: api.AudioMP3}}, "olia_AudioMP3_0.0000__0"},
 		{"voice", args{&api.TTSRequestConfig{Text: "olia1", OutputFormat: api.AudioM4A,
-			OutputTextFormat: api.TextAccented, Voice: "aaa"}}, "olia1_m4a_0.0000_aaa_0"},
+			OutputTextFormat: api.TextAccented, Voice: "aaa"}}, "olia1_AudioM4A_0.0000_aaa_0"},
 		{"speed", args{&api.TTSRequestConfig{Text: "olia1", OutputFormat: api.AudioM4A,
-			OutputTextFormat: api.TextAccented, Speed: 0.56, Voice: "aa"}}, "olia1_m4a_0.5600_aa_0"},
+			OutputTextFormat: api.TextAccented, Speed: 0.56, Voice: "aa"}}, "olia1_AudioM4A_0.5600_aa_0"},
 		{"test 2", args{&api.TTSRequestConfig{Text: "olia1", OutputFormat: api.AudioM4A,
-			OutputTextFormat: api.TextAccented, Speed: 0.56, Voice: "aaa"}}, "olia1_m4a_0.5600_aaa_0"},
+			OutputTextFormat: api.TextAccented, Speed: 0.56, Voice: "aaa"}}, "olia1_AudioM4A_0.5600_aaa_0"},
 		{"max sil duration", args{&api.TTSRequestConfig{Text: "olia1", OutputFormat: api.AudioM4A,
-			OutputTextFormat: api.TextAccented, Speed: 0.56, Voice: "aaa", MaxEdgeSilenceMillis: 50}}, "olia1_m4a_0.5600_aaa_50"},
+			OutputTextFormat: api.TextAccented, Speed: 0.56, Voice: "aaa", MaxEdgeSilenceMillis: 50}}, "olia1_AudioM4A_0.5600_aaa_50"},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

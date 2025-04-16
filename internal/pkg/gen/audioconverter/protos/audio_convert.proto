@@ -1,0 +1,43 @@
+syntax = "proto3";
+
+package audio_convert.v1;
+
+option go_package = "gen/audioconverter;audioconverter";
+
+service AudioConverter {
+  rpc Convert (ConvertInput) returns (ConvertReply);
+  rpc ConvertStream (stream StreamConvertInput) returns (stream StreamFileReply); 
+}
+
+enum AudioFormat {
+  AUDIO_FORMAT_UNSPECIFIED = 0; 
+  MP3 = 1;
+  M4A = 2;
+}
+
+message ConvertInput {
+  AudioFormat format = 1;         
+  repeated string metadata = 2;  
+  bytes data = 3;
+  
+}
+
+message ConvertReply {
+  bytes data = 1;
+}
+
+message StreamConvertInput {
+  oneof payload {
+    InitialMetadata metadata = 1; 
+    bytes chunk = 2; 
+  }
+}
+
+message InitialMetadata {
+  AudioFormat format = 1;
+  repeated string metadata = 2;
+}
+
+message StreamFileReply {
+  bytes chunk = 1; 
+}

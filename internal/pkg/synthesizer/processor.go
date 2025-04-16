@@ -2,6 +2,7 @@ package synthesizer
 
 import (
 	"context"
+	"encoding/base64"
 	"fmt"
 	"strings"
 	"time"
@@ -131,7 +132,7 @@ func getInputText(data *TTSData) string {
 
 func mapResult(ctx context.Context, data *TTSData) (*api.Result, error) {
 	res := &api.Result{}
-	res.AudioAsString = data.AudioMP3
+	res.AudioAsString = toBase64(ctx, data.AudioMP3)
 	if data.Input.OutputTextFormat != api.TextNone {
 		if data.Input.AllowCollectData {
 			res.RequestID = data.RequestID
@@ -159,6 +160,13 @@ func mapResult(ctx context.Context, data *TTSData) (*api.Result, error) {
 		}
 	}
 	return res, nil
+}
+
+func toBase64(ctx context.Context, b []byte) string {
+	_, span := utils.StartSpan(ctx, "processor.toBase64")
+	defer span.End()
+
+	return base64.StdEncoding.EncodeToString(b)
 }
 
 type wordMapData struct {

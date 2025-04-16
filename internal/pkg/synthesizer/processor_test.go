@@ -27,13 +27,13 @@ func TestWork(t *testing.T) {
 	initTest(t)
 	processorMock.f = func(d *TTSData) error {
 		assert.Equal(t, "olia", d.OriginalText)
-		d.AudioMP3 = "mp3"
+		d.AudioMP3 = []byte("mp3")
 		return nil
 	}
 	res, err := worker.Work(context.TODO(), &api.TTSRequestConfig{Text: "olia"})
 	assert.Nil(t, err)
 	assert.NotNil(t, res)
-	assert.Equal(t, "mp3", res.AudioAsString)
+	assert.Equal(t, "bXAz", res.AudioAsString) // base64("mp3")
 }
 
 func TestWork_Fails(t *testing.T) {
@@ -49,16 +49,16 @@ func TestWork_Fails(t *testing.T) {
 func TestWork_Several(t *testing.T) {
 	initTest(t)
 	processorMock.f = func(d *TTSData) error {
-		d.AudioMP3 = "wav"
+		d.AudioMP3 = []byte("wav")
 		return nil
 	}
 	processorMock1 := &procMock{f: func(d *TTSData) error {
-		d.AudioMP3 = d.AudioMP3 + "mp3"
+		d.AudioMP3 = append(d.AudioMP3, []byte("mp3")...)
 		return nil
 	}}
 	worker.Add(processorMock1)
 	res, _ := worker.Work(context.TODO(), &api.TTSRequestConfig{Text: "olia"})
-	assert.Equal(t, "wavmp3", res.AudioAsString)
+	assert.Equal(t, "d2F2bXAz", res.AudioAsString) // base64("wavmp3")
 }
 
 func TestWork_HasUUID(t *testing.T) {

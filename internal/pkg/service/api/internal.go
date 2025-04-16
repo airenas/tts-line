@@ -1,3 +1,5 @@
+//go:generate stringer -type=AudioFormatEnum
+
 package api
 
 import (
@@ -39,14 +41,9 @@ const (
 	AudioMP3
 	//AudioM4A value`
 	AudioM4A
+	//AudioWAV value
+	AudioWAV
 )
-
-func (e AudioFormatEnum) String() string {
-	if e < AudioNone || e > AudioM4A {
-		return "AudioFormatEnum:" + strconv.Itoa(int(e))
-	}
-	return [...]string{"", "default", "mp3", "m4a"}[e]
-}
 
 // TTSRequestConfig config for request
 type TTSRequestConfig struct {

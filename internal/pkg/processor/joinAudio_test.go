@@ -40,7 +40,7 @@ func TestJoinAudio(t *testing.T) {
 	d.Parts = []*synthesizer.TTSDataPart{{Audio: strA}}
 	err := pr.Process(context.TODO(), &d)
 	assert.Nil(t, err)
-	assert.Equal(t, strA, d.Audio)
+	assert.Equal(t, getWaveData(t), d.Audio)
 	assert.InDelta(t, 0.5572, d.AudioLenSeconds, 0.001)
 }
 
@@ -51,7 +51,7 @@ func TestJoinAudio_Skip(t *testing.T) {
 	d.Parts = []*synthesizer.TTSDataPart{{Audio: strA}}
 	err := pr.Process(context.TODO(), &d)
 	assert.Nil(t, err)
-	assert.Equal(t, "", d.Audio)
+	assert.Nil(t, d.Audio)
 	assert.InDelta(t, 0.0, d.AudioLenSeconds, 0.001)
 }
 
@@ -65,7 +65,7 @@ func TestJoinAudio_Several(t *testing.T) {
 	err := pr.Process(context.TODO(), &d)
 	assert.Nil(t, err)
 
-	as := getTestAudioSize(strA)
+	as := getTestAudioSizeStr(strA)
 
 	assert.Equal(t, as*3, getTestAudioSize(d.Audio))
 	assert.InDelta(t, 0.5572*3, d.AudioLenSeconds, 0.001)
@@ -123,7 +123,7 @@ func TestJoinSSMLAudio(t *testing.T) {
 	da := &synthesizer.TTSData{Input: d.Input, SSMLParts: []*synthesizer.TTSData{&d}}
 	err := pr.Process(context.TODO(), da)
 	assert.Nil(t, err)
-	assert.Equal(t, strA, da.Audio)
+	assert.Equal(t, getWaveData(t), da.Audio)
 	assert.InDelta(t, 0.5572, da.AudioLenSeconds, 0.001)
 }
 
@@ -136,7 +136,7 @@ func TestJoinSSMLAudio_Skip(t *testing.T) {
 	da := &synthesizer.TTSData{Input: d.Input, SSMLParts: []*synthesizer.TTSData{&d}}
 	err := pr.Process(context.TODO(), da)
 	assert.Nil(t, err)
-	assert.Equal(t, "", da.Audio)
+	assert.Nil(t, da.Audio)
 	assert.InDelta(t, 0.0, da.AudioLenSeconds, 0.001)
 }
 
@@ -152,7 +152,7 @@ func TestJoinSSMLAudio_Several(t *testing.T) {
 	err := pr.Process(context.TODO(), da)
 	assert.Nil(t, err)
 
-	as := getTestAudioSize(strA)
+	as := getTestAudioSizeStr(strA)
 
 	assert.Equal(t, as*6, getTestAudioSize(da.Audio))
 	assert.InDelta(t, 0.5572*6, da.AudioLenSeconds, 0.001)
@@ -190,7 +190,7 @@ func TestJoinSSMLAudio_AddPause(t *testing.T) {
 	dp.Cfg.Type = synthesizer.SSMLPause
 	dp.Cfg.PauseDuration = time.Second * 5
 
-	as := getTestAudioSize(strA)
+	as := getTestAudioSizeStr(strA)
 	ps := getTestPauseSize(strA, dp.Cfg.PauseDuration)
 	al := 0.5572
 
@@ -254,8 +254,12 @@ func getTestEncAudio(t *testing.T) string {
 	return base64.StdEncoding.EncodeToString(getWaveData(t))
 }
 
-func getTestAudioSize(as string) uint32 {
+func getTestAudioSizeStr(as string) uint32 {
 	bt, _ := base64.StdEncoding.DecodeString(as)
+	return getTestAudioSize(bt)
+}
+
+func getTestAudioSize(bt []byte) uint32 {
 	return wav.GetSize(bt)
 }
 

@@ -236,6 +236,9 @@ func getOutputAudioFormat(s string) (api.AudioFormatEnum, error) {
 	if st == "m4a" {
 		return api.AudioM4A, nil
 	}
+	if st == "wav" {
+		return api.AudioWAV, nil
+	}
 	if st == "none" {
 		return api.AudioNone, nil
 	}
