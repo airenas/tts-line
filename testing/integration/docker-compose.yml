@@ -70,7 +70,7 @@ services:
 
   audioconverter-rs:
     container_name: audioconverter-rs
-    image: airenas/audio-convert-rs:0.1.0
+    image: airenas/audio-convert-rs:0.1.1
     restart: on-failure 
     environment:
       - RUST_LOG=TRACE,h2=info

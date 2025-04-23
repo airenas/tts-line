@@ -10,16 +10,21 @@ import (
 	"github.com/airenas/tts-line/internal/pkg/service/api"
 	"github.com/airenas/tts-line/internal/pkg/synthesizer"
 	"github.com/airenas/tts-line/internal/pkg/utils"
+	"github.com/cenkalti/backoff/v4"
 	"github.com/rs/zerolog/log"
 	"go.opentelemetry.io/otel/codes"
 	"go.opentelemetry.io/otel/trace"
 	"google.golang.org/grpc"
+	grpcCodes "google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/status"
 )
 
 type audioConverter struct {
-	client  audioconverter.AudioConverterClient
-	timeout time.Duration
+	client   audioconverter.AudioConverterClient
+	timeout  time.Duration
+	backoffF func() backoff.BackOff
+	retryF   func(error) bool
 }
 
 // NewConverter creates new processor for wav to mp3/m4a conversion
@@ -35,6 +40,8 @@ func NewConverter(urlStr string) (synthesizer.Processor, error) {
 		return nil, fmt.Errorf("connect to gRPC server: %w", err)
 	}
 	res.client = audioconverter.NewAudioConverterClient(conn)
+	res.backoffF = newSimpleBackoff
+	res.retryF = isRetryableGRPCError
 	return res, nil
 }
 
@@ -60,12 +67,53 @@ func (p *audioConverter) Process(ctx context.Context, data *synthesizer.TTSData)
 	return nil
 }
 
-func (p *audioConverter) invoke(ctx context.Context, data *synthesizer.TTSData) (res []byte, err error) {
+func (p *audioConverter) invoke(ctx context.Context, data *synthesizer.TTSData) ([]byte, error) {
 	af, err := makeAudioConverterFormat((data.Input.OutputFormat))
 	if err != nil {
 		return nil, fmt.Errorf("convert audio format: %w", err)
 	}
-	ctx, span := utils.StartSpan(ctx, "audioConverter.invoke", trace.WithSpanKind(trace.SpanKindClient))
+
+	ctx, cf := context.WithTimeout(ctx, p.timeout)
+	defer cf()
+
+	ctx, span := utils.StartSpan(ctx, "audioConverter.invoke")
+	defer span.End()
+
+	failC := 0
+	var res []byte
+	op := func() error {
+		res, err = p.invokeInternal(ctx, data, af, failC)
+		if err != nil {
+			failC++
+			if !p.retryF(err) {
+				return backoff.Permanent(err)
+			}
+			select {
+			case <-ctx.Done(): // do not retry if context is done
+				errCtx := ctx.Err()
+				if errCtx != nil && err != errCtx {
+					err = fmt.Errorf("%w: %w", errCtx, err)
+				}
+				return backoff.Permanent(err)
+			default:
+			}
+			log.Ctx(ctx).Warn().Int("retry", failC).Err(err).Msg("failed to convert audio")
+			return err
+		}
+		return nil
+	}
+	err = backoff.Retry(op, p.backoffF())
+	if err == nil && failC > 0 {
+		log.Ctx(ctx).Info().Int("times", failC).Msg("Success after retrying")
+	}
+	return res, err
+}
+
+func (p *audioConverter) invokeInternal(ctx context.Context, data *synthesizer.TTSData, audioFormat audioconverter.AudioFormat, retry int) (res []byte, err error) {
+	if retry > 0 {
+		log.Ctx(ctx).Debug().Int("retry", retry).Msg("Retrying audio conversion")
+	}
+	ctx, span := utils.StartSpan(ctx, "audioConverter.invokeInternal", trace.WithSpanKind(trace.SpanKindClient))
 	defer func() {
 		if err != nil {
 			span.SetStatus(codes.Error, err.Error())
@@ -76,9 +124,6 @@ func (p *audioConverter) invoke(ctx context.Context, data *synthesizer.TTSData) 
 		span.End()
 	}()
 
-	ctx, cf := context.WithTimeout(ctx, p.timeout)
-	defer cf()
-
 	stream, err := p.client.ConvertStream(utils.InjectTraceToGRPC(ctx))
 	if err != nil {
 		return nil, fmt.Errorf("create stream: %w", err)
@@ -87,7 +132,7 @@ func (p *audioConverter) invoke(ctx context.Context, data *synthesizer.TTSData) 
 	err = stream.Send(&audioconverter.StreamConvertInput{
 		Payload: &audioconverter.StreamConvertInput_Metadata{
 			Metadata: &audioconverter.InitialMetadata{
-				Format:   af,
+				Format:   audioFormat,
 				Metadata: data.Input.OutputMetadata,
 			},
 		},
@@ -163,4 +208,19 @@ func makeAudioConverterFormat(audioFormatEnum api.AudioFormatEnum) (audioconvert
 // Info return info about processor
 func (p *audioConverter) Info() string {
 	return "audioConverter"
+}
+
+func isRetryableGRPCError(err error) bool {
+	st, ok := status.FromError(err)
+	if !ok {
+		// Not a gRPC error — maybe retry (optional)
+		return false
+	}
+	switch st.Code() {
+	case grpcCodes.Unavailable, grpcCodes.DeadlineExceeded, grpcCodes.ResourceExhausted,
+		grpcCodes.Aborted, grpcCodes.Internal, grpcCodes.Unknown:
+		return true
+	default:
+		return false
+	}
 }
