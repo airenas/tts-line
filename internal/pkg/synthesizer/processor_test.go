@@ -33,7 +33,7 @@ func TestWork(t *testing.T) {
 	res, err := worker.Work(context.TODO(), &api.TTSRequestConfig{Text: "olia"})
 	assert.Nil(t, err)
 	assert.NotNil(t, res)
-	assert.Equal(t, "bXAz", res.AudioAsString) // base64("mp3")
+	assert.Equal(t, "mp3", string(res.Audio))
 }
 
 func TestWork_Fails(t *testing.T) {
@@ -58,7 +58,7 @@ func TestWork_Several(t *testing.T) {
 	}}
 	worker.Add(processorMock1)
 	res, _ := worker.Work(context.TODO(), &api.TTSRequestConfig{Text: "olia"})
-	assert.Equal(t, "d2F2bXAz", res.AudioAsString) // base64("wavmp3")
+	assert.Equal(t, "wavmp3", string(res.Audio))
 }
 
 func TestWork_HasUUID(t *testing.T) {

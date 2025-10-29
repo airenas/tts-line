@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -23,6 +24,7 @@ import (
 	"github.com/labstack/echo-contrib/prometheus"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
+	"github.com/vmihailenco/msgpack/v5"
 	"go.opentelemetry.io/contrib/instrumentation/github.com/labstack/echo/otelecho"
 	"go.opentelemetry.io/otel/trace"
 )
@@ -148,7 +150,7 @@ func synthesizeText(data *PrData) func(echo.Context) error {
 			return echo.NewHTTPError(http.StatusInternalServerError)
 		}
 
-		return writeResponse(c, resp)
+		return writeResponseMsgPackOrJson(c, cfg.OutputContentType, resp)
 	}
 }
 
@@ -194,7 +196,7 @@ func synthesizeCustom(data *PrData) func(echo.Context) error {
 		}
 		resp.RequestID = ""
 
-		return writeResponse(c, resp)
+		return writeResponseMsgPackOrJson(c, cfg.OutputContentType, resp)
 	}
 }
 
@@ -235,11 +237,34 @@ func takeInput(c echo.Context) (*api.Input, error) {
 	return inp, nil
 }
 
+func writeResponseMsgPackOrJson(c echo.Context, contentType api.OutputContentTypeEnum, resp *api.Result) error {
+	if contentType == api.ContentMsgPack {
+		return writeResponseMsgPack(c, resp)
+	}
+	resp.AudioAsString = toBase64(c.Request().Context(), resp.Audio)
+	resp.Audio = nil
+	return writeResponse(c, resp)
+}
+
+func toBase64(ctx context.Context, b []byte) string {
+	_, span := utils.StartSpan(ctx, "processor.toBase64")
+	defer span.End()
+
+	return base64.StdEncoding.EncodeToString(b)
+}
+
 func writeResponse(c echo.Context, resp interface{}) error {
 	c.Response().Header().Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
 	c.Response().WriteHeader(http.StatusOK)
 	enc := json.NewEncoder(c.Response())
 	enc.SetEscapeHTML(false)
+	return enc.Encode(resp)
+}
+
+func writeResponseMsgPack(c echo.Context, resp interface{}) error {
+	c.Response().Header().Set(echo.HeaderContentType, echo.MIMEApplicationMsgpack)
+	c.Response().WriteHeader(http.StatusOK)
+	enc := msgpack.NewEncoder(c.Response())
 	return enc.Encode(resp)
 }
 

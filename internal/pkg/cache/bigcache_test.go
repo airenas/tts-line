@@ -53,15 +53,15 @@ func TestWork(t *testing.T) {
 	initTest(t)
 	c, _ := NewCacher(synthesizerMock, newTestConfig("duration: 10s"))
 	assert.NotNil(t, c)
-	synthesizerMock.On("Work", mock.Anything).Return(&api.Result{AudioAsString: "wav"}, nil)
+	synthesizerMock.On("Work", mock.Anything).Return(&api.Result{Audio: []byte("wav")}, nil)
 
 	res, err := c.Work(context.TODO(), newtestInput("olia"))
 	assert.Nil(t, err)
-	assert.Equal(t, "wav", res.AudioAsString)
+	assert.Equal(t, "wav", string(res.Audio))
 	synthesizerMock.AssertNumberOfCalls(t, "Work", 1)
 	res, err = c.Work(context.TODO(), newtestInput("olia"))
 	assert.Nil(t, err)
-	assert.Equal(t, "wav", res.AudioAsString)
+	assert.Equal(t, "wav", string(res.Audio))
 	synthesizerMock.AssertNumberOfCalls(t, "Work", 1)
 	res, err = c.Work(context.TODO(), newtestInput("olia2"))
 	assert.Nil(t, err)
@@ -116,7 +116,7 @@ func Test_MaxMB(t *testing.T) {
 	initTest(t)
 	c, _ := NewCacher(synthesizerMock, newTestConfig("duration: 10s\nmaxMB: 1"))
 	assert.NotNil(t, c)
-	synthesizerMock.On("Work", mock.Anything).Return(&api.Result{AudioAsString: strOfSize(1024 * 1024 / 64)}, nil) // 64 shards in cache hardcoded
+	synthesizerMock.On("Work", mock.Anything).Return(&api.Result{Audio: bytesOfSize(1024 * 1024 / 64)}, nil) // 64 shards in cache hardcoded
 
 	_, _ = c.Work(context.TODO(), newtestInput("olia"))
 	synthesizerMock.AssertNumberOfCalls(t, "Work", 1)
@@ -154,8 +154,8 @@ func newtestInput(txt string) *api.TTSRequestConfig {
 	return &api.TTSRequestConfig{Text: txt}
 }
 
-func strOfSize(s int) string {
-	return string(make([]byte, s))
+func bytesOfSize(s int) []byte {
+	return make([]byte, s)
 }
 
 func TestBigCacher_isOK(t *testing.T) {

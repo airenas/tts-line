@@ -47,12 +47,25 @@ const (
 	AudioULAW
 )
 
+// OutputContentTypeEnum represent possible service outputs
+type OutputContentTypeEnum int
+
+const (
+	//ContentUnspecified value
+	ContentUnspecified OutputContentTypeEnum = iota
+	//ContentJSON value
+	ContentJSON
+	//ContentMsgPack value
+	ContentMsgPack
+)
+
 // TTSRequestConfig config for request
 type TTSRequestConfig struct {
 	Text                 string
 	RequestID            string
 	OutputFormat         AudioFormatEnum
 	OutputTextFormat     TextFormatEnum
+	OutputContentType    OutputContentTypeEnum
 	OutputMetadata       []string
 	AllowCollectData     bool
 	SaveTags             []string

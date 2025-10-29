@@ -10,6 +10,7 @@ import (
 
 	"github.com/airenas/tts-line/internal/pkg/service/api"
 	"github.com/airenas/tts-line/internal/pkg/test"
+	"github.com/labstack/echo/v4"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -102,6 +103,26 @@ func TestConfigure_FormatHeaderWAV(t *testing.T) {
 	assert.Nil(t, err)
 	require.NotNil(t, res)
 	assert.Equal(t, api.AudioWAV, res.OutputFormat)
+}
+
+func TestConfigure_OutputContentType(t *testing.T) {
+	c, _ := NewTTSConfigurator(test.NewConfig(t, "output:\n  defaultFormat: mp3\n  metadata:\n   - r=a\n  voices:\n   - default:aaa"))
+	req := httptest.NewRequest("POST", "/synthesize", strings.NewReader("text"))
+	req.Header.Add(echo.HeaderAccept, echo.MIMEApplicationJSON)
+	res, err := c.Configure(context.TODO(), req, &api.Input{Text: "olia"})
+	assert.Nil(t, err)
+	require.NotNil(t, res)
+	assert.Equal(t, api.ContentJSON, res.OutputContentType)
+}
+
+func TestConfigure_OutputContentType__msgPack(t *testing.T) {
+	c, _ := NewTTSConfigurator(test.NewConfig(t, "output:\n  defaultFormat: mp3\n  metadata:\n   - r=a\n  voices:\n   - default:aaa"))
+	req := httptest.NewRequest("POST", "/synthesize", strings.NewReader("text"))
+	req.Header.Add(echo.HeaderAccept, echo.MIMEApplicationMsgpack)
+	res, err := c.Configure(context.TODO(), req, &api.Input{Text: "olia"})
+	assert.Nil(t, err)
+	require.NotNil(t, res)
+	assert.Equal(t, api.ContentMsgPack, res.OutputContentType)
 }
 
 func TestConfigure_MaxTextLen(t *testing.T) {
@@ -468,6 +489,37 @@ func Test_getMaxEdgeSilence(t *testing.T) {
 			}
 			if got != tt.want {
 				t.Errorf("getMaxEdgeSilence() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func Test_getOutputContentType(t *testing.T) {
+	tests := []struct {
+		name    string // description of this test case
+		s       string
+		want    api.OutputContentTypeEnum
+		wantErr bool
+	}{
+		{name: "Default", s: "", want: api.ContentJSON, wantErr: false},
+		{name: "JSON", s: "application/json", want: api.ContentJSON, wantErr: false},
+		{name: "Unknown", s: "olia/wav", want: api.ContentJSON, wantErr: false},
+		{name: "MsgPack", s: "application/msgpack", want: api.ContentMsgPack, wantErr: false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, gotErr := getOutputContentType(context.Background(), tt.s)
+			if gotErr != nil {
+				if !tt.wantErr {
+					t.Errorf("getOutputContentType() failed: %v", gotErr)
+				}
+				return
+			}
+			if tt.wantErr {
+				t.Fatal("getOutputContentType() succeeded unexpectedly")
+			}
+			if got != tt.want {
+				t.Errorf("getOutputContentType() = %v, want %v", got, tt.want)
 			}
 		})
 	}

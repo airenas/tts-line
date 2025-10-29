@@ -24,21 +24,22 @@ type Input struct {
 // SpeechMark
 type SpeechMark struct {
 	//In Millis from the start of the audio
-	TimeInMillis int64 `json:"timeMillis"`
+	TimeInMillis int64 `json:"timeMillis" msgpack:"timeMillis,omitempty"`
 	//In Millis
-	Duration int64 `json:"durationMillis,omitempty"`
+	Duration int64 `json:"durationMillis,omitempty" msgpack:"duration,omitempty"`
 	//Possible values are: word
-	Type  string `json:"type,omitempty"`
-	Value string `json:"value,omitempty"`
+	Type  string `json:"type,omitempty" msgpack:"type,omitempty"`
+	Value string `json:"value,omitempty" msgpack:"value,omitempty"`
 }
 
 // Result is synthesis result
 type Result struct {
-	AudioAsString string        `json:"audioAsString,omitempty"`
-	Error         string        `json:"error,omitempty"`
-	Text          string        `json:"text,omitempty"`
-	RequestID     string        `json:"requestID,omitempty"`
-	SpeechMarks   []*SpeechMark `json:"speechMarks,omitempty"`
+	AudioAsString string        `json:"audioAsString,omitempty" msgpack:"audioAsString,omitempty"`
+	Audio         []byte        `json:"audio,omitempty" msgpack:"audio,omitempty"`
+	Error         string        `json:"error,omitempty" msgpack:"error,omitempty"`
+	Text          string        `json:"text,omitempty" msgpack:"text,omitempty"`
+	RequestID     string        `json:"requestID,omitempty" msgpack:"requestID,omitempty"`
+	SpeechMarks   []*SpeechMark `json:"speechMarks,omitempty" msgpack:"speechMarks,omitempty"`
 }
 
 // InfoResult is a response for /synthesizeInfo request

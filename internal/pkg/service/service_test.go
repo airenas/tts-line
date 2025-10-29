@@ -57,13 +57,13 @@ func TestWrongMethod(t *testing.T) {
 func Test_Returns(t *testing.T) {
 	initTest(t)
 	cnfMock.On("Configure", mock.Anything, mock.Anything).Return(&api.TTSRequestConfig{Text: "olia1", OutputFormat: api.AudioMP3}, nil)
-	synthesizerMock.On("Work", mock.Anything).Return(&api.Result{AudioAsString: "wav"}, nil)
+	synthesizerMock.On("Work", mock.Anything).Return(&api.Result{Audio: []byte("wav")}, nil)
 
 	req := httptest.NewRequest("POST", "/synthesize", toReader(api.Input{Text: "olia"}))
 	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
 	resp := testCode(t, req, 200)
 	bytes, _ := io.ReadAll(resp.Body)
-	assert.Contains(t, string(bytes), `"audioAsString":"wav"`)
+	assert.Contains(t, string(bytes), `"audioAsString":"`+toBase64(req.Context(), []byte("wav")))
 	synthesizerMock.AssertNumberOfCalls(t, "Work", 1)
 	txt := mocks.To[*api.TTSRequestConfig](synthesizerMock.Calls[0].Arguments[0])
 	assert.Equal(t, "olia1", txt.Text)
@@ -71,6 +71,21 @@ func Test_Returns(t *testing.T) {
 	cnfMock.AssertNumberOfCalls(t, "Configure", 1)
 	inp := mocks.To[*api.Input](cnfMock.Calls[0].Arguments[1])
 	assert.Equal(t, "olia", inp.Text)
+}
+
+func Test_Returns_MsgPack(t *testing.T) {
+	initTest(t)
+	cnfMock.On("Configure", mock.Anything, mock.Anything).Return(&api.TTSRequestConfig{Text: "olia1", OutputFormat: api.AudioMP3,
+		OutputContentType: api.ContentMsgPack}, nil)
+	synthesizerMock.On("Work", mock.Anything).Return(&api.Result{Audio: []byte("wav")}, nil)
+
+	req := httptest.NewRequest("POST", "/synthesize", toReader(api.Input{Text: "olia"}))
+	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+	resp := testCode(t, req, 200)
+	bytes, _ := io.ReadAll(resp.Body)
+	assert.Contains(t, string(bytes), `audio`)
+	assert.Contains(t, string(bytes), `wav`)
+	assert.NotContains(t, string(bytes), `audioAsString`)
 }
 
 func Test_Fail(t *testing.T) {
@@ -119,13 +134,13 @@ func Test_FailOnWrongInput(t *testing.T) {
 func TestCustom_Returns(t *testing.T) {
 	initTest(t)
 	cnfMock.On("Configure", mock.Anything, mock.Anything).Return(&api.TTSRequestConfig{Text: "olia1", OutputFormat: api.AudioMP3}, nil)
-	synthesizerMock.On("Work", mock.Anything).Return(&api.Result{AudioAsString: "wav"}, nil)
+	synthesizerMock.On("Work", mock.Anything).Return(&api.Result{Audio: []byte("wav")}, nil)
 
 	req := httptest.NewRequest("POST", "/synthesizeCustom?requestID=1", toReader(api.Input{Text: "olia"}))
 	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
 	resp := testCode(t, req, 200)
 	bytes, _ := io.ReadAll(resp.Body)
-	assert.Contains(t, string(bytes), `"audioAsString":"wav"`)
+	assert.Contains(t, string(bytes), `"audioAsString":"`+toBase64(req.Context(), []byte("wav")))
 
 	synthesizerMock.AssertNumberOfCalls(t, "Work", 1)
 	txt := mocks.To[*api.TTSRequestConfig](synthesizerMock.Calls[0].Arguments[0])
@@ -136,10 +151,25 @@ func TestCustom_Returns(t *testing.T) {
 	assert.Equal(t, "olia", inp.Text)
 }
 
+func TestCustom_ReturnsMsgPack(t *testing.T) {
+	initTest(t)
+	cnfMock.On("Configure", mock.Anything, mock.Anything).Return(&api.TTSRequestConfig{Text: "olia1",
+		OutputFormat: api.AudioMP3, OutputContentType: api.ContentMsgPack}, nil)
+	synthesizerMock.On("Work", mock.Anything).Return(&api.Result{Audio: []byte("wav")}, nil)
+
+	req := httptest.NewRequest("POST", "/synthesizeCustom?requestID=1", toReader(api.Input{Text: "olia"}))
+	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+	resp := testCode(t, req, 200)
+	bytes, _ := io.ReadAll(resp.Body)
+	assert.Contains(t, string(bytes), `audio`)
+	assert.Contains(t, string(bytes), `wav`)
+	assert.NotContains(t, string(bytes), `audioAsString`)
+}
+
 func TestCustom_SetAllowCollectData(t *testing.T) {
 	initTest(t)
 	cnfMock.On("Configure", mock.Anything, mock.Anything).Return(&api.TTSRequestConfig{Text: "olia1", OutputFormat: api.AudioMP3}, nil)
-	synthesizerMock.On("Work", mock.Anything).Return(&api.Result{AudioAsString: "wav"}, nil)
+	synthesizerMock.On("Work", mock.Anything).Return(&api.Result{Audio: []byte("wav")}, nil)
 	req := httptest.NewRequest("POST", "/synthesizeCustom?requestID=1", toReader(api.Input{Text: "olia"}))
 	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
 	testCode(t, req, 200)
@@ -152,7 +182,7 @@ func TestCustom_SetAllowCollectData(t *testing.T) {
 func TestCustom_FailWithWrongAllowCollectData(t *testing.T) {
 	initTest(t)
 	cnfMock.On("Configure", mock.Anything, mock.Anything).Return(&api.TTSRequestConfig{Text: "olia1", OutputFormat: api.AudioMP3}, nil)
-	synthesizerMock.On("Work", mock.Anything).Return(&api.Result{AudioAsString: "wav"}, nil)
+	synthesizerMock.On("Work", mock.Anything).Return(&api.Result{Audio: []byte("wav")}, nil)
 	b := false
 	req := httptest.NewRequest("POST", "/synthesizeCustom?requestID=1",
 		toReader(api.Input{Text: "olia", AllowCollectData: &b}))

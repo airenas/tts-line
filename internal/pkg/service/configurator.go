@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/airenas/go-app/pkg/goapp"
+	"github.com/labstack/echo/v4"
 	"github.com/rs/zerolog/log"
 
 	"github.com/airenas/tts-line/internal/pkg/service/api"
@@ -108,6 +109,10 @@ func (c *TTSConfigutaror) Configure(ctx context.Context, r *http.Request, inText
 	res.Text = inText.Text
 	var err error
 	res.OutputFormat, err = getOutputAudioFormat(defaultS(inText.OutputFormat, getHeader(r, headerDefaultFormat)))
+	if err != nil {
+		return nil, err
+	}
+	res.OutputContentType, err = getOutputContentType(ctx, getHeader(r, echo.HeaderAccept))
 	if err != nil {
 		return nil, err
 	}
@@ -246,6 +251,21 @@ func getOutputAudioFormat(s string) (api.AudioFormatEnum, error) {
 		return api.AudioNone, nil
 	}
 	return api.AudioNone, errors.New("Unknown audio format " + s)
+}
+
+func getOutputContentType(ctx context.Context, s string) (api.OutputContentTypeEnum, error) {
+	st := strings.TrimSpace(s)
+	if st == "" {
+		return api.ContentJSON, nil
+	}
+	if st == echo.MIMEApplicationMsgpack {
+		return api.ContentMsgPack, nil
+	}
+	if st == echo.MIMEApplicationJSON {
+		return api.ContentJSON, nil
+	}
+	log.Ctx(ctx).Warn().Str("contentType", s).Msg("Unknown content type, defaulting to JSON")
+	return api.ContentJSON, nil
 }
 
 func initVoices(all []string) (map[string]string, error) {

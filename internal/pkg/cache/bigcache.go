@@ -71,12 +71,12 @@ func (c *BigCacher) Work(ctx context.Context, inp *api.TTSRequestConfig) (*api.R
 	entry, err := c.cache.Get(key(inp))
 	if err == nil {
 		log.Ctx(ctx).Debug().Msg("Found in cache")
-		return &api.Result{AudioAsString: string(entry)}, nil
+		return &api.Result{Audio: entry}, nil
 	}
 	log.Ctx(ctx).Debug().Msg("Not found in cache")
 	res, err := c.realSynt.Work(ctx, inp)
 	if res != nil && err == nil {
-		_ = c.cache.Set(key(inp), []byte(res.AudioAsString))
+		_ = c.cache.Set(key(inp), res.Audio)
 	}
 	return res, err
 }
