@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"sync"
 	"time"
 
 	"github.com/airenas/tts-line/internal/pkg/gen/audioconverter"
@@ -145,7 +146,11 @@ func (p *audioConverter) invokeInternal(ctx context.Context, data *synthesizer.T
 
 	errChan := make(chan error, 1)
 
+	wg := sync.WaitGroup{}
+	wg.Add(1)
+
 	go func() {
+		defer wg.Done()
 		audioData := data.Audio
 		for start := 0; start < len(audioData); start += chunkSize {
 			end := start + chunkSize
@@ -191,6 +196,7 @@ read:
 			res = append(res, reply.Chunk...)
 		}
 	}
+	wg.Wait()
 	log.Ctx(ctx).Trace().Msg("received audio")
 	return res, nil
 }
@@ -201,6 +207,9 @@ func makeAudioConverterFormat(audioFormatEnum api.AudioFormatEnum) (audioconvert
 	}
 	if audioFormatEnum == api.AudioM4A {
 		return audioconverter.AudioFormat_M4A, nil
+	}
+	if audioFormatEnum == api.AudioULAW {
+		return audioconverter.AudioFormat_ULAW, nil
 	}
 	return audioconverter.AudioFormat_AUDIO_FORMAT_UNSPECIFIED, fmt.Errorf("unknown audio format: %s", audioFormatEnum)
 }

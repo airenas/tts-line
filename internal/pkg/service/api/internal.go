@@ -43,6 +43,8 @@ const (
 	AudioM4A
 	//AudioWAV value
 	AudioWAV
+	//AudioULAW value
+	AudioULAW
 )
 
 // TTSRequestConfig config for request

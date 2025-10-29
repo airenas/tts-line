@@ -13,6 +13,7 @@ enum AudioFormat {
   AUDIO_FORMAT_UNSPECIFIED = 0; 
   MP3 = 1;
   M4A = 2;
+  ULAW = 3;
 }
 
 message ConvertInput {

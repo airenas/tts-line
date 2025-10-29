@@ -239,6 +239,9 @@ func getOutputAudioFormat(s string) (api.AudioFormatEnum, error) {
 	if st == "wav" {
 		return api.AudioWAV, nil
 	}
+	if st == "ulaw" {
+		return api.AudioULAW, nil
+	}
 	if st == "none" {
 		return api.AudioNone, nil
 	}

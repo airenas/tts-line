@@ -301,6 +301,8 @@ func TestOutputAudioFormat(t *testing.T) {
 		{in: "none", res: api.AudioNone, isErr: false},
 		{in: "mp3", res: api.AudioMP3, isErr: false},
 		{in: "m4a", res: api.AudioM4A, isErr: false},
+		{in: "wav", res: api.AudioWAV, isErr: false},
+		{in: "ulaw", res: api.AudioULAW, isErr: false},
 		{in: "olia", res: api.AudioNone, isErr: true},
 	}
 

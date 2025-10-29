@@ -27,6 +27,7 @@ const (
 	AudioFormat_AUDIO_FORMAT_UNSPECIFIED AudioFormat = 0
 	AudioFormat_MP3                      AudioFormat = 1
 	AudioFormat_M4A                      AudioFormat = 2
+	AudioFormat_ULAW                     AudioFormat = 3
 )
 
 // Enum value maps for AudioFormat.
@@ -35,11 +36,13 @@ var (
 		0: "AUDIO_FORMAT_UNSPECIFIED",
 		1: "MP3",
 		2: "M4A",
+		3: "ULAW",
 	}
 	AudioFormat_value = map[string]int32{
 		"AUDIO_FORMAT_UNSPECIFIED": 0,
 		"MP3":                      1,
 		"M4A":                      2,
+		"ULAW":                     3,
 	}
 )
 
@@ -371,11 +374,12 @@ const file_protos_audio_convert_proto_rawDesc = "" +
 	"\x06format\x18\x01 \x01(\x0e2\x1d.audio_convert.v1.AudioFormatR\x06format\x12\x1a\n" +
 	"\bmetadata\x18\x02 \x03(\tR\bmetadata\"'\n" +
 	"\x0fStreamFileReply\x12\x14\n" +
-	"\x05chunk\x18\x01 \x01(\fR\x05chunk*=\n" +
+	"\x05chunk\x18\x01 \x01(\fR\x05chunk*G\n" +
 	"\vAudioFormat\x12\x1c\n" +
 	"\x18AUDIO_FORMAT_UNSPECIFIED\x10\x00\x12\a\n" +
 	"\x03MP3\x10\x01\x12\a\n" +
-	"\x03M4A\x10\x022\xb9\x01\n" +
+	"\x03M4A\x10\x02\x12\b\n" +
+	"\x04ULAW\x10\x032\xb9\x01\n" +
 	"\x0eAudioConverter\x12I\n" +
 	"\aConvert\x12\x1e.audio_convert.v1.ConvertInput\x1a\x1e.audio_convert.v1.ConvertReply\x12\\\n" +
 	"\rConvertStream\x12$.audio_convert.v1.StreamConvertInput\x1a!.audio_convert.v1.StreamFileReply(\x010\x01B#Z!gen/audioconverter;audioconverterb\x06proto3"

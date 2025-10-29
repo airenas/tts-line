@@ -13,11 +13,12 @@ func _() {
 	_ = x[AudioMP3-2]
 	_ = x[AudioM4A-3]
 	_ = x[AudioWAV-4]
+	_ = x[AudioULAW-5]
 }
 
-const _AudioFormatEnum_name = "AudioNoneAudioDefaultAudioMP3AudioM4AAudioWAV"
+const _AudioFormatEnum_name = "AudioNoneAudioDefaultAudioMP3AudioM4AAudioWAVAudioULAW"
 
-var _AudioFormatEnum_index = [...]uint8{0, 9, 21, 29, 37, 45}
+var _AudioFormatEnum_index = [...]uint8{0, 9, 21, 29, 37, 45, 54}
 
 func (i AudioFormatEnum) String() string {
 	if i < 0 || i >= AudioFormatEnum(len(_AudioFormatEnum_index)-1) {

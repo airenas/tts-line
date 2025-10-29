@@ -49,9 +49,12 @@ generate/diagram:
 	cd info && $(MAKE) generate
 .PHONY: generate/diagram
 #####################################################################################
+generate:
+	go generate ./...
+.PHONY: generate
+#####################################################################################
 ## cleans prepared data for dockeriimage generation
 clean:
 	go mod tidy -compat=1.21
 	go clean
 	cd build/acronyms && $(MAKE) clean
-	cd build/clitics && $(MAKE) clean

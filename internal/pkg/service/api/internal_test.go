@@ -20,5 +20,7 @@ func TestAudioFormatEnumString(t *testing.T) {
 	assert.Equal(t, "AudioDefault", AudioDefault.String())
 	assert.Equal(t, "AudioMP3", AudioMP3.String())
 	assert.Equal(t, "AudioM4A", AudioM4A.String())
+	assert.Equal(t, "AudioWAV", AudioWAV.String())
+	assert.Equal(t, "AudioULAW", AudioULAW.String())
 	assert.Equal(t, "AudioFormatEnum(100)", AudioFormatEnum(100).String())
 }
