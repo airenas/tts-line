@@ -13,7 +13,7 @@ data/acronyms.txt: $(acronyms_data_dir)/acronyms.txt | data
 
 dbuild: data/acronyms.txt
 	docker buildx build -t $(tag) --build-arg BUILD_VERSION=$(version) \
-		-f Dockerfile$(debug) --build-arg SECRET=$(ACRONYMS_SECRET) ../../
+		-f Dockerfile$(debug) --build-arg SECRET=$(ACRONYMS_SECRET) ../../ --load
 
 dpush: dbuild
 	docker push $(tag)

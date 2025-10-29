@@ -7,7 +7,7 @@ tag=$(service):$(version)
 
 dbuild:
 	docker buildx build -t $(tag) --build-arg BUILD_VERSION=$(version) \
-		-f Dockerfile$(debug) ../../
+		-f Dockerfile$(debug) ../../ --load
 
 dpush: dbuild
 	docker push $(tag)

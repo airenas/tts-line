@@ -18,6 +18,8 @@ import (
 	"time"
 
 	"github.com/airenas/tts-line/internal/pkg/service/api"
+	"github.com/labstack/echo/v4"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -81,7 +83,21 @@ func TestSynthesize_Success(t *testing.T) {
 	CheckCode(t, resp, http.StatusOK)
 	res := api.Result{}
 	Decode(t, resp, &res)
+	assert.Empty(t, res.Audio)
 	require.NotEmpty(t, res.AudioAsString)
+}
+
+func TestSynthesize_MsgPack_Success(t *testing.T) {
+	t.Parallel()
+	req := NewRequest(t, http.MethodPost, cfg.url, "/synthesize",
+		api.Input{Text: "Olia xrytas", Voice: "astra"})
+	req.Header.Add(echo.HeaderAccept, echo.MIMEApplicationMsgpack)
+	resp := Invoke(t, cfg.httpclient, req)
+	CheckCode(t, resp, http.StatusOK)
+	res := api.Result{}
+	DecodeMsgPack(t, resp, &res)
+	assert.Empty(t, res.AudioAsString)
+	require.NotEmpty(t, res.Audio)
 }
 
 func TestSynthesize_SSMLFail_NoSSML(t *testing.T) {

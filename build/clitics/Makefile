@@ -10,7 +10,7 @@ dbuild:
 		--build-arg BUILD_VERSION=$(version) \
 		--build-arg SECRET=$(CLITICS_SECRET) \
 		--build-arg SECRET_FROM=$(CLITICS_SECRET_FROM) \
-		-f Dockerfile ../../
+		-f Dockerfile ../../ --load
 
 dpush: dbuild
 	docker push $(tag)

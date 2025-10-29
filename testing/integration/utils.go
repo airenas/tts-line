@@ -18,6 +18,7 @@ import (
 
 	"github.com/labstack/echo/v4"
 	"github.com/stretchr/testify/require"
+	"github.com/vmihailenco/msgpack/v5"
 )
 
 func WaitForOpenOrFail(ctx context.Context, URL string) {
@@ -91,4 +92,9 @@ func CheckCode(t *testing.T, resp *http.Response, expected int) {
 func Decode(t *testing.T, resp *http.Response, to interface{}) {
 	t.Helper()
 	require.Nil(t, json.NewDecoder(resp.Body).Decode(to))
+}
+
+func DecodeMsgPack(t *testing.T, resp *http.Response, to interface{}) {
+	t.Helper()
+	require.Nil(t, msgpack.NewDecoder(resp.Body).Decode(to))
 }
