@@ -31,7 +31,8 @@ type wrkData struct {
 var startFunctions map[string]startFunc
 var endFunctions map[string]endFunc
 var durationStrs map[string]time.Duration
-var rateStrs map[string]float32
+var rateStrs map[string]float64
+var volumeStrs map[string]float64
 var pDuration time.Duration
 
 func init() {
@@ -56,7 +57,8 @@ func init() {
 		"strong": 1000 * time.Millisecond, "x-strong": 1250 * time.Millisecond}
 	pDuration = durationStrs["x-strong"]
 
-	rateStrs = map[string]float32{"x-slow": 2, "slow": 1.5, "medium": 1, "fast": .75, "x-fast": .5, "default": 1}
+	rateStrs = map[string]float64{"x-slow": 2, "slow": 1.5, "medium": 1, "fast": .75, "x-fast": .5, "default": 1}
+	volumeStrs = map[string]float64{"silent": MinVolumeChange, "x-soft": -6, "soft": -3, "medium": 0, "loud": 3, "x-loud": 6, "default": 0}
 }
 
 // Parse parses xml into synthesis structure
@@ -149,7 +151,7 @@ func makeTextPart(se xml.CharData, wrk *wrkData) error {
 		if wrk.lastText != nil {
 			wrk.lastText.Texts = append(wrk.lastText.Texts, tp)
 		} else {
-			wrk.lastText = &Text{Voice: def.Voice, Speed: def.Speed, Texts: []TextPart{tp}}
+			wrk.lastText = &Text{Voice: def.Voice, Speed: def.Speed, VolumeChange: def.VolumeChange, Texts: []TextPart{tp}}
 			wrk.res = append(wrk.res, wrk.lastText)
 		}
 	}
@@ -251,8 +253,44 @@ func startVoice(se xml.StartElement, wrk *wrkData) error {
 	}
 	wrk.lastText = nil
 	def := wrk.cValues[len(wrk.cValues)-1]
-	wrk.cValues = append(wrk.cValues, &Text{Voice: v, Speed: def.Speed})
+	newTextPart := makeInternalText(def, &Text{Voice: v})
+	wrk.cValues = append(wrk.cValues, newTextPart)
 	return nil
+}
+
+func makeInternalText(parent *Text, new *Text) *Text {
+	res := &Text{
+		Voice:        combineVoice(parent.Voice, new.Voice),
+		Speed:        combineSpeed(parent.Speed, new.Speed),
+		VolumeChange: combineVolume(parent.VolumeChange, new.VolumeChange),
+		Texts:        new.Texts,
+	}
+	return res
+}
+
+func combineVolume(v1, v2 float64) float64 {
+	if v1 == MinVolumeChange || v2 == MinVolumeChange {
+		return MinVolumeChange
+	}
+	return v1 + v2
+}
+
+func combineSpeed(v1, v2 float64) float64 {
+	t1, t2 := v1, v2
+	if t1 == 0 {
+		t1 = 1
+	}
+	if t2 == 0 {
+		t2 = 1
+	}
+	return t1 * t2
+}
+
+func combineVoice(v1, v2 string) string {
+	if v2 != "" {
+		return v2
+	}
+	return v1
 }
 
 func endVoice(se xml.EndElement, wrk *wrkData) error {
@@ -270,17 +308,34 @@ func startProsody(se xml.StartElement, wrk *wrkData) error {
 	if wrk.speakTagCount != 1 {
 		return fmt.Errorf("no <speak>")
 	}
+	was := false
+	var err error
+
+	sp := float64(1)
 	r := getAttr(se, "rate")
-	if r == "" {
-		return fmt.Errorf("no <prosody>:rate")
+	if r != "" {
+		sp, err = getSpeed(r)
+		if err != nil {
+			return err
+		}
+		was = true
 	}
-	sp, err := getSpeed(r)
-	if err != nil {
-		return err
+	volumeChange := float64(0)
+	r = getAttr(se, "volume")
+	if r != "" {
+		volumeChange, err = getVolume(r)
+		if err != nil {
+			return err
+		}
+		was = true
+	}
+	if !was {
+		return fmt.Errorf("no <prosody>:rate or <prosody>:volume or <prosody>:pitch")
 	}
 	wrk.lastText = nil
 	def := wrk.cValues[len(wrk.cValues)-1]
-	wrk.cValues = append(wrk.cValues, &Text{Voice: def.Voice, Speed: sp})
+	newTextPart := makeInternalText(def, &Text{Speed: sp, VolumeChange: volumeChange})
+	wrk.cValues = append(wrk.cValues, newTextPart)
 	return nil
 }
 
@@ -331,25 +386,43 @@ func endWord(se xml.EndElement, wrk *wrkData) error {
 	return nil
 }
 
-func getSpeed(str string) (float32, error) {
+func getSpeed(str string) (float64, error) {
 	if str == "" {
 		return 0, fmt.Errorf("no rate")
 	}
 	if strings.HasSuffix(str, "%") {
-		v, err := strconv.ParseFloat(str[:len(str)-1], 32)
+		v, err := strconv.ParseFloat(str[:len(str)-1], 64)
 		if err != nil {
-			return 0, fmt.Errorf("wrong value '%s': %v", str, err)
+			return 0, fmt.Errorf("wrong rate value '%s': %v", str, err)
 		}
-		return parseRatePercents(float32(v)), nil
+		return parseRatePercents(v), nil
 	}
 	res, ok := rateStrs[str]
 	if !ok {
-		return 0, fmt.Errorf("wrong value '%s'", str)
+		return 0, fmt.Errorf("wrong ratee value '%s'", str)
 	}
 	return res, nil
 }
 
-func parseRatePercents(v float32) float32 {
+func getVolume(str string) (float64, error) {
+	if str == "" {
+		return 0, fmt.Errorf("no volume")
+	}
+	if strings.HasSuffix(str, "dB") && (strings.HasPrefix(str, "+") || strings.HasPrefix(str, "-")) {
+		v, err := strconv.ParseFloat(str[:len(str)-2], 64)
+		if err != nil {
+			return 0, fmt.Errorf("wrong volume value '%s': %v", str, err)
+		}
+		return v, nil
+	}
+	res, ok := volumeStrs[str]
+	if !ok {
+		return 0, fmt.Errorf("wrong volume value '%s'", str)
+	}
+	return res, nil
+}
+
+func parseRatePercents(v float64) float64 {
 	if v > 200 {
 		v = 200
 	} else if v < 50 {

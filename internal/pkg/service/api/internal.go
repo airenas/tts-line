@@ -69,7 +69,7 @@ type TTSRequestConfig struct {
 	OutputMetadata       []string
 	AllowCollectData     bool
 	SaveTags             []string
-	Speed                float32
+	Speed                float64
 	Voice                string
 	Priority             int
 	AllowedMaxLen        int

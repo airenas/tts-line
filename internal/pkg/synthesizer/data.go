@@ -46,7 +46,7 @@ type TTSConfig struct {
 
 	Type  SSMLTypeEnum
 	Voice string
-	Speed float32
+	Speed float64
 
 	PauseDuration time.Duration
 }

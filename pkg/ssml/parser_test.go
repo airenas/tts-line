@@ -19,6 +19,19 @@ func TestParse(t *testing.T) {
 		want    []Part
 		wantErr bool
 	}{
+		{name: "<prosody> inner volume and rate", xml: `<speak><prosody rate="200%" volume="-3dB">
+		<voice name="ooo">aaa
+		<voice name="ooo1"><prosody rate="slow" volume="-5dB">aaa1</prosody></voice>
+		end
+		</voice></prosody>
+		end def</speak>`,
+			want: []Part{
+				&Text{Voice: "ooo", Speed: 0.5, VolumeChange: -3, Texts: []TextPart{{Text: "aaa"}}},
+				&Text{Voice: "ooo1", Speed: 0.75, VolumeChange: -8, Texts: []TextPart{{Text: "aaa1"}}},
+				&Text{Voice: "ooo", Speed: 0.5, VolumeChange: -3, Texts: []TextPart{{Text: "end"}}},
+				&Text{Voice: "aa", Speed: 1, VolumeChange: 0, Texts: []TextPart{{Text: "end def"}}},
+			}, wantErr: false},
+
 		{name: "simple empty", xml: "<speak></speak>", want: []Part{}, wantErr: false},
 		{name: "simple", xml: "<speak>olia</speak>", want: []Part{
 			&Text{Voice: "aa", Speed: 1, Texts: []TextPart{{Text: "olia"}}}},
@@ -72,6 +85,22 @@ func TestParse(t *testing.T) {
 			want: []Part{
 				&Text{Voice: "aa", Speed: 2, Texts: []TextPart{{Text: "aaa"}}},
 			}, wantErr: false},
+		{name: "<prosody> volume", xml: `<speak><prosody volume="silent">aaa</prosody></speak>`,
+			want: []Part{
+				&Text{Voice: "aa", Speed: 1, VolumeChange: MinVolumeChange, Texts: []TextPart{{Text: "aaa"}}},
+			}, wantErr: false},
+		{name: "<prosody> volume", xml: `<speak><prosody volume="+10dB">aaa</prosody></speak>`,
+			want: []Part{
+				&Text{Voice: "aa", Speed: 1, VolumeChange: 10, Texts: []TextPart{{Text: "aaa"}}},
+			}, wantErr: false},
+		{name: "<prosody> volume", xml: `<speak><prosody volume="-5dB">aaa</prosody></speak>`,
+			want: []Part{
+				&Text{Voice: "aa", Speed: 1, VolumeChange: -5, Texts: []TextPart{{Text: "aaa"}}},
+			}, wantErr: false},
+		{name: "<prosody> volume and rate", xml: `<speak><prosody rate="50%" volume="-5dB">aaa</prosody></speak>`,
+			want: []Part{
+				&Text{Voice: "aa", Speed: 2, VolumeChange: -5, Texts: []TextPart{{Text: "aaa"}}},
+			}, wantErr: false},
 		{name: "<prosody> inner", xml: `<speak><prosody rate="200%">
 		<voice name="ooo">aaa
 		<voice name="ooo1"><prosody rate="slow">aaa1</prosody></voice>
@@ -80,9 +109,21 @@ func TestParse(t *testing.T) {
 		end def</speak>`,
 			want: []Part{
 				&Text{Voice: "ooo", Speed: 0.5, Texts: []TextPart{{Text: "aaa"}}},
-				&Text{Voice: "ooo1", Speed: 1.5, Texts: []TextPart{{Text: "aaa1"}}},
+				&Text{Voice: "ooo1", Speed: 0.75, Texts: []TextPart{{Text: "aaa1"}}},
 				&Text{Voice: "ooo", Speed: 0.5, Texts: []TextPart{{Text: "end"}}},
 				&Text{Voice: "aa", Speed: 1, Texts: []TextPart{{Text: "end def"}}},
+			}, wantErr: false},
+		{name: "<prosody> inner volume and rate", xml: `<speak><prosody rate="200%" volume="-3dB">
+		<voice name="ooo">aaa
+		<voice name="ooo1"><prosody rate="slow" volume="-5dB">aaa1</prosody></voice>
+		end
+		</voice></prosody>
+		end def</speak>`,
+			want: []Part{
+				&Text{Voice: "ooo", Speed: 0.5, VolumeChange: -3, Texts: []TextPart{{Text: "aaa"}}},
+				&Text{Voice: "ooo1", Speed: 0.75, VolumeChange: -8, Texts: []TextPart{{Text: "aaa1"}}},
+				&Text{Voice: "ooo", Speed: 0.5, VolumeChange: -3, Texts: []TextPart{{Text: "end"}}},
+				&Text{Voice: "aa", Speed: 1, VolumeChange: 0, Texts: []TextPart{{Text: "end def"}}},
 			}, wantErr: false},
 		{name: "<voice> map", xml: `<speak><voice name="ooo">aaa</voice></speak>`,
 			vf: func(s string) (string, error) { return "ooo.v1", nil },
@@ -220,7 +261,7 @@ func Test_getSpeed(t *testing.T) {
 	tests := []struct {
 		name    string
 		args    string
-		want    float32
+		want    float64
 		wantErr bool
 	}{
 		{name: "percent", args: "10%", want: 2, wantErr: false},

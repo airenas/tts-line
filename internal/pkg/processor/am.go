@@ -109,7 +109,7 @@ func (p *amodel) Process(ctx context.Context, data *synthesizer.TTSDataPart) err
 
 type amInput struct {
 	Text     string  `json:"text"`
-	Speed    float32 `json:"speedAlpha,omitempty"`
+	Speed    float64 `json:"speedAlpha,omitempty"`
 	Voice    string  `json:"voice"`
 	Priority int     `json:"priority,omitempty"`
 }

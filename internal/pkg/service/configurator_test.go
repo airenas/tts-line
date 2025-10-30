@@ -365,8 +365,8 @@ func TestAllowCollect(t *testing.T) {
 
 func TestSpeedValue(t *testing.T) {
 	tests := []struct {
-		v     float32
-		e     float32
+		v     float64
+		e     float64
 		isErr bool
 	}{
 		{v: 0, e: 0, isErr: false},

@@ -7,10 +7,15 @@ type Part interface{}
 
 // Text represents Text directive
 type Text struct {
-	Speed float32
-	Voice string
-	Texts []TextPart
+	Speed        float64
+	Voice        string
+	Texts        []TextPart
+	VolumeChange float64 // in dB, if silent then -1000
 }
+
+const (
+	MinVolumeChange = -1000.0
+)
 
 // Pause represents Pause directive
 type Pause struct {

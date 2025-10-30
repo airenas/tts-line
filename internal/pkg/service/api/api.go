@@ -13,7 +13,7 @@ type Input struct {
 	OutputFormat     string  `json:"outputFormat,omitempty"`
 	OutputTextFormat string  `json:"outputTextFormat,omitempty"`
 	AllowCollectData *bool   `json:"saveRequest,omitempty"`
-	Speed            float32 `json:"speed,omitempty"`
+	Speed            float64 `json:"speed,omitempty"`
 	Voice            string  `json:"voice,omitempty"`
 	Priority         int     `json:"priority,omitempty"`
 	//Possible values are: word
