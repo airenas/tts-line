@@ -39,6 +39,10 @@ func TestParse(t *testing.T) {
 			&Text{Voice: "aa", Speed: 1, Texts: []TextPart{{Text: "olia"}}},
 			&Pause{Duration: pDuration}},
 			wantErr: false},
+		{name: "speak lang", xml: `<speak lang="en">olia</speak>`, want: []Part{
+			&Text{Voice: "aa", Speed: 1, Texts: []TextPart{{Language: "en", Text: "olia"}}}},
+			wantErr: false},
+
 		{name: "<p>", xml: "<speak><p>olia</p></speak>", want: []Part{
 			&Pause{Duration: pDuration},
 			&Text{Voice: "aa", Speed: 1, Texts: []TextPart{{Text: "olia"}}},
@@ -56,6 +60,25 @@ func TestParse(t *testing.T) {
 			want: []Part{
 				&Text{Voice: "ooo", Speed: 1, Texts: []TextPart{{Text: "aaa"}}},
 			}, wantErr: false},
+
+		//////////////////////////////////////////////////////////////////////////////////////////
+		/// language tests
+		//////////////////////////////////////////////////////////////////////////////////////////
+		{name: "lang", xml: `<speak lang="en"><lang lang="lt">olia1<lang lang="us">olia2</lang></lang></speak>`, want: []Part{
+			&Text{Voice: "aa", Speed: 1, Texts: []TextPart{{Language: "lt", Text: "olia1"}, {Language: "us", Text: "olia2"}}}},
+			wantErr: false},
+		{name: "lang fail", xml: `<speak lang="en"><lang>olia1</lang></speak>`, want: nil, wantErr: true},
+
+		{name: "lang inside prosody", xml: `<speak lang="en"><prosody rate="100%"><lang lang="lt">olia1</lang></prosody></speak>`, want: []Part{
+			&Text{Voice: "aa", Speed: 1, Texts: []TextPart{{Language: "lt", Text: "olia1"}}}},
+			wantErr: false},
+		{name: "lang outside prosody", xml: `<speak lang="en"><lang lang="lt"><prosody rate="100%">olia1</prosody></lang></speak>`, want: []Part{
+			&Text{Voice: "aa", Speed: 1, Texts: []TextPart{{Language: "lt", Text: "olia1"}}}},
+			wantErr: false},
+		{name: "lang from speak", xml: `<speak lang="en"><prosody rate="100%">olia1</prosody></speak>`, want: []Part{
+			&Text{Voice: "aa", Speed: 1, Texts: []TextPart{{Language: "en", Text: "olia1"}}}},
+			wantErr: false},
+		//////////////////////////////////////////////////////////////////////////////////////////
 		{name: "<voice> inner", xml: `<speak>
 		<voice name="ooo">aaa
 		<voice name="ooo1">aaa1</voice>

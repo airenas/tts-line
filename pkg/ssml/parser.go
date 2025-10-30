@@ -16,11 +16,41 @@ import (
 type startFunc func(xml.StartElement, *wrkData) error
 type endFunc func(xml.EndElement, *wrkData) error
 
+type tagsData[T any] struct {
+	values []T
+}
+
+func (t *tagsData[T]) peek() T {
+	if len(t.values) == 0 {
+		var zero T
+		return zero
+	}
+	return t.values[len(t.values)-1]
+}
+
+func (t *tagsData[T]) count() int {
+	return len(t.values)
+}
+
+func (t *tagsData[T]) pop() {
+	if len(t.values) == 0 {
+		return
+	}
+	t.values = t.values[:len(t.values)-1]
+}
+
+func (t *tagsData[T]) push(lang T) {
+	t.values = append(t.values, lang)
+}
+
 type wrkData struct {
 	speakTagCount    int
 	speakTagEndCount int
-	lastTag          []string
-	voiceFunc        func(string) (string, error)
+	languageOnSpeak  string
+	languages        tagsData[string]
+
+	lastTag   []string
+	voiceFunc func(string) (string, error)
 
 	lastWAcc, lastWSyll, lastWUser string
 
@@ -54,6 +84,8 @@ func init() {
 	endFunctions["prosody"] = endVoice
 	startFunctions["intelektika:w"] = startWord
 	endFunctions["intelektika:w"] = endWord
+	startFunctions["lang"] = startLang
+	endFunctions["lang"] = endLang
 
 	durationStrs = map[string]time.Duration{"none": 0, "x-weak": 250 * time.Millisecond,
 		"weak": 500 * time.Millisecond, "medium": 750 * time.Millisecond,
@@ -145,7 +177,7 @@ func makeTextPart(se xml.CharData, wrk *wrkData) error {
 		if lt == "break" {
 			return fmt.Errorf("data in <break>")
 		}
-		tp := TextPart{Text: s}
+		tp := TextPart{Text: s, Language: getCurrentLanguage(wrk)}
 		if wrk.lastWAcc != "" {
 			tp.Accented = wrk.lastWAcc
 			wrk.lastWAcc = ""
@@ -155,7 +187,8 @@ func makeTextPart(se xml.CharData, wrk *wrkData) error {
 		if wrk.lastText != nil {
 			wrk.lastText.Texts = append(wrk.lastText.Texts, tp)
 		} else {
-			wrk.lastText = &Text{Voice: def.Voice, Speed: def.Speed, VolumeChange: def.VolumeChange, PitchChanges: slices.Clone(def.PitchChanges), Texts: []TextPart{tp}}
+			wrk.lastText = &Text{Voice: def.Voice, Speed: def.Speed, VolumeChange: def.VolumeChange, PitchChanges: slices.Clone(def.PitchChanges),
+				Texts:    []TextPart{tp}}
 			wrk.res = append(wrk.res, wrk.lastText)
 		}
 	}
@@ -167,6 +200,7 @@ func startSpeak(se xml.StartElement, wrk *wrkData) error {
 		return fmt.Errorf("wrong <speak>")
 	}
 	wrk.speakTagCount++
+	wrk.languageOnSpeak = getAttr(se, "lang")
 	return nil
 }
 
@@ -242,7 +276,7 @@ func endBreak(se xml.EndElement, wrk *wrkData) error {
 	return nil
 }
 
- func startVoice(se xml.StartElement, wrk *wrkData) error {
+func startVoice(se xml.StartElement, wrk *wrkData) error {
 	if wrk.speakTagCount != 1 {
 		return fmt.Errorf("no <speak>")
 	}
@@ -271,6 +305,13 @@ func makeInternalText(parent *Text, new *Text) *Text {
 		PitchChanges: appendCopyPitchChanges(parent.PitchChanges, new.PitchChanges),
 	}
 	return res
+}
+
+func combineLanguage(s1, s2 string) string {
+	if s2 != "" {
+		return s2
+	}
+	return s1
 }
 
 func combineVolume(v1, v2 float64) float64 {
@@ -351,7 +392,7 @@ func startProsody(se xml.StartElement, wrk *wrkData) error {
 	wrk.lastText = nil
 	def := wrk.cValues[len(wrk.cValues)-1]
 	newTextPart := makeInternalText(def, &Text{Speed: sp, VolumeChange: volumeChange, PitchChanges: pitchChanges})
-	wrk.cValues = append(wrk.cValues, newTextPart)
+	wrk.cValues = append(wrk.cValues, newTextPart)		
 	return nil
 }
 
@@ -392,6 +433,36 @@ func startWord(se xml.StartElement, wrk *wrkData) error {
 		return fmt.Errorf("wrong OE model <intelektika:w>:acc='%s' user='%s'", wrk.lastWAcc, wrk.lastWUser)
 	}
 	return nil
+}
+
+func startLang(se xml.StartElement, wrk *wrkData) error {
+	if wrk.speakTagCount != 1 {
+		return fmt.Errorf("no <speak>")
+	}
+	lang := getAttr(se, "lang")
+	if lang == "" {
+		return fmt.Errorf("no <lang>:lang")
+	}
+	wrk.languages.push(lang)
+	return nil
+}
+
+func endLang(se xml.EndElement, wrk *wrkData) error {
+	if wrk.speakTagCount != 1 {
+		return fmt.Errorf("no </speak>")
+	}
+	if wrk.languages.count() < 1 {
+		return fmt.Errorf("no </lang>")
+	}
+	wrk.languages.pop()
+	return nil
+}
+
+func getCurrentLanguage(wrk *wrkData) string {
+	if wrk.languages.count() > 0 {
+		return wrk.languages.peek()
+	}
+	return wrk.languageOnSpeak
 }
 
 func clearUserOE(s string) string {
@@ -496,7 +567,7 @@ func parseRatePercents(v float64) float64 {
 	}
 	return 1 - (v-100)/200
 }
-	
+
 func percentToMultiplier(v float64) float64 {
 	return 1 + v/100.0
 }

@@ -47,6 +47,7 @@ func IsPause(p Part) bool {
 // TextPart represents some part of text
 type TextPart struct {
 	Text      string
+	Language  string
 	Accented  string
 	Syllables string
 	UserOEPal string // long/short OE and palatalization model
