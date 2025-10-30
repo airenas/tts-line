@@ -7,15 +7,30 @@ type Part interface{}
 
 // Text represents Text directive
 type Text struct {
-	Speed        float64
+	Speed        float64 // cummulative change
 	Voice        string
 	Texts        []TextPart
-	VolumeChange float64 // in dB, if silent then -1000
+	VolumeChange float64       // in dB, if silent then -1000, cummulative
+	PitchChanges []PitchChange // list of consecutive changes
 }
 
 const (
 	MinVolumeChange = -1000.0
 )
+
+type PitchChangeKind int
+
+const (
+	PitchChangeNone PitchChangeKind = iota
+	PitchChangeHertz
+	PitchChangeMultiplier
+	PitchChangeSemitone
+)
+
+type PitchChange struct {
+	Kind  PitchChangeKind
+	Value float64
+}
 
 // Pause represents Pause directive
 type Pause struct {

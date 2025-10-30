@@ -19,19 +19,6 @@ func TestParse(t *testing.T) {
 		want    []Part
 		wantErr bool
 	}{
-		{name: "<prosody> inner volume and rate", xml: `<speak><prosody rate="200%" volume="-3dB">
-		<voice name="ooo">aaa
-		<voice name="ooo1"><prosody rate="slow" volume="-5dB">aaa1</prosody></voice>
-		end
-		</voice></prosody>
-		end def</speak>`,
-			want: []Part{
-				&Text{Voice: "ooo", Speed: 0.5, VolumeChange: -3, Texts: []TextPart{{Text: "aaa"}}},
-				&Text{Voice: "ooo1", Speed: 0.75, VolumeChange: -8, Texts: []TextPart{{Text: "aaa1"}}},
-				&Text{Voice: "ooo", Speed: 0.5, VolumeChange: -3, Texts: []TextPart{{Text: "end"}}},
-				&Text{Voice: "aa", Speed: 1, VolumeChange: 0, Texts: []TextPart{{Text: "end def"}}},
-			}, wantErr: false},
-
 		{name: "simple empty", xml: "<speak></speak>", want: []Part{}, wantErr: false},
 		{name: "simple", xml: "<speak>olia</speak>", want: []Part{
 			&Text{Voice: "aa", Speed: 1, Texts: []TextPart{{Text: "olia"}}}},
@@ -97,6 +84,10 @@ func TestParse(t *testing.T) {
 			want: []Part{
 				&Text{Voice: "aa", Speed: 1, VolumeChange: -5, Texts: []TextPart{{Text: "aaa"}}},
 			}, wantErr: false},
+		{name: "<prosody> pitch", xml: `<speak><prosody pitch="+10st">aaa</prosody></speak>`,
+			want: []Part{
+				&Text{Voice: "aa", Speed: 1, VolumeChange: 0, PitchChanges: []PitchChange{{Value: 10, Kind: PitchChangeSemitone}}, Texts: []TextPart{{Text: "aaa"}}},
+			}, wantErr: false},
 		{name: "<prosody> volume and rate", xml: `<speak><prosody rate="50%" volume="-5dB">aaa</prosody></speak>`,
 			want: []Part{
 				&Text{Voice: "aa", Speed: 2, VolumeChange: -5, Texts: []TextPart{{Text: "aaa"}}},
@@ -124,6 +115,34 @@ func TestParse(t *testing.T) {
 				&Text{Voice: "ooo1", Speed: 0.75, VolumeChange: -8, Texts: []TextPart{{Text: "aaa1"}}},
 				&Text{Voice: "ooo", Speed: 0.5, VolumeChange: -3, Texts: []TextPart{{Text: "end"}}},
 				&Text{Voice: "aa", Speed: 1, VolumeChange: 0, Texts: []TextPart{{Text: "end def"}}},
+			}, wantErr: false},
+		{name: "<prosody> inner volume, pitch and rate, ", xml: `
+		<speak>
+			<prosody rate="200%" volume="-3dB" pitch="+2st">
+				<voice name="ooo">aaa
+					<voice name="ooo1">
+						<prosody rate="slow" volume="-5dB" pitch="+10%">
+						aaa1
+						</prosody>
+					</voice>
+					end
+				</voice>
+				<prosody pitch="+10Hz">
+					<prosody pitch="+10%">
+						aaa2
+					</prosody>
+				</prosody>
+			</prosody>
+			end def
+		</speak>`,
+			want: []Part{
+				&Text{Voice: "ooo", Speed: 0.5, VolumeChange: -3, PitchChanges: []PitchChange{{Value: 2, Kind: PitchChangeSemitone}}, Texts: []TextPart{{Text: "aaa"}}},
+				&Text{Voice: "ooo1", Speed: 0.75, VolumeChange: -8, PitchChanges: []PitchChange{{Value: 2, Kind: PitchChangeSemitone},
+					{Value: 1.1, Kind: PitchChangeMultiplier}}, Texts: []TextPart{{Text: "aaa1"}}},
+				&Text{Voice: "ooo", Speed: 0.5, VolumeChange: -3, PitchChanges: []PitchChange{{Value: 2, Kind: PitchChangeSemitone}}, Texts: []TextPart{{Text: "end"}}},
+				&Text{Voice: "aa", Speed: 0.5, VolumeChange: -3, PitchChanges: []PitchChange{{Value: 2, Kind: PitchChangeSemitone},
+					{Value: 10, Kind: PitchChangeHertz}, {Value: 1.1, Kind: PitchChangeMultiplier}}, Texts: []TextPart{{Text: "aaa2"}}},
+				&Text{Voice: "aa", Speed: 1, VolumeChange: 0, PitchChanges: nil, Texts: []TextPart{{Text: "end def"}}},
 			}, wantErr: false},
 		{name: "<voice> map", xml: `<speak><voice name="ooo">aaa</voice></speak>`,
 			vf: func(s string) (string, error) { return "ooo.v1", nil },
@@ -359,6 +378,89 @@ func Test_clearUserOE(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := clearUserOE(tt.args.s); got != tt.want {
 				t.Errorf("clearUserOE() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func Test_getVolume(t *testing.T) {
+	tests := []struct {
+		name    string
+		str     string
+		want    float64
+		wantErr bool
+	}{
+		{name: "silent", str: "silent", want: MinVolumeChange, wantErr: false},
+		{name: "x-soft", str: "x-soft", want: -6, wantErr: false},
+		{name: "soft", str: "soft", want: -3, wantErr: false},
+		{name: "medium", str: "medium", want: 0, wantErr: false},
+		{name: "loud", str: "loud", want: 3, wantErr: false},
+		{name: "x-loud", str: "x-loud", want: 6, wantErr: false},
+		{name: "default", str: "default", want: 0, wantErr: false},
+		{name: "plus dB", str: "+5dB", want: 5, wantErr: false},
+		{name: "plus dB", str: "+0.5dB", want: 0.5, wantErr: false},
+		{name: "minus dB", str: "-3dB", want: -3, wantErr: false},
+		{name: "invalid string", str: "aaa", want: 0, wantErr: true},
+		{name: "invalid plus", str: "+dB", want: 0, wantErr: true},
+		{name: "invalid minus", str: "-dB", want: 0, wantErr: true},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, gotErr := getVolume(tt.str)
+			if gotErr != nil {
+				if !tt.wantErr {
+					t.Errorf("getVolume() failed: %v", gotErr)
+				}
+				return
+			}
+			if tt.wantErr {
+				t.Fatal("getVolume() succeeded unexpectedly")
+			}
+			if got != tt.want {
+				t.Errorf("getVolume() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func Test_getPitch(t *testing.T) {
+	tests := []struct {
+		name    string
+		str     string
+		want    PitchChange
+		wantErr bool
+	}{
+		{name: "semitone plus", str: "+5st", want: PitchChange{Value: 5, Kind: PitchChangeSemitone}, wantErr: false},
+		{name: "semitone minus", str: "-3st", want: PitchChange{Value: -3, Kind: PitchChangeSemitone}, wantErr: false},
+		{name: "hertz plus", str: "+10Hz", want: PitchChange{Value: 10, Kind: PitchChangeHertz}, wantErr: false},
+		{name: "hertz minus", str: "-4Hz", want: PitchChange{Value: -4, Kind: PitchChangeHertz}, wantErr: false},
+		{name: "percent plus", str: "+20%", want: PitchChange{Value: 1.2, Kind: PitchChangeMultiplier}, wantErr: false},
+		{name: "percent minus", str: "-50%", want: PitchChange{Value: 0.5, Kind: PitchChangeMultiplier}, wantErr: false},
+		{name: "invalid string", str: "aaa", want: PitchChange{}, wantErr: true},
+		{name: "invalid semitone", str: "+st", want: PitchChange{}, wantErr: true},
+		{name: "invalid hertz", str: "-Hz", want: PitchChange{}, wantErr: true},
+		{name: "invalid percent", str: "+%", want: PitchChange{}, wantErr: true},
+		{name: "x-low", str: "x-low", want: PitchChange{Value: 0.55, Kind: PitchChangeMultiplier}, wantErr: false},
+		{name: "low", str: "low", want: PitchChange{Value: 0.8, Kind: PitchChangeMultiplier}, wantErr: false},
+		{name: "medium", str: "medium", want: PitchChange{Value: 1, Kind: PitchChangeMultiplier}, wantErr: false},
+		{name: "high", str: "high", want: PitchChange{Value: 1.2, Kind: PitchChangeMultiplier}, wantErr: false},
+		{name: "x-high", str: "x-high", want: PitchChange{Value: 1.45, Kind: PitchChangeMultiplier}, wantErr: false},
+		{name: "default", str: "default", want: PitchChange{Value: 1, Kind: PitchChangeMultiplier}, wantErr: false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, gotErr := getPitch(tt.str)
+			if gotErr != nil {
+				if !tt.wantErr {
+					t.Errorf("getPitch() failed: %v", gotErr)
+				}
+				return
+			}
+			if tt.wantErr {
+				t.Fatal("getPitch() succeeded unexpectedly")
+			}
+			if got != tt.want {
+				t.Errorf("getPitch() = %v, want %v", got, tt.want)
 			}
 		})
 	}

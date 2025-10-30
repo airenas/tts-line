@@ -4,6 +4,7 @@ import (
 	"encoding/xml"
 	"fmt"
 	"io"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -34,6 +35,7 @@ var endFunctions map[string]endFunc
 var durationStrs map[string]time.Duration
 var rateStrs map[string]float64
 var volumeStrs map[string]float64
+var pitchStrs map[string]float64
 var pDuration time.Duration
 
 func init() {
@@ -60,6 +62,7 @@ func init() {
 
 	rateStrs = map[string]float64{"x-slow": 2, "slow": 1.5, "medium": 1, "fast": .75, "x-fast": .5, "default": 1}
 	volumeStrs = map[string]float64{"silent": MinVolumeChange, "x-soft": -6, "soft": -3, "medium": 0, "loud": 3, "x-loud": 6, "default": 0}
+	pitchStrs = map[string]float64{"x-low": 0.55, "low": 0.8, "medium": 1, "high": 1.2, "x-high": 1.45, "default": 1}
 }
 
 // Parse parses xml into synthesis structure
@@ -152,7 +155,7 @@ func makeTextPart(se xml.CharData, wrk *wrkData) error {
 		if wrk.lastText != nil {
 			wrk.lastText.Texts = append(wrk.lastText.Texts, tp)
 		} else {
-			wrk.lastText = &Text{Voice: def.Voice, Speed: def.Speed, VolumeChange: def.VolumeChange, Texts: []TextPart{tp}}
+			wrk.lastText = &Text{Voice: def.Voice, Speed: def.Speed, VolumeChange: def.VolumeChange, PitchChanges: slices.Clone(def.PitchChanges), Texts: []TextPart{tp}}
 			wrk.res = append(wrk.res, wrk.lastText)
 		}
 	}
@@ -239,7 +242,7 @@ func endBreak(se xml.EndElement, wrk *wrkData) error {
 	return nil
 }
 
-func startVoice(se xml.StartElement, wrk *wrkData) error {
+ func startVoice(se xml.StartElement, wrk *wrkData) error {
 	if wrk.speakTagCount != 1 {
 		return fmt.Errorf("no <speak>")
 	}
@@ -265,6 +268,7 @@ func makeInternalText(parent *Text, new *Text) *Text {
 		Speed:        combineSpeed(parent.Speed, new.Speed),
 		VolumeChange: combineVolume(parent.VolumeChange, new.VolumeChange),
 		Texts:        new.Texts,
+		PitchChanges: appendCopyPitchChanges(parent.PitchChanges, new.PitchChanges),
 	}
 	return res
 }
@@ -330,14 +334,40 @@ func startProsody(se xml.StartElement, wrk *wrkData) error {
 		}
 		was = true
 	}
+	var pitchChanges []PitchChange
+
+	r = getAttr(se, "pitch")
+	if r != "" {
+		pitchChange, err := getPitch(r)
+		if err != nil {
+			return err
+		}
+		pitchChanges = appendPitchChange(pitchChanges, pitchChange)
+		was = true
+	}
 	if !was {
 		return fmt.Errorf("no <prosody>:rate or <prosody>:volume or <prosody>:pitch")
 	}
 	wrk.lastText = nil
 	def := wrk.cValues[len(wrk.cValues)-1]
-	newTextPart := makeInternalText(def, &Text{Speed: sp, VolumeChange: volumeChange})
+	newTextPart := makeInternalText(def, &Text{Speed: sp, VolumeChange: volumeChange, PitchChanges: pitchChanges})
 	wrk.cValues = append(wrk.cValues, newTextPart)
 	return nil
+}
+
+func appendPitchChange(pitchChanges []PitchChange, pitchChange PitchChange) []PitchChange {
+	if pitchChange.Kind == PitchChangeNone {
+		return pitchChanges
+	}
+	return append(pitchChanges, pitchChange)
+}
+
+func appendCopyPitchChanges(pitchChanges []PitchChange, newChanges []PitchChange) []PitchChange {
+	if len(newChanges) == 0 {
+		return slices.Clone(pitchChanges)
+	}
+	res := appendPitchChange(slices.Clone(pitchChanges), newChanges[0])
+	return res
 }
 
 func startWord(se xml.StartElement, wrk *wrkData) error {
@@ -423,6 +453,38 @@ func getVolume(str string) (float64, error) {
 	return res, nil
 }
 
+func getPitch(str string) (PitchChange, error) {
+	if str == "" {
+		return PitchChange{}, fmt.Errorf("no pitch")
+	}
+	if strings.HasSuffix(str, "Hz") && (strings.HasPrefix(str, "+") || strings.HasPrefix(str, "-")) {
+		v, err := strconv.ParseFloat(str[:len(str)-2], 64)
+		if err != nil {
+			return PitchChange{}, fmt.Errorf("wrong pitch value '%s': %v", str, err)
+		}
+		return PitchChange{Kind: PitchChangeHertz, Value: v}, nil
+	}
+	if strings.HasSuffix(str, "st") && (strings.HasPrefix(str, "+") || strings.HasPrefix(str, "-")) {
+		v, err := strconv.ParseFloat(str[:len(str)-2], 64)
+		if err != nil {
+			return PitchChange{}, fmt.Errorf("wrong pitch value '%s': %v", str, err)
+		}
+		return PitchChange{Kind: PitchChangeSemitone, Value: v}, nil
+	}
+	if strings.HasSuffix(str, "%") && (strings.HasPrefix(str, "+") || strings.HasPrefix(str, "-")) {
+		v, err := strconv.ParseFloat(str[:len(str)-1], 64)
+		if err != nil {
+			return PitchChange{}, fmt.Errorf("wrong pitch value '%s': %v", str, err)
+		}
+		return PitchChange{Kind: PitchChangeMultiplier, Value: percentToMultiplier(v)}, nil
+	}
+	res, ok := pitchStrs[str]
+	if !ok {
+		return PitchChange{}, fmt.Errorf("wrong pitch value '%s'", str)
+	}
+	return PitchChange{Kind: PitchChangeMultiplier, Value: res}, nil
+}
+
 func parseRatePercents(v float64) float64 {
 	if v > 200 {
 		v = 200
@@ -433,4 +495,8 @@ func parseRatePercents(v float64) float64 {
 		return 1 + (100-v)/50
 	}
 	return 1 - (v-100)/200
+}
+	
+func percentToMultiplier(v float64) float64 {
+	return 1 + v/100.0
 }
