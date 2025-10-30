@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/airenas/tts-line/internal/pkg/accent"
+	"github.com/airenas/tts-line/internal/pkg/utils"
 )
 
 type startFunc func(xml.StartElement, *wrkData) error
@@ -269,7 +270,7 @@ func makeInternalText(parent *Text, new *Text) *Text {
 }
 
 func combineVolume(v1, v2 float64) float64 {
-	if v1 == MinVolumeChange || v2 == MinVolumeChange {
+	if utils.Float64Equals(v1, MinVolumeChange) || utils.Float64Equals(v2, MinVolumeChange) {
 		return MinVolumeChange
 	}
 	return v1 + v2
@@ -277,10 +278,10 @@ func combineVolume(v1, v2 float64) float64 {
 
 func combineSpeed(v1, v2 float64) float64 {
 	t1, t2 := v1, v2
-	if t1 == 0 {
+	if utils.Float64Equals(t1, 0) {
 		t1 = 1
 	}
-	if t2 == 0 {
+	if utils.Float64Equals(t2, 0) {
 		t2 = 1
 	}
 	return t1 * t2
