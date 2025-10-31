@@ -2,6 +2,7 @@ package utils
 
 import (
 	"net/url"
+	"slices"
 	"strings"
 
 	"github.com/pkg/errors"
@@ -43,4 +44,11 @@ func RetrieveInfo(pr interface{}) string {
 		return pri.Info()
 	}
 	return ""
+}
+
+func SlicesCopy[T any](in []T) []T {
+	if len(in) == 0 {
+		return nil
+	}
+	return slices.Clone(in)
 }

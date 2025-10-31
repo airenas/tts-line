@@ -4,7 +4,6 @@ import (
 	"encoding/xml"
 	"fmt"
 	"io"
-	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -46,8 +45,9 @@ func (t *tagsData[T]) push(lang T) {
 type wrkData struct {
 	speakTagCount    int
 	speakTagEndCount int
-	languageOnSpeak  string
 	languages        tagsData[string]
+	prosodies        tagsData[*Prosody]
+	voices           tagsData[string]
 
 	lastTag   []string
 	voiceFunc func(string) (string, error)
@@ -56,8 +56,8 @@ type wrkData struct {
 
 	lastText *Text
 
-	res     []Part
-	cValues []*Text
+	res []Part
+	// cValues []*Text
 }
 
 var startFunctions map[string]startFunc
@@ -66,6 +66,7 @@ var durationStrs map[string]time.Duration
 var rateStrs map[string]float64
 var volumeStrs map[string]float64
 var pitchStrs map[string]float64
+var emphasisLevels map[string]EmphasisType
 var pDuration time.Duration
 
 func init() {
@@ -81,11 +82,13 @@ func init() {
 	startFunctions["voice"] = startVoice
 	endFunctions["voice"] = endVoice
 	startFunctions["prosody"] = startProsody
-	endFunctions["prosody"] = endVoice
+	endFunctions["prosody"] = endProsody
 	startFunctions["intelektika:w"] = startWord
 	endFunctions["intelektika:w"] = endWord
 	startFunctions["lang"] = startLang
 	endFunctions["lang"] = endLang
+	startFunctions["emphasis"] = startEmphasis
+	endFunctions["emphasis"] = endEmphasis
 
 	durationStrs = map[string]time.Duration{"none": 0, "x-weak": 250 * time.Millisecond,
 		"weak": 500 * time.Millisecond, "medium": 750 * time.Millisecond,
@@ -95,11 +98,17 @@ func init() {
 	rateStrs = map[string]float64{"x-slow": 2, "slow": 1.5, "medium": 1, "fast": .75, "x-fast": .5, "default": 1}
 	volumeStrs = map[string]float64{"silent": MinVolumeChange, "x-soft": -6, "soft": -3, "medium": 0, "loud": 3, "x-loud": 6, "default": 0}
 	pitchStrs = map[string]float64{"x-low": 0.55, "low": 0.8, "medium": 1, "high": 1.2, "x-high": 1.45, "default": 1}
+	emphasisLevels = map[string]EmphasisType{"reduced": EmphasisTypeReduced, "none": EmphasisTypeNone,
+		"moderate": EmphasisTypeModerate, "strong": EmphasisTypeStrong}
 }
 
 // Parse parses xml into synthesis structure
 func Parse(r io.Reader, def *Text, voiceFunc func(string) (string, error)) ([]Part, error) {
-	wrk := &wrkData{res: make([]Part, 0), cValues: []*Text{def}, voiceFunc: voiceFunc}
+	wrk := &wrkData{res: make([]Part, 0),
+		//cValues: []*Text{def},
+		voiceFunc: voiceFunc}
+	wrk.voices.push(def.Voice)
+
 	d := xml.NewDecoder(r)
 
 	for {
@@ -166,7 +175,7 @@ func getXMLKey(name xml.Name) string {
 func makeTextPart(se xml.CharData, wrk *wrkData) error {
 	s := strings.TrimSpace(string(se))
 	if s != "" {
-		def := wrk.cValues[len(wrk.cValues)-1]
+		// def := wrk.cValues[len(wrk.cValues)-1]
 		if wrk.speakTagCount != 1 {
 			return fmt.Errorf("no <speak>")
 		}
@@ -177,7 +186,7 @@ func makeTextPart(se xml.CharData, wrk *wrkData) error {
 		if lt == "break" {
 			return fmt.Errorf("data in <break>")
 		}
-		tp := TextPart{Text: s, Language: getCurrentLanguage(wrk)}
+		tp := TextPart{Text: s, Language: wrk.languages.peek()}
 		if wrk.lastWAcc != "" {
 			tp.Accented = wrk.lastWAcc
 			wrk.lastWAcc = ""
@@ -187,8 +196,7 @@ func makeTextPart(se xml.CharData, wrk *wrkData) error {
 		if wrk.lastText != nil {
 			wrk.lastText.Texts = append(wrk.lastText.Texts, tp)
 		} else {
-			wrk.lastText = &Text{Voice: def.Voice, Speed: def.Speed, VolumeChange: def.VolumeChange, PitchChanges: slices.Clone(def.PitchChanges),
-				Texts:    []TextPart{tp}}
+			wrk.lastText = &Text{Voice: wrk.voices.peek(), Texts: []TextPart{tp}, Prosodies: utils.SlicesCopy(wrk.prosodies.values)}
 			wrk.res = append(wrk.res, wrk.lastText)
 		}
 	}
@@ -200,12 +208,19 @@ func startSpeak(se xml.StartElement, wrk *wrkData) error {
 		return fmt.Errorf("wrong <speak>")
 	}
 	wrk.speakTagCount++
-	wrk.languageOnSpeak = getAttr(se, "lang")
+
+	l := getAttr(se, "lang")
+	wrk.languages.push(l)
+
 	return nil
 }
 
 func endSpeak(se xml.EndElement, wrk *wrkData) error {
 	wrk.speakTagEndCount++
+	if wrk.languages.count() < 1 {
+		return fmt.Errorf("no <speak>")
+	}
+	wrk.languages.pop()
 	return nil
 }
 
@@ -290,62 +305,18 @@ func startVoice(se xml.StartElement, wrk *wrkData) error {
 		return err
 	}
 	wrk.lastText = nil
-	def := wrk.cValues[len(wrk.cValues)-1]
-	newTextPart := makeInternalText(def, &Text{Voice: v})
-	wrk.cValues = append(wrk.cValues, newTextPart)
+	wrk.voices.push(v)
 	return nil
-}
-
-func makeInternalText(parent *Text, new *Text) *Text {
-	res := &Text{
-		Voice:        combineVoice(parent.Voice, new.Voice),
-		Speed:        combineSpeed(parent.Speed, new.Speed),
-		VolumeChange: combineVolume(parent.VolumeChange, new.VolumeChange),
-		Texts:        new.Texts,
-		PitchChanges: appendCopyPitchChanges(parent.PitchChanges, new.PitchChanges),
-	}
-	return res
-}
-
-func combineLanguage(s1, s2 string) string {
-	if s2 != "" {
-		return s2
-	}
-	return s1
-}
-
-func combineVolume(v1, v2 float64) float64 {
-	if utils.Float64Equals(v1, MinVolumeChange) || utils.Float64Equals(v2, MinVolumeChange) {
-		return MinVolumeChange
-	}
-	return v1 + v2
-}
-
-func combineSpeed(v1, v2 float64) float64 {
-	t1, t2 := v1, v2
-	if utils.Float64Equals(t1, 0) {
-		t1 = 1
-	}
-	if utils.Float64Equals(t2, 0) {
-		t2 = 1
-	}
-	return t1 * t2
-}
-
-func combineVoice(v1, v2 string) string {
-	if v2 != "" {
-		return v2
-	}
-	return v1
 }
 
 func endVoice(se xml.EndElement, wrk *wrkData) error {
 	if wrk.speakTagCount != 1 {
 		return fmt.Errorf("no </speak>")
 	}
-	l := len(wrk.cValues) - 1
-	wrk.cValues[l] = nil
-	wrk.cValues = wrk.cValues[:l]
+	if wrk.voices.count() < 1 {
+		return fmt.Errorf("no <voice>")
+	}
+	wrk.voices.pop()
 	wrk.lastText = nil
 	return nil
 }
@@ -375,40 +346,38 @@ func startProsody(se xml.StartElement, wrk *wrkData) error {
 		}
 		was = true
 	}
-	var pitchChanges []PitchChange
+	var pitchChange PitchChange
 
 	r = getAttr(se, "pitch")
 	if r != "" {
-		pitchChange, err := getPitch(r)
+		pitchChange, err = getPitch(r)
 		if err != nil {
 			return err
 		}
-		pitchChanges = appendPitchChange(pitchChanges, pitchChange)
 		was = true
 	}
 	if !was {
 		return fmt.Errorf("no <prosody>:rate or <prosody>:volume or <prosody>:pitch")
 	}
+	wrk.prosodies.push(&Prosody{Rate: sp, Volume: volumeChange, Pitch: pitchChange})
 	wrk.lastText = nil
-	def := wrk.cValues[len(wrk.cValues)-1]
-	newTextPart := makeInternalText(def, &Text{Speed: sp, VolumeChange: volumeChange, PitchChanges: pitchChanges})
-	wrk.cValues = append(wrk.cValues, newTextPart)		
+	// def := wrk.cValues[len(wrk.cValues)-1]
+	// newTextPart := makeInternalText(def, &Text{Speed: sp})
+	// newTextPart.Prosodies = slices.Clone(wrk.prosodies.values)
+	// wrk.cValues = append(wrk.cValues, newTextPart)
 	return nil
 }
 
-func appendPitchChange(pitchChanges []PitchChange, pitchChange PitchChange) []PitchChange {
-	if pitchChange.Kind == PitchChangeNone {
-		return pitchChanges
+func endProsody(se xml.EndElement, wrk *wrkData) error {
+	if wrk.speakTagCount != 1 {
+		return fmt.Errorf("no </speak>")
 	}
-	return append(pitchChanges, pitchChange)
-}
-
-func appendCopyPitchChanges(pitchChanges []PitchChange, newChanges []PitchChange) []PitchChange {
-	if len(newChanges) == 0 {
-		return slices.Clone(pitchChanges)
+	if wrk.prosodies.count() < 1 {
+		return fmt.Errorf("no <prosody>")
 	}
-	res := appendPitchChange(slices.Clone(pitchChanges), newChanges[0])
-	return res
+	wrk.prosodies.pop()
+	wrk.lastText = nil
+	return nil
 }
 
 func startWord(se xml.StartElement, wrk *wrkData) error {
@@ -458,11 +427,35 @@ func endLang(se xml.EndElement, wrk *wrkData) error {
 	return nil
 }
 
-func getCurrentLanguage(wrk *wrkData) string {
-	if wrk.languages.count() > 0 {
-		return wrk.languages.peek()
+func startEmphasis(se xml.StartElement, wrk *wrkData) error {
+	if wrk.speakTagCount != 1 {
+		return fmt.Errorf("no <speak>")
 	}
-	return wrk.languageOnSpeak
+	levelStr := getAttr(se, "level")
+	if levelStr == "" {
+		return fmt.Errorf("no <emphasis>:level")
+	}
+	level, ok := emphasisLevels[levelStr]
+	if !ok {
+		return fmt.Errorf("wrong <emphasis>:level='%s'", levelStr)
+	}
+
+	prosody := &Prosody{Emphasis: level, Rate: 1}
+	wrk.prosodies.push(prosody)
+	wrk.lastText = nil
+	return nil
+}
+
+func endEmphasis(se xml.EndElement, wrk *wrkData) error {
+	if wrk.speakTagCount != 1 {
+		return fmt.Errorf("no </speak>")
+	}
+	if wrk.prosodies.count() < 1 {
+		return fmt.Errorf("no <emphasis>")
+	}
+	wrk.prosodies.pop()
+	wrk.lastText = nil
+	return nil
 }
 
 func clearUserOE(s string) string {

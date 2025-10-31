@@ -12,6 +12,7 @@ import (
 	"github.com/airenas/tts-line/internal/pkg/service/api"
 	"github.com/airenas/tts-line/internal/pkg/synthesizer"
 	"github.com/airenas/tts-line/internal/pkg/utils"
+	"github.com/airenas/tts-line/pkg/ssml"
 	"github.com/pkg/errors"
 )
 
@@ -143,7 +144,7 @@ func mapAMOutputDurations(ctx context.Context, data *synthesizer.TTSDataPart, du
 
 func (p *amodel) mapAMInput(data *synthesizer.TTSDataPart) (*amInput, []*synthesizer.SynthesizedPos) {
 	res := &amInput{}
-	res.Speed = data.Cfg.Speed
+	res.Speed = calculateSpeed(data.Cfg.Prosodies)
 	res.Voice = data.Cfg.Voice
 	res.Priority = data.Cfg.Input.Priority
 	if data.Cfg.JustAM {
@@ -210,6 +211,22 @@ func (p *amodel) mapAMInput(data *synthesizer.TTSDataPart) (*amInput, []*synthes
 	}
 	res.Text = strings.Join(sb, " ")
 	return res, indRes
+}
+
+func calculateSpeed(prosody []*ssml.Prosody) float64 {
+	total := 1.0
+	for _, p := range prosody {
+		if utils.Float64Equals(p.Rate, 0) {
+			continue
+		}
+		total *= p.Rate
+	}
+	if total < 0.5 {
+		total = 0.5
+	} else if total > 2.0 {
+		total = 2.0
+	}
+	return total
 }
 
 func getSep(s string, words []*synthesizer.ProcessedWord, pos int) string {
