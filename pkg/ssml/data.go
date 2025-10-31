@@ -7,11 +7,9 @@ type Part interface{}
 
 // Text represents Text directive
 type Text struct {
-	Speed        float64 // cummulative change
-	Voice        string
-	Texts        []TextPart
-	VolumeChange float64       // in dB, if silent then -1000, cummulative
-	PitchChanges []PitchChange // list of consecutive changes
+	Voice     string
+	Texts     []TextPart
+	Prosodies []*Prosody
 }
 
 const (
@@ -30,6 +28,23 @@ const (
 type PitchChange struct {
 	Kind  PitchChangeKind
 	Value float64
+}
+
+type EmphasisType int
+
+const (
+	EmphasisTypeUnset EmphasisType = iota
+	EmphasisTypeReduced
+	EmphasisTypeNone
+	EmphasisTypeModerate
+	EmphasisTypeStrong
+)
+
+type Prosody struct {
+	Rate     float64
+	Volume   float64 // in dB, if silent then -1000
+	Pitch    PitchChange
+	Emphasis EmphasisType
 }
 
 // Pause represents Pause directive

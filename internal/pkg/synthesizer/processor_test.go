@@ -182,22 +182,22 @@ func Test_makeSSMLParts(t *testing.T) {
 		want    []*TTSData
 		wantErr bool
 	}{
-		{name: "text", args: &api.TTSRequestConfig{SSMLParts: []ssml.Part{&ssml.Text{Voice: "aa", Texts: []ssml.TextPart{{Text: "oo"}}, Speed: 0.6}}},
-			want:    []*TTSData{{OriginalTextParts: []*TTSTextPart{{Text: "oo"}}, Cfg: TTSConfig{Type: SSMLText, Voice: "aa", Speed: 0.6}}},
+		{name: "text", args: &api.TTSRequestConfig{SSMLParts: []ssml.Part{&ssml.Text{Voice: "aa", Texts: []ssml.TextPart{{Text: "oo"}}, Prosodies: []*ssml.Prosody{{Rate: 0.6}}}}},
+			want:    []*TTSData{{OriginalTextParts: []*TTSTextPart{{Text: "oo"}}, Cfg: TTSConfig{Type: SSMLText, Voice: "aa", Prosodies: []*ssml.Prosody{{Rate: 0.6}}}}},
 			wantErr: false},
 		{name: "pause", args: &api.TTSRequestConfig{SSMLParts: []ssml.Part{&ssml.Pause{Duration: time.Second, IsBreak: true}}},
 			want:    []*TTSData{{Cfg: TTSConfig{Type: SSMLPause, PauseDuration: time.Second}}},
 			wantErr: false},
 		{name: "pause", args: &api.TTSRequestConfig{SSMLParts: []ssml.Part{&ssml.Pause{Duration: time.Second, IsBreak: true},
-			&ssml.Text{Voice: "aa", Texts: []ssml.TextPart{{Text: "oo"}}, Speed: 0.6}}},
+			&ssml.Text{Voice: "aa", Texts: []ssml.TextPart{{Text: "oo"}}, Prosodies: []*ssml.Prosody{{Rate: 0.6}}}}},
 			want: []*TTSData{{Cfg: TTSConfig{Type: SSMLPause, PauseDuration: time.Second}},
-				{OriginalTextParts: []*TTSTextPart{{Text: "oo"}}, Cfg: TTSConfig{Type: SSMLText, Voice: "aa", Speed: 0.6}}},
+				{OriginalTextParts: []*TTSTextPart{{Text: "oo"}}, Cfg: TTSConfig{Type: SSMLText, Voice: "aa", Prosodies: []*ssml.Prosody{{Rate: 0.6}}}}},
 			wantErr: false},
 		{name: "fail", args: &api.TTSRequestConfig{SSMLParts: []ssml.Part{struct{}{}}},
 			want:    []*TTSData{},
 			wantErr: true},
-		{name: "text with accent", args: &api.TTSRequestConfig{SSMLParts: []ssml.Part{&ssml.Text{Voice: "aa", Texts: []ssml.TextPart{{Text: "oo", Accented: "acc"}}, Speed: 0.6}}},
-			want:    []*TTSData{{OriginalTextParts: []*TTSTextPart{{Text: "oo", Accented: "acc"}}, Cfg: TTSConfig{Type: SSMLText, Voice: "aa", Speed: 0.6}}},
+		{name: "text with accent", args: &api.TTSRequestConfig{SSMLParts: []ssml.Part{&ssml.Text{Voice: "aa", Texts: []ssml.TextPart{{Text: "oo", Accented: "acc"}}, Prosodies: []*ssml.Prosody{{Rate: 0.6}}}}},
+			want:    []*TTSData{{OriginalTextParts: []*TTSTextPart{{Text: "oo", Accented: "acc"}}, Cfg: TTSConfig{Type: SSMLText, Voice: "aa", Prosodies: []*ssml.Prosody{{Rate: 0.6}}}}},
 			wantErr: false},
 	}
 	for _, tt := range tests {
@@ -211,7 +211,7 @@ func Test_makeSSMLParts(t *testing.T) {
 			for i := range tt.want {
 				assert.Equal(t, tt.want[i].OriginalTextParts, got[i].OriginalTextParts)
 				assert.Equal(t, tt.want[i].Cfg.Voice, got[i].Cfg.Voice)
-				assert.Equal(t, tt.want[i].Cfg.Speed, got[i].Cfg.Speed)
+				assert.Equal(t, tt.want[i].Cfg.Prosodies, got[i].Cfg.Prosodies)
 				assert.Equal(t, tt.want[i].Cfg.Type, got[i].Cfg.Type)
 			}
 		})

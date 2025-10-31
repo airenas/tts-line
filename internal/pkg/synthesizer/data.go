@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/airenas/tts-line/internal/pkg/service/api"
+	"github.com/airenas/tts-line/pkg/ssml"
 )
 
 // TTSData working data for one request
@@ -44,9 +45,9 @@ type TTSConfig struct {
 	JustAM bool
 	Input  *api.TTSRequestConfig
 
-	Type  SSMLTypeEnum
-	Voice string
-	Speed float64
+	Type      SSMLTypeEnum
+	Voice     string
+	Prosodies []*ssml.Prosody
 
 	PauseDuration time.Duration
 }

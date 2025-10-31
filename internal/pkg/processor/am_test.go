@@ -14,6 +14,7 @@ import (
 	"github.com/airenas/tts-line/internal/pkg/service/api"
 	"github.com/airenas/tts-line/internal/pkg/synthesizer"
 	"github.com/airenas/tts-line/internal/pkg/test"
+	"github.com/airenas/tts-line/pkg/ssml"
 )
 
 func TestNewAcousticModel(t *testing.T) {
@@ -67,7 +68,7 @@ func TestInvokeAcousticModel(t *testing.T) {
 	pr.(*amodel).httpWrap = httpJSONMock
 	d := newTestTTSDataPart()
 	d.Spectogram = "spectogram"
-	d.Cfg.Speed = 0.5
+	d.Cfg.Prosodies = []*ssml.Prosody{{Rate: 0.5}, {Rate: 1.0}}
 	d.Cfg.Voice = "aa"
 	d.Cfg.Input.Priority = 10
 	httpJSONMock.On("InvokeJSONU", mock.Anything, mock.Anything, mock.Anything).Run(
@@ -160,7 +161,7 @@ func TestInvokeAcousticModel_FromAM(t *testing.T) {
 	assert.Nil(t, err)
 	httpJSONMock.AssertNumberOfCalls(t, "InvokeJSONU", 1)
 	cp1 := httpJSONMock.Calls[0].Arguments[1]
-	assert.Equal(t, &amInput{Text: "olia"}, cp1)
+	assert.Equal(t, &amInput{Text: "olia", Speed: 1}, cp1)
 }
 
 func TestMapAMInput(t *testing.T) {

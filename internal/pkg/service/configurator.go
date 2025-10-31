@@ -164,7 +164,7 @@ func (c *TTSConfigutaror) Configure(ctx context.Context, r *http.Request, inText
 			return nil, errors.New("SSML not allowed")
 		}
 		res.SSMLParts, err = ssml.Parse(strings.NewReader(res.Text),
-			&ssml.Text{Voice: res.Voice, Speed: inText.Speed},
+			&ssml.Text{Voice: res.Voice},
 			func(s string) (string, error) {
 				return getVoice(c.availableVoices, s)
 			})
