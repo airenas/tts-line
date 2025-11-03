@@ -433,7 +433,7 @@ func startEmphasis(se xml.StartElement, wrk *wrkData) error {
 	}
 	levelStr := getAttr(se, "level")
 	if levelStr == "" {
-		return fmt.Errorf("no <emphasis>:level")
+		levelStr = "moderate"
 	}
 	level, ok := emphasisLevels[levelStr]
 	if !ok {
@@ -494,7 +494,7 @@ func getSpeed(str string) (float64, error) {
 	}
 	res, ok := rateStrs[str]
 	if !ok {
-		return 0, fmt.Errorf("wrong ratee value '%s'", str)
+		return 0, fmt.Errorf("wrong rate value '%s'", str)
 	}
 	return res, nil
 }
