@@ -1,0 +1,173 @@
+services:
+  tts-line:
+    image: airenas/tts-line:${TTS_LINE_VERSION}
+    ports:
+      - "${SERVICE_PORT}:8000"
+      - 2345:2345 
+    extra_hosts:
+        host.docker.internal: host-gateway  
+    environment:
+      - LOGGER_LEVEL=DEBUG
+      - NUMBERREPLACE_URL=http://hnum2txt:80/api/
+      - OBSCENE_URL=http://obscene:3000/obscene-filter
+      - NORMALIZE_URL=http://normalizer:3000/norm
+      - TAGGER_URL=http://tagger-ml:8000/tag
+      - ACCENTER_URL=http://accenter:8000/accent?human=true&roe=true
+      - ACRONYMS_URL=http://acronyms:8000/acronyms
+      - TRANSCRIBER_URL=http://transcriber:8000/transcription?gem=gem1&joinatsi=true
+      - CLITICS_URL=http://clitics:8000/clitics
+      - MONGO_URL=mongodb://tts:Ui3Ic5Meej8Ki8tohxawe7jei3iaci@mongo:27017
+      - AUDIOCONVERT_URL=audioconverter-rs:50051
+      - CLEAN_URL=http://text-clean:8000/clean
+      - COMPARATOR_URL=http://comparator:3000/resynthvalid 
+      - TRANSLITERATOR_URL=http://transliterator:3000/transliterate
+      - ACOUSTICMODEL_URL=http://host.docker.internal:8000/model
+      - VOCODER_URL=http://host.docker.internal:8001/model    
+
+    volumes:
+      - ./config.yaml:/app/config.yaml:ro  
+
+  text-clean:
+    image: airenas/tts-text-clean:${TEXT_CLEAN_VERSION}
+    ports:
+      - "8011:8000"  
+
+  hnum2txt:
+    container_name: hnum2txt
+    image: intelektikalt/hnum2txt:${HNUM2TXT_VERSION}
+    environment:
+      - "ConnectionStrings:Url=http://tagger-ml:8000/tag" 
+    ports:
+      - "8017:80"     
+
+  normalizer:
+    image: intelektikalt/text-normalizer:${NORMALIZER_VERSION}         
+    restart: on-failure  
+    ports:
+      - "8012:3000"
+
+  comparator:
+    image: intelektikalt/resynth-validator:${COMPARATOR_VERSION}          
+    ports:
+      - "8014:3000"
+
+  tagger-ml:
+    image: airenas/ml-tagger:${TAGGER_ML_VERSION}
+    environment:
+      - SEGMENTATION_URL=http://lex:8080/
+      - RUST_LOG=DEBUG,tracing=ERROR,ml_tagger::processors::lemmatize_words=INFO,hyper_util::client::legacy::pool=INFO,ml_tagger::processors::embedding=INFO
+      - ONNX_THREADS=4
+      - DATA_DIR=/data
+      - EMBEDDINGS_FILE=mmap:/data/delfi_cbow.150.fifu
+      - ONNX_FILE=/data/model.onnx
+      - LEMMA_URL=http://lemma:8000/analyze/{}
+      - LEX_URL=http://lex:8080/
+      - LEMMA_CACHE=50000
+      - EMBEDDINGS_CACHE=40000
+      - CACHE_KEY=01J4HMRM6GAHP6HNE67JRXXKT4
+    restart: unless-stopped
+    volumes:
+      - tagger-data:/data:ro
+    ports:
+      - "8018:8000"  
+
+    depends_on:
+      - tagger-vol    
+
+  tagger-vol: 
+    image: intelektikalt/ml-tagger-data:${TAGGER_VOL_VERSION}
+    volumes:
+      - tagger-data:/data:rw
+
+  lemma:
+    image: airenas/lema:1.5.1218
+    restart: unless-stopped
+    environment:
+     - LEMA_HUNSPELL_SKIP_OFFENSIVE=false
+     - LEMA_TYPE=hunspell_lema
+     - SECRET=${LEMMA_SECRET}    
+  
+  semantika:
+    image: intelektikalt/morph:0.5
+
+  lex:
+    image: semantikadocker.vdu.lt/lex:2021.04.02
+  
+  clitics:
+    image: airenas/clitics:${CLITICS_VERSION}
+    environment:
+      - SECRET=${CLITICS_SECRET} 
+    ports:
+      - "8015:8000"      
+
+  obscene:
+    container_name: obscene
+    image: intelektikalt/obscene-filter:${OBSCENE_VERSION}         
+    ports:
+      - "8016:3000"   
+
+  acronyms:
+    container_name: acronyms
+    image: airenas/acronyms:${ACRONYMS_VERSION}
+    restart: on-failure 
+    environment:
+     - SECRET=${ACRONYMS_SECRET} 
+    ports:
+      - "8019:8000"      
+
+  transcriber:
+    container_name: transcriber
+    image: airenas/transcriber:${TRANSCRIBER_SERVICE_VERSION}
+    environment:
+      - SECRET=${TRANSCRIBER_SECRET} 
+    ports:
+      - "8020:8000"        
+
+
+  accenter:
+    container_name: accenter
+    image: intelektikalt/accenter:${ACCENTER_SERVICE_VERSION}
+    restart: on-failure
+    environment:
+      - lema.type=hunspell_lema
+      - LEMA_HUNSPELL_SKIP_OFFENSIVE=false
+      - SECRET=${ACCENTER_SECRET}            
+    ports:
+      - "8021:8000"        
+
+  transliterator:
+    container_name: transliterator
+    image: intelektikalt/transliterator:0.2.0
+    restart: on-failure
+    ports:
+      - "8022:3000"   
+
+  audioconverter-rs:
+    container_name: audioconverter-rs
+    image: airenas/audio-convert-rs:${AUDIOCONVERTRS_SERVICE_VERSION}
+    restart: unless-stopped 
+    ports:
+      - "50051:50051"
+    environment:
+      - RUST_LOG=trace,h2=info
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://tempo:4318           
+
+  mongo:
+    image: mongo:4.4.1
+    environment:
+      MONGO_DATA_DIR: "/data/db"
+      MONGO_LOG_DIR: "/dev/null"
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_USER}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASS}
+    volumes:
+      - mongo-data:/data/db  
+    command: mongod --logpath=/dev/null # --quiet
+    ports:
+      - "27017:27017"
+
+
+volumes:
+  tagger-data:
+    name: tagger-data
+  mongo-data:
+    name: mongo-data  
