@@ -33,3 +33,6 @@ examples/docker-compose/sample.json
 deploy/am-voc-wrapper/Makefile.options
 testing/integration/Makefile.options.local
 examples/docker-compose/ml-tagger/
+deploy/docker-compose/Makefile.options
+deploy/docker-compose/.env
+deploy/docker-compose/.data

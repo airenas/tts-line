@@ -15,6 +15,7 @@ options:
       - default:astra
       - astra:astra.v04
       - laimis:laimis.v02a1
+      - vytautas:vytautas.v06b
 
 mongo:
    url: 
