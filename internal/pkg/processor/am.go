@@ -53,6 +53,7 @@ func NewAcousticModel(config *viper.Viper) (synthesizer.PartProcessor, error) {
 	if err != nil {
 		return nil, errors.Wrap(err, "can't init AM client")
 	}
+	am = am.WithOutputFormat(utils.EncodingFormatMsgPack)
 	res.httpWrap, err = utils.NewHTTPBackoff(am, newGPUBackoff, utils.RetryAll)
 	if err != nil {
 		return nil, errors.Wrap(err, "can't init AM client")
@@ -108,18 +109,25 @@ func (p *amodel) Process(ctx context.Context, data *synthesizer.TTSDataPart) err
 	return nil
 }
 
+type pitchChange struct {
+	Value float64 `json:"v,omitempty"`
+	Type  int     `json:"t,omitempty"`
+}
+
 type amInput struct {
-	Text     string  `json:"text"`
-	Speed    float64 `json:"speedAlpha,omitempty"`
-	Voice    string  `json:"voice"`
-	Priority int     `json:"priority,omitempty"`
+	Text            string           `json:"text"`
+	Speed           float64          `json:"speedAlpha,omitempty"`
+	Voice           string           `json:"voice"`
+	Priority        int              `json:"priority,omitempty"`
+	DurationsChange []float64        `json:"durationsChange,omitempty"`
+	PitchChange     [][]*pitchChange `json:"pitchChange,omitempty"`
 }
 
 type amOutput struct {
-	Data        string `json:"data"`
-	Durations   []int  `json:"durations,omitempty"`
-	SilDuration int    `json:"silDuration,omitempty"`
-	Step        int    `json:"step,omitempty"`
+	Data        []byte `msgpack:"data,omitempty"`
+	Durations   []int  `json:"durations,omitempty" msgpack:"durations,omitempty"`
+	SilDuration int    `json:"silDuration,omitempty" msgpack:"silDuration,omitempty"`
+	Step        int    `json:"step,omitempty" msgpack:"step,omitempty"`
 }
 
 func mapAMOutputDurations(ctx context.Context, data *synthesizer.TTSDataPart, durations []int, indRes []*synthesizer.SynthesizedPos) error {
@@ -144,7 +152,7 @@ func mapAMOutputDurations(ctx context.Context, data *synthesizer.TTSDataPart, du
 
 func (p *amodel) mapAMInput(data *synthesizer.TTSDataPart) (*amInput, []*synthesizer.SynthesizedPos) {
 	res := &amInput{}
-	res.Speed = calculateSpeed(data.Cfg.Prosodies)
+	// res.Speed = calculateSpeed(data.Cfg.Prosodies)
 	res.Voice = data.Cfg.Voice
 	res.Priority = data.Cfg.Input.Priority
 	if data.Cfg.JustAM {
@@ -209,8 +217,67 @@ func (p *amodel) mapAMInput(data *synthesizer.TTSDataPart) (*amInput, []*synthes
 			indRes[len(indRes)-1].To += (lEnd - 1)
 		}
 	}
+	// split the last symbol if it has spaces
+	if len(sb) > 0 {
+		l := len(sb) - 1
+		v := sb[l]
+		vs := strings.Split(v, " ")
+		if len(vs) > 1 {
+			sb = sb[:l]
+			sb = append(sb, vs...)
+		}
+	}
 	res.Text = strings.Join(sb, " ")
+	res.DurationsChange = prepareDurationsChange(sb, calculateSpeed(data.Cfg.Prosodies))
+	res.PitchChange = preparePitchChange(sb, data.Cfg.Prosodies)
 	return res, indRes
+}
+
+func preparePitchChange(sb []string, prosody []*ssml.Prosody) [][]*pitchChange {
+	pc := makePitchChange(prosody)
+
+	res := make([][]*pitchChange, len(sb))
+	for i := 0; i < len(sb); i++ {
+		res[i] = pc
+	}
+	return res
+}
+
+func makePitchChange(prosody []*ssml.Prosody) []*pitchChange {
+	res := make([]*pitchChange, 0, len(prosody))
+	for _, p := range prosody {
+		switch p.Pitch.Kind {
+		case ssml.PitchChangeNone:
+			continue
+		case ssml.PitchChangeHertz:
+			pc := &pitchChange{
+				Value: p.Pitch.Value,
+				Type:  1,
+			}
+			res = append(res, pc)
+		case ssml.PitchChangeMultiplier:
+			pc := &pitchChange{
+				Value: p.Pitch.Value,
+				Type:  2,
+			}
+			res = append(res, pc)
+		case ssml.PitchChangeSemitone:
+			pc := &pitchChange{
+				Value: p.Pitch.Value,
+				Type:  3,
+			}
+			res = append(res, pc)
+		}
+	}
+	return res
+}
+
+func prepareDurationsChange(sb []string, f float64) []float64 {
+	res := make([]float64, len(sb))
+	for i := 0; i < len(sb); i++ {
+		res[i] = f
+	}
+	return res
 }
 
 func calculateSpeed(prosody []*ssml.Prosody) float64 {

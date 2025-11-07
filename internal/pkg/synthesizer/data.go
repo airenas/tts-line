@@ -58,8 +58,8 @@ type TTSDataPart struct {
 	Cfg                *TTSConfig
 	First              bool
 	Words              []*ProcessedWord
-	Spectogram         string
-	Audio              string
+	Spectogram         []byte
+	Audio              []byte
 	TranscribedText    string
 	TranscribedSymbols []string
 	// from AM response

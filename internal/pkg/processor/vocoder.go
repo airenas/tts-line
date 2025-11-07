@@ -24,6 +24,8 @@ func NewVocoder(urlStr string) (synthesizer.PartProcessor, error) {
 	if err != nil {
 		return nil, errors.Wrap(err, "can't init vocoder client")
 	}
+	voc = voc.WithInputFormat(utils.EncodingFormatMsgPack).WithOutputFormat(utils.EncodingFormatMsgPack)
+
 	res.httpWrap, err = utils.NewHTTPBackoff(voc, newGPUBackoff, utils.RetryAll)
 	if err != nil {
 		return nil, errors.Wrap(err, "can't init vocoder client")
@@ -39,7 +41,6 @@ func (p *vocoder) Process(ctx context.Context, data *synthesizer.TTSDataPart) er
 	if data.Cfg.Input.OutputFormat == api.AudioNone {
 		return nil
 	}
-
 	inData := vocInput{Data: data.Spectogram, Voice: data.Cfg.Input.Voice, Priority: data.Cfg.Input.Priority}
 	var output vocOutput
 	err := p.httpWrap.InvokeJSONU(ctx, getVoiceURL(p.url, data.Cfg.Input.Voice), inData, &output)
@@ -51,11 +52,11 @@ func (p *vocoder) Process(ctx context.Context, data *synthesizer.TTSDataPart) er
 }
 
 type vocInput struct {
-	Data     string `json:"data"`
-	Voice    string `json:"voice"`
-	Priority int    `json:"priority,omitempty"`
+	Data     []byte `json:"data" msgpack:"data"`
+	Voice    string `json:"voice" msgpack:"voice"`
+	Priority int    `json:"priority,omitempty" msgpack:"priority,omitempty"`
 }
 
 type vocOutput struct {
-	Data string `json:"data"`
+	Data []byte `json:"data" msgpack:"data"`
 }

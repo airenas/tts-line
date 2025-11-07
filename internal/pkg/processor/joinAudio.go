@@ -3,7 +3,6 @@ package processor
 import (
 	"bytes"
 	"context"
-	"encoding/base64"
 	"fmt"
 	"math"
 	"strings"
@@ -99,10 +98,7 @@ func join(ctx context.Context, parts []*synthesizer.TTSDataPart, suffix []byte, 
 	res := &wavWriter{}
 	nextStartSil := 0
 	for i, part := range parts {
-		decoded, err := base64.StdEncoding.DecodeString(part.Audio)
-		if err != nil {
-			return nil, 0, 0, err
-		}
+		decoded := part.Audio
 		res.init(decoded)
 		startSil, endSil := nextStartSil, 0
 		if i == 0 {
@@ -295,7 +291,7 @@ func joinSSML(ctx context.Context, data *synthesizer.TTSData, suffix []byte, max
 		var decoded []byte
 		var err error
 		if part != nil {
-			decoded, err = base64.StdEncoding.DecodeString(part.Audio)
+			decoded = part.Audio
 			res.init(decoded)
 			if err != nil {
 				return err

@@ -12,10 +12,18 @@ import (
 
 	"github.com/airenas/go-app/pkg/goapp"
 	"github.com/pkg/errors"
+	"github.com/vmihailenco/msgpack/v5"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/codes"
 	"go.opentelemetry.io/otel/propagation"
 	"go.opentelemetry.io/otel/trace"
+)
+
+type EncodingFormat int
+
+const (
+	EncodingFormatJSON EncodingFormat = iota
+	EncodingFormatMsgPack
 )
 
 // HTTPWrap for http call
@@ -24,6 +32,9 @@ type HTTPWrap struct {
 	URL        string
 	Timeout    time.Duration
 	flog       func(context.Context, string, string, error)
+
+	inputFormat  EncodingFormat
+	outputFormat EncodingFormat
 }
 
 // NewHTTPWrap creates new wrapper
@@ -43,6 +54,16 @@ func NewHTTPWrapT(urlStr string, timeout time.Duration) (*HTTPWrap, error) {
 	res.Timeout = timeout
 	res.flog = func(ctx context.Context, st, data string, err error) { LogData(ctx, st, data, err) }
 	return res, nil
+}
+
+func (hw *HTTPWrap) WithOutputFormat(outputFormat EncodingFormat) *HTTPWrap {
+	hw.outputFormat = outputFormat
+	return hw
+}
+
+func (hw *HTTPWrap) WithInputFormat(inputFormat EncodingFormat) *HTTPWrap {
+	hw.inputFormat = inputFormat
+	return hw
 }
 
 func newTransport() http.RoundTripper {
@@ -76,24 +97,61 @@ func (hw *HTTPWrap) InvokeJSON(ctx context.Context, dataIn interface{}, dataOut 
 
 // InvokeJSONU makes http call to URL with JSON
 func (hw *HTTPWrap) InvokeJSONU(ctx context.Context, URL string, dataIn interface{}, dataOut interface{}) error {
-	b := new(bytes.Buffer)
-	enc := json.NewEncoder(b)
-	enc.SetEscapeHTML(false)
-	err := enc.Encode(dataIn)
+	b, err := hw.prepareBody(ctx, dataIn)
 	if err != nil {
 		return err
 	}
-	hw.flog(ctx, "Input", b.String(), nil)
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, URL, b)
 	if err != nil {
 		return errors.Wrapf(err, "can't prepare request to '%s'", URL)
 	}
-	req.Header.Set("Content-Type", "application/json")
+	req = hw.prepareRequestHeader(req)
 	err = hw.invoke(ctx, req, dataOut)
 	if err != nil {
-		hw.flog(ctx, "Input", b.String(), err)
+		if hw.inputFormat != EncodingFormatMsgPack {
+			hw.flog(ctx, "Input", b.String(), err)
+		}
 	}
 	return err
+}
+
+func (hw *HTTPWrap) prepareBody(ctx context.Context, dataIn interface{}) (*bytes.Buffer, error) {
+	ctx, span := StartSpan(ctx, "HTTPWrap.prepareBody")
+	defer span.End()
+
+	b := new(bytes.Buffer)
+	
+	if hw.inputFormat == EncodingFormatMsgPack {
+		msgpackEncoder := msgpack.NewEncoder(b)
+		if err := msgpackEncoder.Encode(dataIn); err != nil {
+			return nil, fmt.Errorf("encode msgpack input: %w", err)
+		}
+		hw.flog(ctx, "Input", "bin msgpack data", nil)
+		return b, nil
+	}
+
+	enc := json.NewEncoder(b)
+	enc.SetEscapeHTML(false)
+	err := enc.Encode(dataIn)
+	if err != nil {
+		return nil, fmt.Errorf("encode json input: %w", err)
+	}
+	hw.flog(ctx, "Input", b.String(), nil)
+	return b, nil
+}
+
+func (hw *HTTPWrap) prepareRequestHeader(req *http.Request) *http.Request {
+	if hw.inputFormat == EncodingFormatMsgPack {
+		req.Header.Set("Content-Type", "application/msgpack")
+	} else {
+		req.Header.Set("Content-Type", "application/json")
+	}
+	if hw.outputFormat == EncodingFormatMsgPack {
+		req.Header.Set("Accept", "application/msgpack")
+	} else {
+		req.Header.Set("Accept", "application/json")
+	}
+	return req
 }
 
 func (hw *HTTPWrap) invoke(ctx context.Context, req *http.Request, dataOut interface{}) error {
@@ -121,6 +179,28 @@ func (hw *HTTPWrap) invoke(ctx context.Context, req *http.Request, dataOut inter
 		span.SetStatus(codes.Error, fmt.Sprintf("can't invoke '%s'", req.URL.String()))
 		return errors.Wrapf(err, "can't invoke '%s'", req.URL.String())
 	}
+
+	if err := hw.unmarshalResponse(ctx, resp, dataOut); err != nil {
+		span.SetStatus(codes.Error, "can't read/unmarshal response")
+		return err
+	}
+	span.SetStatus(codes.Ok, "")
+	return nil
+}
+
+func (hw *HTTPWrap) unmarshalResponse(ctx context.Context, resp *http.Response, dataOut interface{}) error {
+	ctx, span := StartSpan(ctx, "HTTPWrap.unmarshalResponse")
+	defer span.End()
+	contentType := resp.Header.Get("Content-Type")
+	if strings.Contains(contentType, "application/msgpack") {
+		msgpackDecoder := msgpack.NewDecoder(resp.Body)
+		if err := msgpackDecoder.Decode(dataOut); err != nil {
+			span.SetStatus(codes.Error, "can't decode msgpack response")
+			return errors.Wrap(err, "can't decode msgpack response")
+		}
+		hw.flog(ctx, "Output", "bin msgpack data", nil)
+		return nil
+	}
 	br, err := io.ReadAll(resp.Body)
 	if err != nil {
 		span.SetStatus(codes.Error, "can't read body")
@@ -132,7 +212,6 @@ func (hw *HTTPWrap) invoke(ctx context.Context, req *http.Request, dataOut inter
 		span.SetStatus(codes.Error, "can't decode response")
 		return errors.Wrap(err, "can't decode response")
 	}
-	span.SetStatus(codes.Ok, "")
 	return nil
 }
 
