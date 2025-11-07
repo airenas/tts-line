@@ -35,6 +35,8 @@ file?=ssml.xml
 .data/output.mp3: .data/response.json	
 	@jq -r '.audioAsString' .data/response.json | base64 --decode > $@
 
+generate: .data/output.mp3
+.PHONY: generate
 play: .data/output.mp3
 	nvlc $<	
 .PHONY: play
