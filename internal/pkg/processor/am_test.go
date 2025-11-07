@@ -67,24 +67,25 @@ func TestInvokeAcousticModel(t *testing.T) {
 	assert.NotNil(t, pr)
 	pr.(*amodel).httpWrap = httpJSONMock
 	d := newTestTTSDataPart()
-	d.Spectogram = "spectogram"
-	d.Cfg.Prosodies = []*ssml.Prosody{{Rate: 0.5}, {Rate: 1.0}}
+	d.Spectogram = []byte("spectogram")
+	d.Cfg.Prosodies = []*ssml.Prosody{{Rate: 0.5, Pitch: ssml.PitchChange{Kind: ssml.PitchChangeHertz, Value: 100}}, {Rate: 1.0}}
 	d.Cfg.Voice = "aa"
 	d.Cfg.Input.Priority = 10
 	httpJSONMock.On("InvokeJSONU", mock.Anything, mock.Anything, mock.Anything).Run(
 		func(params mock.Arguments) {
-			*params[2].(*amOutput) = amOutput{Data: "spec"}
+			*params[2].(*amOutput) = amOutput{Data: []byte("spec")}
 		}).Return(nil)
 	err := pr.Process(context.TODO(), d)
 	assert.Nil(t, err)
-	assert.Equal(t, "spec", d.Spectogram)
+	assert.Equal(t, "spec", string(d.Spectogram))
 
 	httpJSONMock.AssertNumberOfCalls(t, "InvokeJSONU", 1)
 	url := httpJSONMock.Calls[0].Arguments[0]
 	inp := httpJSONMock.Calls[0].Arguments[1]
 
 	ai := inp.(*amInput)
-	assert.InDelta(t, 0.5, ai.Speed, 0.0001)
+	assert.Equal(t, []float64{0.5}, ai.DurationsChange)
+	assert.Equal(t, [][]*pitchChange{{{Type: 1, Value: 100}}}, ai.PitchChange)
 	assert.Equal(t, "aa", ai.Voice)
 	assert.Equal(t, 10, ai.Priority)
 	assert.Equal(t, "http://aa.server", url)
@@ -97,7 +98,7 @@ func TestInvokeAcousticModel_Skip(t *testing.T) {
 	pr.(*amodel).httpWrap = httpJSONMock
 	d := newTestTTSDataPart()
 	d.Cfg.Input.OutputFormat = api.AudioNone
-	d.Spectogram = ""
+	d.Spectogram = []byte("")
 	err := pr.Process(context.TODO(), d)
 	assert.Nil(t, err)
 	httpJSONMock.AssertNumberOfCalls(t, "InvokeJSONU", 0)
@@ -112,7 +113,7 @@ func TestInvokeAcousticModel_Skip_ReturnTranscribed(t *testing.T) {
 	d := newTestTTSDataPart()
 	d.Cfg.Input.OutputFormat = api.AudioNone
 	d.Cfg.Input.OutputTextFormat = api.TextTranscribed
-	d.Spectogram = ""
+	d.Spectogram = []byte("")
 	err := pr.Process(context.TODO(), d)
 	assert.Nil(t, err)
 	assert.Equal(t, d.TranscribedText, "sil")
@@ -124,15 +125,15 @@ func TestInvokeAcousticModel_WriteAudio(t *testing.T) {
 	assert.NotNil(t, pr)
 	pr.(*amodel).httpWrap = httpJSONMock
 	d := newTestTTSDataPart()
-	d.Spectogram = "spectogram"
+	d.Spectogram = []byte("spectogram")
 	httpJSONMock.On("InvokeJSONU", mock.Anything, mock.Anything, mock.Anything).Run(
 		func(params mock.Arguments) {
-			*params[2].(*amOutput) = amOutput{Data: "audio"}
+			*params[2].(*amOutput) = amOutput{Data: []byte("audio")}
 		}).Return(nil)
 	err := pr.Process(context.TODO(), d)
 	assert.Nil(t, err)
-	assert.Equal(t, "spectogram", d.Spectogram)
-	assert.Equal(t, "audio", d.Audio)
+	assert.Equal(t, "spectogram", string(d.Spectogram))
+	assert.Equal(t, "audio", string(d.Audio))
 	assert.Equal(t, d.TranscribedText, "sil")
 }
 
@@ -142,7 +143,7 @@ func TestInvokeAcousticModel_Fail(t *testing.T) {
 	assert.NotNil(t, pr)
 	pr.(*amodel).httpWrap = httpJSONMock
 	d := newTestTTSDataPart()
-	d.Spectogram = "spectogram"
+	d.Spectogram = []byte("spectogram")
 	httpJSONMock.On("InvokeJSONU", mock.Anything, mock.Anything, mock.Anything).Return(errors.New("haha"))
 	err := pr.Process(context.TODO(), d)
 	assert.NotNil(t, err)
@@ -161,7 +162,7 @@ func TestInvokeAcousticModel_FromAM(t *testing.T) {
 	assert.Nil(t, err)
 	httpJSONMock.AssertNumberOfCalls(t, "InvokeJSONU", 1)
 	cp1 := httpJSONMock.Calls[0].Arguments[1]
-	assert.Equal(t, &amInput{Text: "olia", Speed: 1}, cp1)
+	assert.Equal(t, &amInput{Text: "olia"}, cp1)
 }
 
 func TestMapAMInput(t *testing.T) {

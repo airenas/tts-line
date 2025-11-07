@@ -32,28 +32,28 @@ func TestPRunner_Default(t *testing.T) {
 func TestPRProcess(t *testing.T) {
 	initPRunnerTest(t)
 	partProcTest.f = func(d *TTSDataPart) error {
-		assert.Equal(t, "olia", d.Spectogram)
-		d.Audio = "mp3"
+		assert.Equal(t, "olia", string(d.Spectogram))
+		d.Audio = []byte("mp3")
 		return nil
 	}
-	d.Parts = append(d.Parts, &TTSDataPart{Spectogram: "olia"})
+	d.Parts = append(d.Parts, &TTSDataPart{Spectogram: []byte("olia")})
 	err := runner.Process(context.TODO(), d)
 	assert.Nil(t, err)
-	assert.Equal(t, "mp3", d.Parts[0].Audio)
+	assert.Equal(t, "mp3", string(d.Parts[0].Audio))
 }
 
 func TestPRProcess_Several(t *testing.T) {
 	initPRunnerTest(t)
 	partProcTest.f = func(d *TTSDataPart) error {
-		d.Audio = "mp3"
+		d.Audio = []byte("mp3")
 		return nil
 	}
 	d.Parts = append(d.Parts, &TTSDataPart{})
 	d.Parts = append(d.Parts, &TTSDataPart{})
 	err := runner.Process(context.TODO(), d)
 	assert.Nil(t, err)
-	assert.Equal(t, "mp3", d.Parts[0].Audio)
-	assert.Equal(t, "mp3", d.Parts[1].Audio)
+	assert.Equal(t, "mp3", string(d.Parts[0].Audio))
+	assert.Equal(t, "mp3", string(d.Parts[1].Audio))
 }
 
 func TestPRProcess_Fail(t *testing.T) {
