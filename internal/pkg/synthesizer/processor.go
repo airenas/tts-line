@@ -35,7 +35,7 @@ func (mw *MainWorker) Work(ctx context.Context, input *api.TTSRequestConfig) (*a
 	data.Input = input
 	data.Cfg.Input = input
 	data.Cfg.Type = SSMLNone
-	data.Cfg.Prosodies = []*ssml.Prosody{&ssml.Prosody{Rate: input.Speed}}
+	data.Cfg.Prosodies = []*ssml.Prosody{{Rate: input.Speed}}
 	data.Cfg.Voice = input.Voice
 	data.RequestID = input.RequestID
 	data.AudioSuffix = input.AudioSuffix
