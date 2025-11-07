@@ -13,7 +13,9 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
+	"github.com/vmihailenco/msgpack/v5"
 
+	"github.com/airenas/tts-line/internal/pkg/syntmodel"
 	"github.com/airenas/tts-line/internal/pkg/test/mocks"
 	"github.com/airenas/tts-line/internal/pkg/wrapservice/api"
 )
@@ -69,12 +71,39 @@ func TestWrongMethod(t *testing.T) {
 
 func Test_Returns(t *testing.T) {
 	initTest(t)
-	synthesizerMock.On("Work", mock.Anything).Return(&api.Result{Data: "wav"}, nil)
-	req := httptest.NewRequest("POST", "/synthesize", toReader(api.Input{Text: "olia", Speed: 0.9, Voice: "aa", Priority: 10}))
+	synthesizerMock.On("Work", mock.Anything).Return(&syntmodel.Result{Data: []byte("wav")}, nil)
+	req := httptest.NewRequest("POST", "/synthesize", toReader(syntmodel.AMInput{Text: "olia", Speed: 0.9, Voice: "aa", Priority: 10,
+		DurationsChange: []float64{1, -1, 0},
+		PitchChange:     [][]*syntmodel.PitchChange{{{Value: 1.0, Type: 1}}},
+	}))
 	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+	req.Header.Set(echo.HeaderAccept, echo.MIMEApplicationMsgpack)
 	resp := testCode(t, req, 200)
 	bytes, _ := io.ReadAll(resp.Body)
-	assert.Equal(t, `{"data":"wav"}`, strings.TrimSpace(string(bytes)))
+	wanted, _ := msgpack.Marshal(&syntmodel.Result{Data: []byte("wav")})
+	assert.Equal(t, string(wanted), strings.TrimSpace(string(bytes)))
+
+	synthesizerMock.AssertNumberOfCalls(t, "Work", 1)
+	gPrms := mocks.To[*api.Params](synthesizerMock.Calls[0].Arguments[0])
+	assert.Equal(t, "olia", gPrms.Text)
+	assert.InDelta(t, 0.9, gPrms.Speed, 0.0001)
+	assert.Equal(t, "aa", gPrms.Voice)
+	assert.Equal(t, 10, gPrms.Priority)
+	assert.Equal(t, []float64{1, -1, 0}, gPrms.DurationsChange)
+	expectedPitch := [][]*syntmodel.PitchChange{{{Value: 1.0, Type: 1}}}
+	assert.Equal(t, expectedPitch, gPrms.PitchChange)
+}
+
+func Test_Returns_JSON(t *testing.T) {
+	initTest(t)
+	synthesizerMock.On("Work", mock.Anything).Return(&syntmodel.Result{Data: []byte("wav")}, nil)
+	req := httptest.NewRequest("POST", "/synthesize", toReader(syntmodel.AMInput{Text: "olia", Speed: 0.9, Voice: "aa", Priority: 10}))
+	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+	req.Header.Set(echo.HeaderAccept, echo.MIMEApplicationJSON)
+	resp := testCode(t, req, 200)
+	bytes, _ := io.ReadAll(resp.Body)
+	wanted, _ := json.Marshal(&syntmodel.Result{Data: []byte("wav")})
+	assert.Equal(t, string(wanted), strings.TrimSpace(string(bytes)))
 
 	synthesizerMock.AssertNumberOfCalls(t, "Work", 1)
 	gPrms := mocks.To[*api.Params](synthesizerMock.Calls[0].Arguments[0])
@@ -87,7 +116,7 @@ func Test_Returns(t *testing.T) {
 func Test_Fail(t *testing.T) {
 	initTest(t)
 	synthesizerMock.On("Work", mock.Anything).Return(nil, errors.New("haha"))
-	req := httptest.NewRequest("POST", "/synthesize", toReader(api.Input{Text: "olia", Voice: "aa"}))
+	req := httptest.NewRequest("POST", "/synthesize", toReader(syntmodel.AMInput{Text: "olia", Voice: "aa"}))
 	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
 	testCode(t, req, 500)
 }
@@ -97,18 +126,17 @@ func Test_FailOnWrongInput(t *testing.T) {
 	req := httptest.NewRequest("POST", "/synthesize", strings.NewReader("text"))
 	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
 	testCode(t, req, 400)
-	req = httptest.NewRequest("POST", "/synthesize", toReader(api.Input{Text: "olia", Voice: ""}))
+	req = httptest.NewRequest("POST", "/synthesize", toReader(syntmodel.AMInput{Text: "olia", Voice: ""}))
 	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
 	testCode(t, req, 400)
-	req = httptest.NewRequest("POST", "/synthesize", toReader(api.Input{Text: "", Voice: "aaa"}))
+	req = httptest.NewRequest("POST", "/synthesize", toReader(syntmodel.AMInput{Text: "", Voice: "aaa"}))
 	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
 	testCode(t, req, 400)
-	req = httptest.NewRequest("POST", "/synthesize", toReader(api.Input{Text: "ttt", Voice: "aaa"}))
+	req = httptest.NewRequest("POST", "/synthesize", toReader(syntmodel.AMInput{Text: "ttt", Voice: "aaa"}))
 	testCode(t, req, 400)
-
 }
 
-func toReader(inData api.Input) io.Reader {
+func toReader(inData syntmodel.AMInput) io.Reader {
 	bytes, _ := json.Marshal(inData)
 	return strings.NewReader(string(bytes))
 }
@@ -123,7 +151,7 @@ func testCode(t *testing.T, req *http.Request, code int) *httptest.ResponseRecor
 
 type mockWaveSynthesizer struct{ mock.Mock }
 
-func (m *mockWaveSynthesizer) Work(ctx context.Context, in *api.Params) (*api.Result, error) {
+func (m *mockWaveSynthesizer) Work(ctx context.Context, in *api.Params) (*syntmodel.Result, error) {
 	args := m.Called(in)
-	return mocks.To[*api.Result](args.Get(0)), args.Error(1)
+	return mocks.To[*syntmodel.Result](args.Get(0)), args.Error(1)
 }

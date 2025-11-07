@@ -11,6 +11,7 @@ import (
 
 	"github.com/airenas/tts-line/internal/pkg/service/api"
 	"github.com/airenas/tts-line/internal/pkg/synthesizer"
+	"github.com/airenas/tts-line/internal/pkg/syntmodel"
 	"github.com/airenas/tts-line/internal/pkg/utils"
 	"github.com/airenas/tts-line/pkg/ssml"
 	"github.com/pkg/errors"
@@ -87,7 +88,7 @@ func (p *amodel) Process(ctx context.Context, data *synthesizer.TTSDataPart) err
 
 	inData, inIndexes := p.mapAMInput(data)
 	data.TranscribedText = inData.Text
-	var output amOutput
+	var output syntmodel.AMOutput
 	err := p.httpWrap.InvokeJSONU(ctx, getVoiceURL(p.url, data.Cfg.Voice), inData, &output)
 	if err != nil {
 		return err
@@ -107,27 +108,6 @@ func (p *amodel) Process(ctx context.Context, data *synthesizer.TTSDataPart) err
 		data.Spectogram = output.Data
 	}
 	return nil
-}
-
-type pitchChange struct {
-	Value float64 `json:"v,omitempty"`
-	Type  int     `json:"t,omitempty"`
-}
-
-type amInput struct {
-	Text            string           `json:"text"`
-	Speed           float64          `json:"speedAlpha,omitempty"`
-	Voice           string           `json:"voice"`
-	Priority        int              `json:"priority,omitempty"`
-	DurationsChange []float64        `json:"durationsChange,omitempty"`
-	PitchChange     [][]*pitchChange `json:"pitchChange,omitempty"`
-}
-
-type amOutput struct {
-	Data        []byte `msgpack:"data,omitempty"`
-	Durations   []int  `json:"durations,omitempty" msgpack:"durations,omitempty"`
-	SilDuration int    `json:"silDuration,omitempty" msgpack:"silDuration,omitempty"`
-	Step        int    `json:"step,omitempty" msgpack:"step,omitempty"`
 }
 
 func mapAMOutputDurations(ctx context.Context, data *synthesizer.TTSDataPart, durations []int, indRes []*synthesizer.SynthesizedPos) error {
@@ -150,8 +130,8 @@ func mapAMOutputDurations(ctx context.Context, data *synthesizer.TTSDataPart, du
 	return nil
 }
 
-func (p *amodel) mapAMInput(data *synthesizer.TTSDataPart) (*amInput, []*synthesizer.SynthesizedPos) {
-	res := &amInput{}
+func (p *amodel) mapAMInput(data *synthesizer.TTSDataPart) (*syntmodel.AMInput, []*synthesizer.SynthesizedPos) {
+	res := &syntmodel.AMInput{}
 	// res.Speed = calculateSpeed(data.Cfg.Prosodies)
 	res.Voice = data.Cfg.Voice
 	res.Priority = data.Cfg.Input.Priority
@@ -233,36 +213,36 @@ func (p *amodel) mapAMInput(data *synthesizer.TTSDataPart) (*amInput, []*synthes
 	return res, indRes
 }
 
-func preparePitchChange(sb []string, prosody []*ssml.Prosody) [][]*pitchChange {
+func preparePitchChange(sb []string, prosody []*ssml.Prosody) [][]*syntmodel.PitchChange {
 	pc := makePitchChange(prosody)
 
-	res := make([][]*pitchChange, len(sb))
+	res := make([][]*syntmodel.PitchChange, len(sb))
 	for i := 0; i < len(sb); i++ {
 		res[i] = pc
 	}
 	return res
 }
 
-func makePitchChange(prosody []*ssml.Prosody) []*pitchChange {
-	res := make([]*pitchChange, 0, len(prosody))
+func makePitchChange(prosody []*ssml.Prosody) []*syntmodel.PitchChange {
+	res := make([]*syntmodel.PitchChange, 0, len(prosody))
 	for _, p := range prosody {
 		switch p.Pitch.Kind {
 		case ssml.PitchChangeNone:
 			continue
 		case ssml.PitchChangeHertz:
-			pc := &pitchChange{
+			pc := &syntmodel.PitchChange{
 				Value: p.Pitch.Value,
 				Type:  1,
 			}
 			res = append(res, pc)
 		case ssml.PitchChangeMultiplier:
-			pc := &pitchChange{
+			pc := &syntmodel.PitchChange{
 				Value: p.Pitch.Value,
 				Type:  2,
 			}
 			res = append(res, pc)
 		case ssml.PitchChangeSemitone:
-			pc := &pitchChange{
+			pc := &syntmodel.PitchChange{
 				Value: p.Pitch.Value,
 				Type:  3,
 			}

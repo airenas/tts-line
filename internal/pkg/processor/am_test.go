@@ -13,6 +13,7 @@ import (
 
 	"github.com/airenas/tts-line/internal/pkg/service/api"
 	"github.com/airenas/tts-line/internal/pkg/synthesizer"
+	"github.com/airenas/tts-line/internal/pkg/syntmodel"
 	"github.com/airenas/tts-line/internal/pkg/test"
 	"github.com/airenas/tts-line/pkg/ssml"
 )
@@ -73,7 +74,7 @@ func TestInvokeAcousticModel(t *testing.T) {
 	d.Cfg.Input.Priority = 10
 	httpJSONMock.On("InvokeJSONU", mock.Anything, mock.Anything, mock.Anything).Run(
 		func(params mock.Arguments) {
-			*params[2].(*amOutput) = amOutput{Data: []byte("spec")}
+			*params[2].(*syntmodel.AMOutput) = syntmodel.AMOutput{Data: []byte("spec")}
 		}).Return(nil)
 	err := pr.Process(context.TODO(), d)
 	assert.Nil(t, err)
@@ -83,9 +84,9 @@ func TestInvokeAcousticModel(t *testing.T) {
 	url := httpJSONMock.Calls[0].Arguments[0]
 	inp := httpJSONMock.Calls[0].Arguments[1]
 
-	ai := inp.(*amInput)
+	ai := inp.(*syntmodel.AMInput)
 	assert.Equal(t, []float64{0.5}, ai.DurationsChange)
-	assert.Equal(t, [][]*pitchChange{{{Type: 1, Value: 100}}}, ai.PitchChange)
+	assert.Equal(t, [][]*syntmodel.PitchChange{{{Type: 1, Value: 100}}}, ai.PitchChange)
 	assert.Equal(t, "aa", ai.Voice)
 	assert.Equal(t, 10, ai.Priority)
 	assert.Equal(t, "http://aa.server", url)
@@ -128,7 +129,7 @@ func TestInvokeAcousticModel_WriteAudio(t *testing.T) {
 	d.Spectogram = []byte("spectogram")
 	httpJSONMock.On("InvokeJSONU", mock.Anything, mock.Anything, mock.Anything).Run(
 		func(params mock.Arguments) {
-			*params[2].(*amOutput) = amOutput{Data: []byte("audio")}
+			*params[2].(*syntmodel.AMOutput) = syntmodel.AMOutput{Data: []byte("audio")}
 		}).Return(nil)
 	err := pr.Process(context.TODO(), d)
 	assert.Nil(t, err)
@@ -162,7 +163,7 @@ func TestInvokeAcousticModel_FromAM(t *testing.T) {
 	assert.Nil(t, err)
 	httpJSONMock.AssertNumberOfCalls(t, "InvokeJSONU", 1)
 	cp1 := httpJSONMock.Calls[0].Arguments[1]
-	assert.Equal(t, &amInput{Text: "olia"}, cp1)
+	assert.Equal(t, &syntmodel.AMInput{Text: "olia"}, cp1)
 }
 
 func TestMapAMInput(t *testing.T) {
