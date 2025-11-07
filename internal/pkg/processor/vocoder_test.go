@@ -31,16 +31,16 @@ func TestInvokeVocoder(t *testing.T) {
 	assert.NotNil(t, pr)
 	pr.(*vocoder).httpWrap = httpJSONMock
 	d := newTestTTSDataPart()
-	d.Spectogram = "spectogram"
+	d.Spectogram = []byte("spectogram")
 	d.Cfg.Input.Voice = "aaa"
 	d.Cfg.Input.Priority = 10
 	httpJSONMock.On("InvokeJSONU", mock.Anything, mock.Anything, mock.Anything).Run(
 		func(params mock.Arguments) {
-			*params[2].(*vocOutput) = vocOutput{Data: "wav"}
+			*params[2].(*vocOutput) = vocOutput{Data: []byte("wav")}
 		}).Return(nil)
 	err := pr.Process(context.TODO(), d)
 	assert.Nil(t, err)
-	assert.Equal(t, "wav", d.Audio)
+	assert.Equal(t, []byte("wav"), d.Audio)
 
 	httpJSONMock.AssertNumberOfCalls(t, "InvokeJSONU", 1)
 	url := httpJSONMock.Calls[0].Arguments[0]
@@ -58,7 +58,7 @@ func TestInvokeVocoder_Skip(t *testing.T) {
 	pr.(*vocoder).httpWrap = httpJSONMock
 	d := newTestTTSDataPart()
 	d.Cfg.Input.OutputFormat = api.AudioNone
-	d.Spectogram = "spectogram"
+	d.Spectogram = []byte("spectogram")
 	err := pr.Process(context.TODO(), d)
 	assert.Nil(t, err)
 	httpJSONMock.AssertNumberOfCalls(t, "InvokeJSONU", 0)
@@ -70,7 +70,7 @@ func TestInvokeVocoder_Fail(t *testing.T) {
 	assert.NotNil(t, pr)
 	pr.(*vocoder).httpWrap = httpJSONMock
 	d := newTestTTSDataPart()
-	d.Spectogram = "spectogram"
+	d.Spectogram = []byte("spectogram")
 	httpJSONMock.On("InvokeJSONU", mock.Anything, mock.Anything, mock.Anything).Return(errors.New("haha"))
 	err := pr.Process(context.TODO(), d)
 	assert.NotNil(t, err)
