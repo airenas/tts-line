@@ -9,11 +9,13 @@ import (
 	"strings"
 	"time"
 
+	"github.com/airenas/tts-line/internal/pkg/syntmodel"
 	"github.com/airenas/tts-line/internal/pkg/wrapservice/api"
 	"github.com/facebookgo/grace/gracehttp"
 	"github.com/labstack/echo-contrib/prometheus"
 	"github.com/labstack/echo/v4"
 	"github.com/pkg/errors"
+	"github.com/vmihailenco/msgpack/v5"
 
 	"github.com/airenas/go-app/pkg/goapp"
 )
@@ -21,7 +23,7 @@ import (
 type (
 	//WaveSynthesizer main sythesis processor
 	WaveSynthesizer interface {
-		Work(ctx context.Context, params *api.Params) (*api.Result, error)
+		Work(ctx context.Context, params *api.Params) (*syntmodel.Result, error)
 	}
 	//Data is service operation data
 	Data struct {
@@ -78,7 +80,7 @@ func handleSynthesize(data *Data) func(echo.Context) error {
 			goapp.Log.Error().Msg("Wrong content type")
 			return echo.NewHTTPError(http.StatusBadRequest, "Wrong content type. Expected '"+echo.MIMEApplicationJSON+"'")
 		}
-		var input api.Input
+		var input syntmodel.AMInput
 		if err := c.Bind(&input); err != nil {
 			goapp.Log.Error().Err(err).Send()
 			return echo.NewHTTPError(http.StatusBadRequest, "Can read data")
@@ -92,17 +94,40 @@ func handleSynthesize(data *Data) func(echo.Context) error {
 			return echo.NewHTTPError(http.StatusBadRequest, "No voice")
 		}
 
-		res, err := data.Processor.Work(ctx, &api.Params{Text: input.Text, Speed: input.Speed, Voice: input.Voice, Priority: input.Priority})
+		res, err := data.Processor.Work(ctx, &api.Params{Text: input.Text, Speed: input.Speed, Voice: input.Voice, Priority: input.Priority,
+			DurationsChange: input.DurationsChange, PitchChange: input.PitchChange,
+		})
 		if err != nil {
 			goapp.Log.Error().Err(errors.Wrap(err, "cannot process text")).Send()
 			return echo.NewHTTPError(http.StatusInternalServerError, "Cannot process text")
 		}
-		c.Response().Header().Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
-		c.Response().WriteHeader(http.StatusOK)
-		return json.NewEncoder(c.Response()).Encode(res)
+
+		return writeResponseMsgPackOrJson(c, res)
 	}
 }
 
 func live(data *Data) func(echo.Context) error {
 	return echo.WrapHandler(data.HealthHandler)
+}
+
+func writeResponseMsgPackOrJson(c echo.Context, res *syntmodel.Result) error {
+	if c.Request().Header.Get(echo.HeaderAccept) == echo.MIMEApplicationMsgpack {
+		return writeResponseMsgPack(c, res)
+	}
+	return writeResponse(c, res)
+}
+
+func writeResponse(c echo.Context, res interface{}) error {
+	c.Response().Header().Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+	c.Response().WriteHeader(http.StatusOK)
+	enc := json.NewEncoder(c.Response())
+	enc.SetEscapeHTML(false)
+	return enc.Encode(res)
+}
+
+func writeResponseMsgPack(c echo.Context, resp interface{}) error {
+	c.Response().Header().Set(echo.HeaderContentType, echo.MIMEApplicationMsgpack)
+	c.Response().WriteHeader(http.StatusOK)
+	enc := msgpack.NewEncoder(c.Response())
+	return enc.Encode(resp)
 }

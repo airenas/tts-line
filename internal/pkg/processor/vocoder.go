@@ -6,6 +6,7 @@ import (
 
 	"github.com/airenas/tts-line/internal/pkg/service/api"
 	"github.com/airenas/tts-line/internal/pkg/synthesizer"
+	"github.com/airenas/tts-line/internal/pkg/syntmodel"
 	"github.com/airenas/tts-line/internal/pkg/utils"
 	"github.com/pkg/errors"
 )
@@ -41,22 +42,12 @@ func (p *vocoder) Process(ctx context.Context, data *synthesizer.TTSDataPart) er
 	if data.Cfg.Input.OutputFormat == api.AudioNone {
 		return nil
 	}
-	inData := vocInput{Data: data.Spectogram, Voice: data.Cfg.Input.Voice, Priority: data.Cfg.Input.Priority}
-	var output vocOutput
+	inData := syntmodel.VocInput{Data: data.Spectogram, Voice: data.Cfg.Input.Voice, Priority: data.Cfg.Input.Priority}
+	var output syntmodel.VocOutput
 	err := p.httpWrap.InvokeJSONU(ctx, getVoiceURL(p.url, data.Cfg.Input.Voice), inData, &output)
 	if err != nil {
 		return err
 	}
 	data.Audio = output.Data
 	return nil
-}
-
-type vocInput struct {
-	Data     []byte `json:"data" msgpack:"data"`
-	Voice    string `json:"voice" msgpack:"voice"`
-	Priority int    `json:"priority,omitempty" msgpack:"priority,omitempty"`
-}
-
-type vocOutput struct {
-	Data []byte `json:"data" msgpack:"data"`
 }

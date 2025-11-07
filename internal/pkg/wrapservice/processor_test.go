@@ -10,6 +10,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 
+	"github.com/airenas/tts-line/internal/pkg/syntmodel"
 	"github.com/airenas/tts-line/internal/pkg/test/mocks"
 	"github.com/airenas/tts-line/internal/pkg/wrapservice/api"
 )
@@ -50,24 +51,24 @@ func TestInvokeProcessor(t *testing.T) {
 
 	httpAMMock.On("InvokeJSON", mock.Anything, mock.Anything).Run(
 		func(params mock.Arguments) {
-			*params[1].(*amOutput) = amOutput{Data: "specs", Durations: []int{10, 12}, SilDuration: 15}
+			*params[1].(*syntmodel.AMOutput) = syntmodel.AMOutput{Data: []byte("specs"), Durations: []int{10, 12}, SilDuration: 15}
 		}).Return(nil)
 
 	httpVocMock.On("InvokeJSON", mock.Anything, mock.Anything).Run(
 		func(params mock.Arguments) {
-			*params[1].(*output) = output{Data: "audio"}
+			*params[1].(*syntmodel.VocOutput) = syntmodel.VocOutput{Data: []byte("audio")}
 		}).Return(nil)
 	res, err := pr.Work(context.TODO(), &api.Params{Text: "olia", Speed: 0.9, Voice: "voice", Priority: 10})
 	assert.Nil(t, err)
-	assert.Equal(t, &api.Result{Data: "audio", Durations: []int{10, 12}, SilDuration: 15}, res)
+	assert.Equal(t, &syntmodel.Result{Data: []byte("audio"), Durations: []int{10, 12}, SilDuration: 15}, res)
 
 	httpAMMock.AssertNumberOfCalls(t, "InvokeJSON", 1)
 	cp1 := httpAMMock.Calls[0].Arguments[0]
-	assert.Equal(t, &amInput{Text: "olia", Speed: 0.9, Voice: "voice", Priority: 10}, cp1)
+	assert.Equal(t, &syntmodel.AMInput{Text: "olia", Speed: 0.9, Voice: "voice", Priority: 10}, cp1)
 
 	httpVocMock.AssertNumberOfCalls(t, "InvokeJSON", 1)
 	cp2 := httpVocMock.Calls[0].Arguments[0]
-	assert.Equal(t, &vocInput{Data: "specs", Voice: "voice", Priority: 10}, cp2)
+	assert.Equal(t, &syntmodel.VocInput{Data: []byte("specs"), Voice: "voice", Priority: 10}, cp2)
 	assert.InDelta(t, 0.0, testutil.ToFloat64(totalFailureMetrics.WithLabelValues("am", "voice")), 0.000001)
 	assert.InDelta(t, 0.0, testutil.ToFloat64(totalFailureMetrics.WithLabelValues("vocoder", "voice")), 0.000001)
 }
@@ -82,7 +83,7 @@ func TestInvokeProcessor_FailAM(t *testing.T) {
 	httpAMMock.On("InvokeJSON", mock.Anything, mock.Anything).Return(errors.New("haha"))
 	httpVocMock.On("InvokeJSON", mock.Anything, mock.Anything).Run(
 		func(params mock.Arguments) {
-			*params[1].(*output) = output{Data: "audio"}
+			*params[1].(*syntmodel.VocOutput) = syntmodel.VocOutput{Data: []byte("audio")}
 		}).Return(nil)
 	_, err := pr.Work(context.TODO(), &api.Params{Text: "olia", Speed: 1, Voice: "voice", Priority: 10})
 	assert.NotNil(t, err)
@@ -98,7 +99,7 @@ func TestInvokeProcessor_FailVoc(t *testing.T) {
 
 	httpAMMock.On("InvokeJSON", mock.Anything, mock.Anything).Run(
 		func(params mock.Arguments) {
-			*params[1].(*amOutput) = amOutput{Data: "audio"}
+			*params[1].(*syntmodel.AMOutput) = syntmodel.AMOutput{Data: []byte("audio")}
 		}).Return(nil)
 	httpVocMock.On("InvokeJSON", mock.Anything, mock.Anything).Return(errors.New("haha"))
 	_, err := pr.Work(context.TODO(), &api.Params{Text: "olia", Speed: 1, Voice: "voice", Priority: 10})
