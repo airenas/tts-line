@@ -50,7 +50,6 @@ services:
     restart: on-failure 
 
   clitics:
-    container_name: clitics
     image: airenas/clitics:${version}
     environment:
       - SECRET=${CLITICS_SECRET} 
@@ -69,7 +68,6 @@ services:
     restart: on-failure 
 
   audioconverter-rs:
-    container_name: audioconverter-rs
     image: airenas/audio-convert-rs:0.1.1
     restart: on-failure 
     environment:
@@ -78,14 +76,12 @@ services:
       # - OTEL_EXPORTER_OTLP_ENDPOINT=http://jaeger:4318
 
   transcriber:
-    container_name: transcriber
     image: airenas/transcriber:1.3.1209
     environment:
       - SECRET=${TRANSCRIBER_SECRET} 
     restart: on-failure  
 
   accenter:
-    container_name: accenter
     image: airenas/accenter:1.3.1209
     restart: on-failure
     environment:
@@ -94,7 +90,6 @@ services:
       - SECRET=${ACCENTER_SECRET}
   
   acronyms:
-    container_name: acronyms
     image: airenas/acronyms:${version}
     restart: on-failure 
     environment:
