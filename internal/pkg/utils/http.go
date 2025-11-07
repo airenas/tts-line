@@ -120,7 +120,7 @@ func (hw *HTTPWrap) prepareBody(ctx context.Context, dataIn interface{}) (*bytes
 	defer span.End()
 
 	b := new(bytes.Buffer)
-	
+
 	if hw.inputFormat == EncodingFormatMsgPack {
 		msgpackEncoder := msgpack.NewEncoder(b)
 		if err := msgpackEncoder.Encode(dataIn); err != nil {

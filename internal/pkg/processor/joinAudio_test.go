@@ -3,7 +3,6 @@ package processor
 import (
 	"bytes"
 	"context"
-	"encoding/base64"
 	"errors"
 	"os"
 	"testing"
@@ -252,11 +251,6 @@ func TestJoinSSMLAudio_SuffixFail(t *testing.T) {
 func getTestEncAudio(t *testing.T) []byte {
 	t.Helper()
 	return getWaveData(t)
-}
-
-func getTestAudioSizeStr(as string) uint32 {
-	bt, _ := base64.StdEncoding.DecodeString(as)
-	return getTestAudioSize(bt)
 }
 
 func getTestAudioSize(bt []byte) uint32 {
