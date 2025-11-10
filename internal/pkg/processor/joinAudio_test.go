@@ -11,7 +11,9 @@ import (
 	"github.com/airenas/tts-line/internal/pkg/service/api"
 	"github.com/airenas/tts-line/internal/pkg/synthesizer"
 	"github.com/airenas/tts-line/internal/pkg/test/mocks"
+	"github.com/airenas/tts-line/internal/pkg/utils"
 	"github.com/airenas/tts-line/internal/pkg/wav"
+	"github.com/airenas/tts-line/pkg/ssml"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -117,7 +119,7 @@ func TestJoinSSMLAudio(t *testing.T) {
 	pr := NewJoinSSMLAudio(loaderMock)
 	d := synthesizer.TTSData{Input: &api.TTSRequestConfig{OutputFormat: api.AudioMP3}}
 	strA := getTestEncAudio(t)
-	d.Parts = []*synthesizer.TTSDataPart{{Audio: strA, Step: 256}}
+	d.Parts = []*synthesizer.TTSDataPart{{Audio: strA, Step: 256, Cfg: &synthesizer.TTSConfig{}}}
 	d.Cfg.Type = synthesizer.SSMLText
 	da := &synthesizer.TTSData{Input: d.Input, SSMLParts: []*synthesizer.TTSData{&d}}
 	err := pr.Process(context.TODO(), da)
@@ -130,7 +132,7 @@ func TestJoinSSMLAudio_Skip(t *testing.T) {
 	pr := NewJoinSSMLAudio(loaderMock)
 	d := synthesizer.TTSData{Input: &api.TTSRequestConfig{OutputFormat: api.AudioNone}}
 	strA := getTestEncAudio(t)
-	d.Parts = []*synthesizer.TTSDataPart{{Audio: strA}}
+	d.Parts = []*synthesizer.TTSDataPart{{Audio: strA, Cfg: &synthesizer.TTSConfig{}}}
 	d.Cfg.Type = synthesizer.SSMLText
 	da := &synthesizer.TTSData{Input: d.Input, SSMLParts: []*synthesizer.TTSData{&d}}
 	err := pr.Process(context.TODO(), da)
@@ -144,8 +146,8 @@ func TestJoinSSMLAudio_Several(t *testing.T) {
 	pr := NewJoinSSMLAudio(loaderMock)
 	d := synthesizer.TTSData{Input: &api.TTSRequestConfig{OutputFormat: api.AudioMP3}}
 	strA := getTestEncAudio(t)
-	d.Parts = []*synthesizer.TTSDataPart{{Audio: strA, Step: 256}, {Audio: strA, Step: 256},
-		{Audio: strA, Step: 256}}
+	d.Parts = []*synthesizer.TTSDataPart{{Audio: strA, Step: 256, Cfg: &synthesizer.TTSConfig{}}, {Audio: strA, Step: 256, Cfg: &synthesizer.TTSConfig{}},
+		{Audio: strA, Step: 256, Cfg: &synthesizer.TTSConfig{}}}
 	d.Cfg.Type = synthesizer.SSMLText
 	da := &synthesizer.TTSData{Input: d.Input, SSMLParts: []*synthesizer.TTSData{&d, &d}}
 	err := pr.Process(context.TODO(), da)
@@ -162,7 +164,7 @@ func TestJoinSSMLAudio_DecodeFail(t *testing.T) {
 	pr := NewJoinSSMLAudio(loaderMock)
 	d := synthesizer.TTSData{Input: &api.TTSRequestConfig{OutputFormat: api.AudioMP3}}
 	strA := getTestEncAudio(t)
-	d.Parts = []*synthesizer.TTSDataPart{{Audio: strA}, {Audio: []byte("aaa")}}
+	d.Parts = []*synthesizer.TTSDataPart{{Audio: strA, Cfg: &synthesizer.TTSConfig{}}, {Audio: []byte("aaa"), Cfg: &synthesizer.TTSConfig{}}}
 	da := &synthesizer.TTSData{Input: d.Input, SSMLParts: []*synthesizer.TTSData{&d}}
 	err := pr.Process(context.TODO(), da)
 	assert.NotNil(t, err)
@@ -173,7 +175,7 @@ func TestJoinSSMLAudio_EmptyFail(t *testing.T) {
 	pr := NewJoinSSMLAudio(loaderMock)
 	d := synthesizer.TTSData{Input: &api.TTSRequestConfig{OutputFormat: api.AudioMP3}}
 	strA := getTestEncAudio(t)
-	d.Parts = []*synthesizer.TTSDataPart{{Audio: strA, Step: 256}, {Audio: []byte(""), Step: 256}}
+	d.Parts = []*synthesizer.TTSDataPart{{Audio: strA, Step: 256, Cfg: &synthesizer.TTSConfig{}}, {Audio: []byte(""), Step: 256, Cfg: &synthesizer.TTSConfig{}}}
 	da := &synthesizer.TTSData{Input: d.Input, SSMLParts: []*synthesizer.TTSData{&d}}
 	err := pr.Process(context.TODO(), da)
 	assert.NotNil(t, err)
@@ -183,7 +185,7 @@ func TestJoinSSMLAudio_AddPause(t *testing.T) {
 	pr := NewJoinSSMLAudio(loaderMock)
 	d := &synthesizer.TTSData{Input: &api.TTSRequestConfig{OutputFormat: api.AudioMP3}}
 	strA := getTestEncAudio(t)
-	d.Parts = []*synthesizer.TTSDataPart{{Audio: strA, Step: 256}}
+	d.Parts = []*synthesizer.TTSDataPart{{Audio: strA, Step: 256, Cfg: &synthesizer.TTSConfig{}}}
 	d.Cfg.Type = synthesizer.SSMLText
 	dp := &synthesizer.TTSData{}
 	dp.Cfg.Type = synthesizer.SSMLPause
@@ -226,7 +228,7 @@ func TestJoinSSMLAudio_Suffix(t *testing.T) {
 	pr := NewJoinSSMLAudio(loaderMock)
 	d := synthesizer.TTSData{Input: &api.TTSRequestConfig{OutputFormat: api.AudioMP3}}
 	strA := getTestEncAudio(t)
-	d.Parts = []*synthesizer.TTSDataPart{{Audio: strA, Step: 256}}
+	d.Parts = []*synthesizer.TTSDataPart{{Audio: strA, Step: 256, Cfg: &synthesizer.TTSConfig{}}}
 	d.Cfg.Type = synthesizer.SSMLText
 	da := &synthesizer.TTSData{Input: d.Input, SSMLParts: []*synthesizer.TTSData{&d}, AudioSuffix: "oo.wav"}
 	loaderMock.On("TakeWav", mock.Anything).Return(getWaveData(t), nil)
@@ -240,7 +242,7 @@ func TestJoinSSMLAudio_SuffixFail(t *testing.T) {
 	pr := NewJoinSSMLAudio(loaderMock)
 	d := synthesizer.TTSData{Input: &api.TTSRequestConfig{OutputFormat: api.AudioMP3}}
 	strA := getTestEncAudio(t)
-	d.Parts = []*synthesizer.TTSDataPart{{Audio: strA, Step: 256}}
+	d.Parts = []*synthesizer.TTSDataPart{{Audio: strA, Step: 256, Cfg: &synthesizer.TTSConfig{}}}
 	d.Cfg.Type = synthesizer.SSMLText
 	da := &synthesizer.TTSData{Input: d.Input, SSMLParts: []*synthesizer.TTSData{&d}, AudioSuffix: "oo.wav"}
 	loaderMock.On("TakeWav", mock.Anything).Return(nil, errors.New("fail"))
@@ -487,6 +489,105 @@ func Test_toHops(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := toHops(tt.args.millis, tt.args.step, tt.args.sampleRate); got != tt.want {
 				t.Errorf("toHops() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func Test_calcVolumeRate(t *testing.T) {
+	tests := []struct {
+		name       string
+		changeInDB float64
+		want       float64
+	}{
+		{name: "no change", changeInDB: 0.0, want: 1.0},
+		{name: "increase 6dB", changeInDB: 6.0, want: 1.9952623149688795},
+		{name: "decrease 6dB", changeInDB: -6.0, want: 0.5011872336272722},
+		{name: "increase 20dB", changeInDB: 20.0, want: 10.0},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := calcVolumeRate(tt.changeInDB)
+			if !utils.Float64Equals(got, tt.want) {
+				t.Errorf("calcVolumeRate() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func Test_toInt16(t *testing.T) {
+	tests := []struct {
+		name string
+		f    float64
+		want int16
+	}{
+		{name: "zero", f: 0.0, want: 0},
+		{name: "max", f: 32780, want: 32767},
+		{name: "min", f: -32780, want: -32768},
+		{name: "half max", f: 16383.2, want: 16383},
+		{name: "half min", f: -16383.9, want: -16384},
+		{name: "over max", f: 32767, want: 32767},
+		{name: "over min", f: -32768, want: -32768},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := toInt16(tt.f)
+			if got != tt.want {
+				t.Errorf("toInt16() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func Test_calcVolumeChange(t *testing.T) {
+	tests := []struct {
+		name    string
+		prosody []*ssml.Prosody
+		want    float64
+	}{
+		{name: "no change", prosody: []*ssml.Prosody{}, want: 0.0},
+		{name: "single increase", prosody: []*ssml.Prosody{{Volume: 6}}, want: 6.0},
+		{name: "single decrease", prosody: []*ssml.Prosody{{Volume: -6}}, want: -6.0},
+		{name: "multiple changes", prosody: []*ssml.Prosody{{Volume: 3}, {Volume: -2}, {Volume: -5}}, want: -4.0},
+		{name: "multiple silence", prosody: []*ssml.Prosody{{Volume: 3}, {Volume: -1000}, {Volume: -5}}, want: -1000.0},
+		{name: "silence", prosody: []*ssml.Prosody{{Volume: -1000}}, want: -1000.0},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := calcVolumeChange(tt.prosody)
+			if !utils.Float64Equals(got, tt.want) {
+				t.Errorf("calcVolumeChange() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func Test_changeVolume(t *testing.T) {
+	tests := []struct {
+		name      string
+		b         []byte
+		volChange []volChange
+		want      []byte
+		wantErr   bool
+	}{
+		{name: "sil", b: []byte{0, 1, 2, 3, 4, 5, 6, 7}, volChange: []volChange{{from: 2, to: 6, change: 0}}, want: []byte{0, 1, 0, 0, 0, 0, 6, 7}, wantErr: false},
+		{name: "no change", b: getWaveData(t)[:8], volChange: []volChange{}, want: getWaveData(t)[:8], wantErr: false},
+		{name: "sil", b: []byte{0, 1, 2, 3, 4, 5, 6, 7}, volChange: []volChange{{from: 0, to: 2, change: 0}}, want: []byte{0, 0, 2, 3, 4, 5, 6, 7}, wantErr: false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, gotErr := changeVolume(tt.b, tt.volChange, 2)
+			if gotErr != nil {
+				if !tt.wantErr {
+					t.Errorf("changeVolume() failed: %v", gotErr)
+				}
+				return
+			}
+			if tt.wantErr {
+				t.Fatal("changeVolume() succeeded unexpectedly")
+			}
+			if !bytes.Equal(got, tt.want) {
+				t.Errorf("changeVolume() = %v, want %v", got, tt.want)
 			}
 		})
 	}

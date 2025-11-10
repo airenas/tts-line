@@ -13,6 +13,7 @@ import (
 	"github.com/airenas/tts-line/internal/pkg/synthesizer"
 	"github.com/airenas/tts-line/internal/pkg/utils"
 	"github.com/airenas/tts-line/internal/pkg/wav"
+	"github.com/airenas/tts-line/pkg/ssml"
 	"github.com/pkg/errors"
 	"github.com/rs/zerolog/log"
 )
@@ -278,6 +279,13 @@ type nextWriteData struct {
 	pause       time.Duration // pause that should be written after data
 	isPause     bool
 	durationAdd time.Duration // time to add to the part
+	volChanges  []volChange
+}
+
+type volChange struct {
+	from   int
+	to     int
+	change float64
 }
 
 func joinSSML(ctx context.Context, data *synthesizer.TTSData, suffix []byte, maxEdgeSilenceMillis int64) ([]byte, float64 /*len*/, uint32 /*sampleRate*/, error) {
@@ -342,6 +350,15 @@ func joinSSML(ctx context.Context, data *synthesizer.TTSData, suffix []byte, max
 			wd.part.AudioDurations.Shift += utils.ToTTSSteps(wd.durationAdd, wav.GetSampleRate(res.header), step)
 			wd.part.AudioDurations.Duration += wd.durationAdd
 			wd.durationAdd = 0
+			volumeChange := calcVolumeChange(wd.part.Cfg.Prosodies)
+			if !utils.Float64Equals(volumeChange, 0) {
+				log.Ctx(ctx).Warn().Float64("change", volumeChange).Int("from", lenBefore).Int("to", res.buf.Len()).Msg("volume")
+				wd.volChanges = append(wd.volChanges, volChange{
+					from:   lenBefore,
+					to:     res.buf.Len(),
+					change: calcVolumeRate(volumeChange),
+				})
+			}
 		}
 		if pause > 0 {
 			if err := appendPause(ctx, res, pause); err != nil {
@@ -383,17 +400,70 @@ func joinSSML(ctx context.Context, data *synthesizer.TTSData, suffix []byte, max
 		}
 	}
 
+	resBytes, err := changeVolume(res.buf.Bytes(), wd.volChanges, int(res.bitsPerSample()/8))
+	if err != nil {
+		return nil, 0, 0, fmt.Errorf("change volume: %w", err)
+	}
 	var bufRes bytes.Buffer
 	_, _ = bufRes.Write(res.header)
 	_, _ = bufRes.Write([]byte("data"))
 	_, _ = bufRes.Write(wav.SizeBytes(res.size))
-	_, _ = bufRes.Write(res.buf.Bytes())
-
+	_, _ = bufRes.Write(resBytes)
 	bitsRate := wav.GetBitsRateCalc(res.header)
 	if bitsRate == 0 {
 		return nil, 0, 0, errors.New("can't extract bits rate from header")
 	}
 	return bufRes.Bytes(), float64(res.size) / float64(bitsRate), res.sampleRate(), nil
+}
+
+func changeVolume(b []byte, volChange []volChange, bytesPerSaample int) ([]byte, error) {
+	if len(volChange) == 0 {
+		return b, nil
+	}
+	for _, vc := range volChange {
+		for i := vc.from; i < vc.to; i += bytesPerSaample {
+			switch bytesPerSaample {
+			case 2:
+				sample := int16(b[i]) | int16(b[i+1])<<8
+				newSample := toInt16(float64(sample) * vc.change)
+				b[i] = byte(newSample & 0xFF)
+				b[i+1] = byte((newSample >> 8) & 0xFF)
+			case 4:
+				return nil, fmt.Errorf("not implemented for 4 bytes per sample")
+			default:
+				return nil, fmt.Errorf("unsupported bytes per sample %d", bytesPerSaample)
+			}
+		}
+	}
+	return b, nil
+}
+
+func toInt16(f float64) int16 {
+	if f > 32767 {
+		return 32767
+	}
+	if f < -32768 {
+		return -32768
+	}
+	return int16(math.Round(f))
+}
+
+func calcVolumeChange(prosody []*ssml.Prosody) float64 {
+	res := 0.0
+	for _, p := range prosody {
+		if utils.Float64Equals(p.Volume, ssml.MinVolumeChange) {
+			return ssml.MinVolumeChange
+		}
+		res += p.Volume
+	}
+	return res
+}
+
+func calcVolumeRate(changeInDB float64) float64 {
+	if utils.Float64Equals(changeInDB, ssml.MinVolumeChange) {
+		return 0
+	}
+	return math.Pow(10, changeInDB/20)
 }
 
 func calcPauseWithEnds(s1, s2, pause int) (int, int, int) {
