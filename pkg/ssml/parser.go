@@ -51,6 +51,7 @@ type wrkData struct {
 
 	lastTag   []string
 	voiceFunc func(string) (string, error)
+	langFunc  func(string) (string, error)
 
 	lastWAcc, lastWSyll, lastWUser string
 
@@ -106,7 +107,9 @@ func init() {
 func Parse(r io.Reader, def *Text, voiceFunc func(string) (string, error)) ([]Part, error) {
 	wrk := &wrkData{res: make([]Part, 0),
 		//cValues: []*Text{def},
-		voiceFunc: voiceFunc}
+		voiceFunc: voiceFunc,
+		langFunc:  checkLanguage,
+	}
 	wrk.voices.push(def.Voice)
 
 	d := xml.NewDecoder(r)
@@ -209,8 +212,13 @@ func startSpeak(se xml.StartElement, wrk *wrkData) error {
 	}
 	wrk.speakTagCount++
 
-	l := getAttr(se, "lang")
-	wrk.languages.push(l)
+	lang := getAttr(se, "lang")
+	var err error
+	lang, err = wrk.langFunc(lang)
+	if err != nil {
+		return err
+	}
+	wrk.languages.push(lang)
 
 	return nil
 }
@@ -412,6 +420,11 @@ func startLang(se xml.StartElement, wrk *wrkData) error {
 	if lang == "" {
 		return fmt.Errorf("no <lang>:lang")
 	}
+	var err error
+	lang, err = wrk.langFunc(lang)
+	if err != nil {
+		return err
+	}
 	wrk.languages.push(lang)
 	return nil
 }
@@ -563,4 +576,18 @@ func parseRatePercents(v float64) float64 {
 
 func percentToMultiplier(v float64) float64 {
 	return 1 + v/100.0
+}
+
+func checkLanguage(lang string) (string, error) {
+	res := strings.ToLower(strings.TrimSpace(lang))
+	if res == "" || res == "lt" {
+		return "", nil
+	}
+	if res == "en" {
+		return res, nil
+	}
+	if len(res) == 2 {
+		return res, nil
+	}
+	return "", fmt.Errorf("unsupported language '%s'", lang)
 }

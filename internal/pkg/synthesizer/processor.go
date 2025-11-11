@@ -96,7 +96,9 @@ func makeSSMLParts(input *api.TTSRequestConfig) ([]*TTSData, error) {
 func makeTextParts(textPart []ssml.TextPart) []*TTSTextPart {
 	res := []*TTSTextPart{}
 	for _, tp := range textPart {
-		res = append(res, &TTSTextPart{Text: tp.Text, Accented: tp.Accented, Syllables: tp.Syllables, UserOEPal: tp.UserOEPal})
+		res = append(res, &TTSTextPart{Text: tp.Text, Accented: tp.Accented, Syllables: tp.Syllables, UserOEPal: tp.UserOEPal,
+			Language: tp.Language,
+		})
 	}
 	return res
 }

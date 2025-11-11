@@ -56,8 +56,7 @@ func processSentence(ctx context.Context, client HTTPInvokerJSON, s []*synthesiz
 
 	var input []*transliteratorInput
 	for _, w := range s {
-		tw := w.Tagged
-		input = append(input, toTransliteratorInput(&tw))
+		input = append(input, toTransliteratorInput(w))
 	}
 	var output []*transliteratorOutput
 	err := client.InvokeJSON(ctx, input, &output)
@@ -67,14 +66,25 @@ func processSentence(ctx context.Context, client HTTPInvokerJSON, s []*synthesiz
 	return mapTransliteratorRes(output, s)
 }
 
-func toTransliteratorInput(taggedWord *synthesizer.TaggedWord) *transliteratorInput {
-	if taggedWord.Space {
-		return &transliteratorInput{Type: taggedWord.TypeStr(), String: " "}
+func toTransliteratorInput(w *synthesizer.ProcessedWord) *transliteratorInput {
+	tw := w.Tagged
+	if tw.Space {
+		return &transliteratorInput{Type: tw.TypeStr(), String: " "}
 	}
-	if taggedWord.Separator != "" {
-		return &transliteratorInput{Type: taggedWord.TypeStr(), String: taggedWord.Separator}
+	if tw.Separator != "" {
+		return &transliteratorInput{Type: tw.TypeStr(), String: tw.Separator}
 	}
-	return &transliteratorInput{Type: taggedWord.TypeStr(), String: taggedWord.Word, Mi: taggedWord.Mi, Lemma: taggedWord.Lemma}
+	lang := extractLanguage(w.TextPart)
+	//todo use language
+	_ = lang // currently not used
+	return &transliteratorInput{Type: tw.TypeStr(), String: tw.Word, Mi: tw.Mi, Lemma: tw.Lemma}
+}
+
+func extractLanguage(part *synthesizer.TTSTextPart) string {
+	if part != nil {
+		return part.Language
+	}
+	return ""
 }
 
 func mapTransliteratorRes(output []*transliteratorOutput, s []*synthesizer.ProcessedWord) error {
