@@ -66,16 +66,17 @@ func TestParse(t *testing.T) {
 		//////////////////////////////////////////////////////////////////////////////////////////
 		/// language tests
 		//////////////////////////////////////////////////////////////////////////////////////////
-		{name: "lang", xml: `<speak lang="en"><lang lang="lt">olia1<lang lang="us">olia2</lang></lang></speak>`, want: []Part{
-			&Text{Voice: "aa", Texts: []TextPart{{Language: "lt", Text: "olia1"}, {Language: "us", Text: "olia2"}}}},
+		{name: "lang", xml: `<speak lang="en"><lang lang="lt">olia1<lang lang="en">olia2</lang></lang></speak>`, want: []Part{
+			&Text{Voice: "aa", Texts: []TextPart{{Language: "", Text: "olia1"}, {Language: "en", Text: "olia2"}}}},
 			wantErr: false},
 		{name: "lang fail", xml: `<speak lang="en"><lang>olia1</lang></speak>`, want: nil, wantErr: true},
+		{name: "unsupported lang fail", xml: `<speak lang="olia">olia1</speak>`, want: nil, wantErr: true},
 
-		{name: "lang inside prosody", xml: `<speak lang="en"><prosody rate="100%"><lang lang="lt">olia1</lang></prosody></speak>`, want: []Part{
-			&Text{Voice: "aa", Texts: []TextPart{{Language: "lt", Text: "olia1"}}, Prosodies: []*Prosody{{Rate: 1}}}},
+		{name: "lang inside prosody", xml: `<speak lang="en"><prosody rate="100%"><lang lang="us">olia1</lang></prosody></speak>`, want: []Part{
+			&Text{Voice: "aa", Texts: []TextPart{{Language: "us", Text: "olia1"}}, Prosodies: []*Prosody{{Rate: 1}}}},
 			wantErr: false},
 		{name: "lang outside prosody", xml: `<speak lang="en"><lang lang="lt"><prosody rate="100%">olia1</prosody></lang></speak>`, want: []Part{
-			&Text{Voice: "aa", Texts: []TextPart{{Language: "lt", Text: "olia1"}}, Prosodies: []*Prosody{{Rate: 1}}}},
+			&Text{Voice: "aa", Texts: []TextPart{{Language: "", Text: "olia1"}}, Prosodies: []*Prosody{{Rate: 1}}}},
 			wantErr: false},
 		{name: "lang from speak", xml: `<speak lang="en"><prosody rate="100%">olia1</prosody></speak>`, want: []Part{
 			&Text{Voice: "aa", Texts: []TextPart{{Language: "en", Text: "olia1"}}, Prosodies: []*Prosody{{Rate: 1}}}},
