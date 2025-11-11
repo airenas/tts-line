@@ -583,9 +583,6 @@ func checkLanguage(lang string) (string, error) {
 	if res == "" || res == "lt" {
 		return "", nil
 	}
-	if res == "en" {
-		return res, nil
-	}
 	if len(res) == 2 {
 		return res, nil
 	}
