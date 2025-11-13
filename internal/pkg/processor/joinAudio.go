@@ -454,9 +454,25 @@ func calcVolumeChange(prosody []*ssml.Prosody) float64 {
 		if utils.Float64Equals(p.Volume, ssml.MinVolumeChange) {
 			return ssml.MinVolumeChange
 		}
-		res += p.Volume
+		res += getVolumeChange(p)
 	}
 	return res
+}
+
+func getVolumeChange(p *ssml.Prosody) float64 {
+	step := 2.0 // dB
+	switch p.Emphasis {
+	case ssml.EmphasisTypeReduced:
+		return -step
+	case ssml.EmphasisTypeNone:
+		return 0.0
+	case ssml.EmphasisTypeModerate:
+		return step
+	case ssml.EmphasisTypeStrong:
+		return 2 * step
+	default:
+		return p.Volume
+	}
 }
 
 func calcVolumeRate(changeInDB float64) float64 {

@@ -173,7 +173,7 @@ func TestMapAMInput(t *testing.T) {
 	d.Words = append(d.Words, &synthesizer.ProcessedWord{Transcription: "v a - o l i a", Tagged: synthesizer.TaggedWord{Word: "v1"}})
 	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Separator: ","}})
 	d.Words = append(d.Words, &synthesizer.ProcessedWord{Transcription: "v a", Tagged: synthesizer.TaggedWord{Word: "v1"}})
-	inp, _ := pr.mapAMInput(d)
+	inp, _ := pr.mapAMInput(t.Context(), d)
 	assert.Equal(t, "<space> v a o l i a , v a <space>", inp.Text)
 }
 
@@ -196,7 +196,7 @@ func TestMapAMInput_SpaceDot(t *testing.T) {
 	d.Words = append(d.Words, &synthesizer.ProcessedWord{Transcription: "v a - o l i a", Tagged: synthesizer.TaggedWord{Word: "v1"}})
 	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Separator: "."}})
 	d.Words = append(d.Words, &synthesizer.ProcessedWord{Transcription: "v a", Tagged: synthesizer.TaggedWord{Word: "v1"}})
-	inp, _ := pr.mapAMInput(d)
+	inp, _ := pr.mapAMInput(t.Context(), d)
 	assert.Equal(t, "<space> v a o l i a . <space> v a <space>", inp.Text)
 }
 
@@ -207,7 +207,7 @@ func TestMapAMInput_SpaceQuestion(t *testing.T) {
 	d.Words = append(d.Words, &synthesizer.ProcessedWord{Transcription: "v a - o l i a", Tagged: synthesizer.TaggedWord{Word: "v1"}})
 	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Separator: "?"}})
 	d.Words = append(d.Words, &synthesizer.ProcessedWord{Transcription: "v a", Tagged: synthesizer.TaggedWord{Word: "v1"}})
-	inp, _ := pr.mapAMInput(d)
+	inp, _ := pr.mapAMInput(t.Context(), d)
 	assert.Equal(t, "<space> v a o l i a ? <space> v a <space>", inp.Text)
 }
 
@@ -219,7 +219,7 @@ func TestMapAMInput_Exclamation(t *testing.T) {
 	d.Words = append(d.Words, &synthesizer.ProcessedWord{Transcription: "v a - o l i a", Tagged: synthesizer.TaggedWord{Word: "v1"}})
 	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Separator: "!"}})
 	d.Words = append(d.Words, &synthesizer.ProcessedWord{Transcription: "v a", Tagged: synthesizer.TaggedWord{Word: "v1"}})
-	inp, _ := pr.mapAMInput(d)
+	inp, _ := pr.mapAMInput(t.Context(), d)
 	assert.Equal(t, "<space> v a o l i a ! <space> v a <space>", inp.Text)
 }
 
@@ -228,7 +228,7 @@ func TestMapAMInput_ChangePhone(t *testing.T) {
 	d := newTestTTSDataPart()
 
 	d.Words = append(d.Words, &synthesizer.ProcessedWord{Transcription: "v a - \"oi \"iui", Tagged: synthesizer.TaggedWord{Word: "v1"}})
-	inp, _ := pr.mapAMInput(d)
+	inp, _ := pr.mapAMInput(t.Context(), d)
 	assert.Equal(t, "<space> v a \"o: i \"iu i <space>", inp.Text)
 }
 
@@ -238,7 +238,7 @@ func TestMapAMInput_SpaceEnd(t *testing.T) {
 	d.First = true
 
 	d.Words = append(d.Words, &synthesizer.ProcessedWord{Transcription: "v a", Tagged: synthesizer.TaggedWord{Word: "v1"}})
-	inp, _ := pr.mapAMInput(d)
+	inp, _ := pr.mapAMInput(t.Context(), d)
 	assert.Equal(t, "<space> v a <space>", inp.Text)
 }
 
@@ -247,7 +247,7 @@ func TestMapAMInput_AddDotOnSentenceEnd(t *testing.T) {
 	d := newTestTTSDataPart()
 	d.Words = append(d.Words, &synthesizer.ProcessedWord{Transcription: "v a", Tagged: synthesizer.TaggedWord{Word: "v1"}})
 	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{SentenceEnd: true}})
-	inp, _ := pr.mapAMInput(d)
+	inp, _ := pr.mapAMInput(t.Context(), d)
 	assert.Equal(t, "sil v a . sil", inp.Text)
 }
 
@@ -257,7 +257,7 @@ func TestMapAMInput_NoDotOnSentenceEnd(t *testing.T) {
 	d.Words = append(d.Words, &synthesizer.ProcessedWord{Transcription: "v a", Tagged: synthesizer.TaggedWord{Word: "v1"}})
 	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Separator: "."}})
 	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{SentenceEnd: true}})
-	inp, _ := pr.mapAMInput(d)
+	inp, _ := pr.mapAMInput(t.Context(), d)
 	assert.Equal(t, "sil v a . sil", inp.Text)
 }
 
@@ -267,7 +267,7 @@ func TestMapAMInput_NoDotOnSentenceEnd2(t *testing.T) {
 	d.Words = append(d.Words, &synthesizer.ProcessedWord{Transcription: "v a", Tagged: synthesizer.TaggedWord{Word: "v1"}})
 	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Separator: "?"}})
 	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{SentenceEnd: true}})
-	inp, _ := pr.mapAMInput(d)
+	inp, _ := pr.mapAMInput(t.Context(), d)
 	assert.Equal(t, "sil v a ? sil", inp.Text)
 }
 
@@ -279,7 +279,7 @@ func TestMapAMInput_SeveralSentenceEnd(t *testing.T) {
 	d.Words = append(d.Words, &synthesizer.ProcessedWord{Transcription: "v a", Tagged: synthesizer.TaggedWord{Word: "v1"}})
 	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Separator: "?"}})
 	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{SentenceEnd: true}})
-	inp, _ := pr.mapAMInput(d)
+	inp, _ := pr.mapAMInput(t.Context(), d)
 	assert.Equal(t, "sil v a . sil v a ? sil", inp.Text)
 }
 
@@ -289,7 +289,7 @@ func TestMapAMInput_CustomEnd(t *testing.T) {
 	d := newTestTTSDataPart()
 	d.Words = append(d.Words, &synthesizer.ProcessedWord{Transcription: "v a", Tagged: synthesizer.TaggedWord{Word: "v1"}})
 	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{SentenceEnd: true}})
-	inp, _ := pr.mapAMInput(d)
+	inp, _ := pr.mapAMInput(t.Context(), d)
 	assert.Equal(t, "sil v a . sp sil", inp.Text)
 }
 
@@ -300,7 +300,7 @@ func TestMapAMInput_CustomEnd_Dot(t *testing.T) {
 	d.Words = append(d.Words, &synthesizer.ProcessedWord{Transcription: "v a", Tagged: synthesizer.TaggedWord{Word: "v1"}})
 	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Separator: "."}})
 	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{SentenceEnd: true}})
-	inp, _ := pr.mapAMInput(d)
+	inp, _ := pr.mapAMInput(t.Context(), d)
 	assert.Equal(t, "sil v a . sp sil", inp.Text)
 }
 
@@ -313,7 +313,7 @@ func TestMapAMInput_CustomEnd_SeveralSentenceEnd(t *testing.T) {
 	d.Words = append(d.Words, &synthesizer.ProcessedWord{Transcription: "v a", Tagged: synthesizer.TaggedWord{Word: "v1"}})
 	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Separator: "."}})
 	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{SentenceEnd: true}})
-	inp, _ := pr.mapAMInput(d)
+	inp, _ := pr.mapAMInput(t.Context(), d)
 	assert.Equal(t, "sil v a . sil v a . sp sil", inp.Text)
 }
 
@@ -327,7 +327,7 @@ func TestMapAMInput_DropDash(t *testing.T) {
 	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Separator: "-"}})
 	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Space: true}})
 	d.Words = append(d.Words, &synthesizer.ProcessedWord{Transcription: "v a", Tagged: synthesizer.TaggedWord{Word: "v1"}})
-	inp, _ := pr.mapAMInput(d)
+	inp, _ := pr.mapAMInput(t.Context(), d)
 	assert.Equal(t, "<space> v a v a - <space> v a <space>", inp.Text)
 }
 
@@ -345,7 +345,7 @@ func TestMapAMInput_SkipSpaces(t *testing.T) {
 	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Separator: "."}})
 	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Space: true}})
 	d.Words = append(d.Words, &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{SentenceEnd: true}})
-	inp, _ := pr.mapAMInput(d)
+	inp, _ := pr.mapAMInput(t.Context(), d)
 	assert.Equal(t, "sil v a . sil v a v a . sp sil", inp.Text)
 }
 
