@@ -35,7 +35,8 @@ func (mw *MainWorker) Work(ctx context.Context, input *api.TTSRequestConfig) (*a
 	data.Input = input
 	data.Cfg.Input = input
 	data.Cfg.Type = SSMLNone
-	data.Cfg.Prosodies = []*ssml.Prosody{{Rate: input.Speed}}
+	//todo
+	// data.Cfg.Prosodies = []*ssml.Prosody{{Rate: input.Speed}}
 	data.Cfg.Voice = input.Voice
 	data.RequestID = input.RequestID
 	data.AudioSuffix = input.AudioSuffix
@@ -66,26 +67,33 @@ func (mw *MainWorker) Work(ctx context.Context, input *api.TTSRequestConfig) (*a
 
 func makeSSMLParts(input *api.TTSRequestConfig) ([]*TTSData, error) {
 	var res []*TTSData
+	var last *TTSData
 	for _, p := range input.SSMLParts {
 		switch pc := p.(type) {
 		case *ssml.Text:
-			data := &TTSData{}
-			data.OriginalTextParts = makeTextParts(pc.Texts)
-			data.Input = input
-			data.Cfg.Input = input
-			data.Cfg.Prosodies = pc.Prosodies
-			data.Cfg.Voice = pc.Voice
-			data.Cfg.Type = SSMLText
-			data.RequestID = input.RequestID
-			if input.RequestID == "" {
-				data.RequestID = uuid.NewString()
-			}
-			res = append(res, data)
+			if last != nil && last.Cfg.Type == SSMLText && last.Cfg.Voice == pc.Voice {
+				last.OriginalTextParts = append(last.OriginalTextParts, makeTextParts(pc.Texts, pc.Prosodies)...)
+			} else {
+				data := &TTSData{}
+				data.OriginalTextParts = makeTextParts(pc.Texts, pc.Prosodies)
+				data.Input = input
+				data.Cfg.Input = input
+				// data.Cfg.Prosodies = pc.Prosodies
+				data.Cfg.Voice = pc.Voice
+				data.Cfg.Type = SSMLText
+				data.RequestID = input.RequestID
+				if input.RequestID == "" {
+					data.RequestID = uuid.NewString()
+				}
+				res = append(res, data)
+				last = data
+			}		
 		case *ssml.Pause:
 			data := &TTSData{}
 			data.Cfg.PauseDuration = pc.Duration
 			data.Cfg.Type = SSMLPause
 			res = append(res, data)
+			last = data
 		default:
 			return nil, errors.Errorf("unknown SSML part type %T", pc)
 		}
@@ -93,11 +101,12 @@ func makeSSMLParts(input *api.TTSRequestConfig) ([]*TTSData, error) {
 	return res, nil
 }
 
-func makeTextParts(textPart []ssml.TextPart) []*TTSTextPart {
+func makeTextParts(textPart []ssml.TextPart, prosodies []*ssml.Prosody) []*TTSTextPart {
 	res := []*TTSTextPart{}
 	for _, tp := range textPart {
 		res = append(res, &TTSTextPart{Text: tp.Text, Accented: tp.Accented, Syllables: tp.Syllables, UserOEPal: tp.UserOEPal,
 			Language: tp.Language,
+			Prosodies: prosodies,
 		})
 	}
 	return res
