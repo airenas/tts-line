@@ -80,13 +80,13 @@ func (p *amodel) Process(ctx context.Context, data *synthesizer.TTSDataPart) err
 
 	if data.Cfg.Input.OutputFormat == api.AudioNone {
 		if data.Cfg.Input.OutputTextFormat == api.TextTranscribed {
-			inData, _ := p.mapAMInput(data)
+			inData, _ := p.mapAMInput(ctx, data)
 			data.TranscribedText = inData.Text
 		}
 		return nil
 	}
 
-	inData, inIndexes := p.mapAMInput(data)
+	inData, inIndexes := p.mapAMInput(ctx, data)
 	data.TranscribedText = inData.Text
 	var output syntmodel.AMOutput
 	err := p.httpWrap.InvokeJSONU(ctx, getVoiceURL(p.url, data.Cfg.Voice), inData, &output)
@@ -130,7 +130,7 @@ func mapAMOutputDurations(ctx context.Context, data *synthesizer.TTSDataPart, du
 	return nil
 }
 
-func (p *amodel) mapAMInput(data *synthesizer.TTSDataPart) (*syntmodel.AMInput, []*synthesizer.SynthesizedPos) {
+func (p *amodel) mapAMInput(ctx context.Context, data *synthesizer.TTSDataPart) (*syntmodel.AMInput, []*synthesizer.SynthesizedPos) {
 	res := &syntmodel.AMInput{}
 	// res.Speed = calculateSpeed(data.Cfg.Prosodies)
 	res.Voice = data.Cfg.Voice
@@ -208,14 +208,20 @@ func (p *amodel) mapAMInput(data *synthesizer.TTSDataPart) (*syntmodel.AMInput, 
 		}
 	}
 	res.Text = strings.Join(sb, " ")
-	res.DurationsChange = prepareDurationsChange(sb, calculateSpeed(data.Cfg.Prosodies))
-	res.PitchChange = preparePitchChange(sb, data.Cfg.Prosodies)
+	res.DurationsChange = prepareDurationsChange(ctx, sb, data.Cfg.Prosodies)
+	res.PitchChange = preparePitchChange(ctx, sb, data.Cfg.Prosodies)
 	return res, indRes
 }
 
-func preparePitchChange(sb []string, prosody []*ssml.Prosody) [][]*syntmodel.PitchChange {
-	pc := makePitchChange(prosody)
+func preparePitchChange(ctx context.Context, sb []string, prosody []*ssml.Prosody) [][]*syntmodel.PitchChange {
+	lastIsEmphasy := isEmphasyLast(prosody)
+	isOneAccent, accentPos := isOneAccent(sb)
+	if lastIsEmphasy && isOneAccent {
+		// todo do separately
+		log.Ctx(ctx).Debug().Int("pos", accentPos).Bool("emphasy", lastIsEmphasy).Msg("One accent with emphasy")
+	}
 
+	pc := makePitchChange(prosody)
 	res := make([][]*syntmodel.PitchChange, len(sb))
 	for i := 0; i < len(sb); i++ {
 		res[i] = pc
@@ -226,6 +232,29 @@ func preparePitchChange(sb []string, prosody []*ssml.Prosody) [][]*syntmodel.Pit
 func makePitchChange(prosody []*ssml.Prosody) []*syntmodel.PitchChange {
 	res := make([]*syntmodel.PitchChange, 0, len(prosody))
 	for _, p := range prosody {
+		switch p.Emphasis {
+		case ssml.EmphasisTypeModerate:
+			pc := &syntmodel.PitchChange{
+				Value: 1.1,
+				Type:  2,
+			}
+			res = append(res, pc)
+		case ssml.EmphasisTypeStrong:
+			pc := &syntmodel.PitchChange{
+				Value: 1.2,
+				Type:  2,
+			}
+			res = append(res, pc)
+		case ssml.EmphasisTypeReduced:
+			pc := &syntmodel.PitchChange{
+				Value: 1 / 1.1,
+				Type:  2,
+			}
+			res = append(res, pc)
+		default:
+			// no emphasis
+		}
+
 		switch p.Pitch.Kind {
 		case ssml.PitchChangeNone:
 			continue
@@ -252,21 +281,51 @@ func makePitchChange(prosody []*ssml.Prosody) []*syntmodel.PitchChange {
 	return res
 }
 
-func prepareDurationsChange(sb []string, f float64) []float64 {
+func prepareDurationsChange(ctx context.Context, sb []string, prosody []*ssml.Prosody) []float64 {
 	res := make([]float64, len(sb))
+	lastIsEmphasy := isEmphasyLast(prosody)
+	isOneAccent, accentPos := isOneAccent(sb)
+	if lastIsEmphasy && isOneAccent {
+		// todo do separately
+		log.Ctx(ctx).Debug().Int("pos", accentPos).Bool("emphasy", lastIsEmphasy).Msg("One accent with emphasy")
+	}
+
+	f := calculateSpeed(prosody)
 	for i := 0; i < len(sb); i++ {
 		res[i] = f
 	}
 	return res
 }
 
+func isOneAccent(sb []string) (bool, int) {
+	res := -1
+	for i, s := range sb {
+		if strings.Contains(s, "\"") || strings.Contains(s, "^") {
+			if res != -1 {
+				return false, -1
+			}
+			res = i
+		}
+	}
+	if res != -1 {
+		return true, res
+	}
+	return false, -1
+}
+
+func isEmphasyLast(prosody []*ssml.Prosody) bool {
+	if len(prosody) == 0 {
+		return false
+	}
+	last := prosody[len(prosody)-1]
+	return last.Emphasis == ssml.EmphasisTypeStrong || last.Emphasis == ssml.EmphasisTypeModerate || last.Emphasis == ssml.EmphasisTypeReduced
+}
+
 func calculateSpeed(prosody []*ssml.Prosody) float64 {
 	total := 1.0
 	for _, p := range prosody {
-		if utils.Float64Equals(p.Rate, 0) {
-			continue
-		}
-		total *= p.Rate
+		nr := getRate(p)
+		total *= nr
 	}
 	if total < 0.5 {
 		total = 0.5
@@ -274,6 +333,24 @@ func calculateSpeed(prosody []*ssml.Prosody) float64 {
 		total = 2.0
 	}
 	return total
+}
+
+func getRate(p *ssml.Prosody) float64 {
+	switch p.Emphasis {
+	case ssml.EmphasisTypeReduced:
+		return 1 / 1.3
+	case ssml.EmphasisTypeNone:
+		return 1.0
+	case ssml.EmphasisTypeModerate:
+		return 1.3
+	case ssml.EmphasisTypeStrong:
+		return 1.3 * 1.3
+	default:
+		if p.Rate <= 0 {
+			return 1.0
+		}
+		return p.Rate
+	}
 }
 
 func getSep(s string, words []*synthesizer.ProcessedWord, pos int) string {

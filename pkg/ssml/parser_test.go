@@ -94,6 +94,11 @@ func TestParse(t *testing.T) {
 			&Text{Voice: "aa", Texts: []TextPart{{Text: "olia2"}}},
 		},
 			wantErr: false},
+		{name: "emphasis reduced", xml: `<speak><emphasis level="reduced">olia1</emphasis>olia2</speak>`, want: []Part{
+			&Text{Voice: "aa", Texts: []TextPart{{Text: "olia1"}}, Prosodies: []*Prosody{{Rate: 1, Emphasis: EmphasisTypeReduced}}},
+			&Text{Voice: "aa", Texts: []TextPart{{Text: "olia2"}}},
+		},
+			wantErr: false},
 		{name: "emphasis inside prosody", xml: `<speak><prosody volume="+10dB"><emphasis level="moderate">olia1</emphasis></prosody>olia2</speak>`, want: []Part{
 			&Text{Voice: "aa", Texts: []TextPart{{Text: "olia1"}}, Prosodies: []*Prosody{
 				{Rate: 1, Volume: 10},
