@@ -38,6 +38,8 @@ type TTSData struct {
 // TTSTextPart part of the text
 type TTSTextPart struct {
 	Accented, Text, Syllables, UserOEPal, Language string
+
+	Prosodies []*ssml.Prosody
 }
 
 // TTSConfig some TTS configuration
@@ -47,7 +49,7 @@ type TTSConfig struct {
 
 	Type      SSMLTypeEnum
 	Voice     string
-	Prosodies []*ssml.Prosody
+	// Prosodies []*ssml.Prosody
 
 	PauseDuration time.Duration
 }

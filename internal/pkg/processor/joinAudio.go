@@ -9,6 +9,7 @@ import (
 	"time"
 	"unicode"
 
+	"github.com/airenas/tts-line/internal/pkg/audio"
 	"github.com/airenas/tts-line/internal/pkg/service/api"
 	"github.com/airenas/tts-line/internal/pkg/synthesizer"
 	"github.com/airenas/tts-line/internal/pkg/utils"
@@ -93,6 +94,10 @@ func (wr *wavWriter) bitsPerSample() uint16 {
 	}
 	wr.bitsPerSampleV = wav.GetBitsPerSample(wr.header)
 	return wr.bitsPerSampleV
+}
+
+func (wr *wavWriter) bytesPerSample() uint16 {
+	return wr.bitsPerSample() / 8
 }
 
 func join(ctx context.Context, parts []*synthesizer.TTSDataPart, suffix []byte, maxEdgeSilenceMilis int64) ([]byte, float64, uint32 /*sampleRate*/, error) {
@@ -212,8 +217,7 @@ func appendWav(res *wavWriter, wavData []byte, startSkip, endSkip int) error {
 		}
 	}
 	bData := wav.TakeData(wavData)
-	bps := res.bitsPerSample()
-	fix := int(bps / 8)
+	fix := int(res.bytesPerSample())
 	es := len(bData) - (endSkip * fix)
 	if es < (startSkip * fix) {
 		return errors.Errorf("audio start pos > end: %d vs %d", startSkip, es)
@@ -279,13 +283,7 @@ type nextWriteData struct {
 	pause       time.Duration // pause that should be written after data
 	isPause     bool
 	durationAdd time.Duration // time to add to the part
-	volChanges  []volChange
-}
-
-type volChange struct {
-	from   int
-	to     int
-	change float64
+	volChanges  []*audio.VolChange
 }
 
 func joinSSML(ctx context.Context, data *synthesizer.TTSData, suffix []byte, maxEdgeSilenceMillis int64) ([]byte, float64 /*len*/, uint32 /*sampleRate*/, error) {
@@ -345,20 +343,26 @@ func joinSSML(ctx context.Context, data *synthesizer.TTSData, suffix []byte, max
 			}
 			wd.part.AudioDurations = &synthesizer.AudioDurations{
 				Shift:    -wd.startSkip / step,
-				Duration: calculateDurations(res.buf.Len()-lenBefore, res.sampleRate()*uint32(res.bitsPerSample())/uint32(8)),
+				Duration: calculateDurations(res.buf.Len()-lenBefore, res.sampleRate()*uint32(res.bytesPerSample())),
 			}
 			wd.part.AudioDurations.Shift += utils.ToTTSSteps(wd.durationAdd, wav.GetSampleRate(res.header), step)
 			wd.part.AudioDurations.Duration += wd.durationAdd
 			wd.durationAdd = 0
-			volumeChange := calcVolumeChange(wd.part.Cfg.Prosodies)
-			if !utils.Float64Equals(volumeChange, 0) {
-				log.Ctx(ctx).Warn().Float64("change", volumeChange).Int("from", lenBefore).Int("to", res.buf.Len()).Msg("volume")
-				wd.volChanges = append(wd.volChanges, volChange{
-					from:   lenBefore,
-					to:     res.buf.Len(),
-					change: calcVolumeRate(volumeChange),
-				})
+
+			vc := makeVolumeChanges(ctx, wd.part, lenBefore, res.buf.Len(), wd.startSkip, res.bytesPerSample(), step)
+			if len(vc) > 0 {
+				wd.volChanges = append(wd.volChanges, vc...)
 			}
+
+			// volumeChange := calcVolumeChange(wd.part.Cfg.Prosodies)
+			// if !utils.Float64Equals(volumeChange, 0) {
+			// 	log.Ctx(ctx).Warn().Float64("change", volumeChange).Int("from", lenBefore).Int("to", res.buf.Len()).Msg("volume")
+			// 	wd.volChanges = append(wd.volChanges, volChange{
+			// 		from:   lenBefore,
+			// 		to:     res.buf.Len(),
+			// 		change: calcVolumeRate(volumeChange),
+			// 	})
+			// }
 		}
 		if pause > 0 {
 			if err := appendPause(ctx, res, pause); err != nil {
@@ -400,7 +404,7 @@ func joinSSML(ctx context.Context, data *synthesizer.TTSData, suffix []byte, max
 		}
 	}
 
-	resBytes, err := changeVolume(res.buf.Bytes(), wd.volChanges, int(res.bitsPerSample()/8))
+	resBytes, err := audio.ChangeVolume(res.buf.Bytes(), wd.volChanges, int(res.bytesPerSample()))
 	if err != nil {
 		return nil, 0, 0, fmt.Errorf("change volume: %w", err)
 	}
@@ -416,36 +420,27 @@ func joinSSML(ctx context.Context, data *synthesizer.TTSData, suffix []byte, max
 	return bufRes.Bytes(), float64(res.size) / float64(bitsRate), res.sampleRate(), nil
 }
 
-func changeVolume(b []byte, volChange []volChange, bytesPerSaample int) ([]byte, error) {
-	if len(volChange) == 0 {
-		return b, nil
-	}
-	for _, vc := range volChange {
-		for i := vc.from; i < vc.to; i += bytesPerSaample {
-			switch bytesPerSaample {
-			case 2:
-				sample := int16(b[i]) | int16(b[i+1])<<8
-				newSample := toInt16(float64(sample) * vc.change)
-				b[i] = byte(newSample & 0xFF)
-				b[i+1] = byte((newSample >> 8) & 0xFF)
-			case 4:
-				return nil, fmt.Errorf("not implemented for 4 bytes per sample")
-			default:
-				return nil, fmt.Errorf("unsupported bytes per sample %d", bytesPerSaample)
-			}
+func makeVolumeChanges(ctx context.Context, part *synthesizer.TTSDataPart, startPos, endPos, skipSteps int, bytesPerSample uint16, step int) []*audio.VolChange {
+	var res []*audio.VolChange
+	for _, w := range part.Words {
+		if !w.Tagged.IsWord() {
+			continue
 		}
+		vc := calcVolumeChange(w.TextPart.Prosodies)
+		if utils.Float64Equals(vc, 0) {
+			continue
+		}
+		from := (w.SynthesizedPos.From*step - skipSteps)
+		to := (w.SynthesizedPos.To*step - skipSteps)
+		v := audio.VolChange{
+			From:   startPos + from*int(bytesPerSample),
+			To:     startPos + to*int(bytesPerSample),
+			Change: calcVolumeRate(vc),
+		}
+		log.Ctx(ctx).Trace().Float64("change", vc).Int("from", v.From).Int("to", v.To).Str("text", w.TextPart.Text).Msg("volume word")
+		res = append(res, &v)
 	}
-	return b, nil
-}
-
-func toInt16(f float64) int16 {
-	if f > 32767 {
-		return 32767
-	}
-	if f < -32768 {
-		return -32768
-	}
-	return int16(math.Round(f))
+	return res
 }
 
 func calcVolumeChange(prosody []*ssml.Prosody) float64 {

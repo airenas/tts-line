@@ -130,6 +130,79 @@ func mapAMOutputDurations(ctx context.Context, data *synthesizer.TTSDataPart, du
 	return nil
 }
 
+type amChar struct {
+	prosody []*ssml.Prosody
+	char    string
+}
+
+type amChars []*amChar
+
+func (a *amChars) pitch(ctx context.Context) [][]*syntmodel.PitchChange {
+	res := make([][]*syntmodel.PitchChange, len(*a))
+	for i, c := range *a {
+		res[i] = makePitchChange(c.prosody)
+	}
+	return res
+}
+
+func (a *amChars) durations(ctx context.Context) []float64 {
+	res := make([]float64, len(*a))
+	for i, c := range *a {
+		res[i] = calculateSpeed(c.prosody)
+	}
+	return res
+}
+
+func (a *amChars) text() string {
+	res := strings.Builder{}
+	for _, c := range *a {
+		if res.Len() > 0 {
+			res.WriteString(" ")
+		}
+		res.WriteString(c.char)
+	}
+	return res.String()
+}
+
+func (a *amChars) endsWith(s string) bool {
+	if len(*a) == 0 {
+		return false
+	}
+	parts := strings.Split(s, " ")
+	if len(parts) == 0 || len(parts) > len(*a) {
+		return false
+	}
+	for i := 1; i <= len(parts); i++ {
+		if (*a)[len(*a)-i].char != parts[len(parts)-i] {
+			return false
+		}
+	}
+	return true
+}
+
+func (a *amChars) add(s string, prosody []*ssml.Prosody) {
+	parts := strings.Split(s, " ")
+	for _, p := range parts {
+		*a = append(*a, &amChar{
+			char:    p,
+			prosody: prosody,
+		})
+	}
+}
+
+func (a *amChars) replace(s, new string, prosody []*ssml.Prosody) {
+	parts := strings.Split(s, " ")
+	l := len(parts)
+	if len(*a) < l {
+		return
+	}
+	for i := 0; i < l; i++ {
+		(*a)[len(*a)-i-1] = nil
+	}
+	*a = (*a)[:len(*a)-l]
+	(*a).add(new, prosody)
+}
+
 func (p *amodel) mapAMInput(ctx context.Context, data *synthesizer.TTSDataPart) (*syntmodel.AMInput, []*synthesizer.SynthesizedPos) {
 	res := &syntmodel.AMInput{}
 	// res.Speed = calculateSpeed(data.Cfg.Prosodies)
@@ -139,10 +212,10 @@ func (p *amodel) mapAMInput(ctx context.Context, data *synthesizer.TTSDataPart) 
 		res.Text = data.Text
 		return res, nil
 	}
-	sb := make([]string, 0)
-	//sb := &strings.Builder{}
+	sb := amChars{}
 	pause := p.spaceSymbol
-	sb = append(sb, pause)
+
+	sb.add(pause, nil)
 	lastSep := ""
 	indRes := make([]*synthesizer.SynthesizedPos, len(data.Words))
 	for i, w := range data.Words {
@@ -153,27 +226,26 @@ func (p *amodel) mapAMInput(ctx context.Context, data *synthesizer.TTSDataPart) 
 		} else if tgw.Separator != "" {
 			sep := getSep(tgw.Separator, data.Words, i)
 			if sep != "" {
-				sb = append(sb, sep)
+				sb.add(sep, w.TextPart.Prosodies)
 				lastSep = sep
 			}
 			if addPause(sep, data.Words, i) {
-				sb = append(sb, pause)
+				sb.add(pause, w.TextPart.Prosodies)
 			}
 		} else if tgw.SentenceEnd {
 			if lastSep == "" {
 				lastSep = "."
-				sb = append(sb, lastSep)
+				sb.add(lastSep, w.TextPart.Prosodies)
 			}
-			l := len(sb)
-			if l > 0 && sb[l-1] != pause {
-				sb = append(sb, pause)
+			if !sb.endsWith(pause) {
+				sb.add(pause, w.TextPart.Prosodies)
 			}
 		} else {
 			phns := strings.Split(w.Transcription, " ")
 			for _, p := range phns {
 				pt := changePhn(p)
 				if pt != "" {
-					sb = append(sb, pt)
+					sb.add(pt, w.TextPart.Prosodies)
 					lastSep = ""
 				}
 			}
@@ -183,11 +255,11 @@ func (p *amodel) mapAMInput(ctx context.Context, data *synthesizer.TTSDataPart) 
 
 	l := len(sb)
 	if l > 0 {
-		if sb[l-1] != p.endSymbol {
-			if sb[l-1] == pause {
-				sb[l-1] = p.endSymbol
+		if !sb.endsWith(p.endSymbol) {
+			if sb.endsWith(pause) {
+				sb.replace(pause, p.endSymbol, nil)
 			} else {
-				sb = append(sb, p.endSymbol)
+				sb.add(p.endSymbol, nil)
 			}
 		}
 	}
@@ -197,36 +269,10 @@ func (p *amodel) mapAMInput(ctx context.Context, data *synthesizer.TTSDataPart) 
 			indRes[len(indRes)-1].To += (lEnd - 1)
 		}
 	}
-	// split the last symbol if it has spaces
-	if len(sb) > 0 {
-		l := len(sb) - 1
-		v := sb[l]
-		vs := strings.Split(v, " ")
-		if len(vs) > 1 {
-			sb = sb[:l]
-			sb = append(sb, vs...)
-		}
-	}
-	res.Text = strings.Join(sb, " ")
-	res.DurationsChange = prepareDurationsChange(ctx, sb, data.Cfg.Prosodies)
-	res.PitchChange = preparePitchChange(ctx, sb, data.Cfg.Prosodies)
+	res.Text = sb.text()
+	res.DurationsChange = sb.durations(ctx)
+	res.PitchChange = sb.pitch(ctx)
 	return res, indRes
-}
-
-func preparePitchChange(ctx context.Context, sb []string, prosody []*ssml.Prosody) [][]*syntmodel.PitchChange {
-	lastIsEmphasy := isEmphasyLast(prosody)
-	isOneAccent, accentPos := isOneAccent(sb)
-	if lastIsEmphasy && isOneAccent {
-		// todo do separately
-		log.Ctx(ctx).Debug().Int("pos", accentPos).Bool("emphasy", lastIsEmphasy).Msg("One accent with emphasy")
-	}
-
-	pc := makePitchChange(prosody)
-	res := make([][]*syntmodel.PitchChange, len(sb))
-	for i := 0; i < len(sb); i++ {
-		res[i] = pc
-	}
-	return res
 }
 
 func makePitchChange(prosody []*ssml.Prosody) []*syntmodel.PitchChange {
@@ -281,22 +327,6 @@ func makePitchChange(prosody []*ssml.Prosody) []*syntmodel.PitchChange {
 	return res
 }
 
-func prepareDurationsChange(ctx context.Context, sb []string, prosody []*ssml.Prosody) []float64 {
-	res := make([]float64, len(sb))
-	lastIsEmphasy := isEmphasyLast(prosody)
-	isOneAccent, accentPos := isOneAccent(sb)
-	if lastIsEmphasy && isOneAccent {
-		// todo do separately
-		log.Ctx(ctx).Debug().Int("pos", accentPos).Bool("emphasy", lastIsEmphasy).Msg("One accent with emphasy")
-	}
-
-	f := calculateSpeed(prosody)
-	for i := 0; i < len(sb); i++ {
-		res[i] = f
-	}
-	return res
-}
-
 func isOneAccent(sb []string) (bool, int) {
 	res := -1
 	for i, s := range sb {
@@ -337,8 +367,9 @@ func calculateSpeed(prosody []*ssml.Prosody) float64 {
 
 func getRate(p *ssml.Prosody) float64 {
 	switch p.Emphasis {
-	case ssml.EmphasisTypeReduced:
-		return 1 / 1.3
+   	case ssml.EmphasisTypeReduced:
+		// reduce speed
+		return 1 / 1.2
 	case ssml.EmphasisTypeNone:
 		return 1.0
 	case ssml.EmphasisTypeModerate:
