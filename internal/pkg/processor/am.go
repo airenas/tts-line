@@ -159,8 +159,9 @@ type amChar struct {
 }
 
 type amChars struct {
-	items    []*amChar
-	prepared bool
+	items     []*amChar
+	prepared  bool
+	baseSpeed float64
 }
 
 func (si *syllInfo) getSyllPos() syllPos {
@@ -199,7 +200,7 @@ func (a *amChars) prepare() {
 		if c.syllInfo == nil {
 			continue
 		}
-		if last, ok := lastEmphasy(c.syllInfo.textPart.Prosodies); ok {
+		if last, ok := lastEmphasy(c.syllInfo.getProsodies()); ok {
 			id := last.ID
 			sylls, ok := em[id]
 			if !ok {
@@ -235,7 +236,7 @@ func (a *amChars) durations(ctx context.Context) []float64 {
 
 	res := make([]float64, len(a.items))
 	for i, c := range a.items {
-		res[i] = calculateSpeed(c.syllInfo.getProsodies(), c.syllInfo.getSyllPos())
+		res[i] = calculateSpeed(a.baseSpeed, c.syllInfo.getProsodies(), c.syllInfo.getSyllPos())
 	}
 	return res
 }
@@ -302,14 +303,13 @@ func (a *amChars) replace(s, new string, si *syllInfo) {
 
 func (p *amodel) mapAMInput(ctx context.Context, data *synthesizer.TTSDataPart) (*syntmodel.AMInput, []*synthesizer.SynthesizedPos, []float64) {
 	res := &syntmodel.AMInput{}
-	// res.Speed = calculateSpeed(data.Cfg.Prosodies)
 	res.Voice = data.Cfg.Voice
 	res.Priority = data.Cfg.Input.Priority
 	if data.Cfg.JustAM {
 		res.Text = data.Text
 		return res, nil, nil
 	}
-	sb := amChars{}
+	sb := amChars{baseSpeed: data.Cfg.Input.Speed}
 	pause := p.spaceSymbol
 
 	sb.add(pause, nil)
@@ -454,8 +454,11 @@ func lastEmphasy(prosody []*ssml.Prosody) (*ssml.Prosody, bool) {
 	return last, true
 }
 
-func calculateSpeed(prosody []*ssml.Prosody, sp syllPos) float64 {
-	total := 1.0
+func calculateSpeed(baseSpeed float64, prosody []*ssml.Prosody, sp syllPos) float64 {
+	total := baseSpeed
+	if total <= 0 {
+		total = 1.0
+	}
 	for i, p := range prosody {
 		last := i == len(prosody)-1
 		if !last {
