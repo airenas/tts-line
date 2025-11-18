@@ -35,8 +35,7 @@ func (mw *MainWorker) Work(ctx context.Context, input *api.TTSRequestConfig) (*a
 	data.Input = input
 	data.Cfg.Input = input
 	data.Cfg.Type = SSMLNone
-	//todo
-	// data.Cfg.Prosodies = []*ssml.Prosody{{Rate: input.Speed}}
+	data.Cfg.SpeedRate = input.Speed
 	data.Cfg.Voice = input.Voice
 	data.RequestID = input.RequestID
 	data.AudioSuffix = input.AudioSuffix
@@ -87,7 +86,7 @@ func makeSSMLParts(input *api.TTSRequestConfig) ([]*TTSData, error) {
 				}
 				res = append(res, data)
 				last = data
-			}		
+			}
 		case *ssml.Pause:
 			data := &TTSData{}
 			data.Cfg.PauseDuration = pc.Duration
@@ -105,7 +104,7 @@ func makeTextParts(textPart []ssml.TextPart, prosodies []*ssml.Prosody) []*TTSTe
 	res := []*TTSTextPart{}
 	for _, tp := range textPart {
 		res = append(res, &TTSTextPart{Text: tp.Text, Accented: tp.Accented, Syllables: tp.Syllables, UserOEPal: tp.UserOEPal,
-			Language: tp.Language,
+			Language:  tp.Language,
 			Prosodies: prosodies,
 		})
 	}

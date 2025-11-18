@@ -47,9 +47,9 @@ type TTSConfig struct {
 	JustAM bool
 	Input  *api.TTSRequestConfig
 
-	Type  SSMLTypeEnum
-	Voice string
-	// Prosodies []*ssml.Prosody
+	Type      SSMLTypeEnum
+	Voice     string
+	SpeedRate float64
 
 	PauseDuration time.Duration
 }

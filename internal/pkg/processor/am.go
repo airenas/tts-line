@@ -124,9 +124,9 @@ func mapAMOutputDurations(ctx context.Context, data *synthesizer.TTSDataPart, du
 			continue
 		}
 		w.SynthesizedPos = &synthesizer.SynthesizedPos{
-			From:    sums[fromI],
-			To:      sums[toI],
-			Durations: durations[indRes[i].From:indRes[i].To],
+			From:          sums[fromI],
+			To:            sums[toI],
+			Durations:     durations[indRes[i].From:indRes[i].To],
 			VolumeChanges: volChanges[indRes[i].From:indRes[i].To],
 		}
 	}

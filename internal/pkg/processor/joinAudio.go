@@ -440,12 +440,12 @@ func makeVolumeChanges(ctx context.Context, part *synthesizer.TTSDataPart, start
 				last = nil
 			} else {
 				v := &audio.VolChange{
-					From:   startPos + (from * int(bytesPerSample)),
-					To:     startPos + (to * int(bytesPerSample)),
-					
-					Rate: calcVolumeRate(vc),
+					From: startPos + (from * int(bytesPerSample)),
+					To:   startPos + (to * int(bytesPerSample)),
+
+					Rate:      calcVolumeRate(vc),
 					StartRate: calcVolumeRate(rate),
-					EndRate: calcVolumeRate(0),
+					EndRate:   calcVolumeRate(0),
 				}
 				log.Ctx(ctx).Trace().Float64("change", vc).Int("from", v.From).Int("to", v.To).Str("text", w.TextPart.Text).Msg("volume word")
 				res = append(res, v)
@@ -458,7 +458,7 @@ func makeVolumeChanges(ctx context.Context, part *synthesizer.TTSDataPart, start
 			rate = vc
 		}
 	}
- 	return res
+	return res
 }
 
 func calcPauseWithEnds(s1, s2, pause int) (int, int, int) {
