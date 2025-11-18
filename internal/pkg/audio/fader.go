@@ -27,12 +27,12 @@ func newFader(duration time.Duration, freq uint) *Fader {
 	}
 }
 
-func (f *Fader) Fade(pos int, bl int) float64 {
+func (f *Fader) Fade(pos int, bl int) (float64, bool /*start*/) {
 	posEnd := bl - pos - 1
 	if pos <= posEnd {
-		return f.at(pos)
+		return f.at(pos), true
 	}
-	return f.at(posEnd)
+	return f.at(posEnd), false
 }
 
 func (f *Fader) at(pos int) float64 {

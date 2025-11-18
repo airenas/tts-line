@@ -2,6 +2,7 @@ package processor
 
 import (
 	"context"
+	"math"
 	"strings"
 	"time"
 
@@ -80,13 +81,13 @@ func (p *amodel) Process(ctx context.Context, data *synthesizer.TTSDataPart) err
 
 	if data.Cfg.Input.OutputFormat == api.AudioNone {
 		if data.Cfg.Input.OutputTextFormat == api.TextTranscribed {
-			inData, _ := p.mapAMInput(ctx, data)
+			inData, _, _ := p.mapAMInput(ctx, data)
 			data.TranscribedText = inData.Text
 		}
 		return nil
 	}
 
-	inData, inIndexes := p.mapAMInput(ctx, data)
+	inData, inIndexes, volChanges := p.mapAMInput(ctx, data)
 	data.TranscribedText = inData.Text
 	var output syntmodel.AMOutput
 	err := p.httpWrap.InvokeJSONU(ctx, getVoiceURL(p.url, data.Cfg.Voice), inData, &output)
@@ -98,7 +99,7 @@ func (p *amodel) Process(ctx context.Context, data *synthesizer.TTSDataPart) err
 	data.DefaultSilence = output.SilDuration * fixSilDuration
 	data.Step = output.Step
 	data.Durations = output.Durations
-	if err := mapAMOutputDurations(ctx, data, output.Durations, inIndexes); err != nil {
+	if err := mapAMOutputDurations(ctx, data, output.Durations, inIndexes, volChanges); err != nil {
 		return err
 	}
 
@@ -110,7 +111,7 @@ func (p *amodel) Process(ctx context.Context, data *synthesizer.TTSDataPart) err
 	return nil
 }
 
-func mapAMOutputDurations(ctx context.Context, data *synthesizer.TTSDataPart, durations []int, indRes []*synthesizer.SynthesizedPos) error {
+func mapAMOutputDurations(ctx context.Context, data *synthesizer.TTSDataPart, durations []int, indRes []*synthesizer.SynthesizedPos, volChanges []float64) error {
 	sums := make([]int, len(durations)+1)
 	for i := 0; i < len(durations); i++ {
 		sums[i+1] = sums[i] + durations[i]
@@ -123,39 +124,135 @@ func mapAMOutputDurations(ctx context.Context, data *synthesizer.TTSDataPart, du
 			continue
 		}
 		w.SynthesizedPos = &synthesizer.SynthesizedPos{
-			From: sums[fromI],
-			To:   sums[toI],
+			From:    sums[fromI],
+			To:      sums[toI],
+			Durations: durations[indRes[i].From:indRes[i].To],
+			VolumeChanges: volChanges[indRes[i].From:indRes[i].To],
 		}
 	}
 	return nil
 }
 
-type amChar struct {
-	prosody []*ssml.Prosody
-	char    string
+type syllPos int
+
+const (
+	syllPosUnset syllPos = iota
+	syllPosBeforeAccent
+	syllPosAccent
+	syllPosAfterAccent
+)
+
+type emphasisSummary struct {
+	countTotal    int
+	countAccented int
 }
 
-type amChars []*amChar
+type syllInfo struct {
+	textPart        *synthesizer.TTSTextPart
+	syllPos         syllPos
+	emphasisSummary *emphasisSummary
+}
+
+type amChar struct {
+	char     string
+	syllInfo *syllInfo
+}
+
+type amChars struct {
+	items    []*amChar
+	prepared bool
+}
+
+func (si *syllInfo) getSyllPos() syllPos {
+	if si == nil {
+		return syllPosUnset
+	}
+	if si.emphasisSummary == nil || si.emphasisSummary.countAccented != 1 {
+		return syllPosUnset
+	}
+	return si.syllPos
+}
+
+func (si *syllInfo) getProsodies() []*ssml.Prosody {
+	if si == nil || si.textPart == nil {
+		return nil
+	}
+	return si.textPart.Prosodies
+}
 
 func (a *amChars) pitch(ctx context.Context) [][]*syntmodel.PitchChange {
-	res := make([][]*syntmodel.PitchChange, len(*a))
-	for i, c := range *a {
-		res[i] = makePitchChange(c.prosody)
+	a.prepare()
+
+	res := make([][]*syntmodel.PitchChange, len(a.items))
+	for i, c := range a.items {
+		res[i] = makePitchChange(c.syllInfo.getProsodies(), c.syllInfo.getSyllPos())
 	}
 	return res
 }
 
+func (a *amChars) prepare() {
+	if a.prepared {
+		return
+	}
+	em := make(map[int][]*syllInfo)
+	for _, c := range a.items {
+		if c.syllInfo == nil {
+			continue
+		}
+		if last, ok := lastEmphasy(c.syllInfo.textPart.Prosodies); ok {
+			id := last.ID
+			sylls, ok := em[id]
+			if !ok {
+				sylls = make([]*syllInfo, 0, 1)
+			}
+			if len(sylls) == 0 || sylls[len(sylls)-1] != c.syllInfo {
+				sylls = append(sylls, c.syllInfo)
+			}
+			em[id] = sylls
+		}
+	}
+	for _, sylls := range em {
+		emphasisSummary := &emphasisSummary{}
+		acc := false
+		for _, s := range sylls {
+			s.emphasisSummary = emphasisSummary
+			if s.syllPos == syllPosAccent {
+				acc = true
+				emphasisSummary.countAccented++
+			} else if acc {
+				s.syllPos = syllPosAfterAccent
+			} else {
+				s.syllPos = syllPosBeforeAccent
+			}
+			s.emphasisSummary.countTotal++
+		}
+	}
+	a.prepared = true
+}
+
 func (a *amChars) durations(ctx context.Context) []float64 {
-	res := make([]float64, len(*a))
-	for i, c := range *a {
-		res[i] = calculateSpeed(c.prosody)
+	a.prepare()
+
+	res := make([]float64, len(a.items))
+	for i, c := range a.items {
+		res[i] = calculateSpeed(c.syllInfo.getProsodies(), c.syllInfo.getSyllPos())
+	}
+	return res
+}
+
+func (a *amChars) volumes(ctx context.Context) []float64 {
+	a.prepare()
+
+	res := make([]float64, len(a.items))
+	for i, c := range a.items {
+		res[i] = calculateVolumeChange(c.syllInfo.getProsodies(), c.syllInfo.getSyllPos())
 	}
 	return res
 }
 
 func (a *amChars) text() string {
 	res := strings.Builder{}
-	for _, c := range *a {
+	for _, c := range a.items {
 		if res.Len() > 0 {
 			res.WriteString(" ")
 		}
@@ -165,52 +262,52 @@ func (a *amChars) text() string {
 }
 
 func (a *amChars) endsWith(s string) bool {
-	if len(*a) == 0 {
+	if len(a.items) == 0 {
 		return false
 	}
 	parts := strings.Split(s, " ")
-	if len(parts) == 0 || len(parts) > len(*a) {
+	if len(parts) == 0 || len(parts) > len(a.items) {
 		return false
 	}
 	for i := 1; i <= len(parts); i++ {
-		if (*a)[len(*a)-i].char != parts[len(parts)-i] {
+		if a.items[len(a.items)-i].char != parts[len(parts)-i] {
 			return false
 		}
 	}
 	return true
 }
 
-func (a *amChars) add(s string, prosody []*ssml.Prosody) {
+func (a *amChars) add(s string, si *syllInfo) {
 	parts := strings.Split(s, " ")
 	for _, p := range parts {
-		*a = append(*a, &amChar{
-			char:    p,
-			prosody: prosody,
+		a.items = append(a.items, &amChar{
+			char:     p,
+			syllInfo: si,
 		})
 	}
 }
 
-func (a *amChars) replace(s, new string, prosody []*ssml.Prosody) {
+func (a *amChars) replace(s, new string, si *syllInfo) {
 	parts := strings.Split(s, " ")
 	l := len(parts)
-	if len(*a) < l {
+	if len(a.items) < l {
 		return
 	}
 	for i := 0; i < l; i++ {
-		(*a)[len(*a)-i-1] = nil
+		a.items[len(a.items)-i-1] = nil
 	}
-	*a = (*a)[:len(*a)-l]
-	(*a).add(new, prosody)
+	a.items = a.items[:len(a.items)-l]
+	a.add(new, si)
 }
 
-func (p *amodel) mapAMInput(ctx context.Context, data *synthesizer.TTSDataPart) (*syntmodel.AMInput, []*synthesizer.SynthesizedPos) {
+func (p *amodel) mapAMInput(ctx context.Context, data *synthesizer.TTSDataPart) (*syntmodel.AMInput, []*synthesizer.SynthesizedPos, []float64) {
 	res := &syntmodel.AMInput{}
 	// res.Speed = calculateSpeed(data.Cfg.Prosodies)
 	res.Voice = data.Cfg.Voice
 	res.Priority = data.Cfg.Input.Priority
 	if data.Cfg.JustAM {
 		res.Text = data.Text
-		return res, nil
+		return res, nil, nil
 	}
 	sb := amChars{}
 	pause := p.spaceSymbol
@@ -220,40 +317,47 @@ func (p *amodel) mapAMInput(ctx context.Context, data *synthesizer.TTSDataPart) 
 	indRes := make([]*synthesizer.SynthesizedPos, len(data.Words))
 	for i, w := range data.Words {
 		indRes[i] = &synthesizer.SynthesizedPos{}
-		indRes[i].From = len(sb)
+		indRes[i].From = len(sb.items)
 		tgw := w.Tagged
 		if tgw.Space {
 		} else if tgw.Separator != "" {
 			sep := getSep(tgw.Separator, data.Words, i)
 			if sep != "" {
-				sb.add(sep, w.TextPart.Prosodies)
+				sb.add(sep, &syllInfo{textPart: w.TextPart})
 				lastSep = sep
 			}
 			if addPause(sep, data.Words, i) {
-				sb.add(pause, w.TextPart.Prosodies)
+				sb.add(pause, &syllInfo{textPart: w.TextPart})
 			}
 		} else if tgw.SentenceEnd {
 			if lastSep == "" {
 				lastSep = "."
-				sb.add(lastSep, w.TextPart.Prosodies)
+				sb.add(lastSep, &syllInfo{textPart: w.TextPart})
 			}
 			if !sb.endsWith(pause) {
-				sb.add(pause, w.TextPart.Prosodies)
+				sb.add(pause, &syllInfo{textPart: w.TextPart})
 			}
 		} else {
 			phns := strings.Split(w.Transcription, " ")
+			si := &syllInfo{textPart: w.TextPart}
 			for _, p := range phns {
+				if p == "-" {
+					si = &syllInfo{textPart: w.TextPart}
+				}
 				pt := changePhn(p)
 				if pt != "" {
-					sb.add(pt, w.TextPart.Prosodies)
+					if accented(pt) {
+						si.syllPos = syllPosAccent
+					}
+					sb.add(pt, si)
 					lastSep = ""
 				}
 			}
 		}
-		indRes[i].To = len(sb)
+		indRes[i].To = len(sb.items)
 	}
 
-	l := len(sb)
+	l := len(sb.items)
 	if l > 0 {
 		if !sb.endsWith(p.endSymbol) {
 			if sb.endsWith(pause) {
@@ -272,28 +376,33 @@ func (p *amodel) mapAMInput(ctx context.Context, data *synthesizer.TTSDataPart) 
 	res.Text = sb.text()
 	res.DurationsChange = sb.durations(ctx)
 	res.PitchChange = sb.pitch(ctx)
-	return res, indRes
+	return res, indRes, sb.volumes(ctx)
 }
 
-func makePitchChange(prosody []*ssml.Prosody) []*syntmodel.PitchChange {
+func accented(pt string) bool {
+	return strings.Contains(pt, "\"") || strings.Contains(pt, "^")
+}
+
+func makePitchChange(prosody []*ssml.Prosody, sp syllPos) []*syntmodel.PitchChange {
 	res := make([]*syntmodel.PitchChange, 0, len(prosody))
-	for _, p := range prosody {
+	for i, p := range prosody {
+		last := i == len(prosody)-1
 		switch p.Emphasis {
 		case ssml.EmphasisTypeModerate:
 			pc := &syntmodel.PitchChange{
-				Value: 1.1,
+				Value: getPitchMultiplierForEphasis(sp, last),
 				Type:  2,
 			}
 			res = append(res, pc)
 		case ssml.EmphasisTypeStrong:
 			pc := &syntmodel.PitchChange{
-				Value: 1.2,
+				Value: 1.1 * getPitchMultiplierForEphasis(sp, last),
 				Type:  2,
 			}
 			res = append(res, pc)
 		case ssml.EmphasisTypeReduced:
 			pc := &syntmodel.PitchChange{
-				Value: 1 / 1.1,
+				Value: 1 / getPitchMultiplierForEphasis(sp, last),
 				Type:  2,
 			}
 			res = append(res, pc)
@@ -327,34 +436,32 @@ func makePitchChange(prosody []*ssml.Prosody) []*syntmodel.PitchChange {
 	return res
 }
 
-func isOneAccent(sb []string) (bool, int) {
-	res := -1
-	for i, s := range sb {
-		if strings.Contains(s, "\"") || strings.Contains(s, "^") {
-			if res != -1 {
-				return false, -1
-			}
-			res = i
-		}
+func getPitchMultiplierForEphasis(sp syllPos, last bool) float64 {
+	if sp == syllPosAccent && last {
+		return 1.2
 	}
-	if res != -1 {
-		return true, res
-	}
-	return false, -1
+	return 1.1
 }
 
-func isEmphasyLast(prosody []*ssml.Prosody) bool {
+func lastEmphasy(prosody []*ssml.Prosody) (*ssml.Prosody, bool) {
 	if len(prosody) == 0 {
-		return false
+		return nil, false
 	}
 	last := prosody[len(prosody)-1]
-	return last.Emphasis == ssml.EmphasisTypeStrong || last.Emphasis == ssml.EmphasisTypeModerate || last.Emphasis == ssml.EmphasisTypeReduced
+	if last.Emphasis == ssml.EmphasisTypeUnset || last.Emphasis == ssml.EmphasisTypeNone {
+		return nil, false
+	}
+	return last, true
 }
 
-func calculateSpeed(prosody []*ssml.Prosody) float64 {
+func calculateSpeed(prosody []*ssml.Prosody, sp syllPos) float64 {
 	total := 1.0
-	for _, p := range prosody {
-		nr := getRate(p)
+	for i, p := range prosody {
+		last := i == len(prosody)-1
+		if !last {
+			sp = syllPosUnset
+		}
+		nr := getRate(p, sp)
 		total *= nr
 	}
 	if total < 0.5 {
@@ -365,23 +472,84 @@ func calculateSpeed(prosody []*ssml.Prosody) float64 {
 	return total
 }
 
-func getRate(p *ssml.Prosody) float64 {
+func calculateVolumeChange(prosody []*ssml.Prosody, sp syllPos) float64 {
+	res := 0.0
+	for i, p := range prosody {
+		if utils.Float64Equals(p.Volume, ssml.MinVolumeChange) {
+			return ssml.MinVolumeChange
+		}
+		last := i == len(prosody)-1
+		if !last {
+			sp = syllPosUnset
+		}
+		res += getVolumeChange(p, sp)
+	}
+	return res
+}
+
+func getVolumeChange(p *ssml.Prosody, sp syllPos) float64 {
+	step := getEmphasisVolChangeStep(sp) // dB
 	switch p.Emphasis {
-   	case ssml.EmphasisTypeReduced:
+	case ssml.EmphasisTypeReduced:
+		return -step
+	case ssml.EmphasisTypeNone:
+		return 0.0
+	case ssml.EmphasisTypeModerate:
+		return step
+	case ssml.EmphasisTypeStrong:
+		return 2 * step
+	default:
+		return p.Volume
+	}
+}
+
+func getEmphasisVolChangeStep(sp syllPos) float64 {
+	if sp == syllPosUnset {
+		return 2.0
+	}
+	if sp == syllPosAccent {
+		return 3.0
+	}
+	return 0
+}
+
+func calcVolumeRate(changeInDB float64) float64 {
+	if utils.Float64Equals(changeInDB, ssml.MinVolumeChange) {
+		return 0
+	}
+	return math.Pow(10, changeInDB/20)
+}
+
+func getRate(p *ssml.Prosody, sp syllPos) float64 {
+	er := getEmphasisRate(sp)
+	switch p.Emphasis {
+	case ssml.EmphasisTypeReduced:
 		// reduce speed
-		return 1 / 1.2
+		return 1 / er
 	case ssml.EmphasisTypeNone:
 		return 1.0
 	case ssml.EmphasisTypeModerate:
-		return 1.3
+		return er
 	case ssml.EmphasisTypeStrong:
-		return 1.3 * 1.3
+		return 1.1 * er
 	default:
 		if p.Rate <= 0 {
 			return 1.0
 		}
 		return p.Rate
 	}
+}
+
+func getEmphasisRate(sp syllPos) float64 {
+	switch sp {
+	case syllPosBeforeAccent:
+		return 1.3
+	case syllPosAfterAccent:
+		return 1.2
+	case syllPosAccent:
+		return 1.5
+	}
+	return 1.2
 }
 
 func getSep(s string, words []*synthesizer.ProcessedWord, pos int) string {

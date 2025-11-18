@@ -47,8 +47,8 @@ type TTSConfig struct {
 	JustAM bool
 	Input  *api.TTSRequestConfig
 
-	Type      SSMLTypeEnum
-	Voice     string
+	Type  SSMLTypeEnum
+	Voice string
 	// Prosodies []*ssml.Prosody
 
 	PauseDuration time.Duration
@@ -74,6 +74,9 @@ type TTSDataPart struct {
 type SynthesizedPos struct {
 	// in tts steps
 	From, To int
+
+	Durations     []int     //chars
+	VolumeChanges []float64 // in dB
 }
 
 type AudioDurations struct {
