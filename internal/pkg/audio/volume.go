@@ -25,13 +25,13 @@ func ChangeVolume(b []byte, volChange []*VolChange, bytesPerSaample int) ([]byte
 			case 2:
 				fade, isStart := defaultFader.Fade((i-vc.From)/bytesPerSaample, l)
 				sample := int16(b[i]) | int16(b[i+1])<<8
-				rate := 1.0
+				var rate float64
 				if isStart {
 					rate = vc.StartRate + (vc.Rate-vc.StartRate)*fade
 				} else {
 					rate = vc.EndRate + (vc.Rate-vc.EndRate)*(fade)
 				}
- 				newSample := toInt16(float64(sample) * rate)
+				newSample := toInt16(float64(sample) * rate)
 				b[i] = byte(newSample & 0xFF)
 				b[i+1] = byte((newSample >> 8) & 0xFF)
 			case 4:
