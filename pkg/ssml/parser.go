@@ -59,6 +59,7 @@ type wrkData struct {
 
 	res []Part
 	// cValues []*Text
+	emphasisCount int
 }
 
 var startFunctions map[string]startFunc
@@ -453,7 +454,8 @@ func startEmphasis(se xml.StartElement, wrk *wrkData) error {
 		return fmt.Errorf("wrong <emphasis>:level='%s'", levelStr)
 	}
 
-	prosody := &Prosody{Emphasis: level, Rate: 1}
+	wrk.emphasisCount++
+	prosody := &Prosody{Emphasis: level, Rate: 1, ID: wrk.emphasisCount}
 	wrk.prosodies.push(prosody)
 	wrk.lastText = nil
 	return nil

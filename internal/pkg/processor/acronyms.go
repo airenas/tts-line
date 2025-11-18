@@ -148,6 +148,7 @@ func newWords(aw []acrResultWord, w *synthesizer.ProcessedWord) []*synthesizer.P
 		wd.UserTranscription = r.UserTrans
 		wd.UserSyllables = r.Syll
 		wd.TranscriptionWord = r.WordTrans
+		wd.TextPart = w.TextPart
 		res = append(res, &wd)
 	}
 	return res

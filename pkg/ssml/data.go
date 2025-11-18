@@ -45,6 +45,7 @@ type Prosody struct {
 	Volume   float64 // in dB, if silent then -1000
 	Pitch    PitchChange
 	Emphasis EmphasisType
+	ID       int
 }
 
 // Pause represents Pause directive

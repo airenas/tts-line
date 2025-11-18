@@ -6,9 +6,12 @@ import (
 )
 
 type VolChange struct {
-	From   int // pos in bytes
-	To     int // pos in bytes
-	Change float64
+	From int // pos in bytes
+	To   int // pos in bytes
+
+	Rate      float64
+	StartRate float64
+	EndRate   float64
 }
 
 func ChangeVolume(b []byte, volChange []*VolChange, bytesPerSaample int) ([]byte, error) {
@@ -20,9 +23,15 @@ func ChangeVolume(b []byte, volChange []*VolChange, bytesPerSaample int) ([]byte
 			l := (vc.To - vc.From) / bytesPerSaample
 			switch bytesPerSaample {
 			case 2:
-				fade := defaultFader.Fade((i - vc.From)/bytesPerSaample, l)
+				fade, isStart := defaultFader.Fade((i-vc.From)/bytesPerSaample, l)
 				sample := int16(b[i]) | int16(b[i+1])<<8
-				newSample := toInt16(float64(sample) * (1 + (vc.Change - 1) * fade))
+				rate := 1.0
+				if isStart {
+					rate = vc.StartRate + (vc.Rate-vc.StartRate)*fade
+				} else {
+					rate = vc.EndRate + (vc.Rate-vc.EndRate)*(fade)
+				}
+ 				newSample := toInt16(float64(sample) * rate)
 				b[i] = byte(newSample & 0xFF)
 				b[i+1] = byte((newSample >> 8) & 0xFF)
 			case 4:

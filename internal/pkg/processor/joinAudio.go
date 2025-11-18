@@ -14,7 +14,6 @@ import (
 	"github.com/airenas/tts-line/internal/pkg/synthesizer"
 	"github.com/airenas/tts-line/internal/pkg/utils"
 	"github.com/airenas/tts-line/internal/pkg/wav"
-	"github.com/airenas/tts-line/pkg/ssml"
 	"github.com/pkg/errors"
 	"github.com/rs/zerolog/log"
 )
@@ -422,59 +421,44 @@ func joinSSML(ctx context.Context, data *synthesizer.TTSData, suffix []byte, max
 
 func makeVolumeChanges(ctx context.Context, part *synthesizer.TTSDataPart, startPos, endPos, skipSteps int, bytesPerSample uint16, step int) []*audio.VolChange {
 	var res []*audio.VolChange
+	rate := 0.0
+	var last *audio.VolChange
 	for _, w := range part.Words {
+		from := (w.SynthesizedPos.From*step - skipSteps)
 		if !w.Tagged.IsWord() {
 			continue
 		}
-		vc := calcVolumeChange(w.TextPart.Prosodies)
-		if utils.Float64Equals(vc, 0) {
-			continue
-		}
-		from := (w.SynthesizedPos.From*step - skipSteps)
-		to := (w.SynthesizedPos.To*step - skipSteps)
-		v := audio.VolChange{
-			From:   startPos + from*int(bytesPerSample),
-			To:     startPos + to*int(bytesPerSample),
-			Change: calcVolumeRate(vc),
-		}
-		log.Ctx(ctx).Trace().Float64("change", vc).Int("from", v.From).Int("to", v.To).Str("text", w.TextPart.Text).Msg("volume word")
-		res = append(res, &v)
-	}
-	return res
-}
+		for i, vc := range w.SynthesizedPos.VolumeChanges {
+			d := w.SynthesizedPos.Durations[i]
+			to := from + d*step
 
-func calcVolumeChange(prosody []*ssml.Prosody) float64 {
-	res := 0.0
-	for _, p := range prosody {
-		if utils.Float64Equals(p.Volume, ssml.MinVolumeChange) {
-			return ssml.MinVolumeChange
+			if utils.Float64Equals(vc, rate) {
+				if last != nil {
+					last.To = startPos + to*int(bytesPerSample)
+				}
+			} else if utils.Float64Equals(vc, 0) {
+				last = nil
+			} else {
+				v := &audio.VolChange{
+					From:   startPos + (from * int(bytesPerSample)),
+					To:     startPos + (to * int(bytesPerSample)),
+					
+					Rate: calcVolumeRate(vc),
+					StartRate: calcVolumeRate(rate),
+					EndRate: calcVolumeRate(0),
+				}
+				log.Ctx(ctx).Trace().Float64("change", vc).Int("from", v.From).Int("to", v.To).Str("text", w.TextPart.Text).Msg("volume word")
+				res = append(res, v)
+				if last != nil {
+					last.EndRate = v.StartRate
+				}
+				last = v
+			}
+			from = to
+			rate = vc
 		}
-		res += getVolumeChange(p)
 	}
-	return res
-}
-
-func getVolumeChange(p *ssml.Prosody) float64 {
-	step := 2.0 // dB
-	switch p.Emphasis {
-	case ssml.EmphasisTypeReduced:
-		return -step
-	case ssml.EmphasisTypeNone:
-		return 0.0
-	case ssml.EmphasisTypeModerate:
-		return step
-	case ssml.EmphasisTypeStrong:
-		return 2 * step
-	default:
-		return p.Volume
-	}
-}
-
-func calcVolumeRate(changeInDB float64) float64 {
-	if utils.Float64Equals(changeInDB, ssml.MinVolumeChange) {
-		return 0
-	}
-	return math.Pow(10, changeInDB/20)
+ 	return res
 }
 
 func calcPauseWithEnds(s1, s2, pause int) (int, int, int) {
