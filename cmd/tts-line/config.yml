@@ -48,8 +48,8 @@ transcriber:
 acousticModel:
   # url: http://semspch04.vdu.lt:8000/model
   # url: http://semspch04.vdu.lt:8006/synthesize
-  # url: http://localhost:8000/model
-  url: http://18.184.111.46:8006/synthesize
+  url: http://localhost:8023/synthesize
+  # url: http://18.184.111.46:8006/synthesize
   hasVocoder: true
 
 vocoder:
