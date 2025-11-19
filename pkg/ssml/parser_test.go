@@ -85,30 +85,31 @@ func TestParse(t *testing.T) {
 		/// emphasis tests
 		//////////////////////////////////////////////////////////////////////////////////////////
 		{name: "emphasis", xml: `<speak><emphasis level="strong">olia1</emphasis>olia2</speak>`, want: []Part{
-			&Text{Voice: "aa", Texts: []TextPart{{Text: "olia1"}}, Prosodies: []*Prosody{{Rate: 1, Emphasis: EmphasisTypeStrong}}},
+			&Text{Voice: "aa", Texts: []TextPart{{Text: "olia1"}}, Prosodies: []*Prosody{{Rate: 1, Emphasis: EmphasisTypeStrong, ID: 1}}},
 			&Text{Voice: "aa", Texts: []TextPart{{Text: "olia2"}}},
 		},
 			wantErr: false},
 		{name: "emphasis inner", xml: `<speak><emphasis level="strong"><emphasis level="moderate">olia1</emphasis></emphasis>olia2</speak>`, want: []Part{
-			&Text{Voice: "aa", Texts: []TextPart{{Text: "olia1"}}, Prosodies: []*Prosody{{Rate: 1, Emphasis: EmphasisTypeStrong}, {Rate: 1, Emphasis: EmphasisTypeModerate}}},
+			&Text{Voice: "aa", Texts: []TextPart{{Text: "olia1"}}, Prosodies: []*Prosody{{Rate: 1, Emphasis: EmphasisTypeStrong, ID: 1},
+				{Rate: 1, Emphasis: EmphasisTypeModerate, ID: 2}}},
 			&Text{Voice: "aa", Texts: []TextPart{{Text: "olia2"}}},
 		},
 			wantErr: false},
 		{name: "emphasis reduced", xml: `<speak><emphasis level="reduced">olia1</emphasis>olia2</speak>`, want: []Part{
-			&Text{Voice: "aa", Texts: []TextPart{{Text: "olia1"}}, Prosodies: []*Prosody{{Rate: 1, Emphasis: EmphasisTypeReduced}}},
+			&Text{Voice: "aa", Texts: []TextPart{{Text: "olia1"}}, Prosodies: []*Prosody{{Rate: 1, Emphasis: EmphasisTypeReduced, ID: 1}}},
 			&Text{Voice: "aa", Texts: []TextPart{{Text: "olia2"}}},
 		},
 			wantErr: false},
 		{name: "emphasis inside prosody", xml: `<speak><prosody volume="+10dB"><emphasis level="moderate">olia1</emphasis></prosody>olia2</speak>`, want: []Part{
 			&Text{Voice: "aa", Texts: []TextPart{{Text: "olia1"}}, Prosodies: []*Prosody{
 				{Rate: 1, Volume: 10},
-				{Rate: 1, Emphasis: EmphasisTypeModerate}}},
+				{Rate: 1, Emphasis: EmphasisTypeModerate, ID: 1}}},
 			&Text{Voice: "aa", Texts: []TextPart{{Text: "olia2"}}},
 		},
 			wantErr: false},
 		{name: "emphasis outside <prosody>", xml: `<speak><emphasis level="strong"><prosody volume="+10dB">olia1</prosody></emphasis>olia2</speak>`, want: []Part{
 			&Text{Voice: "aa", Texts: []TextPart{{Text: "olia1"}}, Prosodies: []*Prosody{
-				{Rate: 1, Emphasis: EmphasisTypeStrong},
+				{Rate: 1, Emphasis: EmphasisTypeStrong, ID: 1},
 				{Rate: 1, Volume: 10}},
 			},
 			&Text{Voice: "aa", Texts: []TextPart{{Text: "olia2"}}},

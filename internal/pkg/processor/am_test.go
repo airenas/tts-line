@@ -71,6 +71,7 @@ func TestInvokeAcousticModel(t *testing.T) {
 	d := newTestTTSDataPart()
 	d.Spectogram = []byte("spectogram")
 	// d.Cfg.Prosodies = []*ssml.Prosody{{Rate: 0.5, Pitch: ssml.PitchChange{Kind: ssml.PitchChangeHertz, Value: 100}}, {Rate: 1.0}}
+	d.Cfg.Input.Speed = 0.5
 	d.Cfg.Voice = "aa"
 	d.Cfg.Input.Priority = 10
 	httpJSONMock.On("InvokeJSONU", mock.Anything, mock.Anything, mock.Anything).Run(
@@ -87,7 +88,7 @@ func TestInvokeAcousticModel(t *testing.T) {
 
 	ai := inp.(*syntmodel.AMInput)
 	assert.Equal(t, []float64{0.5}, ai.DurationsChange)
-	assert.Equal(t, [][]*syntmodel.PitchChange{{{Type: 1, Value: 100}}}, ai.PitchChange)
+	assert.Equal(t, [][]*syntmodel.PitchChange{{}}, ai.PitchChange)
 	assert.Equal(t, "aa", ai.Voice)
 	assert.Equal(t, 10, ai.Priority)
 	assert.Equal(t, "http://aa.server", url)
