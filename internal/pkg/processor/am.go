@@ -353,6 +353,10 @@ func (p *amodel) mapAMInput(ctx context.Context, data *synthesizer.TTSDataPart) 
 					lastSep = ""
 				}
 			}
+			// // ad pause if emphasis is marked
+			// if isEmphasizedEnd(w) {
+			// 	sb.add(pause, si)
+			// }
 		}
 		indRes[i].To = len(sb.items)
 	}
@@ -378,6 +382,18 @@ func (p *amodel) mapAMInput(ctx context.Context, data *synthesizer.TTSDataPart) 
 	res.PitchChange = sb.pitch(ctx)
 	return res, indRes, sb.volumes(ctx)
 }
+
+// func isEmphasizedEnd(w *synthesizer.ProcessedWord) bool {
+// 	if w.TextPart == nil || len(w.TextPart.Prosodies) == 0 {
+// 		return false
+// 	}
+	
+// 	pr := w.TextPart.Prosodies[len(w.TextPart.Prosodies)-1]
+// 	if pr.Emphasis == ssml.EmphasisTypeModerate || pr.Emphasis == ssml.EmphasisTypeStrong {
+// 		return true
+// 	}
+// 	return false
+// }
 
 func accented(pt string) bool {
 	return strings.Contains(pt, "\"") || strings.Contains(pt, "^")
@@ -526,9 +542,9 @@ func calcVolumeRate(changeInDB float64) float64 {
 func getRate(p *ssml.Prosody, sp syllPos) float64 {
 	er := getEmphasisRate(sp)
 	switch p.Emphasis {
-	case ssml.EmphasisTypeReduced:
-		// reduce speed
-		return 1 / er
+	// case ssml.EmphasisTypeReduced:  // leave reate as it is
+	// 	// reduce speed
+	// 	return 1 / er
 	case ssml.EmphasisTypeNone:
 		return 1.0
 	case ssml.EmphasisTypeModerate:
@@ -550,7 +566,7 @@ func getEmphasisRate(sp syllPos) float64 {
 	case syllPosAfterAccent:
 		return 1.2
 	case syllPosAccent:
-		return 1.5
+		return 1.4
 	}
 	return 1.2
 }
