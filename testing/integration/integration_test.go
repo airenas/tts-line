@@ -6,6 +6,7 @@ package integration
 import (
 	"context"
 	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	"io"
 	"log"
@@ -254,7 +255,29 @@ func startMockService(port int) (net.Listener, *httptest.Server) {
 			if err != nil {
 				log.Print(err.Error())
 			}
-			io.Copy(w, strings.NewReader(fmt.Sprintf(`{"data":"%s","step":256}`, base64.StdEncoding.EncodeToString(b))))
+			var input struct {
+				Text            string    `json:"text"`
+				DurationsChange []float64 `json:"durationsChange"`
+			}
+			if r.Body != nil {
+				defer r.Body.Close()
+				if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
+					log.Printf("failed to parse input: %v", err)
+				} else {
+					log.Printf("Received input: text=%s", input.Text)
+				}
+			}
+			res_durations := make([]int, len(input.DurationsChange))
+			for i := range input.DurationsChange {
+				res_durations[i] = 1
+			}
+			respObj := map[string]interface{}{
+				"data":      base64.StdEncoding.EncodeToString(b),
+				"step":      256,
+				"durations": res_durations,
+			}
+			w.Header().Set("Content-Type", "application/json")
+			json.NewEncoder(w).Encode(respObj)
 		}
 	}))
 
