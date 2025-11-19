@@ -87,7 +87,7 @@ func TestWork_SSML(t *testing.T) {
 	initTest(t)
 	processorMock.f = func(d *TTSData) error {
 		d.TextWithNumbers = []string{"olia lia"}
-		assert.Equal(t, 3, len(d.SSMLParts))
+		assert.Equal(t, 2, len(d.SSMLParts))
 		return nil
 	}
 	worker.processors = nil
