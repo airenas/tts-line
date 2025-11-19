@@ -9,7 +9,7 @@ type Input struct {
 	Text string `json:"text,omitempty"`
 	//TextType may have values: text, ssml
 	TextType string `json:"textType,omitempty"`
-	//Possible values are m4a, mp3
+	//Possible values are m4a, mp3, wav, ulaw
 	OutputFormat     string  `json:"outputFormat,omitempty"`
 	OutputTextFormat string  `json:"outputTextFormat,omitempty"`
 	AllowCollectData *bool   `json:"saveRequest,omitempty"`
