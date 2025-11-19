@@ -387,7 +387,7 @@ func (p *amodel) mapAMInput(ctx context.Context, data *synthesizer.TTSDataPart) 
 // 	if w.TextPart == nil || len(w.TextPart.Prosodies) == 0 {
 // 		return false
 // 	}
-	
+
 // 	pr := w.TextPart.Prosodies[len(w.TextPart.Prosodies)-1]
 // 	if pr.Emphasis == ssml.EmphasisTypeModerate || pr.Emphasis == ssml.EmphasisTypeStrong {
 // 		return true
