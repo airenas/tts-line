@@ -76,7 +76,7 @@ func ToReader(data interface{}) io.Reader {
 func Invoke(t *testing.T, cl *http.Client, r *http.Request) *http.Response {
 	t.Helper()
 	resp, err := cl.Do(r)
-	require.Nil(t, err, "not nil error = %v", err)
+	require.NoError(t, err, "not nil error = %w", err)
 	t.Cleanup(func() { resp.Body.Close() })
 	return resp
 }
