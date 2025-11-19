@@ -447,7 +447,7 @@ func makeVolumeChanges(ctx context.Context, part *synthesizer.TTSDataPart, start
 					StartRate: calcVolumeRate(rate),
 					EndRate:   calcVolumeRate(0),
 				}
-				log.Ctx(ctx).Trace().Float64("change", vc).Int("from", v.From).Int("to", v.To).Str("text", w.TextPart.Text).Msg("volume word")
+				log.Ctx(ctx).Debug().Float64("change", calcVolumeRate(vc)).Int("from", v.From).Int("to", v.To).Msg("volume")
 				res = append(res, v)
 				if last != nil {
 					last.EndRate = v.StartRate
