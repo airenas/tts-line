@@ -38,7 +38,7 @@ file?=ssml.xml
 generate: .data/output.mp3
 .PHONY: generate
 play: .data/output.mp3
-	nvlc $<	
+	nvlc --play-and-exit $<	
 .PHONY: play
 clean/data:
 	rm -rf .data

@@ -8,7 +8,7 @@ dist_dir=$(CURDIR)/bin
 executable_name=am-voc-wrapper
 main_dir=../../cmd/$(executable_name)
 commit_count=$(shell git rev-list --count HEAD)
-version=0.4
+version=0.5
 go_build_cmd=CGO_ENABLED=0 go build -ldflags "-X main.version=$(version).$(commit_count)"
 ########### SERVICE#################################################################
 logs:
