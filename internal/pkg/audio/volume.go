@@ -21,8 +21,8 @@ func ChangeVolume(b []byte, volChange []*VolChange, bytesPerSample int) ([]byte,
 	lb := len(b)
 	for _, vc := range volChange {
 		for i := vc.From; i < vc.To; i += bytesPerSample {
-			if (i + bytesPerSample) >= lb {
-				return nil, fmt.Errorf("out of bounds volume change: %d + %d >= %d", i, bytesPerSample, lb)
+			if (i + bytesPerSample) > lb {
+				return nil, fmt.Errorf("out of bounds volume change: %d + %d > %d", i, bytesPerSample, lb)
 			}
 			l := (vc.To - vc.From) / bytesPerSample
 			switch bytesPerSample {
