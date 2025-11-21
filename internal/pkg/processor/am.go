@@ -19,11 +19,13 @@ import (
 )
 
 type amodel struct {
-	httpWrap    HTTPInvokerJSON
-	url         string
-	spaceSymbol string
-	endSymbol   string
-	hasVocoder  bool
+	httpWrap      HTTPInvokerJSON
+	url           string
+	spaceSymbol   string
+	endSymbol     string
+	emphasisPause string
+
+	hasVocoder bool
 }
 
 var trMap map[string]string
@@ -65,13 +67,18 @@ func NewAcousticModel(config *viper.Viper) (synthesizer.PartProcessor, error) {
 	if res.spaceSymbol == "" {
 		res.spaceSymbol = "sil"
 	}
+	res.emphasisPause = config.GetString("emphasisPause")
+	if res.emphasisPause == "" {
+		res.emphasisPause = "sp"
+	}
 	res.endSymbol = config.GetString("endSymbol")
 	if res.endSymbol == "" {
 		res.endSymbol = res.spaceSymbol
 	}
 	res.hasVocoder = config.GetBool("hasVocoder")
-	log.Info().Msgf("AM pause: '%s', end symbol: '%s'", res.spaceSymbol, res.endSymbol)
-	log.Info().Msgf("AM hasVocoder: %t", res.hasVocoder)
+	log.Info().Str("AM pause", res.spaceSymbol).Str("AM emphasis pause", res.emphasisPause).
+		Str("AM end symbol", res.endSymbol).Msg("AM")
+	log.Info().Bool("has vocoder", res.hasVocoder).Msg("AM")
 	return res, nil
 }
 
@@ -120,14 +127,20 @@ func mapAMOutputDurations(ctx context.Context, data *synthesizer.TTSDataPart, du
 		fromI := indRes[i].From
 		toI := indRes[i].To
 		if fromI < 0 || fromI >= len(sums) || toI < 0 || toI >= len(sums) {
-			log.Ctx(ctx).Warn().Msgf("Invalid duration index %d %d %d %d", fromI, toI, len(sums), len(indRes))
+			log.Ctx(ctx).Warn().Int("from", fromI).Int("to", toI).Int("len", len(sums)).Int("indResLen", len(indRes)).
+				Msg("Invalid duration index")
+			continue
+		}
+		if fromI >= len(volChanges) || toI > len(volChanges) {
+			log.Ctx(ctx).Warn().Int("from", fromI).Int("to", toI).Int("len", len(volChanges)).
+				Msg("Invalid volume change index")
 			continue
 		}
 		w.SynthesizedPos = &synthesizer.SynthesizedPos{
 			From:          sums[fromI],
 			To:            sums[toI],
-			Durations:     durations[indRes[i].From:indRes[i].To],
-			VolumeChanges: volChanges[indRes[i].From:indRes[i].To],
+			Durations:     durations[fromI:toI],
+			VolumeChanges: volChanges[fromI:toI],
 		}
 	}
 	return nil
@@ -353,10 +366,10 @@ func (p *amodel) mapAMInput(ctx context.Context, data *synthesizer.TTSDataPart) 
 					lastSep = ""
 				}
 			}
-			// // ad pause if emphasis is marked
-			// if isEmphasizedEnd(w) {
-			// 	sb.add(pause, si)
-			// }
+			// add pause if it is the last word of an emphasis
+			if w.LastEmphasisWord {
+				sb.add(p.emphasisPause, si)
+			}
 		}
 		indRes[i].To = len(sb.items)
 	}
@@ -366,6 +379,8 @@ func (p *amodel) mapAMInput(ctx context.Context, data *synthesizer.TTSDataPart) 
 		if !sb.endsWith(p.endSymbol) {
 			if sb.endsWith(pause) {
 				sb.replace(pause, p.endSymbol, nil)
+			} else if sb.endsWith(p.emphasisPause) {
+				sb.replace(p.emphasisPause, p.endSymbol, nil)
 			} else {
 				sb.add(p.endSymbol, nil)
 			}
@@ -382,18 +397,6 @@ func (p *amodel) mapAMInput(ctx context.Context, data *synthesizer.TTSDataPart) 
 	res.PitchChange = sb.pitch(ctx)
 	return res, indRes, sb.volumes(ctx)
 }
-
-// func isEmphasizedEnd(w *synthesizer.ProcessedWord) bool {
-// 	if w.TextPart == nil || len(w.TextPart.Prosodies) == 0 {
-// 		return false
-// 	}
-
-// 	pr := w.TextPart.Prosodies[len(w.TextPart.Prosodies)-1]
-// 	if pr.Emphasis == ssml.EmphasisTypeModerate || pr.Emphasis == ssml.EmphasisTypeStrong {
-// 		return true
-// 	}
-// 	return false
-// }
 
 func accented(pt string) bool {
 	return strings.Contains(pt, "\"") || strings.Contains(pt, "^")

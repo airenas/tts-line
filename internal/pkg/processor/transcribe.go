@@ -38,6 +38,8 @@ func (p *transcriber) Process(ctx context.Context, data *synthesizer.TTSDataPart
 		return nil
 	}
 
+	markLastEmphasisWord(data.Words)
+
 	inData, err := mapTransInput(data)
 	if err != nil {
 		return err
@@ -56,6 +58,21 @@ func (p *transcriber) Process(ctx context.Context, data *synthesizer.TTSDataPart
 		log.Ctx(ctx).Debug().Msg("Skip transcriber - no data in")
 	}
 	return nil
+}
+
+func markLastEmphasisWord(processedWord []*synthesizer.ProcessedWord) {
+	emphasisMap := make(map[int]*synthesizer.ProcessedWord)
+	for _, pw := range processedWord {
+		if pw.Tagged.IsWord() {
+			eID := pw.TextPart.EmphasisID()
+			if eID != 0 {
+				emphasisMap[eID] = pw
+			}
+		}
+	}
+	for _, pw := range emphasisMap {
+		pw.LastEmphasisWord = true
+	}
 }
 
 type transInput struct {
@@ -110,6 +127,9 @@ func mapTransInput(data *synthesizer.TTSDataPart) ([]*transInput, error) {
 			}
 			res = append(res, ti)
 			pr = ti
+			if w.LastEmphasisWord {
+				pr = nil
+			}
 		}
 	}
 	return res, nil

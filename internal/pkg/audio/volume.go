@@ -14,16 +14,20 @@ type VolChange struct {
 	EndRate   float64
 }
 
-func ChangeVolume(b []byte, volChange []*VolChange, bytesPerSaample int) ([]byte, error) {
+func ChangeVolume(b []byte, volChange []*VolChange, bytesPerSample int) ([]byte, error) {
 	if len(volChange) == 0 {
 		return b, nil
 	}
+	lb := len(b)
 	for _, vc := range volChange {
-		for i := vc.From; i < vc.To; i += bytesPerSaample {
-			l := (vc.To - vc.From) / bytesPerSaample
-			switch bytesPerSaample {
+		for i := vc.From; i < vc.To; i += bytesPerSample {
+			if (i + bytesPerSample) >= lb {
+				return nil, fmt.Errorf("out of bounds volume change: %d + %d >= %d", i, bytesPerSample, lb)
+			}
+			l := (vc.To - vc.From) / bytesPerSample
+			switch bytesPerSample {
 			case 2:
-				fade, isStart := defaultFader.Fade((i-vc.From)/bytesPerSaample, l)
+				fade, isStart := defaultFader.Fade((i-vc.From)/bytesPerSample, l)
 				sample := int16(b[i]) | int16(b[i+1])<<8
 				var rate float64
 				if isStart {
@@ -34,10 +38,8 @@ func ChangeVolume(b []byte, volChange []*VolChange, bytesPerSaample int) ([]byte
 				newSample := toInt16(float64(sample) * rate)
 				b[i] = byte(newSample & 0xFF)
 				b[i+1] = byte((newSample >> 8) & 0xFF)
-			case 4:
-				return nil, fmt.Errorf("not implemented for 4 bytes per sample")
 			default:
-				return nil, fmt.Errorf("unsupported bytes per sample %d", bytesPerSaample)
+				return nil, fmt.Errorf("unsupported bytes per sample %d", bytesPerSample)
 			}
 		}
 	}

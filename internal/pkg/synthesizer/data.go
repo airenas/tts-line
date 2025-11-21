@@ -96,6 +96,7 @@ type ProcessedWord struct {
 	Clitic            Clitic
 	Transcription     string
 	Obscene           bool
+	LastEmphasisWord  bool
 	TextPart          *TTSTextPart
 	SynthesizedPos    *SynthesizedPos
 }
@@ -169,4 +170,16 @@ func (tw TaggedWord) TypeStr() string {
 		return "SPACE"
 	}
 	return "WORD"
+}
+
+func (tp *TTSTextPart) EmphasisID() int {
+	if tp == nil {
+		return 0
+	}
+	for _, p := range tp.Prosodies {
+		if p.Emphasis == ssml.EmphasisTypeModerate || p.Emphasis == ssml.EmphasisTypeStrong {
+			return p.ID
+		}
+	}
+	return 0
 }
