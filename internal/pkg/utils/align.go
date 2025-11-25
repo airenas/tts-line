@@ -86,6 +86,7 @@ func doPartlyAlign(s1 []string, s2 []string, step int) ([]int, []int) {
 	// 	}
 	// 	fmt.Print(sb.String())
 	// }
+
 	// calc h and h backtrace matrices
 	for i1 := 0; i1 < l1; i1++ {
 		for i2 := 0; i2 < l2; i2++ {
@@ -95,14 +96,17 @@ func doPartlyAlign(s1 []string, s2 []string, step int) ([]int, []int) {
 				eqv = 0
 			}
 			if i1 == 0 && i2 == 0 {
-				h[ind(i1, i2)] = byte(eqv)
+				h[ind(i1, i2)] = eqv
 				hb[ind(i1, i2)] = start
 			} else if i1 == 0 {
 				h[ind(i1, i2)] = h[ind(i1, i2-1)] + 1
 				hb[ind(i1, i2)] = left
 			} else if i2 == 0 {
-				h[ind(i1, i2)] = h[ind(i1-1, i2)] + 1
+				h[ind(i1, i2)] = h[ind(i1-1, i2)] + eqv
 				hb[ind(i1, i2)] = top
+				if eq {
+					hb[ind(i1, i2)] = corner
+				}
 			} else {
 				cv := h[ind(i1-1, i2-1)] + eqv
 				lv := h[ind(i1, i2-1)] + 1
@@ -137,20 +141,25 @@ func doPartlyAlign(s1 []string, s2 []string, step int) ([]int, []int) {
 			res[i1] = -1
 		}
 		for i1 := i1From; i1 >= 0; i1-- {
+			if i2 < 0 {
+				res[i1] = -1
+				continue
+			}
 			v := hb[ind(i1, i2)]
-			if v == corner {
+			switch v {
+			case corner:
 				res[i1] = i2
 				i2--
-			} else if v == left {
+			case left:
 				for v == left && i2 > 0 {
 					i2--
 					v = hb[ind(i1, i2)]
 				}
 				res[i1] = i2
 				i2--
-			} else if v == top {
+			case top:
 				res[i1] = -1
-			} else { // start
+			default: // start
 				res[i1] = 0
 			}
 		}

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strings"
 	"time"
+	"unicode"
 
 	"github.com/airenas/go-app/pkg/goapp"
 	"github.com/google/uuid"
@@ -203,6 +204,7 @@ func mapSpeechMarksInt(ctx context.Context, data *TTSData, from time.Duration) (
 		return nil, 0, nil
 	}
 	originalWords := strings.Fields(accent.ClearAccents(text))
+	originalWords = dropPunctuation(originalWords)
 	words, maps := collectWords(data.Parts)
 	aligned, err := utils.Align(originalWords, words)
 	if err != nil {
@@ -227,6 +229,20 @@ func mapSpeechMarksInt(ctx context.Context, data *TTSData, from time.Duration) (
 		res = append(res, sm)
 	}
 	return res, calcDuration(data.Parts), nil
+}
+
+func dropPunctuation(originalWords []string) []string {
+	var res []string
+	for _, w := range originalWords {
+		nw := strings.TrimFunc(w, func(_r rune) bool {
+			return !unicode.IsLetter(_r) && !unicode.IsDigit(_r)
+		})
+		if nw == "" {
+			continue
+		}
+		res = append(res, nw)
+	}
+	return res
 }
 
 func calcDuration(tTSDataPart []*TTSDataPart) time.Duration {
@@ -273,8 +289,8 @@ func collectWords(parts []*TTSDataPart) ([]string, []*wordMapData) {
 						pw:    w,
 						part:  p,
 					})
-			} else if w.Tagged.Separator != "" && len(words) > 0 {
-				words[len(words)-1] += w.Tagged.Separator
+				// } else if w.Tagged.Separator != "" && len(words) > 0 {
+				// 	words[len(words)-1] += w.Tagged.Separator
 			}
 		}
 		startAt += p.AudioDurations.Duration

@@ -2,6 +2,7 @@ package synthesizer
 
 import (
 	"context"
+	"reflect"
 	"testing"
 	"time"
 
@@ -243,6 +244,31 @@ func TestGetTranscriberAccent(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := GetTranscriberAccent(tt.args.w); got != tt.want {
 				t.Errorf("GetTranscriberAccent() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func Test_dropPunctuation(t *testing.T) {
+	tests := []struct {
+		name string // description of this test case
+		// Named input parameters for target function.
+		originalWords []string
+		want          []string
+	}{
+		{name: "with punctuation", originalWords: []string{"hello", ",", "world", "!"},
+			want: []string{"hello", "world"}},
+		{name: "without punctuation", originalWords: []string{"hello", "world"},
+			want: []string{"hello", "world"}},
+		{name: "only punctuation", originalWords: []string{".", "!", "?"}, want: nil},
+		{name: "empty input", originalWords: []string{}, want: nil},
+		{name: "middle", originalWords: []string{"o-o"}, want: []string{"o-o"}},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := dropPunctuation(tt.originalWords)
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("dropPunctuation() = %v, want %v", got, tt.want)
 			}
 		})
 	}
