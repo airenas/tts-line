@@ -14,6 +14,7 @@ import (
 	"github.com/airenas/tts-line/internal/pkg/accent"
 	"github.com/airenas/tts-line/internal/pkg/service/api"
 	"github.com/airenas/tts-line/internal/pkg/utils"
+	"github.com/airenas/tts-line/internal/pkg/utils/dtw"
 	"github.com/airenas/tts-line/pkg/ssml"
 )
 
@@ -206,7 +207,7 @@ func mapSpeechMarksInt(ctx context.Context, data *TTSData, from time.Duration) (
 	originalWords := strings.Fields(accent.ClearAccents(text))
 	originalWords = dropPunctuation(originalWords)
 	words, maps := collectWords(data.Parts)
-	aligned, err := utils.Align(originalWords, words)
+	aligned, err := dtw.Align(ctx, originalWords, words)
 	if err != nil {
 		return nil, 0, fmt.Errorf("can't align words: %w", err)
 	}

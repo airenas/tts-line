@@ -10,7 +10,7 @@ help:
 #####################################################################################
 ## call units tests
 test/unit: 
-	go test -race -count 1 ./...
+	go test -race -count 1 -bench=. -benchmem ./...
 .PHONY: test/unit
 ## run integration tests - start services, do tests, clean services
 test/integration:

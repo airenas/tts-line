@@ -103,6 +103,11 @@ func TestInvokeSSMLNumberReplace_Real3(t *testing.T) {
 		wantErr    bool
 		wantString string
 	}{
+		{name: "real3-1", in: "(1988 m. surinkęs 25 proc. balsų), bjūk{e~}nenas (1996 m. surinkęs 23 proc. balsų) ir f{o/}rbzas (2000 m. surinkęs 31 proc. balsų)",
+			out: "(tūkstantis devyni šimtai aštuoniasdešimt aštuntieji metai surinkęs dvidešimt penki procentai balsų), bjūkenenas (tūkstantis devyni šimtai " +
+				"devyniasdešimt šeštieji metai surinkęs dvidešimt trys procentai balsų) ir forbzas (du tūkstantieji metai surinkęs trisdešimt vienas procentas balsų)", wantErr: false,
+			wantString: "(tūkstantis devyni šimtai aštuoniasdešimt aštuntieji metai surinkęs dvidešimt penki procentai balsų), bjūk{e~}nenas (tūkstantis devyni šimtai devyniasdešimt " +
+				"šeštieji metai surinkęs dvidešimt trys procentai balsų) ir f{o/}rbzas (du tūkstantieji metai surinkęs trisdešimt vienas procentas balsų)"},
 		{name: "real", in: "kadenciją 1998-2002 m. {o\\}rb buvo demokratiškas vadovas. Kad 2010 m. grįžęs į valdžią jis staiga virto autokratu, buvo didelis",
 			out: "kadenciją tūkstantis devyni šimtai devyniasdešimt aštuntaisiais-du tūkstančiai antraisiais metais orb buvo demokratiškas vadovas." +
 				" Kad du tūkstančiai dešimtaisiais metais grįžęs į valdžią jis staiga virto autokratu, buvo didelis", wantErr: false,
@@ -162,7 +167,7 @@ func TestInvokeSSMLNumberReplace_Real3(t *testing.T) {
 					*params[1].(*string) = tt.out
 				}).Return(nil)
 			err := pr.Process(context.TODO(), &d)
-			assert.Equal(t, tt.wantErr, err != nil, "err on "+tt.name+":%v", err)
+			assert.Equal(t, tt.wantErr, err != nil, "err on "+tt.name+":%s", err)
 			if tt.wantString != "" {
 				assert.Equal(t, []string{tt.wantString}, d.TextWithNumbers, "err on "+tt.name)
 			}
@@ -193,7 +198,7 @@ func Test_mapAccentsBack(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := mapAccentsBack(tt.args.new, tt.args.orig)
+			got, err := mapAccentsBack(t.Context(), tt.args.new, tt.args.orig)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("mapAccentsBack() error = %v, wantErr %v", err, tt.wantErr)
 				return
