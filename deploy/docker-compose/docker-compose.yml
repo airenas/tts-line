@@ -60,7 +60,7 @@ services:
       - DATA_DIR=/data
       - EMBEDDINGS_FILE=mmap:/data/delfi_cbow.150.fifu
       - ONNX_FILE=/data/model.onnx
-      - LEMMA_URL=http://lemma:8000/analyze/{}
+      - LEMMA_URL=http://lema:8000/analyze/{}
       - LEX_URL=http://lex:8080/
       - LEMMA_CACHE=50000
       - EMBEDDINGS_CACHE=40000
@@ -79,8 +79,8 @@ services:
     volumes:
       - tagger-data:/data:rw
 
-  lemma:
-    image: airenas/lema:1.5.1218
+  lema:
+    image: airenas/lema:${LEMA_SERVICE_VERSION}
     restart: unless-stopped
     environment:
      - LEMA_HUNSPELL_SKIP_OFFENSIVE=false
@@ -126,7 +126,7 @@ services:
 
   accenter:
     container_name: accenter
-    image: intelektikalt/accenter:${ACCENTER_SERVICE_VERSION}
+    image: airenas/accenter:${ACCENTER_SERVICE_VERSION}
     restart: on-failure
     environment:
       - lema.type=hunspell_lema
