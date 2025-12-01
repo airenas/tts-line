@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/airenas/go-app/pkg/goapp"
+	"github.com/airenas/tts-line/internal/pkg/acronyms/model"
 	"github.com/airenas/tts-line/internal/pkg/acronyms/service/api"
 	"github.com/airenas/tts-line/internal/pkg/transcription"
 
@@ -58,13 +59,13 @@ func parse(strs []string) []*data {
 	return r
 }
 
-func (s *Acronyms) Process(word, mi string) ([]api.ResultWord, error) {
+func (s *Acronyms) Process(input *model.Input) ([]api.ResultWord, error) {
 	var result []api.ResultWord
-	wl := strings.ToLower(word)
+	wl := strings.ToLower(input.Word)
 	r, ok := s.d[wl]
 	if ok {
 		for _, d := range r {
-			w := word
+			w := input.Word
 			if len(r) > 1 {
 				w = d.word
 			}

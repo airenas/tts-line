@@ -4,6 +4,7 @@ import (
 	"strings"
 
 	"github.com/airenas/go-app/pkg/goapp"
+	"github.com/airenas/tts-line/internal/pkg/acronyms/model"
 	"github.com/airenas/tts-line/internal/pkg/acronyms/service/api"
 	"github.com/airenas/tts-line/internal/pkg/transcription"
 )
@@ -18,7 +19,8 @@ func NewLetters() (*Letters, error) {
 }
 
 // Process returns the next random saying
-func (s *Letters) Process(word, mi string) ([]api.ResultWord, error) {
+func (s *Letters) Process(input *model.Input) ([]api.ResultWord, error) {
+	word := input.Word
 	var result []api.ResultWord
 	wl := strings.ToLower(word)
 	wl = strings.TrimRight(wl, ".")

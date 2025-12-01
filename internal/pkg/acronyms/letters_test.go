@@ -4,6 +4,7 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/airenas/tts-line/internal/pkg/acronyms/model"
 	"github.com/airenas/tts-line/internal/pkg/acronyms/service/api"
 	"github.com/stretchr/testify/assert"
 )
@@ -11,7 +12,7 @@ import (
 func TestNewWord(t *testing.T) {
 	prv, err := NewLetters()
 	assert.Nil(t, err)
-	res, err := prv.Process("AAWBA", "1")
+	res, err := prv.Process(&model.Input{Word: "AAWBA", MI: "1"})
 	assert.Nil(t, err)
 	assert.NotNil(t, res)
 	assert.Equal(t, 3, len(res))
@@ -36,7 +37,7 @@ func TestNewWord(t *testing.T) {
 func TestNewWordFirst(t *testing.T) {
 	prv, err := NewLetters()
 	assert.Nil(t, err)
-	res, err := prv.Process("WBA", "1")
+	res, err := prv.Process(&model.Input{Word: "WBA", MI: "1"})
 	assert.Nil(t, err)
 	assert.NotNil(t, res)
 	assert.Equal(t, 2, len(res))
@@ -56,7 +57,7 @@ func TestNewWordFirst(t *testing.T) {
 func TestNewWordLast(t *testing.T) {
 	prv, err := NewLetters()
 	assert.Nil(t, err)
-	res, err := prv.Process("AAW", "1")
+	res, err := prv.Process(&model.Input{Word: "AAW", MI: "1"})
 	assert.Nil(t, err)
 	assert.NotNil(t, res)
 	assert.Equal(t, 2, len(res))
@@ -76,7 +77,7 @@ func TestNewWordLast(t *testing.T) {
 func TestAddDot(t *testing.T) {
 	prv, err := NewLetters()
 	assert.Nil(t, err)
-	res, err := prv.Process("A.LT", "1")
+	res, err := prv.Process(&model.Input{Word: "A.LT", MI: "1"})
 	assert.Nil(t, err)
 	assert.NotNil(t, res)
 	if assert.Equal(t, 3, len(res)) {
@@ -100,7 +101,7 @@ func TestAddDot(t *testing.T) {
 func TestNoFail(t *testing.T) {
 	prv, err := NewLetters()
 	assert.Nil(t, err)
-	res, err := prv.Process("'.A.", "1")
+	res, err := prv.Process(&model.Input{Word: "'.A.", MI: "1"})
 	assert.Nil(t, err)
 	assert.NotNil(t, res)
 	if assert.Equal(t, 1, len(res)) {
@@ -152,7 +153,7 @@ func TestLetters_Process(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			s := &Letters{}
-			got, err := s.Process(tt.args.word, tt.args.mi)
+			got, err := s.Process(&model.Input{Word: tt.args.word, MI: tt.args.mi})
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Letters.Process() error = %v, wantErr %v", err, tt.wantErr)
 				return

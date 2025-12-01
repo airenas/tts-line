@@ -3,6 +3,7 @@ package mocks
 import (
 	"context"
 
+	"github.com/airenas/tts-line/internal/pkg/acronyms/model"
 	aapi "github.com/airenas/tts-line/internal/pkg/acronyms/service/api"
 	tapi "github.com/airenas/tts-line/internal/pkg/service/api"
 	"github.com/stretchr/testify/mock"
@@ -19,8 +20,8 @@ func To[T interface{}](val interface{}) T {
 
 type Worker struct{ mock.Mock }
 
-func (m *Worker) Process(word, mi string) ([]aapi.ResultWord, error) {
-	args := m.Called(word, mi)
+func (m *Worker) Process(input *model.Input) ([]aapi.ResultWord, error) {
+	args := m.Called(input)
 	return To[[]aapi.ResultWord](args.Get(0)), args.Error(1)
 }
 

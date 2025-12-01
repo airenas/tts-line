@@ -2,9 +2,10 @@ package api
 
 // WordInput is input structure
 type WordInput struct {
-	Word string `json:"word,omitempty"`
-	MI   string `json:"mi,omitempty"`
-	ID   string `json:"id,omitempty"`
+	Word           string `json:"word,omitempty"`
+	MI             string `json:"mi,omitempty"`
+	ID             string `json:"id,omitempty"`
+	ForceToLetters bool   `json:"forceToLetters,omitempty"`
 }
 
 // WordOutput is output result

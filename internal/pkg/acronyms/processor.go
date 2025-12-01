@@ -3,6 +3,7 @@ package acronyms
 import (
 	"strings"
 
+	"github.com/airenas/tts-line/internal/pkg/acronyms/model"
 	"github.com/airenas/tts-line/internal/pkg/acronyms/service"
 	"github.com/airenas/tts-line/internal/pkg/acronyms/service/api"
 )
@@ -19,18 +20,22 @@ func NewProcessor(acronyms, letters service.Worker) (*Processor, error) {
 }
 
 // Process process word
-func (s *Processor) Process(word, mi string) ([]api.ResultWord, error) {
-	result, err := s.acronyms.Process(word, mi)
+func (s *Processor) Process(input *model.Input) ([]api.ResultWord, error) {
+	if input.ForceToLetters {
+		return s.letters.Process(input)
+	}
+
+	result, err := s.acronyms.Process(input)
 	if err != nil {
 		return nil, err
 	}
 	if len(result) > 0 {
 		return result, nil
 	}
-	if strings.HasPrefix(mi, "X") && !canReadAsLetters(word) {
-		return []api.ResultWord{{Word: word}}, nil
+	if strings.HasPrefix(input.MI, "X") && !canReadAsLetters(input.Word) {
+		return []api.ResultWord{{Word: input.Word}}, nil
 	}
-	return s.letters.Process(word, mi)
+	return s.letters.Process(input)
 }
 
 func canReadAsLetters(word string) bool {

@@ -58,9 +58,10 @@ func (p *acronyms) Process(ctx context.Context, data *synthesizer.TTSDataPart) e
 }
 
 type acrInput struct {
-	Word string `json:"word,omitempty"`
-	MI   string `json:"mi,omitempty"`
-	ID   string `json:"id,omitempty"`
+	Word           string `json:"word,omitempty"`
+	MI             string `json:"mi,omitempty"`
+	ID             string `json:"id,omitempty"`
+	ForceToLetters bool   `json:"forceToLetters,omitempty"`
 }
 
 type acrWordOutput struct {
@@ -83,7 +84,7 @@ func mapAbbrInput(data *synthesizer.TTSDataPart) []acrInput {
 			w.Obscene || (!isAccented(w) && // do not do acronyms change if user has provided accent
 			!hasUserTranscriptions(w) &&
 			isAbbr(tgw.Mi, tgw.Lemma)) {
-			res = append(res, acrInput{Word: tgw.Word, MI: tgw.Mi, ID: strconv.Itoa(i)})
+			res = append(res, acrInput{Word: tgw.Word, MI: tgw.Mi, ID: strconv.Itoa(i), ForceToLetters: w.Obscene})
 		}
 	}
 	return res

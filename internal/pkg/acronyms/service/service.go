@@ -8,6 +8,7 @@ import (
 	"log"
 
 	"github.com/airenas/go-app/pkg/goapp"
+	"github.com/airenas/tts-line/internal/pkg/acronyms/model"
 	"github.com/airenas/tts-line/internal/pkg/acronyms/service/api"
 	"github.com/facebookgo/grace/gracehttp"
 	"github.com/labstack/echo-contrib/prometheus"
@@ -20,7 +21,7 @@ import (
 type (
 	// Worker returns acronyms as word to pronounce
 	Worker interface {
-		Process(word, mi string) ([]api.ResultWord, error)
+		Process(input *model.Input) ([]api.ResultWord, error)
 	}
 
 	//Data is service operation data
@@ -71,7 +72,7 @@ func handleOne(data *Data) func(echo.Context) error {
 			return echo.NewHTTPError(http.StatusBadRequest, "No word")
 		}
 
-		res, err := data.Worker.Process(word, "")
+		res, err := data.Worker.Process(&model.Input{Word: word})
 		if err != nil {
 			goapp.Log.Error().Err(errors.Wrap(err, "Cannot process "+word)).Send()
 			return echo.NewHTTPError(http.StatusInternalServerError, "Cannot process "+word)
@@ -103,7 +104,7 @@ func handleList(data *Data) func(echo.Context) error {
 
 		res := make([]*api.WordOutput, 0)
 		for _, wi := range input {
-			wl, err := data.Worker.Process(wi.Word, wi.MI)
+			wl, err := data.Worker.Process(&model.Input{Word: wi.Word, MI: wi.MI, ForceToLetters: wi.ForceToLetters})
 			if err != nil {
 				goapp.Log.Error().Err(err).Msg("Cannot process " + goapp.Sanitize(wi.Word))
 				return echo.NewHTTPError(http.StatusInternalServerError, "Cannot process "+wi.Word)

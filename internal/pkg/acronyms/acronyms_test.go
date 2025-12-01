@@ -4,6 +4,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/airenas/tts-line/internal/pkg/acronyms/model"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -26,7 +27,7 @@ func TestReadsAcronyms(t *testing.T) {
 func TestReturnAcronyms(t *testing.T) {
 	prv, err := New(strings.NewReader("ola o-lia9"))
 	assert.Nil(t, err)
-	res, err := prv.Process("ola", "1")
+	res, err := prv.Process(&model.Input{Word: "ola", MI: "1"})
 	assert.Nil(t, err)
 	assert.NotNil(t, res)
 	assert.Equal(t, 1, len(res))
@@ -41,7 +42,7 @@ func TestReturnAcronyms(t *testing.T) {
 func TestReturnAcronymsLower(t *testing.T) {
 	prv, err := New(strings.NewReader("ola o-lia9"))
 	assert.Nil(t, err)
-	res, err := prv.Process("OLA", "1")
+	res, err := prv.Process(&model.Input{Word: "OLA", MI: "1"})
 	assert.Nil(t, err)
 	assert.NotNil(t, res)
 	assert.Equal(t, 1, len(res))
@@ -56,7 +57,7 @@ func TestReturnAcronymsLower(t *testing.T) {
 func TestReturnAcronymsLower2(t *testing.T) {
 	prv, err := New(strings.NewReader("OLA o-lia9"))
 	assert.Nil(t, err)
-	res, err := prv.Process("ola", "1")
+	res, err := prv.Process(&model.Input{Word: "ola", MI: "1"})
 	assert.Nil(t, err)
 	assert.NotNil(t, res)
 	assert.Equal(t, 1, len(res))
@@ -71,7 +72,7 @@ func TestReturnAcronymsLower2(t *testing.T) {
 func TestReturnAcronymsMultiple(t *testing.T) {
 	prv, err := New(strings.NewReader("ola o3 li-a9"))
 	assert.Nil(t, err)
-	res, err := prv.Process("ola", "1")
+	res, err := prv.Process(&model.Input{Word: "ola", MI: "1"})
 	assert.Nil(t, err)
 	assert.NotNil(t, res)
 	assert.Equal(t, 2, len(res))
