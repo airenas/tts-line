@@ -13,6 +13,7 @@ jobs:
         run: make docker/build acronyms_data_dir=../../testing/integration/data version=latest
         env:
           ACRONYMS_SECRET: ${{ secrets.ACRONYMS_SECRET }}
+          ACRONYMS_SECRET_FROM: ${{ secrets.ACRONYMS_SECRET_FROM }}
           CLITICS_SECRET: ${{ secrets.CLITICS_SECRET }}
           CLITICS_SECRET_FROM: ${{ secrets.CLITICS_SECRET_FROM }}
       - name: Login to dockerhub

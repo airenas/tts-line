@@ -8,12 +8,13 @@ tag=$(service):$(version)
 data:
 	mkdir -p $@
 
-data/acronyms.txt: $(acronyms_data_dir)/acronyms.txt | data
-	cp $^ $@ 
+# data/acronyms.txt: $(acronyms_data_dir)/acronyms.txt | data
+# 	cp $^ $@ 
 
-dbuild: data/acronyms.txt
+# dbuild: data/acronyms.txt
+dbuild: 
 	docker buildx build -t $(tag) --build-arg BUILD_VERSION=$(version) \
-		-f Dockerfile$(debug) --build-arg SECRET=$(ACRONYMS_SECRET) ../../ --load
+		-f Dockerfile$(debug) --build-arg ACRONYMS_SECRET=$(ACRONYMS_SECRET) --build-arg ACRONYMS_SECRET_FROM=$(ACRONYMS_SECRET_FROM) ../../ --load
 
 dpush: dbuild
 	docker push $(tag)

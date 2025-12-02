@@ -1,7 +1,7 @@
 #########################################################################################
 ## docker will invoke this file from ../.. dir in order to access code
 #########################################################################################
-FROM golang:1.24-alpine AS builder
+FROM golang:1.25-alpine AS builder
 
 ARG BUILD_VERSION=0.1
 
@@ -37,7 +37,7 @@ RUN ./encrypt-file -f phrases.txt -s $SECRET > phrases.txt.aes
 #########################################################################################
 ## final image
 #########################################################################################
-FROM alpine:3.18 AS runner
+FROM alpine:3.22 AS runner
 
 ARG BUILD_VERSION=0.1
 

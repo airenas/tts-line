@@ -12,7 +12,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        container: [tts-text-clean, tts-line, clitics]
+        container: [tts-text-clean, tts-line, clitics, acronyms]
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -58,3 +58,5 @@ jobs:
             BUILD_VERSION=${{ github.ref_name }}-${{ steps.vars.outputs.sha_short }}
             SECRET=${{ secrets.CLITICS_SECRET }}
             SECRET_FROM=${{ secrets.CLITICS_SECRET_FROM }} 
+            ACRONYMS_SECRET=${{ secrets.ACRONYMS_SECRET }}
+            ACRONYMS_SECRET_FROM=${{ secrets.ACRONYMS_SECRET_FROM }}

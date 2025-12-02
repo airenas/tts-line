@@ -1,7 +1,7 @@
 #########################################################################################
 ## docker will invoke this file from ../.. dir in order to access code
 #########################################################################################
-FROM golang:1.24-alpine AS builder
+FROM golang:1.25-alpine AS builder
 
 ARG BUILD_VERSION=0.1
 
@@ -13,20 +13,30 @@ COPY . /go/src
 RUN --mount=type=cache,target=/root/.cache/go-build \
     --mount=type=cache,target=/go/pkg/mod \
     go build -o /go/bin/acronyms -trimpath -ldflags "-s -w -X main.version=$BUILD_VERSION" cmd/acronyms/main.go
-
+#########################################################################################
+## data
+#########################################################################################
+FROM airenas/acronyms:0.1.439-c326c41 AS data
 #########################################################################################
 ## encrypt file
+#########################################################################################
 FROM airenas/secure-file:0.1.2 AS encryptor
 WORKDIR /app
-COPY build/acronyms/data/acronyms.txt /app/
-ARG SECRET
-# use the value to set the ENV var default
-ENV SECRET=$SECRET
-RUN ./encrypt-file -f acronyms.txt -s $SECRET > acronyms.txt.aes
+ARG ACRONYMS_SECRET
+ARG ACRONYMS_SECRET_FROM
 
+# use the value to set the ENV var default
+ENV SECRET_FROM=$ACRONYMS_SECRET_FROM
+ENV SECRET=$ACRONYMS_SECRET
+COPY --from=data /app/acronyms.txt.aes /app/
+
+RUN ./check-decrypt-file -f acronyms.txt -s $SECRET_FROM
+# COPY build/acronyms/data/acronyms.txt /app/
+
+RUN ./encrypt-file -f acronyms.txt -s $SECRET > acronyms.txt.aes
 #########################################################################################
 ## final image
-FROM alpine:3.15 AS runner
+FROM alpine:3.22 AS runner
 
 ARG BUILD_VERSION=0.1
 
