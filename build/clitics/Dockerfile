@@ -51,6 +51,8 @@ LABEL org.opencontainers.image.version=$BUILD_VERSION \
       summary="This image is used to host clitics service" \
       description="This image is used to host clitics service" 
 
+COPY LICENSE /LICENSE
+
 WORKDIR /app
 
 COPY --from=encryptor /app/check-decrypt-file /app/

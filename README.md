@@ -8,6 +8,23 @@ Pipeline for Lithuanian speech synthesizer.
 
 Sequence diagram for synthesizing request [Sequence diagram](./info/tts.png).
 
+## Build
+
+### Dependencies
+
+- Go >= 1.25
+- libebur128
+  ```
+   sudo apt install -y libebur128-dev
+  ``` 
+
+### Build binaries
+
+```
+go build ./...
+```
+
+
 ---
 ### Author
 

@@ -50,6 +50,8 @@ LABEL org.opencontainers.image.version=$BUILD_VERSION \
       summary="This image is used to host the Acronyms service" \
       description="This image is used to host the Acronyms service" 
 
+COPY LICENSE /LICENSE
+      
 WORKDIR /app
 
 ENV UID=999

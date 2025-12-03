@@ -15,10 +15,14 @@ jobs:
       uses: actions/setup-go@v2
       with:
         go-version: 1.25
-        
+
     - name: Check out code into the Go module directory
       uses: actions/checkout@v2
 
+    - name: Install libebur128 (shared)
+      run: |
+        sudo apt update
+        sudo apt install -y libebur128-dev
 
     - name: Get dependencies
       run: |

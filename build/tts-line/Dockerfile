@@ -6,7 +6,19 @@ FROM golang:1.25-alpine AS builder
 ARG BUILD_VERSION=0.1
 
 WORKDIR /go/src/
-ENV CGO_ENABLED=0
+
+RUN apk add build-base cmake git pkgconfig
+RUN git clone --branch v1.2.6 --single-branch https://github.com/jiixyj/libebur128.git \
+    && mkdir -p libebur128/build \
+    && cd libebur128/build \
+    && cmake .. -DBUILD_SHARED_LIBS=OFF \
+    && make \
+    && make install
+
+ENV CGO_ENABLED=1
+ENV CGO_CFLAGS="-I/usr/local/include"
+ENV CGO_LDFLAGS="-L/usr/local/lib -lebur128"
+
 
 COPY . /go/src
 
@@ -30,6 +42,9 @@ LABEL org.opencontainers.image.version=$BUILD_VERSION \
       release=$BUILD_VERSION \
       summary="This image is used to host the TTS Line service" \
       description="This image is used to host the TTS Line service" 
+
+COPY Licenses /Licenses
+COPY LICENSE /LICENSE
 
 WORKDIR /app
 
