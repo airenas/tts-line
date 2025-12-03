@@ -29,15 +29,26 @@ func (p *calcLoudness) Process(ctx context.Context, data *synthesizer.TTSData) e
 		return nil
 	}
 
+	return addLoudness(ctx, data.Parts)
+}
+
+func addLoudness(ctx context.Context, parts []*synthesizer.TTSDataPart) error {
+	if len(parts) < 2 { // nothing to adjust
+		return nil
+	}
+
 	var err error
 	var first float64
-	for _, dp := range data.Parts {
+	for _, dp := range parts {
 		dp.Loudness, err = calculateLoudness(ctx, dp.Audio)
 		if err != nil {
 			return fmt.Errorf("calc loudness: %w", err)
 		}
 		log.Ctx(ctx).Debug().Float64("loudness", dp.Loudness).Msg("Part loudness")
-		if utils.Float64Equals(first, 0) {
+		if !hasNormalPAFSValue(dp.Loudness) {
+			continue
+		}
+		if !hasNormalPAFSValue(first) {
 			first = dp.Loudness
 		} else {
 			dp.LoudnessGain = first - dp.Loudness
@@ -46,6 +57,10 @@ func (p *calcLoudness) Process(ctx context.Context, data *synthesizer.TTSData) e
 	}
 
 	return nil
+}
+
+func hasNormalPAFSValue(first float64) bool {
+	return first < -10 && first > -30 // normal loudness range
 }
 
 type calcLoudnessSSML struct {
@@ -64,25 +79,15 @@ func (p *calcLoudnessSSML) Process(ctx context.Context, data *synthesizer.TTSDat
 		return nil
 	}
 
-	var err error
-	var first float64
-	for _, dp := range data.SSMLParts {
-		for _, p := range dp.Parts {
-			p.Loudness, err = calculateLoudness(ctx, p.Audio)
-			if err != nil {
-				return fmt.Errorf("calc loudness: %w", err)
-			}
-			log.Ctx(ctx).Info().Float64("loudness", p.Loudness).Msg("Part loudness")
-			if utils.Float64Equals(first, 0) {
-				first = p.Loudness
-			} else {
-				p.LoudnessGain = first - p.Loudness
-				log.Ctx(ctx).Info().Float64("gain", p.LoudnessGain).Msg("Adjusting loudness")
-			}
-		}
-	}
+	return addLoudness(ctx, collectPartsFromSSML(data.SSMLParts))
+}
 
-	return nil
+func collectPartsFromSSML(ssmlParts []*synthesizer.TTSData) []*synthesizer.TTSDataPart {
+	var res []*synthesizer.TTSDataPart
+	for _, dp := range ssmlParts {
+		res = append(res, dp.Parts...)
+	}
+	return res
 }
 
 func calculateLoudness(ctx context.Context, wavData []byte) (float64, error) {
@@ -120,6 +125,9 @@ func calculateLoudness(ctx context.Context, wavData []byte) (float64, error) {
 	loud, err := st.GetLoudnessGlobal()
 	if err != nil {
 		return 0, fmt.Errorf("get loudness: %w", err)
+	}
+	if loud < -70 { // too quiet
+		loud = -70
 	}
 	return loud, nil
 }

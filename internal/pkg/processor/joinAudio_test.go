@@ -268,8 +268,13 @@ func getTestPauseSize(bt []byte, dur time.Duration) uint32 {
 
 func getWaveData(t *testing.T) []byte {
 	t.Helper()
-	res, err := os.ReadFile("../wav/_testdata/test.wav")
-	assert.Nil(t, err)
+	return getWaveDataWithName(t, "test.wav")
+}
+
+func getWaveDataWithName(t *testing.T, filename string) []byte {
+	t.Helper()
+	res, err := os.ReadFile("../wav/_testdata/" + filename)
+	require.Nil(t, err)
 	return res
 }
 

@@ -78,7 +78,7 @@ cache:
   maxTextLen: 80
 
 splitter:
-  maxChars: 50
+  maxChars: 200
 
 partRunner:
   workers: 1  
