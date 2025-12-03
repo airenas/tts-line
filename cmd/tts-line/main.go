@@ -200,6 +200,8 @@ func addProcessors(synt *synthesizer.MainWorker, sp *mongodb.SessionProvider, cf
 	if err != nil {
 		return errors.Wrap(err, "can't init suffix Loader")
 	}
+
+	synt.Add(processor.NewCalcLoudness())
 	synt.Add(processor.NewJoinAudio(suffixLoader))
 
 	pr, err = processor.NewConverter(cfg.GetString("audioConvert.url"))
@@ -291,6 +293,7 @@ func addSSMLProcessors(synt *synthesizer.MainWorker, sp *mongodb.SessionProvider
 	if err != nil {
 		return errors.Wrap(err, "can't init suffix Loader")
 	}
+	synt.AddSSML(processor.NewCalcLoudnessSSML())
 	synt.AddSSML(processor.NewJoinSSMLAudio(suffixLoader))
 
 	pr, err = processor.NewConverter(cfg.GetString("audioConvert.url"))
@@ -372,6 +375,7 @@ func addCustomProcessors(synt *synthesizer.MainWorker, sp *mongodb.SessionProvid
 	if err != nil {
 		return errors.Wrap(err, "can't init suffix Loader")
 	}
+	synt.Add(processor.NewCalcLoudness())
 	synt.Add(processor.NewJoinAudio(suffixLoader))
 
 	pr, err = processor.NewConverter(cfg.GetString("audioConvert.url"))

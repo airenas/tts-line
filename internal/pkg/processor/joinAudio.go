@@ -421,7 +421,7 @@ func joinSSML(ctx context.Context, data *synthesizer.TTSData, suffix []byte, max
 
 func makeVolumeChanges(ctx context.Context, part *synthesizer.TTSDataPart, startPos, endPos, skipSteps int, bytesPerSample uint16, step int) []*audio.VolChange {
 	var res []*audio.VolChange
-	rate := 0.0
+	rate := part.LoudnessGain
 	var last *audio.VolChange
 	for _, w := range part.Words {
 		from := (w.SynthesizedPos.From*step - skipSteps)
@@ -432,31 +432,72 @@ func makeVolumeChanges(ctx context.Context, part *synthesizer.TTSDataPart, start
 			d := w.SynthesizedPos.Durations[i]
 			to := from + d*step
 
-			if utils.Float64Equals(vc, rate) {
+			gain := vc + part.LoudnessGain
+
+			if utils.Float64Equals(gain, rate) {
 				if last != nil {
 					last.To = startPos + to*int(bytesPerSample)
 				}
-			} else if utils.Float64Equals(vc, 0) {
+			} else if utils.Float64Equals(gain, 0) {
 				last = nil
 			} else {
 				v := &audio.VolChange{
 					From: startPos + (from * int(bytesPerSample)),
 					To:   startPos + (to * int(bytesPerSample)),
-
-					Rate:      calcVolumeRate(vc),
-					StartRate: calcVolumeRate(rate),
-					EndRate:   calcVolumeRate(0),
+					Rate: calcVolumeRate(gain),
 				}
-				log.Ctx(ctx).Debug().Float64("change", calcVolumeRate(vc)).Int("from", v.From).Int("to", v.To).Msg("volume")
+				log.Ctx(ctx).Debug().Float64("change", calcVolumeRate(gain)).Int("from", v.From).Int("to", v.To).Msg("volume")
 				res = append(res, v)
-				if last != nil {
-					last.EndRate = v.StartRate
-				}
 				last = v
 			}
 			from = to
-			rate = vc
+			rate = gain
 		}
+	}
+	if !utils.Float64Equals(part.LoudnessGain, 0) {
+		// fill from startPos to endPos with part.LoudnessGain
+		gainMultiply := calcVolumeRate(part.LoudnessGain)
+		partRes := res
+		start := startPos
+		res = make([]*audio.VolChange, 0, len(partRes))
+		for _, v := range partRes {
+			if v.From > start {
+				res = append(res, &audio.VolChange{
+					From: start,
+					To:   v.From,
+					Rate: gainMultiply,
+				})
+			}
+			res = append(res, v)
+			start = v.To
+		}
+		if endPos > start {
+			res = append(res, &audio.VolChange{
+				From: start,
+				To:   endPos,
+				Rate: gainMultiply,
+			})
+		}
+	}
+	return fixStartEndRates(res, calcVolumeRate(part.LoudnessGain))
+}
+
+func fixStartEndRates(res []*audio.VolChange, defaultGain float64) []*audio.VolChange {
+	var prev *audio.VolChange
+	for _, v := range res {
+		if prev == nil {
+			v.StartRate = defaultGain
+		} else if prev.To < v.From {
+			prev.EndRate = defaultGain
+			v.StartRate = defaultGain
+		} else {
+			prev.EndRate = prev.Rate
+			v.StartRate = prev.Rate
+		}
+		prev = v
+	}
+	if prev != nil {
+		prev.EndRate = defaultGain
 	}
 	return res
 }

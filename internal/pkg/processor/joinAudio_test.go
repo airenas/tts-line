@@ -5,9 +5,11 @@ import (
 	"context"
 	"errors"
 	"os"
+	"reflect"
 	"testing"
 	"time"
 
+	"github.com/airenas/tts-line/internal/pkg/audio"
 	"github.com/airenas/tts-line/internal/pkg/service/api"
 	"github.com/airenas/tts-line/internal/pkg/synthesizer"
 	"github.com/airenas/tts-line/internal/pkg/test/mocks"
@@ -512,4 +514,43 @@ func Test_calcVolumeRate(t *testing.T) {
 			}
 		})
 	}
+}
+
+func Test_fixStartEndRates(t *testing.T) {
+	tests := []struct {
+		name        string
+		res         []*audio.VolChange
+		defaultGain float64
+		want        []*audio.VolChange
+	}{
+		{name: "nil", res: nil, defaultGain: 1.0, want: nil},
+		{name: "empty", res: []*audio.VolChange{}, defaultGain: 1.0, want: []*audio.VolChange{}},
+		{name: "one", res: []*audio.VolChange{{From: 1000, To: 2000, Rate: 1.5}}, defaultGain: 1.2,
+			want: []*audio.VolChange{{From: 1000, To: 2000, Rate: 1.5, StartRate: 1.2, EndRate: 1.2}}},
+		{name: "two in a row", res: []*audio.VolChange{{From: 1000, To: 2000, Rate: 1.5}, {From: 2000, To: 3000, Rate: 2}}, defaultGain: 1.2,
+			want: []*audio.VolChange{{From: 1000, To: 2000, Rate: 1.5, StartRate: 1.2, EndRate: 1.5},
+				{From: 2000, To: 3000, Rate: 2, StartRate: 1.5, EndRate: 1.2}}},
+		{name: "not in a row", res: []*audio.VolChange{{From: 1000, To: 2000, Rate: 1.5}, {From: 3000, To: 4000, Rate: 2}}, defaultGain: 1.2,
+			want: []*audio.VolChange{{From: 1000, To: 2000, Rate: 1.5, StartRate: 1.2, EndRate: 1.2},
+				{From: 3000, To: 4000, Rate: 2, StartRate: 1.2, EndRate: 1.2}}},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := fixStartEndRates(tt.res, tt.defaultGain)
+			if !reflect.DeepEqual(toNonPtrArray(got), toNonPtrArray(tt.want)) {
+				t.Errorf("fixStartEndRates() = %v, want %v", toNonPtrArray(got), toNonPtrArray(tt.want))
+			}
+		})
+	}
+}
+
+func toNonPtrArray(in []*audio.VolChange) []audio.VolChange {
+	if in == nil {
+		return nil
+	}
+	res := make([]audio.VolChange, 0, len(in))
+	for _, v := range in {
+		res = append(res, *v)
+	}
+	return res
 }
