@@ -100,8 +100,12 @@ func (wr *wavWriter) bytesPerSample() uint16 {
 }
 
 func join(ctx context.Context, parts []*synthesizer.TTSDataPart, suffix []byte, maxEdgeSilenceMilis int64) ([]byte, float64, uint32 /*sampleRate*/, error) {
+	ctx, span := utils.StartSpan(ctx, "joinAudio.join")
+	defer span.End()
+
 	res := &wavWriter{}
 	nextStartSil := 0
+	var volChanges []*audio.VolChange
 	for i, part := range parts {
 		decoded := part.Audio
 		res.init(decoded)
@@ -139,21 +143,32 @@ func join(ctx context.Context, parts []*synthesizer.TTSDataPart, suffix []byte, 
 			Shift:    -startSil,
 			Duration: calculateDurations(res.buf.Len()-lenBefore, res.sampleRate()*uint32(res.bitsPerSample())/uint32(8)),
 		}
+		vc := makeVolumeChanges(ctx, part, lenBefore, res.buf.Len(), startSkip, res.bytesPerSample(), part.Step)
+		if len(vc) > 0 {
+			volChanges = append(volChanges, vc...)
+		}
 	}
 	if res.size == 0 {
 		return nil, 0, 0, errors.New("no wav data")
 	}
+
 	if suffix != nil {
 		if err := appendWav(res, suffix, 0, 0); err != nil {
 			return nil, 0, 0, errors.Wrapf(err, "can't append suffix")
 		}
 	}
+
+	resBytes, err := audio.ChangeVolume(ctx, res.buf.Bytes(), volChanges, int(res.bytesPerSample()))
+	if err != nil {
+		return nil, 0, 0, fmt.Errorf("change volume: %w", err)
+	}
+
 	var bufRes bytes.Buffer
 	_, _ = bufRes.Write(res.header)
 
 	_, _ = bufRes.Write([]byte("data"))
 	_, _ = bufRes.Write(wav.SizeBytes(res.size))
-	_, _ = bufRes.Write(res.buf.Bytes())
+	_, _ = bufRes.Write(resBytes)
 	bitsRate := wav.GetBitsRateCalc(res.header)
 	if bitsRate == 0 {
 		return nil, 0, 0, errors.New("can't extract bits rate from header")
@@ -286,6 +301,9 @@ type nextWriteData struct {
 }
 
 func joinSSML(ctx context.Context, data *synthesizer.TTSData, suffix []byte, maxEdgeSilenceMillis int64) ([]byte, float64 /*len*/, uint32 /*sampleRate*/, error) {
+	ctx, span := utils.StartSpan(ctx, "joinSSML")
+	defer span.End()
+
 	res := &wavWriter{}
 	wd := &nextWriteData{}
 	wd.pause = time.Duration(0)
@@ -403,7 +421,7 @@ func joinSSML(ctx context.Context, data *synthesizer.TTSData, suffix []byte, max
 		}
 	}
 
-	resBytes, err := audio.ChangeVolume(res.buf.Bytes(), wd.volChanges, int(res.bytesPerSample()))
+	resBytes, err := audio.ChangeVolume(ctx, res.buf.Bytes(), wd.volChanges, int(res.bytesPerSample()))
 	if err != nil {
 		return nil, 0, 0, fmt.Errorf("change volume: %w", err)
 	}

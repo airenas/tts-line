@@ -45,7 +45,7 @@ func Test_ChangeVolume(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, gotErr := ChangeVolume(tt.b, tt.volChange, 2)
+			got, gotErr := ChangeVolume(t.Context(), tt.b, tt.volChange, 2)
 			if gotErr != nil {
 				if !tt.wantErr {
 					t.Errorf("changeVolume() failed: %v", gotErr)

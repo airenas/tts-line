@@ -1,8 +1,11 @@
 package audio
 
 import (
+	"context"
 	"fmt"
 	"math"
+
+	"github.com/airenas/tts-line/internal/pkg/utils"
 )
 
 type VolChange struct {
@@ -14,17 +17,21 @@ type VolChange struct {
 	EndRate   float64
 }
 
-func ChangeVolume(b []byte, volChange []*VolChange, bytesPerSample int) ([]byte, error) {
+func ChangeVolume(ctx context.Context, b []byte, volChange []*VolChange, bytesPerSample int) ([]byte, error) {
 	if len(volChange) == 0 {
 		return b, nil
 	}
+
+	_, span := utils.StartSpan(ctx, "audio.ChangeVolume")
+	defer span.End()
+
 	lb := len(b)
 	for _, vc := range volChange {
+		l := (vc.To - vc.From) / bytesPerSample
 		for i := vc.From; i < vc.To; i += bytesPerSample {
 			if (i + bytesPerSample) > lb {
 				return nil, fmt.Errorf("out of bounds volume change: %d + %d > %d", i, bytesPerSample, lb)
 			}
-			l := (vc.To - vc.From) / bytesPerSample
 			switch bytesPerSample {
 			case 2:
 				fade, isStart := defaultFader.Fade((i-vc.From)/bytesPerSample, l)
