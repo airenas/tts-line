@@ -6,6 +6,7 @@ import (
 
 	"github.com/airenas/tts-line/internal/pkg/service/api"
 	"github.com/airenas/tts-line/internal/pkg/synthesizer"
+	"github.com/airenas/tts-line/internal/pkg/wav"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -134,4 +135,48 @@ func TestCalcLoudnessSSML_Skip(t *testing.T) {
 	assert.Nil(t, err)
 	assert.InDelta(t, 0, d2.Parts[0].Loudness, 1)
 	assert.InDelta(t, 0, d2.Parts[0].LoudnessGain, 0.1)
+}
+
+func BenchmarkCalculateLoudness(b *testing.B) {
+	data := testMakeLongAudio(b)
+	b.ReportAllocs()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		_, err := calculateLoudness(b.Context(), data)
+		if err != nil {
+			b.Errorf("calculateLoudness() error = %v", err)
+		}
+	}
+}
+
+func BenchmarkCalculateLoudnessFloat(b *testing.B) {
+	data := testMakeLongAudio(b)
+	b.ReportAllocs()
+	b.ResetTimer()
+
+	for i := 0; i < b.N; i++ {
+		_, err := calculateLoudnessFloat(b.Context(), data)
+		if err != nil {
+			b.Errorf("calcLoudness() error = %v", err)
+		}
+	}
+}
+
+func testMakeLongAudio(b *testing.B) []byte {
+	b.Helper()
+	base := getWaveDataWithName(b, "sine_1s.wav")
+	header := wav.TakeHeader(base)
+	data := wav.TakeData(base)
+
+	rep := 100
+	res := make([]byte, 0, len(header)+8+len(data)*rep)
+	res = append(res, header...)
+	res = append(res, []byte("data")...)
+	dataSize := wav.SizeBytes(uint32(len(data) * rep))
+	res = append(res, dataSize...)
+
+	for i := 0; i < rep; i++ {
+		res = append(res, data...)
+	}
+	return res
 }

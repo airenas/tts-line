@@ -181,21 +181,70 @@ func calculateLoudness(ctx context.Context, wavData []byte) (float64, error) {
 		return 0, fmt.Errorf("unsupported bytes per sample %d", bytesPerSample)
 	}
 
-	data := wav.TakeData(wavData)
-	audioInt16 := make([]int16, len(data)/2)
-	for i := 0; i < len(audioInt16); i++ {
-		audioInt16[i] = int16(data[2*i]) | int16(data[2*i+1])<<8
-	}
-
+	buffLen := 8096
+	audioInt16 := make([]int16, 0, buffLen)
 	st := ebur128.NewState(nch, sr, ebur128.LoudnessGlobalMomentary)
 	defer st.Close()
+	data := wav.TakeData(wavData)
+	for i := 0; i < len(data); i += 2 {
+		v := int16(data[i]) | int16(data[i+1])<<8
+		audioInt16 = append(audioInt16, v)
+		if len(audioInt16) == buffLen {
+			if err := st.AddShort(audioInt16); err != nil {
+				return 0, fmt.Errorf("add short: %w", err)
+			}
+			audioInt16 = audioInt16[:0]
+		}
+	}
+	if len(audioInt16) > 0 {
+		if err := st.AddShort(audioInt16); err != nil {
+			return 0, fmt.Errorf("add short: %w", err)
+		}
+	}
 
-	err := st.AddShort(audioInt16)
+	loud, err := st.GetLoudnessGlobal()
+	if err != nil {
+		return 0, fmt.Errorf("get loudness: %w", err)
+	}
+	if loud < -70 { // too quiet
+		loud = -70
+	}
+	return loud, nil
+}
+
+func calculateLoudnessFloat(ctx context.Context, wavData []byte) (float64, error) {
+	_, span := utils.StartSpan(ctx, "calcLoudness.calculateLoudness")
+	defer span.End()
+
+	if !wav.IsValid(wavData) {
+		return 0, errors.New("no valid audio wave data")
+	}
+	header := wav.TakeHeader(wavData)
+	if header == nil {
+		return 0, errors.New("no valid wave header")
+	}
+	nch := int(wav.GetChannels(header))
+	sr := int(wav.GetSampleRate(header))
+	bytesPerSample := int(wav.GetBitsPerSample(header)) / 8
+	if bytesPerSample != 2 {
+		return 0, fmt.Errorf("unsupported bytes per sample %d", bytesPerSample)
+	}
+
+	data := wav.TakeData(wavData)
+	audioArray := make([]float64, len(data)/2)
+	for i := 0; i < len(audioArray); i++ {
+		audioArray[i] = float64(int16(data[2*i])|int16(data[2*i+1])<<8) / 32768.0
+	}
+
+	st := ebur128.NewState(nch, sr, ebur128.LoudnessShortTerm)
+	defer st.Close()
+
+	err := st.AddDouble(audioArray)
 	if err != nil {
 		return 0, fmt.Errorf("add short: %w", err)
 	}
 
-	loud, err := st.GetLoudnessGlobal()
+	loud, err := st.GetLoudnessShortTerm()
 	if err != nil {
 		return 0, fmt.Errorf("get loudness: %w", err)
 	}

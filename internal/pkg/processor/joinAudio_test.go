@@ -271,10 +271,10 @@ func getWaveData(t *testing.T) []byte {
 	return getWaveDataWithName(t, "test.wav")
 }
 
-func getWaveDataWithName(t *testing.T, filename string) []byte {
-	t.Helper()
+func getWaveDataWithName(tb testing.TB, filename string) []byte {
+	tb.Helper()
 	res, err := os.ReadFile("../wav/_testdata/" + filename)
-	require.Nil(t, err)
+	require.Nil(tb, err)
 	return res
 }
 
