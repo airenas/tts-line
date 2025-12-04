@@ -18,7 +18,7 @@ RUN git clone --branch v1.2.6 --single-branch https://github.com/jiixyj/libebur1
 ENV CGO_ENABLED=1
 ENV CGO_CFLAGS="-I/usr/local/include"
 ENV CGO_LDFLAGS="-L/usr/local/lib -lebur128"
-
+ENV GOAMD64=v3
 
 COPY . /go/src
 
