@@ -11,7 +11,7 @@ RUN apk add build-base cmake git pkgconfig
 RUN git clone --branch v1.2.6 --single-branch https://github.com/jiixyj/libebur128.git \
     && mkdir -p libebur128/build \
     && cd libebur128/build \
-    && cmake .. -DBUILD_SHARED_LIBS=OFF \
+    && cmake .. -DBUILD_SHARED_LIBS=OFF -DCMAKE_POLICY_VERSION_MINIMUM=3.5 \
     && make \
     && make install
 
