@@ -10,7 +10,7 @@ import (
 )
 
 func TestCalcLoudness(t *testing.T) {
-	pr := NewCalcLoudness()
+	pr := NewCalcLoudness(2)
 	d := synthesizer.TTSData{Input: &api.TTSRequestConfig{OutputFormat: api.AudioMP3}}
 	strA := getWaveDataWithName(t, "sine_1s.wav")
 	d.Parts = []*synthesizer.TTSDataPart{{Audio: strA}, {Audio: strA}}
@@ -21,7 +21,7 @@ func TestCalcLoudness(t *testing.T) {
 }
 
 func TestCalcLoudness_Skip(t *testing.T) {
-	pr := NewCalcLoudness()
+	pr := NewCalcLoudness(2)
 	d := synthesizer.TTSData{Input: &api.TTSRequestConfig{OutputFormat: api.AudioNone}}
 	strA := getWaveDataWithName(t, "sine_1s.wav")
 	d.Parts = []*synthesizer.TTSDataPart{{Audio: strA}, {Audio: strA}}
@@ -31,7 +31,7 @@ func TestCalcLoudness_Skip(t *testing.T) {
 	assert.InDelta(t, 0.0, d.Parts[0].LoudnessGain, 0.001)
 }
 func TestCalcLoudness_SkipOne(t *testing.T) {
-	pr := NewCalcLoudness()
+	pr := NewCalcLoudness(2)
 	d := synthesizer.TTSData{Input: &api.TTSRequestConfig{OutputFormat: api.AudioMP3}}
 	strA := getWaveDataWithName(t, "sine_1s.wav")
 	d.Parts = []*synthesizer.TTSDataPart{{Audio: strA}}
@@ -43,7 +43,7 @@ func TestCalcLoudness_SkipOne(t *testing.T) {
 
 func TestCalcLoudness_Several(t *testing.T) {
 	initTestJSON(t)
-	pr := NewCalcLoudness()
+	pr := NewCalcLoudness(2)
 	d := synthesizer.TTSData{Input: &api.TTSRequestConfig{OutputFormat: api.AudioMP3}}
 	d.Parts = []*synthesizer.TTSDataPart{{Audio: getWaveDataWithName(t, "sine_1s.wav")}, {Audio: getWaveDataWithName(t, "sine_louder_1s.wav")}}
 	err := pr.Process(context.TODO(), &d)
@@ -56,7 +56,7 @@ func TestCalcLoudness_Several(t *testing.T) {
 
 func TestCalcLoudness_Several_Increase(t *testing.T) {
 	initTestJSON(t)
-	pr := NewCalcLoudness()
+	pr := NewCalcLoudness(2)
 	d := synthesizer.TTSData{Input: &api.TTSRequestConfig{OutputFormat: api.AudioMP3}}
 	d.Parts = []*synthesizer.TTSDataPart{{Audio: getWaveDataWithName(t, "sine_louder_1s.wav")}, {Audio: getWaveDataWithName(t, "sine_1s.wav")}}
 	err := pr.Process(context.TODO(), &d)
@@ -69,7 +69,7 @@ func TestCalcLoudness_Several_Increase(t *testing.T) {
 
 func TestCalcLoudness_SkipZeros(t *testing.T) {
 	initTestJSON(t)
-	pr := NewCalcLoudness()
+	pr := NewCalcLoudness(2)
 	d := synthesizer.TTSData{Input: &api.TTSRequestConfig{OutputFormat: api.AudioMP3}}
 	d.Parts = []*synthesizer.TTSDataPart{
 		{Audio: getWaveDataWithName(t, "test.wav")},
@@ -86,7 +86,7 @@ func TestCalcLoudness_SkipZeros(t *testing.T) {
 }
 
 func TestCalcLoudness_WavFail(t *testing.T) {
-	pr := NewCalcLoudness()
+	pr := NewCalcLoudness(2)
 	d := synthesizer.TTSData{Input: &api.TTSRequestConfig{OutputFormat: api.AudioMP3}}
 	strA := getTestEncAudio(t)
 	d.Parts = []*synthesizer.TTSDataPart{{Audio: strA}, {Audio: []byte("aaa")}}
@@ -96,7 +96,7 @@ func TestCalcLoudness_WavFail(t *testing.T) {
 
 func TestCalcLoudnessSSML_Several(t *testing.T) {
 	initTestJSON(t)
-	pr := NewCalcLoudnessSSML()
+	pr := NewCalcLoudnessSSML(2)
 	d1 := synthesizer.TTSData{Input: &api.TTSRequestConfig{OutputFormat: api.AudioMP3}}
 	d1.Parts = []*synthesizer.TTSDataPart{{Audio: getWaveDataWithName(t, "sine_louder_1s.wav")}, {Audio: getWaveDataWithName(t, "sine_1s.wav")}}
 	d2 := synthesizer.TTSData{Input: &api.TTSRequestConfig{OutputFormat: api.AudioMP3}}
@@ -120,7 +120,7 @@ func TestCalcLoudnessSSML_Several(t *testing.T) {
 
 func TestCalcLoudnessSSML_Skip(t *testing.T) {
 	initTestJSON(t)
-	pr := NewCalcLoudnessSSML()
+	pr := NewCalcLoudnessSSML(2)
 	d1 := synthesizer.TTSData{Input: &api.TTSRequestConfig{OutputFormat: api.AudioMP3}}
 	d1.Parts = []*synthesizer.TTSDataPart{}
 	d2 := synthesizer.TTSData{Input: &api.TTSRequestConfig{OutputFormat: api.AudioMP3}}
