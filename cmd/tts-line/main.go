@@ -297,7 +297,7 @@ func addSSMLProcessors(synt *synthesizer.MainWorker, sp *mongodb.SessionProvider
 	}
 	if cfg.GetBool("loudness.adjust") {
 		synt.AddSSML(processor.NewCalcLoudnessSSML(cfg.GetInt("loudness.workers")))
-	}	
+	}
 	synt.AddSSML(processor.NewJoinSSMLAudio(suffixLoader))
 
 	pr, err = processor.NewConverter(cfg.GetString("audioConvert.url"))
@@ -382,7 +382,7 @@ func addCustomProcessors(synt *synthesizer.MainWorker, sp *mongodb.SessionProvid
 
 	if cfg.GetBool("loudness.adjust") {
 		synt.Add(processor.NewCalcLoudness(cfg.GetInt("loudness.workers")))
-	}	
+	}
 	synt.Add(processor.NewJoinAudio(suffixLoader))
 
 	pr, err = processor.NewConverter(cfg.GetString("audioConvert.url"))
