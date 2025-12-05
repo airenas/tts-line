@@ -370,16 +370,6 @@ func joinSSML(ctx context.Context, data *synthesizer.TTSData, suffix []byte, max
 			if len(vc) > 0 {
 				wd.volChanges = append(wd.volChanges, vc...)
 			}
-
-			// volumeChange := calcVolumeChange(wd.part.Cfg.Prosodies)
-			// if !utils.Float64Equals(volumeChange, 0) {
-			// 	log.Ctx(ctx).Warn().Float64("change", volumeChange).Int("from", lenBefore).Int("to", res.buf.Len()).Msg("volume")
-			// 	wd.volChanges = append(wd.volChanges, volChange{
-			// 		from:   lenBefore,
-			// 		to:     res.buf.Len(),
-			// 		change: calcVolumeRate(volumeChange),
-			// 	})
-			// }
 		}
 		if pause > 0 {
 			if err := appendPause(ctx, res, pause); err != nil {

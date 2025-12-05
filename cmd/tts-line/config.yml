@@ -83,6 +83,10 @@ splitter:
 partRunner:
   workers: 1  
 
+loudness:
+  adjust: true
+  workers: 3 
+
 suffixLoader:
   path: ./ 
 

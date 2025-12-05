@@ -37,6 +37,10 @@ acousticModel:
 # filer:
 #   dir: 
 
+loudness:
+  adjust: true
+  workers: 4
+
 cache:
   duration: 20m
 
