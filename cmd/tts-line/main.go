@@ -191,6 +191,12 @@ func addProcessors(synt *synthesizer.MainWorker, sp *mongodb.SessionProvider, cf
 	}
 	synt.Add(pr)
 
+	pr, err = processor.NewNER()
+	if err != nil {
+		return fmt.Errorf("can't init ner: %w", err)
+	}
+	synt.Add(pr)
+
 	synt.Add(processor.NewSplitter(cfg.GetInt("splitter.maxChars")))
 
 	partRunner := synthesizer.NewPartRunner(cfg.GetInt("partRunner.workers"))
@@ -284,6 +290,12 @@ func addSSMLProcessors(synt *synthesizer.MainWorker, sp *mongodb.SessionProvider
 	}
 	processors = append(processors, pr)
 
+	pr, err = processor.NewNER()
+	if err != nil {
+		return fmt.Errorf("can't init ner: %w", err)
+	}
+	processors = append(processors, pr)
+
 	processors = append(processors, processor.NewSplitter(cfg.GetInt("splitter.maxChars")))
 
 	partRunner := synthesizer.NewPartRunner(cfg.GetInt("partRunner.workers"))
@@ -367,6 +379,12 @@ func addCustomProcessors(synt *synthesizer.MainWorker, sp *mongodb.SessionProvid
 	pr, err = processor.NewTransliterator(cfg.GetString("transliterator.url"))
 	if err != nil {
 		return fmt.Errorf("can't init transliterator: %w", err)
+	}
+	synt.Add(pr)
+
+	pr, err = processor.NewNER()
+	if err != nil {
+		return fmt.Errorf("can't init ner: %w", err)
 	}
 	synt.Add(pr)
 
