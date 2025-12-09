@@ -66,7 +66,9 @@ sequenceDiagram
     tts ->>+ Transliterator: 
     Transliterator -->>- tts: 
 
-    par Parallel Processing
+    tts ->> tts: Do minimal NER
+
+    par Parallel Processing for each batch
         tts ->>+ obscene: 
         obscene -->>- tts: 
 
@@ -81,16 +83,20 @@ sequenceDiagram
 
         tts ->>+ Transcriber: 
         Transcriber -->>- tts: 
+
+        tts ->>+ amVoc: 
+        amVoc ->>+ AM: 
+        AM -->>- amVoc: 
+
+        amVoc ->>+ Vocoder: 
+        Vocoder -->>- amVoc: 
+        amVoc -->>- tts: 
     end
 
-    tts ->>+ amVoc: 
-    amVoc ->>+ AM: 
-    AM -->>- amVoc: 
+    tts ->> tts: Calculate batch volume/Unify volume
+    tts ->> tts: Join audio batches
 
-    amVoc ->>+ Vocoder: 
-    Vocoder -->>- amVoc: 
-    amVoc -->>- tts: 
-
+    
     tts ->>+ converter: 
     converter -->>- tts: 
 
