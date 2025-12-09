@@ -137,7 +137,7 @@ services:
 
   transliterator:
     container_name: transliterator
-    image: intelektikalt/transliterator:0.2.0
+    image: intelektikalt/transliterator:${TRANSLITERATOR_VERSION}
     restart: on-failure
     ports:
       - "8022:3000"   
