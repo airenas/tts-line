@@ -213,3 +213,25 @@ func Test_hasUserTranscriptions(t *testing.T) {
 		})
 	}
 }
+
+func Test_needAbbrProcessing(t *testing.T) {
+	tests := []struct {
+		name string
+		w    *synthesizer.ProcessedWord
+		want bool
+	}{
+		{name: "not a word", w: &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Separator: ","}}, want: false},
+		{name: "regular word", w: &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Word: "olia"}}, want: false},
+		{name: "one letter", w: &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Word: "o"}, NERType: synthesizer.NERSingleLetter}, want: true},
+		{name: "Accented", w: &synthesizer.ProcessedWord{UserAccent: 301, Tagged: synthesizer.TaggedWord{Word: "o"}, NERType: synthesizer.NERSingleLetter}, want: false},
+		{name: "Obscene", w: &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Word: "o"}, NERType: synthesizer.NERRegular, Obscene: true}, want: true},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := needAbbrProcessing(tt.w)
+			if got != tt.want {
+				t.Errorf("needAbbrProcessing() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}

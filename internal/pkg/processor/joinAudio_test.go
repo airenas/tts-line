@@ -549,11 +549,11 @@ func Test_fixStartEndRates(t *testing.T) {
 	}
 }
 
-func toNonPtrArray(in []*audio.VolChange) []audio.VolChange {
+func toNonPtrArray[T any](in []*T) []T {
 	if in == nil {
 		return nil
 	}
-	res := make([]audio.VolChange, 0, len(in))
+	res := make([]T, 0, len(in))
 	for _, v := range in {
 		res = append(res, *v)
 	}

@@ -1,3 +1,4 @@
+//go:generate stringer -type=NEREnum
 package synthesizer
 
 import (
@@ -101,6 +102,7 @@ type ProcessedWord struct {
 	LastEmphasisWord  bool
 	TextPart          *TTSTextPart
 	SynthesizedPos    *SynthesizedPos
+	NERType           NEREnum
 }
 
 // CliticAccentEnum contains types of possible clitics
@@ -115,6 +117,16 @@ const (
 
 	//CliticsCustom - custom clitic type
 	CliticsCustom
+)
+
+// NEREnum
+type NEREnum int
+
+const (
+	//NERRegular - regular word
+	NERRegular NEREnum = iota
+	//NERSingleLetter - single letter word
+	NERSingleLetter
 )
 
 // Clitic structure
