@@ -10,6 +10,7 @@ import (
 
 	"github.com/airenas/tts-line/internal/pkg/accent"
 	"github.com/airenas/tts-line/internal/pkg/utils"
+	"github.com/rs/zerolog/log"
 )
 
 type startFunc func(xml.StartElement, *wrkData) error
@@ -55,6 +56,9 @@ type wrkData struct {
 
 	lastWAcc, lastWSyll, lastWUser string
 
+	lastInterpretAs       InterpretAsType
+	lastInterpretAsDetail InterpretAsDetailType
+
 	lastText *Text
 
 	res []Part
@@ -62,35 +66,97 @@ type wrkData struct {
 	emphasisCount int
 }
 
+func (w *wrkData) validateNew(key string) error {
+	if w.allowedInside(key) {
+		return nil
+	}
+	lt := w.getLastTag()
+	if lt == "" {
+		return fmt.Errorf("not allowed tag <%s> as the root element", key)
+	}
+	return fmt.Errorf("not allowed tag <%s> inside <%s>", key, lt)
+}
+
+func (w *wrkData) allowedInside(key string) bool {
+	lastTag := w.getLastTag()
+	if lastTagMap, ok := allowedInside[key]; ok {
+		_, ok := lastTagMap[lastTag]
+		return ok
+	}
+	return false
+}
+
+func (w *wrkData) getLastTag() string {
+	if len(w.lastTag) == 0 {
+		return ""
+	}
+	return w.lastTag[len(w.lastTag)-1]
+}
+
 var startFunctions map[string]startFunc
 var endFunctions map[string]endFunc
+var allowedInside map[string]map[string]struct{}
 var durationStrs map[string]time.Duration
 var rateStrs map[string]float64
 var volumeStrs map[string]float64
 var pitchStrs map[string]float64
 var emphasisLevels map[string]EmphasisType
+var interpretAsTypes map[string]InterpretAsType
+var interpretAsDetailTypes map[string]InterpretAsDetailType
 var pDuration time.Duration
+
+const (
+	TagSpeak    = "speak"
+	TagP        = "p"
+	TagBreak    = "break"
+	TagVoice    = "voice"
+	TagProsody  = "prosody"
+	TagWord     = "intelektika:w"
+	TagLang     = "lang"
+	TagEmphasis = "emphasis"
+	TagSayAs    = "say-as"
+)
 
 func init() {
 	startFunctions = make(map[string]startFunc)
 	endFunctions = make(map[string]endFunc)
+	allowedInside = make(map[string]map[string]struct{})
 
-	startFunctions["speak"] = startSpeak
-	endFunctions["speak"] = endSpeak
-	startFunctions["p"] = startP
-	endFunctions["p"] = endP
-	startFunctions["break"] = startBreak
-	endFunctions["break"] = endBreak
-	startFunctions["voice"] = startVoice
-	endFunctions["voice"] = endVoice
-	startFunctions["prosody"] = startProsody
-	endFunctions["prosody"] = endProsody
-	startFunctions["intelektika:w"] = startWord
-	endFunctions["intelektika:w"] = endWord
-	startFunctions["lang"] = startLang
-	endFunctions["lang"] = endLang
-	startFunctions["emphasis"] = startEmphasis
-	endFunctions["emphasis"] = endEmphasis
+	startFunctions[TagSpeak] = startSpeak
+	endFunctions[TagSpeak] = endSpeak
+	allowedInside[TagSpeak] = makeTagMap("")
+
+	startFunctions[TagP] = startP
+	endFunctions[TagP] = endP
+	allowedInside[TagP] = makeTagMap(TagSpeak, TagEmphasis, TagProsody, TagVoice, TagP, TagLang)
+
+	startFunctions[TagBreak] = startBreak
+	endFunctions[TagBreak] = endBreak
+	allowedInside[TagBreak] = makeTagMap(TagSpeak, TagEmphasis, TagProsody, TagVoice, TagP, TagLang)
+
+	startFunctions[TagVoice] = startVoice
+	endFunctions[TagVoice] = endVoice
+	allowedInside[TagVoice] = makeTagMap(TagSpeak, TagEmphasis, TagProsody, TagVoice, TagP, TagLang)
+
+	startFunctions[TagProsody] = startProsody
+	endFunctions[TagProsody] = endProsody
+	allowedInside[TagProsody] = makeTagMap(TagSpeak, TagEmphasis, TagProsody, TagVoice, TagP, TagLang)
+
+	startFunctions[TagWord] = startWord
+	endFunctions[TagWord] = endWord
+	allowedInside[TagWord] = makeTagMap(TagSpeak, TagEmphasis, TagProsody, TagVoice, TagP, TagLang)
+
+	startFunctions[TagLang] = startLang
+	endFunctions[TagLang] = endLang
+	allowedInside[TagLang] = makeTagMap(TagSpeak, TagEmphasis, TagProsody, TagVoice, TagP, TagLang)
+
+	startFunctions[TagEmphasis] = startEmphasis
+	endFunctions[TagEmphasis] = endEmphasis
+	allowedInside[TagEmphasis] = makeTagMap(TagSpeak, TagEmphasis, TagProsody, TagVoice, TagP, TagLang)
+
+	startFunctions[TagSayAs] = startSayAs
+	endFunctions[TagSayAs] = endSayAs
+	allowedInside[TagSayAs] = makeTagMap(TagSpeak, TagEmphasis, TagProsody, TagVoice, TagP, TagLang)
 
 	durationStrs = map[string]time.Duration{"none": 0, "x-weak": 250 * time.Millisecond,
 		"weak": 500 * time.Millisecond, "medium": 750 * time.Millisecond,
@@ -102,6 +168,16 @@ func init() {
 	pitchStrs = map[string]float64{"x-low": 0.55, "low": 0.8, "medium": 1, "high": 1.2, "x-high": 1.45, "default": 1}
 	emphasisLevels = map[string]EmphasisType{"reduced": EmphasisTypeReduced, "none": EmphasisTypeNone,
 		"moderate": EmphasisTypeModerate, "strong": EmphasisTypeStrong}
+	interpretAsTypes = map[string]InterpretAsType{InterpretAsTypeCharacters.String(): InterpretAsTypeCharacters}
+	interpretAsDetailTypes = map[string]InterpretAsDetailType{InterpretAsDetailTypeReadSymbols.String(): InterpretAsDetailTypeReadSymbols}
+}
+
+func makeTagMap(s ...string) map[string]struct{} {
+	res := make(map[string]struct{})
+	for _, v := range s {
+		res[v] = struct{}{}
+	}
+	return res
 }
 
 // Parse parses xml into synthesis structure
@@ -134,6 +210,9 @@ func Parse(r io.Reader, def *Text, voiceFunc func(string) (string, error)) ([]Pa
 			f, ok := startFunctions[key]
 			if !ok {
 				return nil, &ErrParse{Pos: d.InputOffset(), Msg: fmt.Sprintf("unknown tag <%s>", key)}
+			}
+			if err := wrk.validateNew(key); err != nil {
+				return nil, &ErrParse{Pos: d.InputOffset(), Msg: err.Error()}
 			}
 			if err := f(se, wrk); err != nil {
 				return nil, &ErrParse{Pos: d.InputOffset(), Msg: err.Error()}
@@ -186,8 +265,8 @@ func makeTextPart(se xml.CharData, wrk *wrkData) error {
 		if len(wrk.lastTag) == 0 {
 			return fmt.Errorf("data after </speak>")
 		}
-		lt := wrk.lastTag[len(wrk.lastTag)-1]
-		if lt == "break" {
+		lt := wrk.getLastTag()
+		if lt == TagBreak {
 			return fmt.Errorf("data in <break>")
 		}
 		tp := TextPart{Text: s, Language: wrk.languages.peek()}
@@ -197,6 +276,8 @@ func makeTextPart(se xml.CharData, wrk *wrkData) error {
 		}
 		tp.Syllables = wrk.lastWSyll
 		tp.UserOEPal = wrk.lastWUser
+		tp.InterpretAs = wrk.lastInterpretAs
+		tp.InterpretAsDetail = wrk.lastInterpretAsDetail
 		if wrk.lastText != nil {
 			wrk.lastText.Texts = append(wrk.lastText.Texts, tp)
 		} else {
@@ -413,6 +494,16 @@ func startWord(se xml.StartElement, wrk *wrkData) error {
 	return nil
 }
 
+func endWord(se xml.EndElement, wrk *wrkData) error {
+	if wrk.speakTagCount != 1 {
+		return fmt.Errorf("no </speak>")
+	}
+	if wrk.lastWAcc != "" {
+		return fmt.Errorf("no word in <intelektika:w>")
+	}
+	return nil
+}
+
 func startLang(se xml.StartElement, wrk *wrkData) error {
 	if wrk.speakTagCount != 1 {
 		return fmt.Errorf("no <speak>")
@@ -473,6 +564,29 @@ func endEmphasis(se xml.EndElement, wrk *wrkData) error {
 	return nil
 }
 
+func startSayAs(se xml.StartElement, wrk *wrkData) error {
+	interpretAsStr := getAttr(se, "interpret-as")
+	interpretAs, ok := interpretAsTypes[interpretAsStr]
+	if !ok {
+		return fmt.Errorf("wrong <say-as>:interpret-as='%s'", interpretAsStr)
+	}
+	detailStr := getAttr(se, "detail")
+	detail, ok := interpretAsDetailTypes[detailStr]
+	if !ok && detailStr != "" {
+		log.Warn().Str("value", detailStr).Msg("Unknown value in <say-as>:detail")
+		return fmt.Errorf("wrong <say-as>:detail='%s'", detailStr)
+	}
+	wrk.lastInterpretAs = interpretAs
+	wrk.lastInterpretAsDetail = detail
+	return nil
+}
+
+func endSayAs(se xml.EndElement, wrk *wrkData) error {
+	wrk.lastInterpretAs = InterpretAsTypeUnset
+	wrk.lastInterpretAsDetail = InterpretAsDetailTypeUnset
+	return nil
+}
+
 func clearUserOE(s string) string {
 	r := strings.NewReplacer("'", "", "*", "")
 	return r.Replace(s)
@@ -484,16 +598,6 @@ func clearSylls(s string) string {
 
 func okAccentedWord(a string) bool {
 	return a != "" && len(a) < 50 && accent.IsWordOrWithAccent(a)
-}
-
-func endWord(se xml.EndElement, wrk *wrkData) error {
-	if wrk.speakTagCount != 1 {
-		return fmt.Errorf("no </speak>")
-	}
-	if wrk.lastWAcc != "" {
-		return fmt.Errorf("no word in <intelektika:w>")
-	}
-	return nil
 }
 
 func getSpeed(str string) (float64, error) {

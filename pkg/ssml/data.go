@@ -1,3 +1,4 @@
+//go:generate stringer -type=InterpretAsType,InterpretAsDetailType -linecomment=true
 package ssml
 
 import "time"
@@ -40,6 +41,20 @@ const (
 	EmphasisTypeStrong
 )
 
+type InterpretAsType int
+
+const (
+	InterpretAsTypeUnset      InterpretAsType = iota // unset
+	InterpretAsTypeCharacters                        // characters
+)
+
+type InterpretAsDetailType int
+
+const (
+	InterpretAsDetailTypeUnset       InterpretAsDetailType = iota // unset
+	InterpretAsDetailTypeReadSymbols                              // read-symbols
+)
+
 type Prosody struct {
 	Rate     float64
 	Volume   float64 // in dB, if silent then -1000
@@ -62,9 +77,11 @@ func IsPause(p Part) bool {
 
 // TextPart represents some part of text
 type TextPart struct {
-	Text      string
-	Language  string
-	Accented  string
-	Syllables string
-	UserOEPal string // long/short OE and palatalization model
+	Text              string
+	Language          string
+	Accented          string
+	Syllables         string
+	UserOEPal         string // long/short OE and palatalization model
+	InterpretAs       InterpretAsType
+	InterpretAsDetail InterpretAsDetailType
 }
