@@ -82,6 +82,27 @@ func TestParse(t *testing.T) {
 			&Text{Voice: "aa", Texts: []TextPart{{Language: "en", Text: "olia1"}}, Prosodies: []*Prosody{{Rate: 1}}}},
 			wantErr: false},
 		//////////////////////////////////////////////////////////////////////////////////////////
+		/// say-as tests
+		//////////////////////////////////////////////////////////////////////////////////////////
+		{name: "say-as", xml: `<speak><say-as interpret-as="characters">olia1</say-as></speak>`, want: []Part{
+			&Text{Voice: "aa", Texts: []TextPart{{Language: "", Text: "olia1", InterpretAs: InterpretAsTypeCharacters}}}},
+			wantErr: false},
+		{name: "say-as fail", xml: `<speak><say-as>olia1</say-as></speak>`, want: nil, wantErr: true},
+		{name: "unsupported say-as interpret-as fail", xml: `<speak><say-as interpret-as="olia"> olia1</say-as></speak>`, want: nil, wantErr: true},
+
+		{name: "say-as inside prosody", xml: `<speak lang="en"><prosody rate="100%">haha <say-as interpret-as="characters">olia1</say-as></prosody></speak>`, want: []Part{
+			&Text{Voice: "aa", Texts: []TextPart{{Language: "en", Text: "haha"}, {Language: "en", Text: "olia1", InterpretAs: InterpretAsTypeCharacters}}, Prosodies: []*Prosody{{Rate: 1}}}},
+			wantErr: false},
+		{name: "say-as with detaails", xml: `<speak lang="en">haha <say-as interpret-as="characters" detail="read-symbols">olia1</say-as></speak>`, want: []Part{
+			&Text{Voice: "aa", Texts: []TextPart{{Language: "en", Text: "haha"}, {Language: "en", Text: "olia1", InterpretAs: InterpretAsTypeCharacters, InterpretAsDetail: InterpretAsDetailTypeReadSymbols}}}},
+			wantErr: false},
+		{name: "say-as inside", xml: `<speak lang="en">haha <say-as interpret-as="characters" detail="read-symbols">olia1</say-as> ok?</speak>`, want: []Part{
+			&Text{Voice: "aa", Texts: []TextPart{{Language: "en", Text: "haha"},
+				{Language: "en", Text: "olia1", InterpretAs: InterpretAsTypeCharacters, InterpretAsDetail: InterpretAsDetailTypeReadSymbols},
+				{Language: "en", Text: "ok?"},			
+			}}},
+			wantErr: false},
+		//////////////////////////////////////////////////////////////////////////////////////////
 		/// emphasis tests
 		//////////////////////////////////////////////////////////////////////////////////////////
 		{name: "emphasis", xml: `<speak><emphasis level="strong">olia1</emphasis>olia2</speak>`, want: []Part{
