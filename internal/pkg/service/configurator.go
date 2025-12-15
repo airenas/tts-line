@@ -159,6 +159,12 @@ func (c *TTSConfigutaror) Configure(ctx context.Context, r *http.Request, inText
 	if err != nil {
 		return nil, err
 	}
+	res.SymbolMode, err = getSymbolMode(inText.SymbolMode)
+	if err != nil {
+		return nil, err
+	}
+	res.SelectedSymbols = inText.SelectedSymbols
+	
 	if strings.HasPrefix(res.Text, "<speak") || inText.TextType == "ssml" {
 		if c.noSSML {
 			return nil, errors.New("SSML not allowed")
@@ -173,6 +179,15 @@ func (c *TTSConfigutaror) Configure(ctx context.Context, r *http.Request, inText
 		}
 	}
 	return res, nil
+}
+
+func getSymbolMode(symbolMode api.SymbolMode) (api.SymbolMode, error) {
+	for _, m := range [...]api.SymbolMode{api.SymbolModeNone, api.SymbolModeRead, api.SymbolModeReadSelected} {
+		if symbolMode == m {
+			return m, nil
+		}
+	}
+	return api.SymbolModeNone, errors.Errorf("unknown symbol mode '%s'", symbolMode)
 }
 
 func getMaxEdgeSilence(value *int64) (int64, error) {

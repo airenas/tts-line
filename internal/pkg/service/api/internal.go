@@ -77,4 +77,7 @@ type TTSRequestConfig struct {
 	AudioSuffix          string
 	SpeechMarkTypes      map[string]bool
 	MaxEdgeSilenceMillis int64
+
+	SymbolMode      SymbolMode
+	SelectedSymbols []string
 }

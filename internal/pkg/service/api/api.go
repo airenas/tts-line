@@ -4,6 +4,14 @@ const (
 	SpeechMarkTypeWord = "word"
 )
 
+type SymbolMode string
+
+const (
+	SymbolModeNone         SymbolMode = ""
+	SymbolModeRead         SymbolMode = "read"
+	SymbolModeReadSelected SymbolMode = "readSelected"
+)
+
 // Input is sythesis input data
 type Input struct {
 	Text string `json:"text,omitempty"`
@@ -19,6 +27,9 @@ type Input struct {
 	//Possible values are: word
 	SpeechMarkTypes      []string `json:"speechMarkTypes,omitempty"`
 	MaxEdgeSilenceMillis *int64   `json:"maxEdgeSilenceMillis,omitempty"`
+
+	SymbolMode      SymbolMode `json:"symbolMode,omitempty"`
+	SelectedSymbols []string   `json:"selectedSymbols,omitempty"`
 }
 
 // SpeechMark

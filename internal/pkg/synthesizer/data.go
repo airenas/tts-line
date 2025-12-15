@@ -108,6 +108,11 @@ type ProcessedWord struct {
 	NERType           NEREnum
 }
 
+func (p *ProcessedWord) Clone() *ProcessedWord {
+	res := *p
+	return &res
+}
+
 // CliticAccentEnum contains types of possible clitics
 type CliticAccentEnum int
 

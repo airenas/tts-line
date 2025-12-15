@@ -524,3 +524,34 @@ func Test_getOutputContentType(t *testing.T) {
 		})
 	}
 }
+
+func Test_getSymbolMode(t *testing.T) {
+	tests := []struct {
+		name string
+		symbolMode string
+		want       api.SymbolMode
+		wantErr    bool
+	}{
+		{name: "Empty", symbolMode: "", want: api.SymbolModeNone, wantErr: false},
+		{name: "Read", symbolMode: "read", want: api.SymbolModeRead, wantErr: false},
+		{name: "Read Selected", symbolMode: "readSelected", want: api.SymbolModeReadSelected, wantErr: false},
+		{name: "Fail", symbolMode: "olia", want: api.SymbolModeNone, wantErr: true},		
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, gotErr := getSymbolMode(api.SymbolMode(tt.symbolMode))
+			if gotErr != nil {
+				if !tt.wantErr {
+					t.Errorf("getSymbolMode() failed: %v", gotErr)
+				}
+				return
+			}
+			if tt.wantErr {
+				t.Fatal("getSymbolMode() succeeded unexpectedly")
+			}
+			if got != tt.want {
+				t.Errorf("getSymbolMode() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
