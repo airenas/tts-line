@@ -5,9 +5,11 @@ import (
 	"reflect"
 	"testing"
 
+	aapi "github.com/airenas/tts-line/internal/pkg/acronyms/service/api"
 	"github.com/airenas/tts-line/internal/pkg/service/api"
 	"github.com/airenas/tts-line/internal/pkg/synthesizer"
 	"github.com/airenas/tts-line/internal/pkg/test/mocks"
+	"github.com/airenas/tts-line/pkg/ssml"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -135,27 +137,34 @@ func Test_mapAbbrInput(t *testing.T) {
 	tests := []struct {
 		name string
 		args []*synthesizer.ProcessedWord
-		want []acrInput
+		want []aapi.WordInput
 	}{
 		{name: "One word", args: []*synthesizer.ProcessedWord{{Tagged: synthesizer.TaggedWord{Word: "word", Mi: "Xolia"}}},
-			want: []acrInput{{Word: "word", MI: "Xolia", ID: "0"}}},
+			want: []aapi.WordInput{{Word: "word", MI: "Xolia", ID: "0"}}},
 		{name: "No mi", args: []*synthesizer.ProcessedWord{{Tagged: synthesizer.TaggedWord{Word: "word", Mi: ""}}},
-			want: []acrInput{}},
+			want: []aapi.WordInput{}},
 		{name: "Obscene", args: []*synthesizer.ProcessedWord{{Tagged: synthesizer.TaggedWord{Word: "word", Mi: ""}, Obscene: true}},
-			want: []acrInput{{Word: "word", MI: "", ID: "0", ForceToLetters: true}}},
+			want: []aapi.WordInput{{Word: "word", MI: "", ID: "0", Mode: aapi.ModeCharactersAsWord}}},
 		{name: "AllUpper", args: []*synthesizer.ProcessedWord{{Tagged: synthesizer.TaggedWord{Word: "word", Mi: "Naaa",
 			Lemma: "WORD"}, Obscene: false}},
-			want: []acrInput{{Word: "word", MI: "Naaa", ID: "0"}}},
+			want: []aapi.WordInput{{Word: "word", MI: "Naaa", ID: "0"}}},
+		{name: "As chars", args: []*synthesizer.ProcessedWord{{Tagged: synthesizer.TaggedWord{Word: "word", Mi: "Naaa",
+			Lemma: "WORD"}, Obscene: false, TextPart: &synthesizer.TTSTextPart{InterpretAs: ssml.InterpretAsTypeCharacters}}},
+			want: []aapi.WordInput{{Word: "word", MI: "Naaa", ID: "0", Mode: aapi.ModeCharacters}}},
+		{name: "As chars details", args: []*synthesizer.ProcessedWord{{Tagged: synthesizer.TaggedWord{Word: "word", Mi: "Naaa",
+			Lemma: "WORD"}, Obscene: false, TextPart: &synthesizer.TTSTextPart{InterpretAs: ssml.InterpretAsTypeCharacters,
+			InterpretAsDetail: ssml.InterpretAsDetailTypeReadSymbols}}},
+			want: []aapi.WordInput{{Word: "word", MI: "Naaa", ID: "0", Mode: aapi.ModeAllAsCharacters}}},
 		{name: "No AllUpper", args: []*synthesizer.ProcessedWord{{Tagged: synthesizer.TaggedWord{Word: "word", Mi: "Naaa",
 			Lemma: "WORd"}, Obscene: false}},
-			want: []acrInput{}},
+			want: []aapi.WordInput{}},
 		{name: "Skip user accent", args: []*synthesizer.ProcessedWord{{Tagged: synthesizer.TaggedWord{Word: "word", Mi: "X-",
 			Lemma: "Looong"}, UserAccent: 101}},
-			want: []acrInput{}},
+			want: []aapi.WordInput{}},
 		{name: "Obscene with user accent",
 			args: []*synthesizer.ProcessedWord{{Tagged: synthesizer.TaggedWord{Word: "word", Mi: "X-", Lemma: "Looooong"},
 				Obscene: true, UserAccent: 101}},
-			want: []acrInput{{Word: "word", MI: "X-", ID: "0", ForceToLetters: true}}},
+			want: []aapi.WordInput{{Word: "word", MI: "X-", ID: "0", Mode: aapi.ModeCharactersAsWord}}},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

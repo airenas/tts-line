@@ -21,7 +21,7 @@ func NewProcessor(acronyms, letters service.Worker) (*Processor, error) {
 
 // Process process word
 func (s *Processor) Process(input *model.Input) ([]api.ResultWord, error) {
-	if input.ForceToLetters {
+	if input.Mode != api.ModeNone {
 		return s.letters.Process(input)
 	}
 

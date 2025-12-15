@@ -104,7 +104,7 @@ func handleList(data *Data) func(echo.Context) error {
 
 		res := make([]*api.WordOutput, 0)
 		for _, wi := range input {
-			wl, err := data.Worker.Process(&model.Input{Word: wi.Word, MI: wi.MI, ForceToLetters: wi.ForceToLetters})
+			wl, err := data.Worker.Process(&model.Input{Word: wi.Word, MI: wi.MI, Mode: wi.Mode})
 			if err != nil {
 				goapp.Log.Error().Err(err).Msg("Cannot process " + goapp.Sanitize(wi.Word))
 				return echo.NewHTTPError(http.StatusInternalServerError, "Cannot process "+wi.Word)

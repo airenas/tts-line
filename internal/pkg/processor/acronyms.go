@@ -7,8 +7,10 @@ import (
 	"time"
 	"unicode"
 
+	"github.com/airenas/tts-line/internal/pkg/acronyms/service/api"
 	"github.com/airenas/tts-line/internal/pkg/synthesizer"
 	"github.com/airenas/tts-line/internal/pkg/utils"
+	"github.com/airenas/tts-line/pkg/ssml"
 	"github.com/pkg/errors"
 	"github.com/rs/zerolog/log"
 )
@@ -57,13 +59,6 @@ func (p *acronyms) Process(ctx context.Context, data *synthesizer.TTSDataPart) e
 	return nil
 }
 
-type acrInput struct {
-	Word           string `json:"word,omitempty"`
-	MI             string `json:"mi,omitempty"`
-	ID             string `json:"id,omitempty"`
-	ForceToLetters bool   `json:"forceToLetters,omitempty"`
-}
-
 type acrWordOutput struct {
 	ID    string          `json:"id,omitempty"`
 	Words []acrResultWord `json:"words,omitempty"`
@@ -76,16 +71,31 @@ type acrResultWord struct {
 	UserTrans string `json:"userTrans,omitempty"`
 }
 
-func mapAbbrInput(data *synthesizer.TTSDataPart) []acrInput {
-	res := []acrInput{}
+func mapAbbrInput(data *synthesizer.TTSDataPart) []api.WordInput {
+	res := []api.WordInput{}
 	for i, w := range data.Words {
 		tgw := w.Tagged
 		if needAbbrProcessing(w) {
-			res = append(res, acrInput{Word: tgw.Word, MI: tgw.Mi, ID: strconv.Itoa(i),
-				ForceToLetters: w.Obscene || w.NERType == synthesizer.NERSingleLetter})
+			res = append(res, api.WordInput{Word: tgw.Word, MI: tgw.Mi, ID: strconv.Itoa(i), Mode: mapMode(w)})
 		}
 	}
 	return res
+}
+
+func mapMode(w *synthesizer.ProcessedWord) api.Mode {
+	if w.Obscene {
+		return api.ModeCharactersAsWord
+	}
+	if w.NERType == synthesizer.NERSingleLetter {
+		return api.ModeCharactersAsWord
+	}
+	if w.TextPart != nil && w.TextPart.InterpretAs == ssml.InterpretAsTypeCharacters {
+		if w.TextPart.InterpretAsDetail == ssml.InterpretAsDetailTypeReadSymbols {
+			return api.ModeAllAsCharacters
+		}
+		return api.ModeCharacters
+	}
+	return api.ModeNone
 }
 
 func needAbbrProcessing(w *synthesizer.ProcessedWord) bool {
@@ -94,6 +104,9 @@ func needAbbrProcessing(w *synthesizer.ProcessedWord) bool {
 		return false
 	}
 	if w.Obscene {
+		return true
+	}
+	if w.TextPart != nil && w.TextPart.InterpretAs == ssml.InterpretAsTypeCharacters {
 		return true
 	}
 	if isAccented(w) || // do not do acronyms change if user has provided accent
