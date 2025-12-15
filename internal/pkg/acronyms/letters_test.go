@@ -116,6 +116,7 @@ func TestLetters_Process(t *testing.T) {
 	type args struct {
 		word string
 		mi   string
+		mode api.Mode
 	}
 	tests := []struct {
 		name    string
@@ -124,6 +125,11 @@ func TestLetters_Process(t *testing.T) {
 		want    []api.ResultWord
 		wantErr bool
 	}{
+		{name: "Ch as all puncts", args: args{word: "Ch,", mi: "1", mode: api.ModeAllAsCharacters}, wantErr: false,
+			want: []api.ResultWord{{Word: "c", WordTrans: "cė", Syll: "cė", UserTrans: "cė3"},
+				{Word: "h", WordTrans: "hą", Syll: "hą", UserTrans: "hą3"},
+				{Word: "kablelis", WordTrans: "kablelis", Syll: "ka-ble-lis", UserTrans: "kable3lis"},
+			}},
 		{name: "Simple", args: args{word: "a", mi: "1"}, wantErr: false,
 			want: []api.ResultWord{{Word: "a", WordTrans: "ą", Syll: "ą", UserTrans: "ą3"}}},
 		{name: "To lower", args: args{word: "A", mi: "1"}, wantErr: false,
@@ -149,11 +155,14 @@ func TestLetters_Process(t *testing.T) {
 			want: []api.ResultWord{{Word: "dž", WordTrans: "dėžė", Syll: "dė-žė", UserTrans: "dėžė3"}}},
 		{name: "Ch", args: args{word: "Ch", mi: "1"}, wantErr: false,
 			want: []api.ResultWord{{Word: "ch", WordTrans: "chą", Syll: "chą", UserTrans: "chą3"}}},
+		{name: "Ch as chars", args: args{word: "Ch,", mi: "1", mode: api.ModeCharacters}, wantErr: false,
+			want: []api.ResultWord{{Word: "c", WordTrans: "cė", Syll: "cė", UserTrans: "cė3"},
+				{Word: "h", WordTrans: "hą", Syll: "hą", UserTrans: "hą3"}}},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			s := &Letters{}
-			got, err := s.Process(&model.Input{Word: tt.args.word, MI: tt.args.mi})
+			s, _ := NewLetters()
+			got, err := s.Process(&model.Input{Word: tt.args.word, MI: tt.args.mi, Mode: tt.args.mode})
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Letters.Process() error = %v, wantErr %v", err, tt.wantErr)
 				return

@@ -11,38 +11,48 @@ import (
 
 // Letters processes letter abbreviation
 type Letters struct {
+	letters map[api.Mode]map[string]*ldata
 }
 
 // NewLetters will instantiate a abbreviation processor
 func NewLetters() (*Letters, error) {
-	return &Letters{}, nil
+	return &Letters{
+		letters: initLetters(),
+	}, nil
 }
 
 // Process returns the next random saying
 func (s *Letters) Process(input *model.Input) ([]api.ResultWord, error) {
+	mode := input.Mode
+	if mode == api.ModeNone {
+		mode = api.ModeCharactersAsWord
+	}
+
 	word := input.Word
 	var result []api.ResultWord
 	wl := strings.ToLower(word)
-	wl = strings.TrimRight(wl, ".")
+	if mode != api.ModeAllAsCharacters {
+		wl = strings.TrimRight(wl, ".")
+	}
 	wr := []rune(wl)
 	var cwr []*ldata
-	ad := allowDot(wl)
+	ad := allowDot(wl) || mode == api.ModeCharacters || mode == api.ModeAllAsCharacters
 	wLen := len(wr)
 	var step int
 	for i := 0; i < wLen; i = i + step {
 		var d *ldata
 		ok := false
-		step = 1
-		if i < wLen-1 {
-			d, ok = letters[string(wr[i:i+2])]
+		if i < wLen-1 && mode == api.ModeCharactersAsWord {
+			d, ok = s.getLetters(string(wr[i:i+2]), mode)
 		}
 		if !ok {
-			d, ok = letters[string(wr[i])]
+			d, ok = s.getLetters(string(wr[i]), mode)
+			step = 1
 		} else {
 			step = 2
 		}
 		if !ok {
-			goapp.Log.Warn().Msgf("Unknown letter: '%s'", goapp.Sanitize(string(wr[i])))
+			goapp.Log.Warn().Str("letter", string(wr[i])).Msg("Unknown")
 			continue
 		}
 		if wr[i] == '.' && !ad {
@@ -52,7 +62,11 @@ func (s *Letters) Process(input *model.Input) ([]api.ResultWord, error) {
 			if len(cwr) > 0 {
 				result = append(result, *makeResultWord(cwr))
 			}
-			result = append(result, *makeResultWord([]*ldata{d}))
+			ldt := d
+			for ldt != nil {
+				result = append(result, *makeResultWord([]*ldata{ldt}))
+				ldt = ldt.next
+			}
 			cwr = nil
 		} else {
 			cwr = append(cwr, d)
@@ -62,6 +76,15 @@ func (s *Letters) Process(input *model.Input) ([]api.ResultWord, error) {
 		result = append(result, *makeResultWord(cwr))
 	}
 	return result, nil
+}
+
+func (s *Letters) getLetters(chars string, mode api.Mode) (*ldata, bool) {
+	dict, ok := s.letters[mode]
+	if !ok {
+		return nil, false
+	}
+	res, ok := dict[chars]
+	return res, ok
 }
 
 func makeResultWord(wr []*ldata) *api.ResultWord {
@@ -79,9 +102,6 @@ func makeResultWord(wr []*ldata) *api.ResultWord {
 		lr = lr + d.letter
 	}
 	r.Word = lr
-	if r.Word == "." {
-		r.Word = "taškas"
-	}
 	r.UserTrans = strings.ReplaceAll(tr, "-", "")
 	r.Syll = transcription.TrimAccent(strings.ToLower(tr))
 	r.WordTrans = strings.ReplaceAll(r.Syll, "-", "")

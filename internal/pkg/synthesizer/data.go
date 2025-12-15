@@ -40,6 +40,9 @@ type TTSData struct {
 type TTSTextPart struct {
 	Accented, Text, Syllables, UserOEPal, Language string
 
+	InterpretAs       ssml.InterpretAsType
+	InterpretAsDetail ssml.InterpretAsDetailType
+
 	Prosodies []*ssml.Prosody
 }
 

@@ -92,7 +92,29 @@ func TestForceLetters(t *testing.T) {
 	pr, err := NewProcessor(w1Mock, w2Mock)
 	assert.Nil(t, err)
 	assert.NotNil(t, pr)
-	_, err = pr.Process(&model.Input{Word: "olia", MI: "1", ForceToLetters: true})
+	_, err = pr.Process(&model.Input{Word: "olia", MI: "1", Mode: api.ModeCharacters})
+	assert.Nil(t, err)
+}
+
+func TestForceLettersWord(t *testing.T) {
+	initTest(t)
+	w1Mock.On("Process", mock.Anything, mock.Anything).Return(nil, errors.New("err"))
+	w2Mock.On("Process", mock.Anything, mock.Anything).Return([]api.ResultWord{{Word: "olia2"}}, nil) // should be called as letters
+	pr, err := NewProcessor(w1Mock, w2Mock)
+	assert.Nil(t, err)
+	assert.NotNil(t, pr)
+	_, err = pr.Process(&model.Input{Word: "olia", MI: "1", Mode: api.ModeCharactersAsWord})
+	assert.Nil(t, err)
+}
+
+func TestForceLettersAll(t *testing.T) {
+	initTest(t)
+	w1Mock.On("Process", mock.Anything, mock.Anything).Return(nil, errors.New("err"))
+	w2Mock.On("Process", mock.Anything, mock.Anything).Return([]api.ResultWord{{Word: "olia2"}}, nil) // should be called as letters
+	pr, err := NewProcessor(w1Mock, w2Mock)
+	assert.Nil(t, err)
+	assert.NotNil(t, pr)
+	_, err = pr.Process(&model.Input{Word: "olia", MI: "1", Mode: api.ModeAllAsCharacters})
 	assert.Nil(t, err)
 }
 

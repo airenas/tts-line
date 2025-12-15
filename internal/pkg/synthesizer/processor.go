@@ -106,8 +106,10 @@ func makeTextParts(textPart []ssml.TextPart, prosodies []*ssml.Prosody) []*TTSTe
 	res := []*TTSTextPart{}
 	for _, tp := range textPart {
 		res = append(res, &TTSTextPart{Text: tp.Text, Accented: tp.Accented, Syllables: tp.Syllables, UserOEPal: tp.UserOEPal,
-			Language:  tp.Language,
-			Prosodies: prosodies,
+			Language:          tp.Language,
+			InterpretAs:       tp.InterpretAs,
+			InterpretAsDetail: tp.InterpretAsDetail,
+			Prosodies:         prosodies,
 		})
 	}
 	return res

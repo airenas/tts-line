@@ -10,6 +10,7 @@ import (
 	accentI "github.com/airenas/tts-line/internal/pkg/accent"
 	"github.com/airenas/tts-line/internal/pkg/synthesizer"
 	"github.com/airenas/tts-line/internal/pkg/utils"
+	"github.com/airenas/tts-line/pkg/ssml"
 	"github.com/pkg/errors"
 	"github.com/rs/zerolog/log"
 )
@@ -163,7 +164,30 @@ func mapTagAccentResult(tags []*TaggedWord, text []string, textParts []*synthesi
 			}
 		}
 	}
-	return res, nil
+	// group words that are required to be spelled out, but where split by tagger
+	finalRes := make([]*synthesizer.ProcessedWord, 0)
+	var lastTP *synthesizer.TTSTextPart
+	for i, w := range res {
+		if lastTP != nil && w.TextPart == lastTP {
+			if i < len(res)-1 {
+				nextW := res[i+1]
+				if nextW.TextPart != lastTP && !w.Tagged.IsWord() {
+					finalRes = append(finalRes, w)
+				}
+			}
+			continue
+		}
+		finalRes = append(finalRes, w)
+		if w.TextPart != nil && w.TextPart.InterpretAs == ssml.InterpretAsTypeCharacters {
+			lastTP = w.TextPart
+			w.Tagged.Word = w.TextPart.Text
+			w.Tagged.Separator = ""
+		} else {
+			lastTP = nil
+		}
+	}
+
+	return finalRes, nil
 }
 
 func moveText(rns []rune, pos int, tag *TaggedWord) (int, int, error) {

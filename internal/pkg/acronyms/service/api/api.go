@@ -1,11 +1,20 @@
 package api
 
+type Mode string
+
+const (
+	ModeNone             Mode = ""
+	ModeCharactersAsWord Mode = "charaactersAsWord" // read as word, accented the last character,
+	ModeCharacters       Mode = "charaacters"
+	ModeAllAsCharacters  Mode = "all" // read all puntuations also
+)
+
 // WordInput is input structure
 type WordInput struct {
-	Word           string `json:"word,omitempty"`
-	MI             string `json:"mi,omitempty"`
-	ID             string `json:"id,omitempty"`
-	ForceToLetters bool   `json:"forceToLetters,omitempty"`
+	Word string `json:"word,omitempty"`
+	MI   string `json:"mi,omitempty"`
+	ID   string `json:"id,omitempty"`
+	Mode Mode   `json:"mode,omitempty"`
 }
 
 // WordOutput is output result

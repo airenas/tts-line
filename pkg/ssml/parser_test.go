@@ -99,7 +99,7 @@ func TestParse(t *testing.T) {
 		{name: "say-as inside", xml: `<speak lang="en">haha <say-as interpret-as="characters" detail="read-symbols">olia1</say-as> ok?</speak>`, want: []Part{
 			&Text{Voice: "aa", Texts: []TextPart{{Language: "en", Text: "haha"},
 				{Language: "en", Text: "olia1", InterpretAs: InterpretAsTypeCharacters, InterpretAsDetail: InterpretAsDetailTypeReadSymbols},
-				{Language: "en", Text: "ok?"},			
+				{Language: "en", Text: "ok?"},
 			}}},
 			wantErr: false},
 		//////////////////////////////////////////////////////////////////////////////////////////
