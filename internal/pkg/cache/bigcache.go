@@ -3,6 +3,7 @@ package cache
 import (
 	"context"
 	"fmt"
+	"hash/fnv"
 	slog "log"
 	"strconv"
 	"time"
@@ -48,13 +49,13 @@ func NewCacher(rw service.Synthesizer, config *viper.Viper) (*BigCacher, error) 
 			return nil, errors.Wrap(err, "Can't init cache")
 		}
 		res.maxTextLen = config.GetInt("maxTextLen")
-		goapp.Log.Info().Msgf("Cache initialized with duration: %s, clean duration: %s", dur.String(), cfg.CleanWindow.String())
+		goapp.Log.Info().Str("duration", dur.String()).Str("cleanDuration", cfg.CleanWindow.String()).Msg("Cache initialized")
 		if cfg.HardMaxCacheSize > 0 {
-			goapp.Log.Info().Msgf("Cache max memomy in MB %d", cfg.HardMaxCacheSize)
+			goapp.Log.Info().Int("value", cfg.HardMaxCacheSize).Msg("Cache max memory in MB")
 		}
-		goapp.Log.Info().Msgf("Cache max len for caching text %d", res.maxTextLen)
+		goapp.Log.Info().Int("value", res.maxTextLen).Msg("Cache max len for caching text")
 	} else {
-		goapp.Log.Info().Msgf("No cache initialized")
+		goapp.Log.Info().Msg("No cache initialized")
 	}
 	return res, nil
 }
@@ -68,7 +69,8 @@ func (c *BigCacher) Work(ctx context.Context, inp *api.TTSRequestConfig) (*api.R
 		return c.realSynt.Work(ctx, inp)
 	}
 
-	entry, err := c.cache.Get(key(inp))
+	k := key(inp)
+	entry, err := c.cache.Get(k)
 	if err == nil {
 		log.Ctx(ctx).Debug().Msg("Found in cache")
 		return &api.Result{Audio: entry}, nil
@@ -76,7 +78,7 @@ func (c *BigCacher) Work(ctx context.Context, inp *api.TTSRequestConfig) (*api.R
 	log.Ctx(ctx).Debug().Msg("Not found in cache")
 	res, err := c.realSynt.Work(ctx, inp)
 	if res != nil && err == nil {
-		_ = c.cache.Set(key(inp), res.Audio)
+		_ = c.cache.Set(k, res.Audio)
 	}
 	return res, err
 }
@@ -93,5 +95,14 @@ func getCleanDuration(dur time.Duration) time.Duration {
 }
 
 func key(inp *api.TTSRequestConfig) string {
-	return inp.Text + "_" + inp.OutputFormat.String() + "_" + fmt.Sprintf("%.4f", inp.Speed) + "_" + inp.Voice + "_" + strconv.FormatInt(inp.MaxEdgeSilenceMillis, 10)
+	h := fnv.New64a()
+	h.Write([]byte(inp.Text))
+	h.Write([]byte(inp.OutputFormat.String()))
+	h.Write([]byte(inp.Voice))
+	h.Write([]byte(fmt.Sprintf("%.4f", inp.Speed)))
+	h.Write([]byte(strconv.FormatInt(inp.MaxEdgeSilenceMillis, 10)))
+	h.Write([]byte(inp.SymbolMode))
+	h.Write([]byte(fmt.Sprintf("%s", inp.SelectedSymbols)))
+	//	return inp.Text + "_" + inp.OutputFormat.String() + "_" + fmt.Sprintf("%.4f", inp.Speed) + "_" + inp.Voice + "_" + strconv.FormatInt(inp.MaxEdgeSilenceMillis, 10)
+	return strconv.FormatUint(h.Sum64(), 36)
 }

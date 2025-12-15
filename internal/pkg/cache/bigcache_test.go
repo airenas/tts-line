@@ -192,15 +192,30 @@ func Test_key(t *testing.T) {
 		args args
 		want string
 	}{
-		{"mp3", args{&api.TTSRequestConfig{Text: "olia", OutputFormat: api.AudioMP3}}, "olia_AudioMP3_0.0000__0"},
+		{"mp3", args{&api.TTSRequestConfig{Text: "olia", OutputFormat: api.AudioMP3}}, "cskxn53wzmwu"},
+		{"same", args{&api.TTSRequestConfig{Text: "olia", OutputFormat: api.AudioMP3}}, "cskxn53wzmwu"},
+		{"mp3", args{&api.TTSRequestConfig{Text: "olia", OutputFormat: api.AudioULAW}}, "2vq1nwvb9h6tz"},
 		{"voice", args{&api.TTSRequestConfig{Text: "olia1", OutputFormat: api.AudioM4A,
-			OutputTextFormat: api.TextAccented, Voice: "aaa"}}, "olia1_AudioM4A_0.0000_aaa_0"},
+			OutputTextFormat: api.TextAccented, Voice: "aaa"}}, "v2ijneo4x1zk"},
+		{"symbol mode", args{&api.TTSRequestConfig{Text: "olia1", SymbolMode: api.SymbolModeRead,
+			OutputTextFormat: api.TextAccented, Voice: "aaa"}}, "15o300tsz5qhs"},
+		{"selected", args{&api.TTSRequestConfig{Text: "olia1",
+			SymbolMode:       api.SymbolModeRead,
+			SelectedSymbols:  []string{","},
+			OutputTextFormat: api.TextAccented, Voice: "aaa"}},
+			"2a04s5vsyr15m"},
+		{"selected 2", args{&api.TTSRequestConfig{Text: "olia1",
+			SymbolMode:       api.SymbolModeRead,
+			SelectedSymbols:  []string{",", "("},
+			OutputTextFormat: api.TextAccented, Voice: "aaa"}},
+			"2xmcypjzpdcvu"},
 		{"speed", args{&api.TTSRequestConfig{Text: "olia1", OutputFormat: api.AudioM4A,
-			OutputTextFormat: api.TextAccented, Speed: 0.56, Voice: "aa"}}, "olia1_AudioM4A_0.5600_aa_0"},
+			OutputTextFormat: api.TextAccented, Speed: 0.56, Voice: "aa"}}, "3w1qem0q039bq"},
 		{"test 2", args{&api.TTSRequestConfig{Text: "olia1", OutputFormat: api.AudioM4A,
-			OutputTextFormat: api.TextAccented, Speed: 0.56, Voice: "aaa"}}, "olia1_AudioM4A_0.5600_aaa_0"},
+			OutputTextFormat: api.TextAccented, Speed: 0.56, Voice: "aaa"}}, "3kl944exi0o3h"},
 		{"max sil duration", args{&api.TTSRequestConfig{Text: "olia1", OutputFormat: api.AudioM4A,
-			OutputTextFormat: api.TextAccented, Speed: 0.56, Voice: "aaa", MaxEdgeSilenceMillis: 50}}, "olia1_AudioM4A_0.5600_aaa_50"},
+			OutputTextFormat: api.TextAccented, Speed: 0.56, Voice: "aaa", MaxEdgeSilenceMillis: 50}},
+			"xkfaexfzey56"},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
