@@ -62,7 +62,7 @@ func Test_ner_Process(t *testing.T) {
 				{Tagged: synthesizer.TaggedWord{Word: "olia"}},
 			}}, wantedPosMarked: []int{2}},
 
-		{name: "First in sentenceq", data: &synthesizer.TTSData{Cfg: synthesizer.TTSConfig{JustAM: false},
+		{name: "First in sentence", data: &synthesizer.TTSData{Cfg: synthesizer.TTSConfig{JustAM: false},
 			Words: []*synthesizer.ProcessedWord{
 				{Tagged: synthesizer.TaggedWord{Word: "A"}},
 				{Tagged: synthesizer.TaggedWord{Separator: ","}},

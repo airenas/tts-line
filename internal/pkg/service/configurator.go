@@ -164,7 +164,7 @@ func (c *TTSConfigutaror) Configure(ctx context.Context, r *http.Request, inText
 		return nil, err
 	}
 	res.SelectedSymbols = inText.SelectedSymbols
-	
+
 	if strings.HasPrefix(res.Text, "<speak") || inText.TextType == "ssml" {
 		if c.noSSML {
 			return nil, errors.New("SSML not allowed")
