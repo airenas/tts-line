@@ -36,3 +36,4 @@ examples/docker-compose/ml-tagger/
 deploy/docker-compose/Makefile.options
 deploy/docker-compose/.env
 deploy/docker-compose/.data
+deploy/docker-compose/ssml*
