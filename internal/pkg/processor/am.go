@@ -333,6 +333,9 @@ func (p *amodel) mapAMInput(ctx context.Context, data *synthesizer.TTSDataPart) 
 		indRes[i].From = len(sb.items)
 		tgw := w.Tagged
 		if tgw.Space {
+			if w.IsLastInPart && w.TextPart != nil && w.TextPart.PauseAfter > 0 {
+				sb.add("sil", &syllInfo{textPart: w.TextPart})
+			}
 		} else if tgw.Separator != "" {
 			sep := getSep(tgw.Separator, data.Words, i)
 			if sep != "" {

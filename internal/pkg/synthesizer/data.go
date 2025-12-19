@@ -27,13 +27,24 @@ type TTSData struct {
 	Words []*ProcessedWord
 	Parts []*TTSDataPart
 
-	Audio           []byte
-	AudioMP3        []byte
-	AudioLenSeconds float64
-	SampleRate      uint32
+	Audio    *AudioData
+	AudioMP3 []byte
 
 	OriginalTextParts []*TTSTextPart
 	SSMLParts         []*TTSData
+}
+
+type AudioData struct {
+	Data          []byte
+	SampleRate    uint32
+	BitsPerSample uint16
+}
+
+func (a *AudioData) Seconds() float64 {
+	if a == nil || a.SampleRate <= 0 || a.BitsPerSample <= 0 {
+		return 0
+	}
+	return float64(len(a.Data)) / float64(a.SampleRate*uint32(a.BitsPerSample)/8)
 }
 
 // TTSTextPart part of the text
@@ -44,6 +55,8 @@ type TTSTextPart struct {
 	InterpretAsDetail ssml.InterpretAsDetailType
 
 	Prosodies []*ssml.Prosody
+
+	PauseAfter time.Duration
 }
 
 // TTSConfig some TTS configuration
@@ -85,6 +98,11 @@ type SynthesizedPos struct {
 	VolumeChanges []float64 // in dB
 }
 
+type AudioPos struct {
+	From int // position in bytes
+	To   int
+}
+
 type AudioDurations struct {
 	// in tts steps
 	Shift    int
@@ -106,6 +124,8 @@ type ProcessedWord struct {
 	TextPart          *TTSTextPart
 	SynthesizedPos    *SynthesizedPos
 	NERType           NEREnum
+	IsLastInPart      bool
+	AudioPos          *AudioPos
 }
 
 func (p *ProcessedWord) Clone() *ProcessedWord {

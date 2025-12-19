@@ -39,6 +39,7 @@ func (p *transcriber) Process(ctx context.Context, data *synthesizer.TTSDataPart
 	}
 
 	markLastEmphasisWord(data.Words)
+	markPauses(data.Words)
 
 	inData, err := mapTransInput(data)
 	if err != nil {
@@ -72,6 +73,23 @@ func markLastEmphasisWord(processedWord []*synthesizer.ProcessedWord) {
 	}
 	for _, pw := range emphasisMap {
 		pw.LastEmphasisWord = true
+	}
+}
+
+func markPauses(processedWord []*synthesizer.ProcessedWord) {
+	var nextTP *synthesizer.TTSTextPart
+	for i, pw := range processedWord {
+		nextTP = nil
+		if i < len(processedWord)-1 {
+			nextPW := processedWord[i+1]
+			if nextPW.TextPart != nil {
+				nextTP = nextPW.TextPart
+			}
+		}
+
+		if pw.TextPart != nil && pw.TextPart != nextTP {
+			pw.IsLastInPart = true
+		}
 	}
 }
 
@@ -130,6 +148,9 @@ func mapTransInput(data *synthesizer.TTSDataPart) ([]*transInput, error) {
 			if w.LastEmphasisWord {
 				pr = nil
 			}
+		}
+		if w.IsLastInPart && w.TextPart != nil && w.TextPart.PauseAfter > 0 {
+			pr = nil
 		}
 	}
 	return res, nil

@@ -67,6 +67,6 @@ func NewMetricsCharsFunc(url string) func(data *synthesizer.TTSData) {
 // NewMetricsWaveLenFunc creates func for add audiolen metric
 func NewMetricsWaveLenFunc(url string) func(data *synthesizer.TTSData) {
 	return func(data *synthesizer.TTSData) {
-		totalDurationMetrics.WithLabelValues(url).Add(data.AudioLenSeconds)
+		totalDurationMetrics.WithLabelValues(url).Add(data.Audio.Seconds())
 	}
 }
