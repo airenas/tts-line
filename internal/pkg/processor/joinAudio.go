@@ -50,11 +50,11 @@ func (p *joinAudio) Process(ctx context.Context, data *synthesizer.TTSData) erro
 		p.TranscribedSymbols = strings.Split(p.TranscribedText, " ")
 	}
 
-	data.Audio, data.AudioLenSeconds, data.SampleRate, err = join(ctx, data.Parts, suffix, data.Input.MaxEdgeSilenceMillis)
+	data.Audio, err = join(ctx, data.Parts, suffix, data.Input.MaxEdgeSilenceMillis)
 	if err != nil {
 		return errors.Wrap(err, "can't join audio")
 	}
-	utils.LogData(ctx, "Output", fmt.Sprintf("audio len %d", len(data.Audio)), nil)
+	utils.LogData(ctx, "Output", fmt.Sprintf("audio len %d", len(data.Audio.Data)), nil)
 	return nil
 }
 
@@ -99,7 +99,7 @@ func (wr *wavWriter) bytesPerSample() uint16 {
 	return wr.bitsPerSample() / 8
 }
 
-func join(ctx context.Context, parts []*synthesizer.TTSDataPart, suffix []byte, maxEdgeSilenceMilis int64) ([]byte, float64, uint32 /*sampleRate*/, error) {
+func join(ctx context.Context, parts []*synthesizer.TTSDataPart, suffix []byte, maxEdgeSilenceMilis int64) (*synthesizer.AudioData, error) {
 	ctx, span := utils.StartSpan(ctx, "joinAudio.join")
 	defer span.End()
 
@@ -136,31 +136,31 @@ func join(ctx context.Context, parts []*synthesizer.TTSDataPart, suffix []byte, 
 		}
 		startSkip, endSkip := startSil*part.Step, endSil*part.Step
 		lenBefore := res.buf.Len()
-		if err := appendWav(res, decoded, startSkip, endSkip); err != nil {
-			return nil, 0, 0, err
+		if err := appendPartWav(ctx, res, decoded, part, startSkip, endSkip, nil); err != nil {
+			return nil, err
 		}
 		part.AudioDurations = &synthesizer.AudioDurations{
 			Shift:    -startSil,
 			Duration: calculateDurations(res.buf.Len()-lenBefore, res.sampleRate()*uint32(res.bitsPerSample())/uint32(8)),
 		}
-		vc := makeVolumeChanges(ctx, part, lenBefore, res.buf.Len(), startSkip, res.bytesPerSample(), part.Step)
+		vc := makeVolumeChanges(ctx, part, lenBefore, res.buf.Len(), res.bytesPerSample())
 		if len(vc) > 0 {
 			volChanges = append(volChanges, vc...)
 		}
 	}
 	if res.size == 0 {
-		return nil, 0, 0, errors.New("no wav data")
+		return nil, errors.New("no wav data")
 	}
 
 	if suffix != nil {
-		if err := appendWav(res, suffix, 0, 0); err != nil {
-			return nil, 0, 0, errors.Wrapf(err, "can't append suffix")
+		if err := appendWav(ctx, res, suffix); err != nil {
+			return nil, errors.Wrapf(err, "can't append suffix")
 		}
 	}
 
 	resBytes, err := audio.ChangeVolume(ctx, res.buf.Bytes(), volChanges, int(res.bytesPerSample()))
 	if err != nil {
-		return nil, 0, 0, fmt.Errorf("change volume: %w", err)
+		return nil, fmt.Errorf("change volume: %w", err)
 	}
 
 	var bufRes bytes.Buffer
@@ -169,11 +169,11 @@ func join(ctx context.Context, parts []*synthesizer.TTSDataPart, suffix []byte, 
 	_, _ = bufRes.Write([]byte("data"))
 	_, _ = bufRes.Write(wav.SizeBytes(res.size))
 	_, _ = bufRes.Write(resBytes)
-	bitsRate := wav.GetBitsRateCalc(res.header)
-	if bitsRate == 0 {
-		return nil, 0, 0, errors.New("can't extract bits rate from header")
-	}
-	return bufRes.Bytes(), float64(res.size) / float64(bitsRate), res.sampleRate(), nil
+	return &synthesizer.AudioData{
+		Data:          bufRes.Bytes(),
+		SampleRate:    res.sampleRate(),
+		BitsPerSample: res.bitsPerSample(),
+	}, nil
 }
 
 func calculateDurations(aLen int, samplesPerSec uint32) time.Duration {
@@ -217,7 +217,36 @@ func getEndSilSize(ctx context.Context, phones []string, durations []int) int {
 	return res
 }
 
-func appendWav(res *wavWriter, wavData []byte, startSkip, endSkip int) error {
+type interval struct {
+	from     int
+	skip     int
+	duration time.Duration
+	nextShift int
+}
+
+func appendWav(ctx context.Context, res *wavWriter, wavData []byte) error {
+	if !wav.IsValid(wavData) {
+		return errors.New("no valid audio wave data")
+	}
+	header := wav.TakeHeader(wavData)
+	if res.header != nil {
+		if res.sampleRate() != wav.GetSampleRate(header) {
+			return errors.Errorf("differs sample rate %d vs %d", res.sampleRate(), wav.GetSampleRate(header))
+		}
+		if res.bitsPerSample() != wav.GetBitsPerSample(header) {
+			return errors.Errorf("differs bits per sample %d vs %d", res.bitsPerSample(), wav.GetBitsPerSample(header))
+		}
+	}
+	bData := wav.TakeData(wavData)
+	n, err := res.buf.Write(bData)
+	if err != nil {
+		return err
+	}
+	res.size += uint32(n)
+	return nil
+}
+
+func appendPartWav(ctx context.Context, res *wavWriter, wavData []byte, part *synthesizer.TTSDataPart, startSkip int, endSkip int, silZones []*interval) error {
 	if !wav.IsValid(wavData) {
 		return errors.New("no valid audio wave data")
 	}
@@ -237,11 +266,81 @@ func appendWav(res *wavWriter, wavData []byte, startSkip, endSkip int) error {
 		return errors.Errorf("audio start pos > end: %d vs %d", startSkip, es)
 	}
 
-	res.size += uint32(es - (startSkip * fix))
+	// res.size += uint32(es - (startSkip * fix))
 
 	from, to := startSkip*fix, es
-	_, err := res.buf.Write(bData[from:to])
-	return err
+
+	wordsPos := 0
+
+	startShift := startSkip / part.St
+
+	for _, sz := range silZones {
+		fr := sz.from * fix
+		if fr < from || sz.from >= to {
+			return fmt.Errorf("wrong sil zone %d, wav (%d, %d)", fr, from, to)
+		}
+
+		wordsPos = markAudioPos(part, wordsPos, len(res.buf.Bytes()), fr, fix, startShift)
+		startShift = sz.nextShift
+
+		// search 50ms (about 22050/20) before and after
+		if sz.duration > 0 {
+			fr = audio.SearchBestSilAround(ctx, bData, res.bytesPerSample(), fr/fix, 1100) * fix
+
+			n, err := res.buf.Write(bData[from:fr])
+			if err != nil {
+				return err
+			}
+			res.size += uint32(n)
+			// write silence
+			if err := appendPause(ctx, res, sz.duration); err != nil {
+				return err
+			}
+
+			from = fr
+		} else {
+			n, err := res.buf.Write(bData[from:fr])
+			if err != nil {
+				return err
+			}
+			res.size += uint32(n)
+			// skip write sz.skip samples
+			from = fr + sz.skip*fix
+		}
+	}
+
+	if from < to {
+		_ = markAudioPos(part, wordsPos, len(res.buf.Bytes()), to, fix, startShift)
+		n, err := res.buf.Write(bData[from:to])
+		if err != nil {
+			return err
+		}
+		res.size += uint32(n)
+	}
+	return nil
+}
+
+func markAudioPos(part *synthesizer.TTSDataPart, wordsPos, startLen, to, fix, startShift int) int {
+	words := part.Words
+	if wordsPos >= len(words) {
+		return wordsPos
+	}
+	first := words[wordsPos]
+	from := first.SynthesizedPos.From // from is startLen
+	from -= startShift
+	
+	for wordsPos < len(words) {
+		w := words[wordsPos]
+		if w.SynthesizedPos.From*fix*part.Step >= to {
+			break
+		}
+		w.AudioPos = &synthesizer.AudioPos{
+			From: startLen + (w.SynthesizedPos.From-from)*part.Step*fix,
+			To:   startLen + (w.SynthesizedPos.To-from)*part.Step*fix,
+		}
+		wordsPos++
+	}
+	return wordsPos
 }
 
 // Info return info about processor
@@ -279,14 +378,14 @@ func (p *joinSSMLAudio) Process(ctx context.Context, data *synthesizer.TTSData) 
 			}
 		}
 	}
-	data.Audio, data.AudioLenSeconds, data.SampleRate, err = joinSSML(ctx, data, suffix, data.Input.MaxEdgeSilenceMillis)
+	data.Audio, err = joinSSML(ctx, data, suffix, data.Input.MaxEdgeSilenceMillis)
 	if err != nil {
 		return errors.Wrap(err, "can't join audio")
 	}
 	for _, dp := range data.SSMLParts {
-		dp.SampleRate = data.SampleRate
+		dp.Audio = data.Audio
 	}
-	utils.LogData(ctx, "Output", fmt.Sprintf("audio len %d", len(data.Audio)), nil)
+	utils.LogData(ctx, "Output", fmt.Sprintf("audio len %d", len(data.Audio.Data)), nil)
 	return nil
 }
 
@@ -300,7 +399,7 @@ type nextWriteData struct {
 	volChanges  []*audio.VolChange
 }
 
-func joinSSML(ctx context.Context, data *synthesizer.TTSData, suffix []byte, maxEdgeSilenceMillis int64) ([]byte, float64 /*len*/, uint32 /*sampleRate*/, error) {
+func joinSSML(ctx context.Context, data *synthesizer.TTSData, suffix []byte, maxEdgeSilenceMillis int64) (*synthesizer.AudioData, error) {
 	ctx, span := utils.StartSpan(ctx, "joinSSML")
 	defer span.End()
 
@@ -354,8 +453,9 @@ func joinSSML(ctx context.Context, data *synthesizer.TTSData, suffix []byte, max
 
 		startSkip, endSkip := startSil*step, endSil*step
 		if wd.part != nil {
+			silZones := findSilZones(res, wd.part)
 			lenBefore := res.buf.Len()
-			if err := appendWav(res, wd.data, wd.startSkip, endSkip); err != nil {
+			if err := appendPartWav(ctx, res, wd.data, wd.part, wd.startSkip, endSkip, silZones); err != nil {
 				return err
 			}
 			wd.part.AudioDurations = &synthesizer.AudioDurations{
@@ -366,7 +466,7 @@ func joinSSML(ctx context.Context, data *synthesizer.TTSData, suffix []byte, max
 			wd.part.AudioDurations.Duration += wd.durationAdd
 			wd.durationAdd = 0
 
-			vc := makeVolumeChanges(ctx, wd.part, lenBefore, res.buf.Len(), wd.startSkip, res.bytesPerSample(), step)
+			vc := makeVolumeChanges(ctx, wd.part, lenBefore, res.buf.Len(), res.bytesPerSample())
 			if len(vc) > 0 {
 				wd.volChanges = append(wd.volChanges, vc...)
 			}
@@ -394,64 +494,89 @@ func joinSSML(ctx context.Context, data *synthesizer.TTSData, suffix []byte, max
 			for _, part := range dp.Parts {
 				err := writeF(part, false /*last*/)
 				if err != nil {
-					return nil, 0, 0, err
+					return nil, err
 				}
 			}
 		}
 	}
 	if err := writeF(nil, suffix == nil /*last*/); err != nil {
-		return nil, 0, 0, err
+		return nil, err
 	}
 	if res.size == 0 {
-		return nil, 0, 0, errors.New("no audio")
+		return nil, errors.New("no audio")
 	}
 	if suffix != nil {
-		if err := appendWav(res, suffix, wd.startSkip, 0); err != nil {
-			return nil, 0, 0, errors.Wrapf(err, "can't append suffix")
+		if err := appendWav(ctx, res, suffix); err != nil {
+			return nil, errors.Wrapf(err, "can't append suffix")
 		}
 	}
 
 	resBytes, err := audio.ChangeVolume(ctx, res.buf.Bytes(), wd.volChanges, int(res.bytesPerSample()))
 	if err != nil {
-		return nil, 0, 0, fmt.Errorf("change volume: %w", err)
+		return nil, fmt.Errorf("change volume: %w", err)
 	}
 	var bufRes bytes.Buffer
 	_, _ = bufRes.Write(res.header)
 	_, _ = bufRes.Write([]byte("data"))
 	_, _ = bufRes.Write(wav.SizeBytes(res.size))
 	_, _ = bufRes.Write(resBytes)
-	bitsRate := wav.GetBitsRateCalc(res.header)
-	if bitsRate == 0 {
-		return nil, 0, 0, errors.New("can't extract bits rate from header")
-	}
-	return bufRes.Bytes(), float64(res.size) / float64(bitsRate), res.sampleRate(), nil
+	
+	return &synthesizer.AudioData{
+		Data:          bufRes.Bytes(),
+		SampleRate:    res.sampleRate(),
+		BitsPerSample: res.bitsPerSample(),
+	}, nil
 }
 
-func makeVolumeChanges(ctx context.Context, part *synthesizer.TTSDataPart, startPos, endPos, skipSteps int, bytesPerSample uint16, step int) []*audio.VolChange {
+func findSilZones(ww *wavWriter, part *synthesizer.TTSDataPart) []*interval {
+	var res []*interval
+	for _, w := range part.Words {
+		if w.TextPart != nil && w.IsLastInPart && w.TextPart.PauseAfter > 0 {
+			var duration time.Duration
+			var nextShift int
+			if !w.Tagged.IsWord() && len(w.SynthesizedPos.Durations) > 0 {
+				nextShift = w.SynthesizedPos.Durations[len(w.SynthesizedPos.Durations)-1]	
+				duration = utils.ToDuration(nextShift, ww.sampleRate(), part.Step)
+			}
+			from := (w.SynthesizedPos.To - (w.SynthesizedPos.To-w.SynthesizedPos.From)/2) * part.Step
+			if duration < w.TextPart.PauseAfter {
+				res = append(res, &interval{from: from, duration: w.TextPart.PauseAfter - duration, nextShift: nextShift})
+			} else if duration > w.TextPart.PauseAfter {
+				hoops := utils.ToTTSSteps(duration-w.TextPart.PauseAfter, ww.sampleRate(), part.Step)
+				steps := hoops * part.Step
+				from -= steps / 2
+				res = append(res, &interval{from: from, skip: steps, duration: w.TextPart.PauseAfter - duration, nextShift: nextShift - hoops})
+			}
+		}
+	}
+	return res
+}
+
+func makeVolumeChanges(ctx context.Context, part *synthesizer.TTSDataPart, startPos, endPos int, bytesPerSample uint16) []*audio.VolChange {
 	var res []*audio.VolChange
 	rate := part.LoudnessGain
 	var last *audio.VolChange
 	for _, w := range part.Words {
-		from := (w.SynthesizedPos.From*step - skipSteps)
 		if !w.Tagged.IsWord() {
 			continue
 		}
+		from := w.AudioPos.From
 		for i, vc := range w.SynthesizedPos.VolumeChanges {
 			d := w.SynthesizedPos.Durations[i]
-			to := from + d*step
+			to := from + d*part.Step*int(bytesPerSample)
 
 			gain := vc + part.LoudnessGain
 
 			if utils.Float64Equals(gain, rate) {
 				if last != nil {
-					last.To = startPos + to*int(bytesPerSample)
+					last.To = to
 				}
 			} else if utils.Float64Equals(gain, 0) {
 				last = nil
 			} else {
 				v := &audio.VolChange{
-					From: startPos + (from * int(bytesPerSample)),
-					To:   startPos + (to * int(bytesPerSample)),
+					From: from,
+					To:   to,
 					Rate: calcVolumeRate(gain),
 				}
 				log.Ctx(ctx).Debug().Float64("change", calcVolumeRate(gain)).Int("from", v.From).Int("to", v.To).Msg("volume")

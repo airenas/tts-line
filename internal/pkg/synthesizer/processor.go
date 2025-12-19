@@ -90,6 +90,12 @@ func makeSSMLParts(input *api.TTSRequestConfig) ([]*TTSData, error) {
 				last = data
 			}
 		case *ssml.Pause:
+			if pc.Duration <= time.Millisecond*1000 { // try merge small pauses
+				if last != nil && last.Cfg.Type == SSMLText && len(last.OriginalTextParts) > 0 {
+					last.OriginalTextParts[len(last.OriginalTextParts)-1].PauseAfter += pc.Duration
+					continue
+				}
+			}
 			data := &TTSData{}
 			data.Cfg.PauseDuration = pc.Duration
 			data.Cfg.Type = SSMLPause
@@ -219,13 +225,14 @@ func mapSpeechMarksInt(ctx context.Context, data *TTSData, from time.Duration) (
 			continue
 		}
 		md := maps[aligned[i]]
-		to := getLastWordTo(aligned, i, maps, data.SampleRate, md.part.Step)
+		to := getLastWordTo(aligned, i, maps, data.Audio.SampleRate, md.part.Step)
 		sm := &api.SpeechMark{
 			Value:        w,
 			Type:         api.SpeechMarkTypeWord,
-			TimeInMillis: (from + md.start + utils.ToDuration(md.pw.SynthesizedPos.From+md.shift, data.SampleRate, md.part.Step)).Milliseconds(),
-			Duration: (getLastWordTo(aligned, i, maps, data.SampleRate, md.part.Step) -
-				(utils.ToDuration(md.pw.SynthesizedPos.From+md.shift, data.SampleRate, md.part.Step) + md.start)).Milliseconds(),
+			// TimeInMillis: (from + md.start + utils.ToDuration(md.pw.SynthesizedPos.From+md.shift, data.Audio.SampleRate, md.part.Step)).Milliseconds(),
+			TimeInMillis: utils.BytesToDuration(md.pw.AudioPos.From, data.Audio.SampleRate, data.Audio.BitsPerSample).Milliseconds(),
+			Duration: (getLastWordTo(aligned, i, maps, data.Audio.SampleRate, md.part.Step) -
+				(utils.ToDuration(md.pw.SynthesizedPos.From+md.shift, data.Audio.SampleRate, md.part.Step) + md.start)).Milliseconds(),
 		}
 		goapp.Log.Debug().Msgf("Word: %s, from: %d, to: %d, shift: %d, start: %d, from %d, res: %d-%d (%d)",
 			w, md.pw.SynthesizedPos.From, to.Milliseconds(), md.shift, md.start.Milliseconds(), from.Milliseconds(), sm.TimeInMillis, sm.TimeInMillis+sm.Duration, sm.Duration)

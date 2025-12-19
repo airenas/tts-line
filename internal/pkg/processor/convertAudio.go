@@ -55,7 +55,7 @@ func (p *audioConverter) Process(ctx context.Context, data *synthesizer.TTSData)
 	}
 	if data.Input.OutputFormat == api.AudioWAV {
 		log.Ctx(ctx).Debug().Msg("No conversion needed to WAV")
-		data.AudioMP3 = data.Audio
+		data.AudioMP3 = data.Audio.Data
 		return nil
 	}
 
@@ -151,7 +151,7 @@ func (p *audioConverter) invokeInternal(ctx context.Context, data *synthesizer.T
 
 	go func() {
 		defer wg.Done()
-		audioData := data.Audio
+		audioData := data.Audio.Data
 		for start := 0; start < len(audioData); start += chunkSize {
 			end := start + chunkSize
 			if end > len(audioData) {
