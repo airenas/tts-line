@@ -85,7 +85,6 @@ type TTSDataPart struct {
 	Durations      []int
 	DefaultSilence int
 	Step           int
-	AudioDurations *AudioDurations
 	Loudness       float64
 	LoudnessGain   float64
 }
@@ -102,12 +101,6 @@ type SynthesizedPos struct {
 type AudioPos struct {
 	From int // position in bytes
 	To   int
-}
-
-type AudioDurations struct {
-	// in tts steps
-	Shift    int
-	Duration time.Duration
 }
 
 // ProcessedWord keeps one word info

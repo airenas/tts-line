@@ -187,34 +187,32 @@ type wordMapData struct {
 
 func mapSpeechMarks(ctx context.Context, data *TTSData) ([]*api.SpeechMark, error) {
 	if len(data.SSMLParts) == 0 {
-		res, _, err := mapSpeechMarksInt(ctx, data, 0)
+		res, err := mapSpeechMarksInt(ctx, data)
 		return res, err
 	}
 
 	var res []*api.SpeechMark
-	from := time.Duration(0)
 	for _, p := range data.SSMLParts {
-		pRes, dur, err := mapSpeechMarksInt(ctx, p, from)
+		pRes, err := mapSpeechMarksInt(ctx, p)
 		if err != nil {
 			return nil, err
 		}
 		res = append(res, pRes...)
-		from += dur
 	}
 	return res, nil
 }
 
-func mapSpeechMarksInt(ctx context.Context, data *TTSData, from time.Duration) ([]*api.SpeechMark, time.Duration, error) {
+func mapSpeechMarksInt(ctx context.Context, data *TTSData) ([]*api.SpeechMark, error) {
 	text := strings.Join(data.Text, " ")
 	if len(text) == 0 {
-		return nil, 0, nil
+		return nil, nil
 	}
 	originalWords := strings.Fields(accent.ClearAccents(text))
 	originalWords = dropPunctuation(originalWords)
 	words, maps := collectWords(data.Parts)
 	aligned, err := dtw.Align(ctx, originalWords, words)
 	if err != nil {
-		return nil, 0, fmt.Errorf("can't align words: %w", err)
+		return nil, fmt.Errorf("can't align words: %w", err)
 	}
 	var res []*api.SpeechMark
 	for i, w := range originalWords {
@@ -231,11 +229,11 @@ func mapSpeechMarksInt(ctx context.Context, data *TTSData, from time.Duration) (
 			TimeInMillis: at.Milliseconds(),
 			Duration:     (to - at).Milliseconds(),
 		}
-		goapp.Log.Debug().Msgf("Word: %s, from: %d, to: %d, from %d, res: %d-%d (%d)",
-			w, md.pw.SynthesizedPos.From, to.Milliseconds(), from.Milliseconds(), sm.TimeInMillis, sm.TimeInMillis+sm.Duration, sm.Duration)
+		goapp.Log.Debug().Msgf("Word: %s, from: %d, to: %d, res: %d-%d (%d)",
+			w, md.pw.SynthesizedPos.From, to.Milliseconds(), sm.TimeInMillis, sm.TimeInMillis+sm.Duration, sm.Duration)
 		res = append(res, sm)
 	}
-	return res, calcDuration(data.Parts), nil
+	return res, nil
 }
 
 func dropPunctuation(originalWords []string) []string {
@@ -248,16 +246,6 @@ func dropPunctuation(originalWords []string) []string {
 			continue
 		}
 		res = append(res, nw)
-	}
-	return res
-}
-
-func calcDuration(tTSDataPart []*TTSDataPart) time.Duration {
-	res := time.Duration(0)
-	for _, p := range tTSDataPart {
-		if p.AudioDurations != nil {
-			res += p.AudioDurations.Duration
-		}
 	}
 	return res
 }

@@ -28,7 +28,7 @@ func ChangeVolume(ctx context.Context, b []byte, volChange []*VolChange, bytesPe
 	lb := len(b)
 	for _, vc := range volChange {
 		l := (vc.To - vc.From) / bytesPerSample
-		for i := vc.From; i < vc.To - bytesPerSample; i += bytesPerSample {
+		for i := vc.From; i < vc.To-bytesPerSample; i += bytesPerSample {
 			if (i + bytesPerSample) > lb {
 				return nil, fmt.Errorf("out of bounds volume change: %d + %d > %d", i, bytesPerSample, lb)
 			}
@@ -60,11 +60,11 @@ func SearchBestSilAround(ctx context.Context, b []byte, bytesPerSample uint16, c
 	lb := len(b) / int(bytesPerSample)
 
 	start := center - window
-    if start < 0 { 
-		start = 0 
+	if start < 0 {
+		start = 0
 	}
-    end := center + window - 1
-    if end > lb { 
+	end := center + window - 1
+	if end > lb {
 		end = lb - 1
 	}
 
@@ -75,20 +75,20 @@ func SearchBestSilAround(ctx context.Context, b []byte, bytesPerSample uint16, c
 	}
 
 	sum, swPos, i := 0, 0, start
-	for ; i < start + sw; i++ {
+	for ; i < start+sw; i++ {
 		samples[swPos] = int16(b[i*2]) | int16(b[i*2+1])<<8
 		sum += abs(samples[swPos])
 		swPos++
-	}	
+	}
 
-	bestS, bestP := sum, i - sw/2
+	bestS, bestP := sum, i-sw/2
 	swPos = 0
 	for ; i < end; i++ {
 		sum -= abs(samples[swPos])
 		// add new
 		samples[swPos] = int16(b[i*2]) | int16(b[i*2+1])<<8
 		sum += abs(samples[swPos])
-		
+
 		if sum < bestS {
 			bestS = sum
 			bestP = i - sw/2
