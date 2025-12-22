@@ -182,10 +182,7 @@ func mapResult(ctx context.Context, data *TTSData) (*api.Result, error) {
 }
 
 type wordMapData struct {
-	pw    *ProcessedWord
-	part  *TTSDataPart
-	start time.Duration
-	shift int
+	pw *ProcessedWord
 }
 
 func mapSpeechMarks(ctx context.Context, data *TTSData) ([]*api.SpeechMark, error) {
@@ -225,17 +222,17 @@ func mapSpeechMarksInt(ctx context.Context, data *TTSData, from time.Duration) (
 			continue
 		}
 		md := maps[aligned[i]]
-		to := getLastWordTo(aligned, i, maps, data.Audio.SampleRate, md.part.Step)
+		to := getLastWordTo(aligned, i, maps, data.Audio.SampleRate, data.Audio.BitsPerSample)
+		at := utils.BytesToDuration(md.pw.AudioPos.From, data.Audio.SampleRate, data.Audio.BitsPerSample)
 		sm := &api.SpeechMark{
-			Value:        w,
-			Type:         api.SpeechMarkTypeWord,
+			Value: w,
+			Type:  api.SpeechMarkTypeWord,
 			// TimeInMillis: (from + md.start + utils.ToDuration(md.pw.SynthesizedPos.From+md.shift, data.Audio.SampleRate, md.part.Step)).Milliseconds(),
-			TimeInMillis: utils.BytesToDuration(md.pw.AudioPos.From, data.Audio.SampleRate, data.Audio.BitsPerSample).Milliseconds(),
-			Duration: (getLastWordTo(aligned, i, maps, data.Audio.SampleRate, md.part.Step) -
-				(utils.ToDuration(md.pw.SynthesizedPos.From+md.shift, data.Audio.SampleRate, md.part.Step) + md.start)).Milliseconds(),
+			TimeInMillis: at.Milliseconds(),
+			Duration:     (to - at).Milliseconds(),
 		}
-		goapp.Log.Debug().Msgf("Word: %s, from: %d, to: %d, shift: %d, start: %d, from %d, res: %d-%d (%d)",
-			w, md.pw.SynthesizedPos.From, to.Milliseconds(), md.shift, md.start.Milliseconds(), from.Milliseconds(), sm.TimeInMillis, sm.TimeInMillis+sm.Duration, sm.Duration)
+		goapp.Log.Debug().Msgf("Word: %s, from: %d, to: %d, from %d, res: %d-%d (%d)",
+			w, md.pw.SynthesizedPos.From, to.Milliseconds(), from.Milliseconds(), sm.TimeInMillis, sm.TimeInMillis+sm.Duration, sm.Duration)
 		res = append(res, sm)
 	}
 	return res, calcDuration(data.Parts), nil
@@ -265,7 +262,7 @@ func calcDuration(tTSDataPart []*TTSDataPart) time.Duration {
 	return res
 }
 
-func getLastWordTo(aligned []int, i int, maps []*wordMapData, sampleRate uint32, step int) time.Duration {
+func getLastWordTo(aligned []int, i int, maps []*wordMapData, sampleRate uint32, bitsPerSample uint16) time.Duration {
 	c := aligned[i]
 	var upTo int
 	if i < len(aligned)-1 {
@@ -281,29 +278,22 @@ func getLastWordTo(aligned []int, i int, maps []*wordMapData, sampleRate uint32,
 		}
 	}
 	mw := maps[res]
-	return utils.ToDuration(mw.pw.SynthesizedPos.To+mw.shift, sampleRate, step) + mw.start
+	return utils.BytesToDuration(mw.pw.AudioPos.To, sampleRate, bitsPerSample)
 }
 
 func collectWords(parts []*TTSDataPart) ([]string, []*wordMapData) {
 	var words []string
 	var maps []*wordMapData
-	startAt := time.Duration(0)
 	for _, p := range parts {
 		for _, w := range p.Words {
 			if w.Tagged.IsWord() {
 				words = append(words, w.Tagged.Word)
 				maps = append(maps,
 					&wordMapData{
-						start: startAt,
-						shift: p.AudioDurations.Shift,
-						pw:    w,
-						part:  p,
+						pw: w,
 					})
-				// } else if w.Tagged.Separator != "" && len(words) > 0 {
-				// 	words[len(words)-1] += w.Tagged.Separator
 			}
 		}
-		startAt += p.AudioDurations.Duration
 	}
 	return words, maps
 }

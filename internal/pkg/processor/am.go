@@ -140,6 +140,7 @@ func mapAMOutputDurations(ctx context.Context, data *synthesizer.TTSDataPart, du
 			From:          sums[fromI],
 			To:            sums[toI],
 			Durations:     durations[fromI:toI],
+			StartIndex:    fromI,
 			VolumeChanges: volChanges[fromI:toI],
 		}
 	}

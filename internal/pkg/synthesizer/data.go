@@ -92,7 +92,8 @@ type TTSDataPart struct {
 
 type SynthesizedPos struct {
 	// in tts steps
-	From, To int
+	From, To   int
+	StartIndex int // in base duration list
 
 	Durations     []int     //chars
 	VolumeChanges []float64 // in dB
