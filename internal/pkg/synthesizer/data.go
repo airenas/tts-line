@@ -38,13 +38,14 @@ type AudioData struct {
 	Data          []byte
 	SampleRate    uint32
 	BitsPerSample uint16
+	Duration      time.Duration
 }
 
 func (a *AudioData) Seconds() float64 {
-	if a == nil || a.SampleRate <= 0 || a.BitsPerSample <= 0 {
+	if a == nil {
 		return 0
 	}
-	return float64(len(a.Data)) / float64(a.SampleRate*uint32(a.BitsPerSample)/8)
+	return a.Duration.Seconds()
 }
 
 // TTSTextPart part of the text

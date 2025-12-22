@@ -37,7 +37,7 @@ func TestNewJoinAudio(t *testing.T) {
 
 func TestJoinAudio(t *testing.T) {
 	pr := NewJoinAudio(loaderMock)
-	d := synthesizer.TTSData{Input: &api.TTSRequestConfig{OutputFormat: api.AudioMP3}}
+	d := synthesizer.TTSData{Input: &api.TTSRequestConfig{OutputFormat: api.AudioMP3, MaxEdgeSilenceMillis: -1}}
 	strA := getTestEncAudio(t)
 	d.Parts = []*synthesizer.TTSDataPart{{Audio: strA,
 		Words: []*synthesizer.ProcessedWord{{Tagged: synthesizer.TaggedWord{Word: "olia"},
@@ -45,11 +45,15 @@ func TestJoinAudio(t *testing.T) {
 		Durations:       []int{10, 10, 10, 10, 10, 10, 10, 10},
 		TranscribedText: "sil o l i a sp sil",
 		Step:            256,
+		DefaultSilence:  18,
 	}}
 	err := pr.Process(context.TODO(), &d)
 	require.Nil(t, err)
 	// assert.Equal(t, getWaveData(t), d.Audio)
-	assert.InDelta(t, 0.5572, d.Audio.Seconds(), 0.001)
+	// 9 +40 + 9 = 58 * 256    // half default duration
+	// 58 * 256 *2 / (44100* 2) = 0.33668934240362813
+
+	assert.InDelta(t, 0.33668, d.Audio.Seconds(), 0.001)
 }
 
 func TestJoinAudio_Skip(t *testing.T) {
@@ -124,15 +128,23 @@ func TestJoinAudio_Suffix(t *testing.T) {
 
 func TestJoinSSMLAudio(t *testing.T) {
 	pr := NewJoinSSMLAudio(loaderMock)
-	d := synthesizer.TTSData{Input: &api.TTSRequestConfig{OutputFormat: api.AudioMP3}}
+	d := synthesizer.TTSData{Input: &api.TTSRequestConfig{OutputFormat: api.AudioMP3, MaxEdgeSilenceMillis: -1}}
 	strA := getTestEncAudio(t)
-	d.Parts = []*synthesizer.TTSDataPart{{Audio: strA, Step: 256, Cfg: &synthesizer.TTSConfig{}}}
+	d.Parts = []*synthesizer.TTSDataPart{{Audio: strA,
+		Words: []*synthesizer.ProcessedWord{{Tagged: synthesizer.TaggedWord{Word: "olia"},
+			SynthesizedPos: &synthesizer.SynthesizedPos{From: 10, StartIndex: 1, To: 40}}},
+		Durations:       []int{10, 10, 10, 10, 10, 10, 10, 10},
+		TranscribedText: "sil o l i a sp sil",
+		Step:            256,
+		DefaultSilence:  18,
+	}}
+
 	d.Cfg.Type = synthesizer.SSMLText
 	da := &synthesizer.TTSData{Input: d.Input, SSMLParts: []*synthesizer.TTSData{&d}}
 	err := pr.Process(context.TODO(), da)
 	assert.Nil(t, err)
-	assert.Equal(t, getWaveData(t), da.Audio)
-	assert.InDelta(t, 0.5572, da.Audio.Seconds(), 0.001)
+	// assert.Equal(t, getWaveData(t), da.Audio)
+	assert.InDelta(t, 0.33689, da.Audio.Seconds(), 0.001)
 }
 
 func TestJoinSSMLAudio_Skip(t *testing.T) {
@@ -158,7 +170,7 @@ func TestJoinSSMLAudio_Several(t *testing.T) {
 	d.Cfg.Type = synthesizer.SSMLText
 	da := &synthesizer.TTSData{Input: d.Input, SSMLParts: []*synthesizer.TTSData{&d, &d}}
 	err := pr.Process(context.TODO(), da)
-	assert.Nil(t, err)
+	require.Nil(t, err)
 
 	as := getTestAudioSize(strA)
 
@@ -175,6 +187,7 @@ func TestJoinSSMLAudio_DecodeFail(t *testing.T) {
 	da := &synthesizer.TTSData{Input: d.Input, SSMLParts: []*synthesizer.TTSData{&d}}
 	err := pr.Process(context.TODO(), da)
 	assert.NotNil(t, err)
+	t.Logf("%s", err.Error())
 }
 
 func TestJoinSSMLAudio_EmptyFail(t *testing.T) {

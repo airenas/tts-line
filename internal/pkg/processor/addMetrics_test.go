@@ -3,6 +3,7 @@ package processor
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/airenas/tts-line/internal/pkg/synthesizer"
 	"github.com/prometheus/client_golang/prometheus/testutil"
@@ -52,5 +53,5 @@ func TestCallsCMetricsWaveLen(t *testing.T) {
 func testGenerateSampleData(t *testing.T, data []byte) *synthesizer.AudioData {
 	t.Helper()
 
-	return &synthesizer.AudioData{Data: data, SampleRate: 22050, BitsPerSample: 16}
+	return &synthesizer.AudioData{Data: data, SampleRate: 22050, BitsPerSample: 16, Duration: time.Duration(len(data)) * time.Second / time.Duration(22050*2)}
 }
