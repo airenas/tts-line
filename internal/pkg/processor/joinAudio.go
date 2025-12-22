@@ -170,12 +170,13 @@ func join(ctx context.Context, parts []*synthesizer.TTSDataPart, suffix []byte, 
 	_, _ = bufRes.Write(res.header)
 
 	_, _ = bufRes.Write([]byte("data"))
-	_, _ = bufRes.Write(wav.SizeBytes(uint32(res.buf.Len())))
+	_, _ = bufRes.Write(wav.SizeBytes(uint32(len(resBytes))))
 	_, _ = bufRes.Write(resBytes)
 	return &synthesizer.AudioData{
 		Data:          bufRes.Bytes(),
 		SampleRate:    res.sampleRate(),
 		BitsPerSample: res.bitsPerSample(),
+		Duration:      time.Duration(len(resBytes)) * time.Second / time.Duration(res.sampleRate()*uint32(res.bitsPerSample()/8)),
 	}, nil
 
 }
@@ -581,13 +582,14 @@ func joinSSML(ctx context.Context, data *synthesizer.TTSData, suffix []byte, max
 	var bufRes bytes.Buffer
 	_, _ = bufRes.Write(res.header)
 	_, _ = bufRes.Write([]byte("data"))
-	_, _ = bufRes.Write(wav.SizeBytes(uint32(res.buf.Len())))
+	_, _ = bufRes.Write(wav.SizeBytes(uint32(len(resBytes))))
 	_, _ = bufRes.Write(resBytes)
 
 	return &synthesizer.AudioData{
 		Data:          bufRes.Bytes(),
 		SampleRate:    res.sampleRate(),
 		BitsPerSample: res.bitsPerSample(),
+		Duration:      time.Duration(len(resBytes)) * time.Second / time.Duration(res.sampleRate()*uint32(res.bitsPerSample()/8)),
 	}, nil
 }
 
