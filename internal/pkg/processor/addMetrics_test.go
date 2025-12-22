@@ -39,7 +39,7 @@ func TestCallsCMetricsWaveLen(t *testing.T) {
 	assert.NotNil(t, pr)
 	assert.Nil(t, err)
 	d := &synthesizer.TTSData{}
-	d.AudioLenSeconds = 0.35
+	d.Audio = testGenerateSampleData(t, make([]byte, 22050*2*.35)) // 0.35 sec of audio
 	err = pr.Process(context.TODO(), d)
 	assert.Nil(t, err)
 	err = pr.Process(context.TODO(), d)
@@ -47,4 +47,10 @@ func TestCallsCMetricsWaveLen(t *testing.T) {
 	err = pr.Process(context.TODO(), d)
 	assert.Nil(t, err)
 	assert.InDelta(t, 1.05, testutil.ToFloat64(totalDurationMetrics.WithLabelValues("test")), 0.000001)
+}
+
+func testGenerateSampleData(t *testing.T, data []byte) *synthesizer.AudioData {
+	t.Helper()
+
+	return &synthesizer.AudioData{Data: data, SampleRate: 22050, BitsPerSample: 16}
 }

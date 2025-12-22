@@ -123,6 +123,15 @@ func join(ctx context.Context, parts []*synthesizer.TTSDataPart, suffix []byte, 
 			res.sampleRateV = ar.audio.sampleRate
 		}
 		lenBefore := res.buf.Len()
+		if len(part.Words) == 0 {
+			// just append all
+			bData := ar.audio.data
+			_, err := res.buf.Write(bData)
+			if err != nil {
+				return nil, err
+			}
+			continue
+		}
 		for _, w := range part.Words {
 			wwdNext.audioReader = ar
 			wwdNext.word = w
@@ -169,13 +178,6 @@ func join(ctx context.Context, parts []*synthesizer.TTSDataPart, suffix []byte, 
 		BitsPerSample: res.bitsPerSample(),
 	}, nil
 
-}
-
-func calculateDurations(aLen int, samplesPerSec uint32) time.Duration {
-	if samplesPerSec == 0 {
-		return 0
-	}
-	return time.Duration(float64(aLen)*1000/float64(samplesPerSec)) * time.Millisecond
 }
 
 func getStartSilSize(phones []string, durations []int) int {
@@ -230,14 +232,7 @@ func getEndSilSize(ctx context.Context, phones []string, durations []int) (int /
 	return res, sum
 }
 
-type interval struct {
-	from      int
-	skip      int
-	duration  time.Duration
-	nextShift int
-}
-
-func appendWav(ctx context.Context, res *wavWriter, wavData []byte) error {
+func appendWav(_ctx context.Context, res *wavWriter, wavData []byte) error {
 	if !wav.IsValid(wavData) {
 		return errors.New("no valid audio wave data")
 	}
@@ -432,7 +427,7 @@ func writeWordAudio(ctx context.Context, res *wavWriter, wwd *wordWriteData, wwd
 
 	wwd.word.AudioPos = &synthesizer.AudioPos{
 		From: res.buf.Len() + wwd.audioReader.wordShiftInAudio(wwd.word.SynthesizedPos.From),
-		To: res.buf.Len() + wwd.audioReader.wordShiftInAudio(wwd.word.SynthesizedPos.To),
+		To:   res.buf.Len() + wwd.audioReader.wordShiftInAudio(wwd.word.SynthesizedPos.To),
 	}
 
 	if wwd.word.Tagged.IsWord() {
@@ -638,36 +633,12 @@ func initAudioReader(ctx context.Context, part *synthesizer.TTSDataPart) (*audio
 	}, nil
 }
 
-func findSilZones(ww *wavWriter, part *synthesizer.TTSDataPart) []*interval {
-	var res []*interval
-	for _, w := range part.Words {
-		if w.TextPart != nil && w.IsLastInPart && w.TextPart.PauseAfter > 0 {
-			var duration time.Duration
-			var nextShift int
-			if !w.Tagged.IsWord() && len(w.SynthesizedPos.Durations) > 0 {
-				nextShift = w.SynthesizedPos.Durations[len(w.SynthesizedPos.Durations)-1]
-				duration = utils.ToDuration(nextShift, ww.sampleRate(), part.Step)
-			}
-			from := (w.SynthesizedPos.To - (w.SynthesizedPos.To-w.SynthesizedPos.From)/2) * part.Step
-			if duration < w.TextPart.PauseAfter {
-				res = append(res, &interval{from: from, duration: w.TextPart.PauseAfter - duration, nextShift: nextShift})
-			} else if duration > w.TextPart.PauseAfter {
-				hoops := utils.ToTTSSteps(duration-w.TextPart.PauseAfter, ww.sampleRate(), part.Step)
-				steps := hoops * part.Step
-				from -= steps / 2
-				res = append(res, &interval{from: from, skip: steps, duration: w.TextPart.PauseAfter - duration, nextShift: nextShift - hoops})
-			}
-		}
-	}
-	return res
-}
-
 func makeVolumeChanges(ctx context.Context, part *synthesizer.TTSDataPart, startPos, endPos int, bytesPerSample uint16) []*audio.VolChange {
 	var res []*audio.VolChange
 	rate := part.LoudnessGain
 	var last *audio.VolChange
 	for _, w := range part.Words {
-		if !w.Tagged.IsWord() {
+		if !w.Tagged.IsWord() || w.AudioPos == nil {
 			continue
 		}
 		from := w.AudioPos.From

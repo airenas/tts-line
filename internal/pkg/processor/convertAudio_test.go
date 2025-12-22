@@ -44,7 +44,7 @@ func TestInvokeConvert(t *testing.T) {
 	assert.NotNil(t, pr)
 	pr.(*audioConverter).client = mockClient
 	d := synthesizer.TTSData{}
-	d.Audio = []byte("wav")
+	d.Audio = testGenerateSampleData(t, []byte("wav"))
 	d.Input = &api.TTSRequestConfig{OutputMetadata: []string{"olia"}, OutputFormat: api.AudioMP3}
 	err := pr.Process(context.TODO(), &d)
 	assert.Nil(t, err)
@@ -69,7 +69,7 @@ func TestInvokeConvert_Skip(t *testing.T) {
 	assert.NotNil(t, pr)
 	pr.(*audioConverter).client = mockClient
 	d := synthesizer.TTSData{}
-	d.Audio = []byte("wav")
+	d.Audio = testGenerateSampleData(t, []byte("wav"))
 	d.Input = &api.TTSRequestConfig{OutputMetadata: []string{"olia"}, OutputFormat: api.AudioNone}
 	err := pr.Process(context.TODO(), &d)
 	assert.Nil(t, err)
@@ -87,7 +87,7 @@ func TestInvokeConvert_SkipWAV(t *testing.T) {
 	assert.NotNil(t, pr)
 	pr.(*audioConverter).client = mockClient
 	d := synthesizer.TTSData{}
-	d.Audio = []byte("wav")
+	d.Audio = testGenerateSampleData(t, []byte("wav"))
 	d.Input = &api.TTSRequestConfig{OutputMetadata: []string{"olia"}, OutputFormat: api.AudioWAV}
 	err := pr.Process(context.TODO(), &d)
 	assert.Nil(t, err)
@@ -104,7 +104,7 @@ func TestInvokeConvert_Fail(t *testing.T) {
 	assert.NotNil(t, pr)
 	pr.(*audioConverter).client = mockClient
 	d := synthesizer.TTSData{}
-	d.Audio = []byte("wav")
+	d.Audio = testGenerateSampleData(t, []byte("wav"))
 	d.Input = &api.TTSRequestConfig{OutputMetadata: []string{"olia"}, OutputFormat: api.AudioMP3}
 	err := pr.Process(context.TODO(), &d)
 	assert.NotNil(t, err)
@@ -125,7 +125,7 @@ func TestInvokeConvert_FailSend(t *testing.T) {
 	assert.NotNil(t, pr)
 	pr.(*audioConverter).client = mockClient
 	d := synthesizer.TTSData{}
-	d.Audio = []byte("wav")
+	d.Audio = testGenerateSampleData(t, []byte("wav"))
 	d.Input = &api.TTSRequestConfig{OutputMetadata: []string{"olia"}, OutputFormat: api.AudioMP3}
 	err := pr.Process(context.TODO(), &d)
 	assert.NotNil(t, err)
@@ -146,7 +146,7 @@ func TestInvokeConvert_FailSendEOF(t *testing.T) {
 	assert.NotNil(t, pr)
 	pr.(*audioConverter).client = mockClient
 	d := synthesizer.TTSData{}
-	d.Audio = []byte("wav")
+	d.Audio = testGenerateSampleData(t, []byte("wav"))
 	d.Input = &api.TTSRequestConfig{OutputMetadata: []string{"olia"}, OutputFormat: api.AudioMP3}
 	err := pr.Process(context.TODO(), &d)
 	assert.NotNil(t, err)
@@ -167,7 +167,7 @@ func TestInvokeConvert_FailReceive(t *testing.T) {
 	assert.NotNil(t, pr)
 	pr.(*audioConverter).client = mockClient
 	d := synthesizer.TTSData{}
-	d.Audio = []byte("wav")
+	d.Audio = testGenerateSampleData(t, []byte("wav"))
 	d.Input = &api.TTSRequestConfig{OutputMetadata: []string{"olia"}, OutputFormat: api.AudioMP3}
 	err := pr.Process(context.TODO(), &d)
 	assert.NotNil(t, err)
