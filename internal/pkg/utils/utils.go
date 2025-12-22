@@ -34,6 +34,13 @@ func Float64Equals(a, b float64) bool {
 	return (a-b) < eps64 && (b-a) < eps64
 }
 
+func Abs(v int) int {
+	if v < 0 {
+		return -v
+	}
+	return v
+}
+
 // RetrieveInfo invokes Info() if interface has one
 // else returns ""
 func RetrieveInfo(pr interface{}) string {
