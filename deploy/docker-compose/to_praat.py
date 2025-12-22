@@ -43,11 +43,13 @@ def main(argv):
         end = (m["timeMillis"] + m["durationMillis"]) / 1000.0
         word_entries.append((start, end, m["value"]))
 
+    end += 3.0  # to avoid issues with praat
     tg = textgrid.Textgrid()
     word_tier = textgrid.IntervalTier(
         name="words",
         entries=word_entries,
-        minT=0
+        minT=0.0,
+        maxT=end    
     )
 
     tg.addTier(word_tier)
