@@ -51,7 +51,7 @@ func TestJoinAudio(t *testing.T) {
 	require.Nil(t, err)
 	// assert.Equal(t, getWaveData(t), d.Audio)
 	// 9 +40 + 9 = 58 * 256    // half default duration
-	// 58 * 256 *2 / (44100* 2) = 0.33668934240362813
+	// 58 * 256 *2 / (44100 * 2) = 0.33668934240362813
 
 	assert.InDelta(t, 0.33668, d.Audio.Seconds(), 0.001)
 }
@@ -149,9 +149,16 @@ func TestJoinSSMLAudio(t *testing.T) {
 
 func TestJoinSSMLAudio_Skip(t *testing.T) {
 	pr := NewJoinSSMLAudio(loaderMock)
-	d := synthesizer.TTSData{Input: &api.TTSRequestConfig{OutputFormat: api.AudioNone}}
+	d := synthesizer.TTSData{Input: &api.TTSRequestConfig{OutputFormat: api.AudioNone, MaxEdgeSilenceMillis: -1}}
 	strA := getTestEncAudio(t)
-	d.Parts = []*synthesizer.TTSDataPart{{Audio: strA, Cfg: &synthesizer.TTSConfig{}}}
+	d.Parts = []*synthesizer.TTSDataPart{{Audio: strA,
+		Words: []*synthesizer.ProcessedWord{{Tagged: synthesizer.TaggedWord{Word: "olia"},
+			SynthesizedPos: &synthesizer.SynthesizedPos{From: 10, StartIndex: 1, To: 40}}},
+		Durations:       []int{10, 10, 10, 10, 10, 10, 10, 10},
+		TranscribedText: "sil o l i a sp sil",
+		Step:            256,
+		DefaultSilence:  18,
+	}}
 	d.Cfg.Type = synthesizer.SSMLText
 	da := &synthesizer.TTSData{Input: d.Input, SSMLParts: []*synthesizer.TTSData{&d}}
 	err := pr.Process(context.TODO(), da)
@@ -163,39 +170,93 @@ func TestJoinSSMLAudio_Skip(t *testing.T) {
 func TestJoinSSMLAudio_Several(t *testing.T) {
 	initTestJSON(t)
 	pr := NewJoinSSMLAudio(loaderMock)
-	d := synthesizer.TTSData{Input: &api.TTSRequestConfig{OutputFormat: api.AudioMP3}}
+	d := synthesizer.TTSData{Input: &api.TTSRequestConfig{OutputFormat: api.AudioMP3, MaxEdgeSilenceMillis: -1}}
 	strA := getTestEncAudio(t)
-	d.Parts = []*synthesizer.TTSDataPart{{Audio: strA, Step: 256, Cfg: &synthesizer.TTSConfig{}}, {Audio: strA, Step: 256, Cfg: &synthesizer.TTSConfig{}},
-		{Audio: strA, Step: 256, Cfg: &synthesizer.TTSConfig{}}}
+	d.Parts = []*synthesizer.TTSDataPart{{Audio: strA,
+		Words: []*synthesizer.ProcessedWord{{Tagged: synthesizer.TaggedWord{Word: "olia"},
+			SynthesizedPos: &synthesizer.SynthesizedPos{From: 10, StartIndex: 1, To: 40}}},
+		Durations:       []int{10, 10, 10, 10, 10, 10, 10, 10},
+		TranscribedText: "sil o l i a sp sil",
+		Step:            256,
+		DefaultSilence:  18,
+	},
+		{Audio: strA,
+			Words: []*synthesizer.ProcessedWord{{Tagged: synthesizer.TaggedWord{Word: "olia"},
+				SynthesizedPos: &synthesizer.SynthesizedPos{From: 10, StartIndex: 1, To: 40}}},
+			Durations:       []int{10, 10, 10, 10, 10, 10, 10, 10},
+			TranscribedText: "sil o l i a sp sil",
+			Step:            256,
+			DefaultSilence:  18,
+		}, {Audio: strA,
+			Words: []*synthesizer.ProcessedWord{{Tagged: synthesizer.TaggedWord{Word: "olia"},
+				SynthesizedPos: &synthesizer.SynthesizedPos{From: 10, StartIndex: 1, To: 40}}},
+			Durations:       []int{10, 10, 10, 10, 10, 10, 10, 10},
+			TranscribedText: "sil o l i a sp sil",
+			Step:            256,
+			DefaultSilence:  18,
+		}}
 	d.Cfg.Type = synthesizer.SSMLText
 	da := &synthesizer.TTSData{Input: d.Input, SSMLParts: []*synthesizer.TTSData{&d, &d}}
 	err := pr.Process(context.TODO(), da)
 	require.Nil(t, err)
 
-	as := getTestAudioSize(strA)
+	// 9 + 40 + 18 + 40 + 18 + 40 + 9 = 174    // 18 - default duration
+	// 174 * 256 *2 / (44100* 2) = 1.0100680272108844
+	// * 2 ssml parts
 
-	assert.Equal(t, as*6, getTestAudioSize(da.Audio.Data))
-	assert.InDelta(t, 0.5572*6, da.Audio.Seconds(), 0.001)
+	assert.InDelta(t, 2*174.0*256/44100, da.Audio.Seconds(), 0.001)
 }
 
 func TestJoinSSMLAudio_DecodeFail(t *testing.T) {
 	initTestJSON(t)
 	pr := NewJoinSSMLAudio(loaderMock)
-	d := synthesizer.TTSData{Input: &api.TTSRequestConfig{OutputFormat: api.AudioMP3}}
+	d := synthesizer.TTSData{Input: &api.TTSRequestConfig{OutputFormat: api.AudioMP3, MaxEdgeSilenceMillis: -1}}
 	strA := getTestEncAudio(t)
-	d.Parts = []*synthesizer.TTSDataPart{{Audio: strA, Cfg: &synthesizer.TTSConfig{}}, {Audio: []byte("aaa"), Cfg: &synthesizer.TTSConfig{}}}
+	d.Parts = []*synthesizer.TTSDataPart{{Audio: strA,
+		Words: []*synthesizer.ProcessedWord{{Tagged: synthesizer.TaggedWord{Word: "olia"},
+			SynthesizedPos: &synthesizer.SynthesizedPos{From: 10, StartIndex: 1, To: 40}}},
+		Durations:       []int{10, 10, 10, 10, 10, 10, 10, 10},
+		TranscribedText: "sil o l i a sp sil",
+		Step:            256,
+		DefaultSilence:  18,
+	},
+		{Audio: []byte("aaa"),
+			Words: []*synthesizer.ProcessedWord{{Tagged: synthesizer.TaggedWord{Word: "olia"},
+				SynthesizedPos: &synthesizer.SynthesizedPos{From: 10, StartIndex: 1, To: 40}}},
+			Durations:       []int{10, 10, 10, 10, 10, 10, 10, 10},
+			TranscribedText: "sil o l i a sp sil",
+			Step:            256,
+			DefaultSilence:  18,
+		}}
+	d.Cfg.Type = synthesizer.SSMLText
 	da := &synthesizer.TTSData{Input: d.Input, SSMLParts: []*synthesizer.TTSData{&d}}
 	err := pr.Process(context.TODO(), da)
-	assert.NotNil(t, err)
+	require.NotNil(t, err)
 	t.Logf("%s", err.Error())
 }
 
 func TestJoinSSMLAudio_EmptyFail(t *testing.T) {
 	initTestJSON(t)
 	pr := NewJoinSSMLAudio(loaderMock)
-	d := synthesizer.TTSData{Input: &api.TTSRequestConfig{OutputFormat: api.AudioMP3}}
+	d := synthesizer.TTSData{Input: &api.TTSRequestConfig{OutputFormat: api.AudioMP3, MaxEdgeSilenceMillis: -1}}
 	strA := getTestEncAudio(t)
-	d.Parts = []*synthesizer.TTSDataPart{{Audio: strA, Step: 256, Cfg: &synthesizer.TTSConfig{}}, {Audio: []byte(""), Step: 256, Cfg: &synthesizer.TTSConfig{}}}
+	d.Parts = []*synthesizer.TTSDataPart{{Audio: strA,
+		Words: []*synthesizer.ProcessedWord{{Tagged: synthesizer.TaggedWord{Word: "olia"},
+			SynthesizedPos: &synthesizer.SynthesizedPos{From: 10, StartIndex: 1, To: 40}}},
+		Durations:       []int{10, 10, 10, 10, 10, 10, 10, 10},
+		TranscribedText: "sil o l i a sp sil",
+		Step:            256,
+		DefaultSilence:  18,
+	},
+		{Audio: []byte(""),
+			Words: []*synthesizer.ProcessedWord{{Tagged: synthesizer.TaggedWord{Word: "olia"},
+				SynthesizedPos: &synthesizer.SynthesizedPos{From: 10, StartIndex: 1, To: 40}}},
+			Durations:       []int{10, 10, 10, 10, 10, 10, 10, 10},
+			TranscribedText: "sil o l i a sp sil",
+			Step:            256,
+			DefaultSilence:  18,
+		}}
+	d.Cfg.Type = synthesizer.SSMLText
 	da := &synthesizer.TTSData{Input: d.Input, SSMLParts: []*synthesizer.TTSData{&d}}
 	err := pr.Process(context.TODO(), da)
 	assert.NotNil(t, err)
@@ -203,31 +264,59 @@ func TestJoinSSMLAudio_EmptyFail(t *testing.T) {
 
 func TestJoinSSMLAudio_AddPause(t *testing.T) {
 	pr := NewJoinSSMLAudio(loaderMock)
-	d := &synthesizer.TTSData{Input: &api.TTSRequestConfig{OutputFormat: api.AudioMP3}}
+	d := &synthesizer.TTSData{Input: &api.TTSRequestConfig{OutputFormat: api.AudioMP3, MaxEdgeSilenceMillis: -1}}
 	strA := getTestEncAudio(t)
-	d.Parts = []*synthesizer.TTSDataPart{{Audio: strA, Step: 256, Cfg: &synthesizer.TTSConfig{}}}
+	d.Parts = []*synthesizer.TTSDataPart{{Audio: strA,
+		Words: []*synthesizer.ProcessedWord{{Tagged: synthesizer.TaggedWord{Word: "olia"},
+			SynthesizedPos: &synthesizer.SynthesizedPos{From: 10, StartIndex: 1, To: 40}}},
+		Durations:       []int{10, 10, 10, 10, 10, 10, 10, 10},
+		TranscribedText: "sil o l i a sp sil",
+		Step:            256,
+		DefaultSilence:  18,
+	}}
 	d.Cfg.Type = synthesizer.SSMLText
+
+	dpw := &synthesizer.TTSData{Input: &api.TTSRequestConfig{OutputFormat: api.AudioMP3, MaxEdgeSilenceMillis: -1}}
+	dpw.Parts = []*synthesizer.TTSDataPart{{Audio: strA,
+		Words: []*synthesizer.ProcessedWord{{Tagged: synthesizer.TaggedWord{Word: "olia"},
+			SynthesizedPos: &synthesizer.SynthesizedPos{From: 10, StartIndex: 1, To: 30},
+			TextPart:       &synthesizer.TTSTextPart{PauseAfter: time.Second},
+		}, {Tagged: synthesizer.TaggedWord{Space: true},
+			SynthesizedPos: &synthesizer.SynthesizedPos{From: 30, StartIndex: 4, To: 40},
+			TextPart:       &synthesizer.TTSTextPart{PauseAfter: time.Second},
+			IsLastInPart:   true,
+		}},
+		Durations:       []int{10, 10, 10, 10, 10, 10, 10, 10, 5},
+		TranscribedText: "sil o l i a sil sp sil",
+		Step:            256,
+		DefaultSilence:  18,
+	}}
+	dpw.Cfg.Type = synthesizer.SSMLText
+
 	dp := &synthesizer.TTSData{}
 	dp.Cfg.Type = synthesizer.SSMLPause
 	dp.Cfg.PauseDuration = time.Second * 5
 
-	as := getTestAudioSize(strA)
-	ps := getTestPauseSize(strA, dp.Cfg.PauseDuration)
-	al := 0.5572
+	al := 0.33668
+	startl := 9.0 * 256 * 2 / (44100 * 2)
+	endPauseSil := 30.0 * 256 * 2 / (44100 * 2)
 
 	tests := []struct {
-		name     string
-		args     []*synthesizer.TTSData
-		wantSize uint32
-		wantLen  float64
-		wantErr  bool
+		name    string
+		args    []*synthesizer.TTSData
+		wantLen float64
+		wantErr bool
 	}{
-		{name: "pause start", args: []*synthesizer.TTSData{dp, d}, wantSize: as + ps, wantLen: al + 5, wantErr: false},
-		{name: "simple", args: []*synthesizer.TTSData{d}, wantSize: as, wantLen: al, wantErr: false},
-		{name: "pause end", args: []*synthesizer.TTSData{d, dp}, wantSize: as + ps, wantLen: al + 5, wantErr: false},
-		{name: "pause middle", args: []*synthesizer.TTSData{d, dp, d}, wantSize: as*2 + ps, wantLen: al*2 + 5, wantErr: false},
-		{name: "max 10 sec", args: []*synthesizer.TTSData{d, dp, dp, dp}, wantSize: as + ps*2, wantLen: al + 10, wantErr: false},
-		{name: "just pause", args: []*synthesizer.TTSData{dp, dp, dp}, wantSize: 0, wantLen: 0, wantErr: true},
+		{name: "pause in word", args: []*synthesizer.TTSData{dpw}, wantLen: al - startl + 1, wantErr: false}, // the last end is eaten by pause
+		{name: "simple", args: []*synthesizer.TTSData{d}, wantLen: al, wantErr: false},
+		{name: "pause start", args: []*synthesizer.TTSData{dp, d}, wantLen: al - startl + 5, wantErr: false},
+		{name: "pause end", args: []*synthesizer.TTSData{d, dp}, wantLen: al + -startl + 5, wantErr: false},
+		{name: "pause middle", args: []*synthesizer.TTSData{d, dp, d}, wantLen: al*2 - startl*2 + 5, wantErr: false},
+
+		// pause is trimmed at 10s internally, so the full end pause does not caunt in this time
+		{name: "max 10 sec", args: []*synthesizer.TTSData{d, dp, dp, dp}, wantLen: al - startl + endPauseSil + 10, wantErr: false},
+
+		{name: "just pause", args: []*synthesizer.TTSData{dp, dp, dp}, wantLen: 0, wantErr: true},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -235,8 +324,7 @@ func TestJoinSSMLAudio_AddPause(t *testing.T) {
 			err := pr.Process(context.TODO(), da)
 			require.Equal(t, tt.wantErr, err != nil)
 			if !tt.wantErr {
-				assert.InDelta(t, int(tt.wantSize), int(getTestAudioSize(da.Audio.Data)), 300) // give some delta bacause of hops to time conversion and floating point errors
-				assert.InDelta(t, tt.wantLen, da.Audio.Seconds(), 0.004)
+				assert.InDelta(t, tt.wantLen, da.Audio.Seconds(), 0.001)
 			}
 		})
 	}
@@ -246,23 +334,47 @@ func TestJoinSSMLAudio_AddPause(t *testing.T) {
 func TestJoinSSMLAudio_Suffix(t *testing.T) {
 	initTestJoiner(t)
 	pr := NewJoinSSMLAudio(loaderMock)
-	d := synthesizer.TTSData{Input: &api.TTSRequestConfig{OutputFormat: api.AudioMP3}}
+	d := synthesizer.TTSData{Input: &api.TTSRequestConfig{OutputFormat: api.AudioMP3, MaxEdgeSilenceMillis: -1}}
 	strA := getTestEncAudio(t)
-	d.Parts = []*synthesizer.TTSDataPart{{Audio: strA, Step: 256, Cfg: &synthesizer.TTSConfig{}}}
+	d.Parts = []*synthesizer.TTSDataPart{{Audio: strA,
+		Words: []*synthesizer.ProcessedWord{{Tagged: synthesizer.TaggedWord{Word: "olia"},
+			SynthesizedPos: &synthesizer.SynthesizedPos{From: 10, StartIndex: 1, To: 40}}},
+		Durations:       []int{10, 10, 10, 10, 10, 10, 10, 10},
+		TranscribedText: "sil o l i a sp sil",
+		Step:            256,
+		DefaultSilence:  18,
+	}}
 	d.Cfg.Type = synthesizer.SSMLText
 	da := &synthesizer.TTSData{Input: d.Input, SSMLParts: []*synthesizer.TTSData{&d}, AudioSuffix: "oo.wav"}
 	loaderMock.On("TakeWav", mock.Anything).Return(getWaveData(t), nil)
 	err := pr.Process(context.TODO(), da)
-	assert.Nil(t, err)
-	assert.InDelta(t, 0.5572*2, da.Audio.Seconds(), 0.001)
+	require.Nil(t, err)
+	al := 0.33668
+	sl := 0.5572
+	assert.InDelta(t, al+sl, da.Audio.Seconds(), 0.001)
 }
 
 func TestJoinSSMLAudio_SuffixFail(t *testing.T) {
 	initTestJoiner(t)
 	pr := NewJoinSSMLAudio(loaderMock)
-	d := synthesizer.TTSData{Input: &api.TTSRequestConfig{OutputFormat: api.AudioMP3}}
+	d := synthesizer.TTSData{Input: &api.TTSRequestConfig{OutputFormat: api.AudioMP3, MaxEdgeSilenceMillis: -1}}
 	strA := getTestEncAudio(t)
-	d.Parts = []*synthesizer.TTSDataPart{{Audio: strA, Step: 256, Cfg: &synthesizer.TTSConfig{}}}
+	d.Parts = []*synthesizer.TTSDataPart{{Audio: strA,
+		Words: []*synthesizer.ProcessedWord{{Tagged: synthesizer.TaggedWord{Word: "olia"},
+			SynthesizedPos: &synthesizer.SynthesizedPos{From: 10, StartIndex: 1, To: 40}}},
+		Durations:       []int{10, 10, 10, 10, 10, 10, 10, 10},
+		TranscribedText: "sil o l i a sp sil",
+		Step:            256,
+		DefaultSilence:  18,
+	},
+		{Audio: strA,
+			Words: []*synthesizer.ProcessedWord{{Tagged: synthesizer.TaggedWord{Word: "olia"},
+				SynthesizedPos: &synthesizer.SynthesizedPos{From: 10, StartIndex: 1, To: 40}}},
+			Durations:       []int{10, 10, 10, 10, 10, 10, 10, 10},
+			TranscribedText: "sil o l i a sp sil",
+			Step:            256,
+			DefaultSilence:  18,
+		}}
 	d.Cfg.Type = synthesizer.SSMLText
 	da := &synthesizer.TTSData{Input: d.Input, SSMLParts: []*synthesizer.TTSData{&d}, AudioSuffix: "oo.wav"}
 	loaderMock.On("TakeWav", mock.Anything).Return(nil, errors.New("fail"))
@@ -277,12 +389,6 @@ func getTestEncAudio(t *testing.T) []byte {
 
 func getTestAudioSize(bt []byte) uint32 {
 	return wav.GetSize(bt)
-}
-
-func getTestPauseSize(bt []byte, dur time.Duration) uint32 {
-	sr := wav.GetSampleRate(bt)
-	bps := wav.GetBitsPerSample(bt)
-	return uint32(dur.Milliseconds() * int64(sr) * int64(bps) / (8 * 1000))
 }
 
 func getWaveData(t *testing.T) []byte {

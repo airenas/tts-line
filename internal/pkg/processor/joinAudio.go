@@ -330,6 +330,20 @@ type wordWriteData struct {
 	cutSteps    int // in tts steps
 }
 
+func (w *wordWriteData) calculatePostWordPause() (time.Duration, int /*skip hoops*/) {
+	if !w.word.IsLastInPart || w.word.TextPart.PauseAfter == 0 {
+		return 0, 0
+	}
+	ar := w.audioReader
+
+	silTTSSteps := getSilSize(ar.part.TranscribedSymbols, ar.part.Durations, w.word.SynthesizedPos.StartIndex, -1)
+	silDuration := utils.ToDuration(silTTSSteps, ar.audio.sampleRate, ar.step)
+	if w.word.TextPart.PauseAfter >= silDuration {
+		return w.word.TextPart.PauseAfter - silDuration, 0
+	}
+	return 0, toHops((silDuration - w.word.TextPart.PauseAfter).Milliseconds(), ar.step, ar.audio.sampleRate)
+}
+
 func writeWordAudio(ctx context.Context, res *wavWriter, wwd *wordWriteData, wwdNext *wordWriteData) error {
 	if wwd.word == nil && wwdNext.word == nil { // both nil ???
 		return nil
@@ -359,12 +373,14 @@ func writeWordAudio(ctx context.Context, res *wavWriter, wwd *wordWriteData, wwd
 	if wwdNext.word == nil { // last
 		silTTSSteps := wwd.audioReader.endSil
 		silAtEnd := utils.ToDuration(silTTSSteps, wwd.audioReader.audio.sampleRate, wwd.audioReader.step)
-		if wwd.silence > silAtEnd {
+		sil, _ := wwd.calculatePostWordPause() // maybe we have the last word with pause after?
+		sil = sil + wwd.silence
+		if sil > silAtEnd {
 			err := appendAudioBytes(ctx, res, wwd.audioReader, wwd.audioReader.endSilStart+wwd.audioReader.endSil)
 			if err != nil {
 				return err
 			}
-			if err := appendPause(ctx, res, wwd.silence-silAtEnd); err != nil {
+			if err := appendPause(ctx, res, sil-silAtEnd); err != nil {
 				return err
 			}
 			wwd.silence = 0
@@ -437,16 +453,7 @@ func writeWordAudio(ctx context.Context, res *wavWriter, wwd *wordWriteData, wwd
 			return err
 		}
 	}
-	if wwd.word.IsLastInPart && wwd.word.TextPart.PauseAfter > 0 {
-		silTTSSteps := getSilSize(wwd.audioReader.part.TranscribedSymbols, wwd.audioReader.part.Durations, wwd.word.SynthesizedPos.StartIndex, -1)
-		silDuration := utils.ToDuration(silTTSSteps, wwd.audioReader.audio.sampleRate, wwd.audioReader.step)
-		if wwd.word.TextPart.PauseAfter >= silDuration {
-			wwdNext.silence = wwd.word.TextPart.PauseAfter - silDuration
-		} else {
-			skipTTSSteps := toHops((silDuration - wwd.word.TextPart.PauseAfter).Milliseconds(), wwd.audioReader.step, wwd.audioReader.audio.sampleRate)
-			wwdNext.cutSteps = skipTTSSteps
-		}
-	}
+	wwdNext.silence, wwdNext.cutSteps = wwd.calculatePostWordPause()
 
 	return nil
 }
