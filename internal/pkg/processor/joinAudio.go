@@ -215,13 +215,10 @@ func getEndSilSize(ctx context.Context, phones []string, durations []int) (int /
 	l := len(phones)
 	if len(durations) != l+1 {
 		log.Ctx(ctx).Warn().Msg("Duration size don't match phone list")
-		return 0, 0
+		return 0, utils.Sum(durations) // return total as sum if mismatch
 	}
 	res := durations[l]
-	sum := 0
-	for _, d := range durations[:l] {
-		sum += d
-	}
+	sum := utils.Sum(durations[:l])
 	for i := l - 1; i > 1; i-- {
 		if isSil(phones[i]) {
 			res = res + durations[i]

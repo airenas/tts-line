@@ -267,8 +267,8 @@ func startMockService(port int) (net.Listener, *httptest.Server) {
 					log.Printf("Received input: text=%s", input.Text)
 				}
 			}
-			res_durations := make([]int, len(input.DurationsChange))
-			for i := range input.DurationsChange {
+			res_durations := make([]int, len(input.DurationsChange) + 1)
+			for i := range res_durations {
 				res_durations[i] = 1
 			}
 			respObj := map[string]interface{}{
