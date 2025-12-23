@@ -3,6 +3,8 @@ package acronyms
 import (
 	"strings"
 
+	"github.com/rs/zerolog/log"
+
 	"github.com/airenas/tts-line/internal/pkg/acronyms/service/api"
 	"github.com/airenas/tts-line/internal/pkg/transcription"
 )
@@ -73,9 +75,24 @@ func initLetters() map[api.Mode]map[string]*ldata {
 	add(&res, ":", word("dvi4-taš-kis"), api.ModeAllAsCharacters)
 	add(&res, ";", word("ka-blia3-taš-kis"), api.ModeAllAsCharacters)
 	add(&res, " ", word("ta9r-pas"), api.ModeAllAsCharacters)
+	// other symbols
+	add(&res, "%", word("prO4-cen-tas"), api.ModeAllAsCharacters)
+	add(&res, "&", word("ir3"), api.ModeAllAsCharacters)
+	add(&res, "*", word("žvaigž-du4-tė"), api.ModeAllAsCharacters)
+	add(&res, "+", word("pliu4-sas"), api.ModeAllAsCharacters)
+	add(&res, "=", word("ly9-gu"), api.ModeAllAsCharacters)
 
+	add(&res, "(", words("skliau3-stai", "at-si-da3-ro"), api.ModeAllAsCharacters)
+	add(&res, ")", words("skliau3-stai", "už-si-da3-ro"), api.ModeAllAsCharacters)
+	add(&res, "|", words("ver-ti-ka-lu4s", "brūkš-ny3s"), api.ModeAllAsCharacters)
+	add(&res, "{", words("fi-gū3-ri-nių", "skliau3-stų", "a-ti-da3-ry-mas"), api.ModeAllAsCharacters)
+	add(&res, "}", words("fi-gū3-ri-nių", "skliau3-stų", "už-da3-ry-mas"), api.ModeAllAsCharacters)
+	add(&res, "[", words("lauž-ti4-nių", "skliau3-stų", "a-ti-da3-ry-mas"), api.ModeAllAsCharacters)
+	add(&res, "]", words("lauž-ti4-nių", "skliau3-stų", "už-da3-ry-mas"), api.ModeAllAsCharacters)
+	add(&res, "$", words("do-le3-rio", "že9n-klas"), api.ModeAllAsCharacters)
 	return res
 }
+
 func letterProns() []pronData {
 	var res []pronData
 	res = append(res, pronData{char: "a", pron: "ą3"})
@@ -151,6 +168,20 @@ func wordFromPron(c pronData) *ldata {
 		res.next = word("no9-si-nė")
 	case charTypeLong:
 		res.next = word("il-go9-ji")
+	}
+	return res
+}
+
+func words(w ...string) *ldata {
+	if len(w) == 0 {
+		log.Fatal().Msg("no words") // allow as it is initialization error
+	}
+	res := word(w[0])
+	add := res
+	for _, wn := range w[1:] {
+		nw := word(wn)
+		add.next = nw
+		add = nw
 	}
 	return res
 }
