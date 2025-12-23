@@ -10,6 +10,7 @@ import (
 	"github.com/airenas/go-app/pkg/goapp"
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
+	"github.com/rs/zerolog/log"
 
 	"github.com/airenas/tts-line/internal/pkg/accent"
 	"github.com/airenas/tts-line/internal/pkg/service/api"
@@ -222,6 +223,11 @@ func mapSpeechMarksInt(ctx context.Context, data *TTSData) ([]*api.SpeechMark, e
 		md := maps[aligned[i]]
 		to := getLastWordTo(aligned, i, maps, data.Audio.SampleRate, data.Audio.BitsPerSample)
 		at := utils.BytesToDuration(md.pw.AudioPos.From, data.Audio.SampleRate, data.Audio.BitsPerSample)
+		if to < at {
+			log.Ctx(ctx).Warn().Int("wordIndex", i).Str("word", w).Int64("at", at.Milliseconds()).Int64("to", to.Milliseconds()).
+				Msg("Invalid word timing, skipping")
+			continue
+		}
 		sm := &api.SpeechMark{
 			Value: w,
 			Type:  api.SpeechMarkTypeWord,
@@ -231,6 +237,7 @@ func mapSpeechMarksInt(ctx context.Context, data *TTSData) ([]*api.SpeechMark, e
 		}
 		goapp.Log.Debug().Msgf("Word: %s, from: %d, to: %d, res: %d-%d (%d)",
 			w, md.pw.SynthesizedPos.From, to.Milliseconds(), sm.TimeInMillis, sm.TimeInMillis+sm.Duration, sm.Duration)
+
 		res = append(res, sm)
 	}
 	return res, nil
@@ -266,6 +273,9 @@ func getLastWordTo(aligned []int, i int, maps []*wordMapData, sampleRate uint32,
 		}
 	}
 	mw := maps[res]
+	if mw.pw.AudioPos == nil {
+		return time.Duration(0)
+	}
 	return utils.BytesToDuration(mw.pw.AudioPos.To, sampleRate, bitsPerSample)
 }
 

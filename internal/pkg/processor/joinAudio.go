@@ -367,6 +367,11 @@ func writeWordAudio(ctx context.Context, res *wavWriter, wwd *wordWriteData, wwd
 		}
 		return nil
 	}
+	// make sure we fill AudioPos for the word - will fix later if silence added before
+	wwd.word.AudioPos = &synthesizer.AudioPos{
+		From: res.buf.Len() + wwd.audioReader.wordShiftInAudio(wwd.word.SynthesizedPos.From),
+		To:   res.buf.Len() + wwd.audioReader.wordShiftInAudio(wwd.word.SynthesizedPos.To),
+	}
 	if wwdNext.word == nil { // last
 		silTTSSteps := wwd.audioReader.endSil
 		silAtEnd := utils.ToDuration(silTTSSteps, wwd.audioReader.audio.sampleRate, wwd.audioReader.step)
@@ -439,6 +444,7 @@ func writeWordAudio(ctx context.Context, res *wavWriter, wwd *wordWriteData, wwd
 		wwd.cutSteps = 0
 	}
 
+	// maybe changed due to silence/cut before - fix then
 	wwd.word.AudioPos = &synthesizer.AudioPos{
 		From: res.buf.Len() + wwd.audioReader.wordShiftInAudio(wwd.word.SynthesizedPos.From),
 		To:   res.buf.Len() + wwd.audioReader.wordShiftInAudio(wwd.word.SynthesizedPos.To),
