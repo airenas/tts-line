@@ -41,6 +41,14 @@ func Abs(v int) int {
 	return v
 }
 
+func Sum(v []int) int {
+	res := 0
+	for _, val := range v {
+		res += val
+	}
+	return res
+}
+
 // RetrieveInfo invokes Info() if interface has one
 // else returns ""
 func RetrieveInfo(pr interface{}) string {
