@@ -75,16 +75,18 @@ func toTransliteratorInput(w *synthesizer.ProcessedWord) *transliteratorInput {
 		return &transliteratorInput{Type: tw.TypeStr(), String: tw.Separator}
 	}
 	lang := extractLanguage(w.TextPart)
-	//todo use language
-	_ = lang // currently not used
-	return &transliteratorInput{Type: tw.TypeStr(), String: tw.Word, Mi: tw.Mi, Lemma: tw.Lemma}
+	return &transliteratorInput{Type: tw.TypeStr(), String: tw.Word, Mi: tw.Mi, Lemma: tw.Lemma, Language: lang}
 }
 
 func extractLanguage(part *synthesizer.TTSTextPart) string {
 	if part != nil {
-		return part.Language
+		return mapLanguage(part.Language)
 	}
 	return ""
+}
+
+func mapLanguage(s string) string {
+	return strings.TrimSpace(strings.ToLower(s))
 }
 
 func mapTransliteratorRes(output []*transliteratorOutput, s []*synthesizer.ProcessedWord) error {
@@ -152,10 +154,11 @@ func (p *transliterator) Info() string {
 
 // --------------------------------------------
 type transliteratorInput struct {
-	Type   string `json:"type"`
-	String string `json:"string,omitempty"`
-	Mi     string `json:"mi,omitempty"`
-	Lemma  string `json:"lemma,omitempty"`
+	Type     string `json:"type"`
+	String   string `json:"string,omitempty"`
+	Mi       string `json:"mi,omitempty"`
+	Lemma    string `json:"lemma,omitempty"`
+	Language string `json:"lang,omitempty"`
 }
 
 type transliteratorOutput struct {
