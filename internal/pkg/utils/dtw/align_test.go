@@ -61,14 +61,20 @@ func Test_align(t *testing.T) {
 		want    []int
 		wantErr bool
 	}{
+		{name: "insert 1", args: args{oStrs: []string{"a", "b", "c", "d"}, nStrs: []string{"b1", "a", "b", "c", "d"}},
+			want: []int{1, 2, 3, 4}, wantErr: false},
+		{name: "same in a row small", args: args{oStrs: []string{"b", "c", "c", "k"}, nStrs: []string{"b", "c", "c", "e", "k"}},
+			want: []int{0, 1, 2, 4}, wantErr: false},
+		{name: "same in a row", args: args{oStrs: []string{"a", "b", "c", "c", "d", "k"}, nStrs: []string{"a", "b", "c", "c", "d", "e", "k"}},
+			want: []int{0, 1, 2, 3, 4, 6}, wantErr: false},
+		{name: "three in a row ", args: args{oStrs: []string{"a", "b", "c", "c", "c", "d", "k"}, nStrs: []string{"a", "b", "c", "c", "c", "d", "k"}},
+			want: []int{0, 1, 2, 3, 4, 5, 6}, wantErr: false},
 		{name: "empty", args: args{oStrs: []string{}, nStrs: []string{}},
 			want: []int{}, wantErr: false},
 		{name: "simple", args: args{oStrs: []string{"a", "b", "c", "d"}, nStrs: []string{"a", "b", "c", "d"}},
 			want: []int{0, 1, 2, 3}, wantErr: false},
 		{name: "insert middle", args: args{oStrs: []string{"a", "b", "c", "d"}, nStrs: []string{"a", "b", "b1", "c", "d"}},
 			want: []int{0, 1, 3, 4}, wantErr: false},
-		{name: "insert 1", args: args{oStrs: []string{"a", "b", "c", "d"}, nStrs: []string{"b1", "a", "b", "c", "d"}},
-			want: []int{1, 2, 3, 4}, wantErr: false},
 		{name: "with shift", args: args{oStrs: makeTestStr("a", 10),
 			nStrs: append(makeTestStr("c", 3), makeTestStr("a", 10)...)},
 			want: makeTestInt(3, 13), wantErr: false},
