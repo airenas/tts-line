@@ -609,7 +609,13 @@ func appendAudioBytes(ctx context.Context, res *wavWriter, audioReader *audioRea
 		return errors.Errorf("append to %d > audio len %d", to, len(audioReader.audio.data))
 	}
 	if to < audioReader.wrote {
-		return errors.Errorf("to %d < wrote %d", to, audioReader.wrote)
+		// allow small overflow at the end, could be because word is extended with sp or sil for emphasis or spelling
+		// in future we need to keep exact phoneme sequence, that was used for synthesis of a word and do smth with sp at the end
+		allow := int(math.Ceil(float64(audioReader.audio.sampleRate*uint32(audioReader.audio.bitsPerSample)/8) * 0.05)) // 50 ms
+		if audioReader.wrote - to > allow {
+			return errors.Errorf("to %d < wrote %d", to, audioReader.wrote)
+		}
+		return nil
 	}
 	bData := audioReader.audio.data[audioReader.wrote:to]
 	audioReader.wrote = to
