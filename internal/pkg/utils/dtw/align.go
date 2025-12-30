@@ -93,19 +93,34 @@ type dpValues struct {
 
 func (d *dpValues) calcNextValue(i int, j int, eq int, prevRow, currRow []int) (int, moveType) {
 	if i == 0 && j == 0 {
-		return eq, start.add(eq)
+		return eq, corner.add(eq)
 	}
 	prevJ := j + 1 // ignore on first row
 	if i > 0 {
 		prevJ = d.rowsMeta[i-1].jMin
 	}
 	currJ := d.rowsMeta[i].jMin
-	lv := add(atOrMax(currRow, j-currJ-1), 1)
-	tv := atOrMax(prevRow, j-prevJ)
-	if j != 0 || eq != 0 {
-		tv = add(tv, 1)
+
+	lv := i + 1
+	if j > 0 {
+		lv = atOrMax(currRow, j-currJ-1)
 	}
-	cv := add(atOrMax(prevRow, j-prevJ-1), eq)
+	lv = add(lv, 1)
+
+	tv := j + 1
+	if i > 0 {
+		tv = atOrMax(prevRow, j-prevJ)
+	}
+	tv = add(tv, 1)
+
+	cv := i // j == 0
+	if i == 0 {
+		cv = j
+	} else if j > 0 {
+		cv = atOrMax(prevRow, j-prevJ-1)
+	}
+	cv = add(cv, eq)
+
 	if lv <= tv && lv <= cv {
 		return lv, left.add(eq)
 	}
@@ -116,7 +131,16 @@ func (d *dpValues) calcNextValue(i int, j int, eq int, prevRow, currRow []int) (
 }
 
 func (d *dpValues) backAt(i, j int) moveType {
-	if i < 0 || j < d.rowsMeta[i].jMin {
+	if i < 0 && j < 0 {
+		return start
+	}
+	if i < 0 {
+		return left
+	}
+	if j < 0 {
+		return top
+	}
+	if j < d.rowsMeta[i].jMin {
 		return start
 	}
 	return d.backs[d.index(i, j-d.rowsMeta[i].jMin)]
@@ -178,14 +202,13 @@ func alignBanded[T comparable](orig, pred []T, bandWidth int) ([]int, error) {
 		return nil, fmt.Errorf("alignment failed due to band width limit: %d < %d", dp.band+dp.rowsMeta[n-1].jMin, m)
 	}
 
-	bestJ := m - 1
-	for i := n - 1; i >= 0; i-- {
-		rMeta := dp.rowsMeta[i]
+	bestJ, i := m-1, n-1
+	for i >= 0 {
 		res[i] = bestJ
 		if i == 0 && bestJ < 0 {
 			break
 		}
-		move := dp.backs[dp.index(i, bestJ-rMeta.jMin)]
+		move := dp.backAt(i, bestJ)
 		switch move {
 		case corner:
 			bestJ--
@@ -196,25 +219,19 @@ func alignBanded[T comparable](orig, pred []T, bandWidth int) ([]int, error) {
 		case eqCorner3InARow:
 			bestJ--
 		case left:
-			for (move == left || move == eqLeft) && bestJ > 0 {
-				bestJ--
-				res[i] = bestJ
-				move = dp.backs[dp.index(i, bestJ-rMeta.jMin)]
-			}
+			bestJ--
+			i++ // stay in the same i
 		case eqLeft:
-			for (move == left || move == eqLeft) && bestJ > 0 {
-				bestJ--
-				move = dp.backs[dp.index(i, bestJ-rMeta.jMin)]
-			}
+			bestJ--
+			// i++
 		case top:
 			res[i] = -1
 		case eqTop: // do nothing
-			if bestJ == 0 {
-				bestJ--
-			}
+			res[i] = -1
 		case start:
 			res[i] = 0
 		}
+		i--
 	}
 	return res, nil
 }

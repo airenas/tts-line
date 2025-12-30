@@ -61,6 +61,12 @@ func Test_align(t *testing.T) {
 		want    []int
 		wantErr bool
 	}{
+		{name: "skip", args: args{oStrs: []string{"a", "b", "c", "d"}, nStrs: []string{"a", "c", "d"}},
+			want: []int{0, -1, 1, 2}, wantErr: false},
+		{name: "skip first", args: args{oStrs: []string{"a", "b", "c"}, nStrs: []string{"b", "c"}},
+			want: []int{-1, 0, 1}, wantErr: false},
+		{name: "skip first 4", args: args{oStrs: []string{"a", "b", "c", "d"}, nStrs: []string{"b", "c", "d"}},
+			want: []int{-1, 0, 1, 2}, wantErr: false},
 		{name: "insert 1", args: args{oStrs: []string{"a", "b", "c", "d"}, nStrs: []string{"b1", "a", "b", "c", "d"}},
 			want: []int{1, 2, 3, 4}, wantErr: false},
 		{name: "same in a row small", args: args{oStrs: []string{"b", "c", "c", "k"}, nStrs: []string{"b", "c", "c", "e", "k"}},
@@ -80,13 +86,9 @@ func Test_align(t *testing.T) {
 			want: makeTestInt(3, 13), wantErr: false},
 		{name: "insert", args: args{oStrs: []string{"a", "b", "c", "d"}, nStrs: []string{"b1", "b1", "b1", "a", "b", "c", "d"}},
 			want: []int{3, 4, 5, 6}, wantErr: false},
-		{name: "skip", args: args{oStrs: []string{"a", "b", "c", "d"}, nStrs: []string{"a", "c", "d"}},
-			want: []int{0, -1, 1, 2}, wantErr: false},
 		{name: "with shift 5 100", args: args{oStrs: makeTestStr("a", 100),
 			nStrs: append(makeTestStr("c", 5), makeTestStr("a", 100)...)},
 			want: append([]int{}, makeTestInt(5, 105)...), wantErr: false},
-		{name: "skip first", args: args{oStrs: []string{"a", "b", "c", "d"}, nStrs: []string{"b", "c", "d"}},
-			want: []int{-1, 0, 1, 2}, wantErr: false},
 		{name: "skip first", args: args{oStrs: []string{"a", "a", "b", "c", "d"}, nStrs: []string{"b", "c", "d"}},
 			want: []int{-1, -1, 0, 1, 2}, wantErr: false},
 		{name: "skip first 2", args: args{oStrs: []string{"b", "c", "d"}, nStrs: []string{"a", "a", "b", "c", "d"}},
