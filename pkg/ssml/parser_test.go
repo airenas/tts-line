@@ -67,16 +67,16 @@ func TestParse(t *testing.T) {
 		/// language tests
 		//////////////////////////////////////////////////////////////////////////////////////////
 		{name: "lang", xml: `<speak lang="en"><lang lang="lt">olia1<lang lang="en">olia2</lang></lang></speak>`, want: []Part{
-			&Text{Voice: "aa", Texts: []TextPart{{Language: "", Text: "olia1"}, {Language: "en", Text: "olia2"}}}},
+			&Text{Voice: "aa", Texts: []TextPart{{Language: "lt", Text: "olia1"}, {Language: "en", Text: "olia2"}}}},
 			wantErr: false},
 		{name: "lang fail", xml: `<speak lang="en"><lang>olia1</lang></speak>`, want: nil, wantErr: true},
 		{name: "unsupported lang fail", xml: `<speak lang="olia">olia1</speak>`, want: nil, wantErr: true},
 
-		{name: "lang inside prosody", xml: `<speak lang="en"><prosody rate="100%"><lang lang="us">olia1</lang></prosody></speak>`, want: []Part{
-			&Text{Voice: "aa", Texts: []TextPart{{Language: "us", Text: "olia1"}}, Prosodies: []*Prosody{{Rate: 1}}}},
+		{name: "lang inside prosody", xml: `<speak lang="en"><prosody rate="100%"><lang lang="en-us">olia1</lang></prosody></speak>`, want: []Part{
+			&Text{Voice: "aa", Texts: []TextPart{{Language: "en", Text: "olia1"}}, Prosodies: []*Prosody{{Rate: 1}}}},
 			wantErr: false},
 		{name: "lang outside prosody", xml: `<speak lang="en"><lang lang="lt"><prosody rate="100%">olia1</prosody></lang></speak>`, want: []Part{
-			&Text{Voice: "aa", Texts: []TextPart{{Language: "", Text: "olia1"}}, Prosodies: []*Prosody{{Rate: 1}}}},
+			&Text{Voice: "aa", Texts: []TextPart{{Language: "lt", Text: "olia1"}}, Prosodies: []*Prosody{{Rate: 1}}}},
 			wantErr: false},
 		{name: "lang from speak", xml: `<speak lang="en"><prosody rate="100%">olia1</prosody></speak>`, want: []Part{
 			&Text{Voice: "aa", Texts: []TextPart{{Language: "en", Text: "olia1"}}, Prosodies: []*Prosody{{Rate: 1}}}},
@@ -552,6 +552,44 @@ func Test_getPitch(t *testing.T) {
 			}
 			if got != tt.want {
 				t.Errorf("getPitch() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func Test_checkLanguage(t *testing.T) {
+	tests := []struct {
+		name    string
+		lang    string
+		want    string
+		wantErr bool
+	}{
+		{name: "empty", lang: "", want: "", wantErr: false},
+		{name: "valid lang", lang: "en-US", want: "en", wantErr: false},
+		{name: "valid lang", lang: "en-GB", want: "en", wantErr: false},
+		{name: "valid lang", lang: "en", want: "en", wantErr: false},
+		{name: "valid lang", lang: "lt-LT", want: "lt", wantErr: false},
+		{name: "valid lang", lang: "lt", want: "lt", wantErr: false},
+		{name: "valid lang", lang: "lt", want: "lt", wantErr: false},
+		{name: "valid lang Samogitian", lang: "sgs", want: "lt", wantErr: false},
+		{name: "en_US", lang: "en_US", want: "en", wantErr: false}, // works?
+		{name: "invalid lang", lang: "english", want: "", wantErr: true},
+		{name: "invalid lang e", lang: "e", want: "", wantErr: true},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, gotErr := checkLanguage(tt.lang)
+			if gotErr != nil {
+				if !tt.wantErr {
+					t.Errorf("checkLanguage() failed: %v", gotErr)
+				}
+				return
+			}
+			if tt.wantErr {
+				t.Fatal("checkLanguage() succeeded unexpectedly")
+			}
+			if got != tt.want {
+				t.Errorf("checkLanguage() = %v, want %v", got, tt.want)
 			}
 		})
 	}

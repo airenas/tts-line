@@ -11,6 +11,7 @@ import (
 	"github.com/airenas/tts-line/internal/pkg/accent"
 	"github.com/airenas/tts-line/internal/pkg/utils"
 	"github.com/rs/zerolog/log"
+	"golang.org/x/text/language"
 )
 
 type startFunc func(xml.StartElement, *wrkData) error
@@ -685,12 +686,21 @@ func percentToMultiplier(v float64) float64 {
 }
 
 func checkLanguage(lang string) (string, error) {
-	res := strings.ToLower(strings.TrimSpace(lang))
-	if res == "" || res == "lt" {
+	res := strings.TrimSpace(lang)
+	if res == "" {
 		return "", nil
 	}
-	if len(res) == 2 {
-		return res, nil
+
+	parsed, err := language.Parse(res)
+	if err != nil {
+		return "", fmt.Errorf("invalid BCP 47 language tag '%s'", res)
 	}
-	return "", fmt.Errorf("unsupported language '%s'", lang)
+	if parsed == language.Und {
+		return "", fmt.Errorf("undefined language in '%s'", res)
+	}
+	base, _ := parsed.Base()
+	if base.String() == "sgs" { // Samogitian fallback to Lithuanian
+		return language.Lithuanian.String(), nil
+	}
+	return base.String(), nil
 }

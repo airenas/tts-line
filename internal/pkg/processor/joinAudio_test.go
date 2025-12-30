@@ -551,12 +551,12 @@ func Test_getEndSilSize(t *testing.T) {
 		args args
 		want int
 	}{
+		{name: "finds punct", args: args{phones: []string{"sil", "-", "a", "-", ".", ",", "sp", "sil"}, durations: []int{10, 2, 3, 5, 6, 7, 8, 9, 0}}, want: 24},
 		{name: "none", args: args{phones: []string{}, durations: []int{}}, want: 0},
 		{name: "none", args: args{phones: []string{"sil", "a", "a", "a", "a", "a", "a", "sil"}, durations: []int{}}, want: 0},
 		{name: "none", args: args{phones: []string{"a", "b"}, durations: []int{1, 2, 3}}, want: 3},
 		{name: "finds", args: args{phones: []string{"sil", "a", "b", "sp", "sil"}, durations: []int{10, 2, 3, 5, 6, 7}}, want: 18},
 		{name: "finds", args: args{phones: []string{"sil", "-", "a", "b", ",", "sp", "sil"}, durations: []int{10, 2, 3, 5, 6, 7, 8, 9}}, want: 30},
-		{name: "finds punct", args: args{phones: []string{"sil", "-", "a", "-", ".", ",", "sp", "sil"}, durations: []int{10, 2, 3, 5, 6, 7, 8, 9, 10}}, want: 45},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
