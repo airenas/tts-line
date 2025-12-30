@@ -219,7 +219,7 @@ func getEndSilSize(ctx context.Context, phones []string, durations []int) (int /
 	}
 	res := durations[l]
 	sum := utils.Sum(durations[:l])
-	for i := l - 1; i > 1; i-- {
+	for i := l - 1; i > 1 && i > l-4; i-- {
 		if isSil(phones[i]) {
 			res = res + durations[i]
 			sum -= durations[i]
@@ -612,7 +612,7 @@ func appendAudioBytes(ctx context.Context, res *wavWriter, audioReader *audioRea
 		// allow small overflow at the end, could be because word is extended with sp or sil for emphasis or spelling
 		// in future we need to keep exact phoneme sequence, that was used for synthesis of a word and do smth with sp at the end
 		allow := int(math.Ceil(float64(audioReader.audio.sampleRate*uint32(audioReader.audio.bitsPerSample)/8) * 0.05)) // 50 ms
-		if audioReader.wrote - to > allow {
+		if audioReader.wrote-to > allow {
 			return errors.Errorf("to %d < wrote %d", to, audioReader.wrote)
 		}
 		return nil
