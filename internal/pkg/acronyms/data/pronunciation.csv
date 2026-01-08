@@ -17,7 +17,7 @@ $,,doleris,,
 &,,ampersendas,,
 (,,skliausteliai atsidaro,true,
 ),,skliausteliai užsidaro,true,
-[,,laužtiniai skliausteliai atsidaro ,true,
+[,,laužtiniai skliausteliai atsidaro,true,
 ],,laužtiniai skliausteliai užsidaro,true,
 {,,riestiniai skliausteliai atsidaro,true,
 },,riestiniai skliausteliai užsidaro,true,
@@ -134,14 +134,14 @@ _,,pabraukimas,,
 ⅝,,penkios aštuntosios,,
 ⅞,,septynios aštuntosios,,
 α,,alfa,,true
-β,,beta,,true
+β,f,bE4-ta,,true
 γ,,gama,,true
-δ,,delta,,true
+δ,f,dEl3-ta,,true
 ε,,epsilon,,true
-ζ,,dzeta,,true
-η,,eta,,true
-θ,,teta,,true
-ι,,jota,,true
+ζ,f,dzE4-ta,,true
+η,f,E4-ta,,true
+θ,f,tE4-ta,,true
+ι,f,jo4-ta,,true
 κ,,kapa,,true
 λ,,lambda,,true
 μ,,mi,,true
@@ -155,4 +155,4 @@ _,,pabraukimas,,
 Φ,,fi,,true
 χ,,chi,,true
 Ψ,,psi,,true
-ω,,omega,,true
+ω,f,O-mE4-ga,,true

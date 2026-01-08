@@ -53,10 +53,22 @@ func processNERSentence(_ctx context.Context, s []*synthesizer.ProcessedWord) er
 		runes := []rune(w)
 		if i > 0 && len(runes) == 1 && unicode.IsLetter(runes[0]) && unicode.IsUpper(runes[0]) {
 			word.NERType = synthesizer.NERSingleLetter
+		} else if allGreekLetters(runes) {
+			word.NERType = synthesizer.NERGreekLetters
 		}
+
 		i++
 	}
 	return nil
+}
+
+func allGreekLetters(runes []rune) bool {
+	for _, r := range runes {
+		if !(r >= 'Α' && r <= 'Ω') && !(r >= 'α' && r <= 'ω') {
+			return false
+		}
+	}
+	return len(runes) > 0
 }
 
 func (p *ner) skip(data *synthesizer.TTSData) bool {

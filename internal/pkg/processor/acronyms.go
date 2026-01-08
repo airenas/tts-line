@@ -76,7 +76,7 @@ func mapAbbrInput(data *synthesizer.TTSDataPart) []api.WordInput {
 	for i, w := range data.Words {
 		tgw := w.Tagged
 		if needAbbrProcessing(w) {
-			res = append(res, api.WordInput{Word: tgw.Word, MI: tgw.Mi, ID: strconv.Itoa(i), Mode: mapMode(w)})
+			res = append(res, api.WordInput{Word: tgw.Str(), MI: tgw.Mi, ID: strconv.Itoa(i), Mode: mapMode(w)})
 		}
 	}
 	return res
@@ -89,6 +89,15 @@ func mapMode(w *synthesizer.ProcessedWord) api.Mode {
 	if w.NERType == synthesizer.NERSingleLetter {
 		return api.ModeCharactersAsWord
 	}
+	if w.NERType == synthesizer.NERGreekLetters {
+		return api.ModeCharacters
+	}
+	if w.NERType == synthesizer.NERReadableSymbol {
+		return api.ModeCharacters
+	}
+	if w.NERType == synthesizer.NERReadableAllSymbol {
+		return api.ModeAllAsCharacters
+	}
 	if w.TextPart != nil && w.TextPart.InterpretAs == ssml.InterpretAsTypeCharacters {
 		if w.TextPart.InterpretAsDetail == ssml.InterpretAsDetailTypeReadSymbols {
 			return api.ModeAllAsCharacters
@@ -100,6 +109,9 @@ func mapMode(w *synthesizer.ProcessedWord) api.Mode {
 
 func needAbbrProcessing(w *synthesizer.ProcessedWord) bool {
 	tgw := w.Tagged
+	if w.NERType == synthesizer.NERReadableSymbol || w.NERType == synthesizer.NERReadableAllSymbol {
+		return true
+	}
 	if !tgw.IsWord() {
 		return false
 	}
@@ -114,7 +126,7 @@ func needAbbrProcessing(w *synthesizer.ProcessedWord) bool {
 		return false
 	}
 
-	if isAbbr(tgw.Mi, tgw.Lemma) || w.NERType == synthesizer.NERSingleLetter {
+	if isAbbr(tgw.Mi, tgw.Lemma) || w.NERType == synthesizer.NERSingleLetter || w.NERType == synthesizer.NERGreekLetters {
 		return true
 	}
 

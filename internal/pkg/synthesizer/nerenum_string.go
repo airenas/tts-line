@@ -10,11 +10,14 @@ func _() {
 	var x [1]struct{}
 	_ = x[NERRegular-0]
 	_ = x[NERSingleLetter-1]
+	_ = x[NERGreekLetters-2]
+	_ = x[NERReadableSymbol-3]
+	_ = x[NERReadableAllSymbol-4]
 }
 
-const _NEREnum_name = "NERRegularNERSingleLetter"
+const _NEREnum_name = "NERRegularNERSingleLetterNERGreekLettersNERReadableSymbolNERReadableAllSymbol"
 
-var _NEREnum_index = [...]uint8{0, 10, 25}
+var _NEREnum_index = [...]uint8{0, 10, 25, 40, 57, 77}
 
 func (i NEREnum) String() string {
 	if i < 0 || i >= NEREnum(len(_NEREnum_index)-1) {

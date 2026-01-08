@@ -10,52 +10,13 @@ import (
 )
 
 type readSymbols struct {
-	symbolToWords  map[string][]string
-	defaultSymbols map[string][]string
 }
 
 func NewReadSymbols() (synthesizer.Processor, error) {
-	sm := initSymbolsToWords()
-	ds := initDefaultSymbolsToWords(sm)
 
-	res := &readSymbols{symbolToWords: sm, defaultSymbols: ds}
+	res := &readSymbols{}
 
 	return res, nil
-}
-
-func initDefaultSymbolsToWords(sm map[string][]string) map[string][]string {
-	res := make(map[string][]string)
-	for _, s := range []string{"(", ")", "|", "%", "*", "+", "=", "{", "}", "$", "_", "[", "]"} {
-		if words, ok := sm[s]; ok {
-			res[s] = words
-		}
-	}
-	return res
-}
-
-func initSymbolsToWords() map[string][]string {
-	res := make(map[string][]string)
-	res["("] = []string{"skliaustai", "atsidaro"}
-	res[")"] = []string{"skliaustai", "užsidaro"}
-	res["|"] = []string{"vertikalus", "brūkšnys"}
-	res["%"] = []string{"procentas"}
-	res["*"] = []string{"žvaigždutė"}
-	res["+"] = []string{"pliusas"}
-	res["="] = []string{"lygu"}
-	res["{"] = []string{"figūrinių", "skliaustų", "atidarymas"}
-	res["}"] = []string{"figūrinių", "skliaustų", "uždarymas"}
-	res["["] = []string{"laužtinių", "skliaustų", "atidarymas"}
-	res["]"] = []string{"laužtinių", "skliaustų", "uždarymas"}
-	res["$"] = []string{"dolerio", "ženklas"}
-	res["?"] = []string{"klaustukas"}
-	res["!"] = []string{"šauktukas"}
-	res[":"] = []string{"dvitaškis"}
-	res[";"] = []string{"kabliataškis"}
-	res[","] = []string{"kablelis"}
-	res["."] = []string{"taškas"}
-	res["-"] = []string{"brūkšnys"}
-	res["_"] = []string{"pabraukimas"}
-	return res
 }
 
 func (p *readSymbols) Process(ctx context.Context, data *synthesizer.TTSData) error {
@@ -70,46 +31,39 @@ func (p *readSymbols) Process(ctx context.Context, data *synthesizer.TTSData) er
 		log.Ctx(ctx).Info().Msg("Skip readSymbols - mode none")
 		return nil
 	}
-	mp := p.defaultSymbols
+	var mp map[string]struct{}
+	modeType := synthesizer.NERReadableSymbol
 	if data.Cfg.Input.SymbolMode == api.SymbolModeReadSelected {
-		mp = make(map[string][]string)
+		modeType = synthesizer.NERReadableAllSymbol
+		mp = make(map[string]struct{})
 		for _, s := range data.Cfg.Input.SelectedSymbols {
-			if words, ok := p.symbolToWords[s]; ok {
-				mp[s] = words
-			} else {
-				log.Ctx(ctx).Warn().Str("symbol", s).Msg("Unknown symbol to read")
-			}
+			mp[s] = struct{}{}
 		}
 	}
-	var err error
-	data.Words, err = readSymbolsInWords(ctx, data.Words, mp)
-	if err != nil {
+	if err := markToReadSymbols(ctx, data.Words, mp, modeType); err != nil {
 		return err
 	}
 	return nil
 }
 
-func readSymbolsInWords(ctx context.Context, processedWord []*synthesizer.ProcessedWord, mp map[string][]string) ([]*synthesizer.ProcessedWord, error) {
-	var res []*synthesizer.ProcessedWord
+func markToReadSymbols(_ctx context.Context, processedWord []*synthesizer.ProcessedWord, mp map[string]struct{}, modeType synthesizer.NEREnum) error {
 	for _, pw := range processedWord {
 		if pw.Tagged.IsWord() {
-			res = append(res, pw)
 			continue
 		}
 		sep := pw.Tagged.Separator
-		if words, ok := mp[sep]; ok {
-			for _, w := range words {
-				newPW := pw.Clone()
-				newPW.Tagged.Word = w
-				newPW.Tagged.Separator = ""
-				res = append(res, newPW)
-			}
-		} else {
-			res = append(res, pw)
+		if sep == "" {
+			continue
 		}
-
+		ok := mp == nil
+		if !ok {
+			_, ok = mp[sep]
+		}
+		if ok {
+			pw.NERType = modeType
+		}
 	}
-	return res, nil
+	return nil
 }
 
 func (p *readSymbols) skip(data *synthesizer.TTSData) bool {

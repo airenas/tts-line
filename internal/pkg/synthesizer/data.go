@@ -150,6 +150,12 @@ const (
 	NERRegular NEREnum = iota
 	//NERSingleLetter - single letter word
 	NERSingleLetter
+	//NERGreekLetters - greek letters
+	NERGreekLetters
+	//NERReadableSymbol - readable symbol
+	NERReadableSymbol
+	//NERReadableAllSymbol - readable symbol (all characters)
+	NERReadableAllSymbol
 )
 
 // Clitic structure
@@ -207,6 +213,13 @@ func (tw TaggedWord) TypeStr() string {
 		return "SPACE"
 	}
 	return "WORD"
+}
+
+func (tw TaggedWord) Str() string {
+	if tw.IsWord() {
+		return tw.Word
+	}
+	return tw.Separator
 }
 
 func (tp *TTSTextPart) EmphasisID() int {

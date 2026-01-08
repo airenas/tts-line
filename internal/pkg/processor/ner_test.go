@@ -105,3 +105,27 @@ func testValidateNER(t testing.TB, words []*synthesizer.ProcessedWord, wantedPos
 		}
 	}
 }
+
+func Test_allGreekLetters(t *testing.T) {
+	tests := []struct {
+		name  string
+		runes []rune
+		want  bool
+	}{
+		{name: "all greek", runes: []rune("ΑΒΓΔΕΖΗΘΙΚ"), want: true},
+		{name: "all greek lower", runes: []rune("αβγδεζηθικ"), want: true},
+		{name: "mixed", runes: []rune("ΑΒΓDΕΖΗΘΙΚ"), want: false},
+		{name: "non greek", runes: []rune("ABCD"), want: false},
+		{name: "empty", runes: []rune(""), want: false},
+		{name: "one greek", runes: []rune("Α"), want: true},
+		{name: "one non greek", runes: []rune("A"), want: false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := allGreekLetters(tt.runes)
+			if got != tt.want {
+				t.Errorf("allGreekLetters() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
