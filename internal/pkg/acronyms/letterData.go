@@ -1,6 +1,10 @@
 package acronyms
 
 import (
+	_ "embed"
+	"encoding/csv"
+	"fmt"
+	"strconv"
 	"strings"
 
 	"github.com/rs/zerolog/log"
@@ -32,11 +36,16 @@ type pronData struct {
 	ct         charType
 }
 
-func initLetters() map[api.Mode]map[string]*ldata {
+func newLettersMap() map[api.Mode]map[string]*ldata {
 	res := make(map[api.Mode]map[string]*ldata)
 	res[api.ModeCharacters] = map[string]*ldata{}
 	res[api.ModeCharactersAsWord] = map[string]*ldata{}
 	res[api.ModeAllAsCharacters] = map[string]*ldata{}
+	return res
+}
+
+func initLetters() map[api.Mode]map[string]*ldata {
+	res := newLettersMap()
 
 	oneChar := letterProns()
 	for _, c := range oneChar {
@@ -55,42 +64,69 @@ func initLetters() map[api.Mode]map[string]*ldata {
 
 	add(&res, ".", word("ta3-škas"), api.ModeCharactersAsWord, api.ModeAllAsCharacters)
 
-	// numbers
-	add(&res, "0", word("nu4-lis"), api.ModeCharacters, api.ModeAllAsCharacters)
-	add(&res, "1", word("vie3-nas"), api.ModeCharacters, api.ModeAllAsCharacters)
-	add(&res, "2", word("du4"), api.ModeCharacters, api.ModeAllAsCharacters)
-	add(&res, "3", word("try3s"), api.ModeCharacters, api.ModeAllAsCharacters)
-	add(&res, "4", word("ke-tu-ri4"), api.ModeCharacters, api.ModeAllAsCharacters)
-	add(&res, "5", word("pen-ki4"), api.ModeCharacters, api.ModeAllAsCharacters)
-	add(&res, "6", word("še-ši4"), api.ModeCharacters, api.ModeAllAsCharacters)
-	add(&res, "7", word("sep-ty-ni4"), api.ModeCharacters, api.ModeAllAsCharacters)
-	add(&res, "8", word("aš-tuo-ni4"), api.ModeCharacters, api.ModeAllAsCharacters)
-	add(&res, "9", word("de-vy-ni4"), api.ModeCharacters, api.ModeAllAsCharacters)
+	if err := readVocab(pronunciationCSV, &res); err != nil {
+		log.Fatal().Err(err).Msg("read pronunciation data")
+	}
 
-	// punctuation
-	add(&res, "?", word("klau3s-tu-kas"), api.ModeAllAsCharacters)
-	add(&res, "!", word("šau3k-tu-kas"), api.ModeAllAsCharacters)
-	add(&res, ",", word("ka-ble3-lis"), api.ModeAllAsCharacters)
-	add(&res, "-", word("brūkš-ny3s"), api.ModeAllAsCharacters)
-	add(&res, ":", word("dvi4-taš-kis"), api.ModeAllAsCharacters)
-	add(&res, ";", word("ka-blia3-taš-kis"), api.ModeAllAsCharacters)
-	add(&res, " ", word("ta9r-pas"), api.ModeAllAsCharacters)
-	// other symbols
-	add(&res, "%", word("prO4-cen-tas"), api.ModeAllAsCharacters)
-	add(&res, "&", word("ir3"), api.ModeAllAsCharacters)
-	add(&res, "*", word("žvaigž-du4-tė"), api.ModeAllAsCharacters)
-	add(&res, "+", word("pliu4-sas"), api.ModeAllAsCharacters)
-	add(&res, "=", word("ly9-gu"), api.ModeAllAsCharacters)
-
-	add(&res, "(", words("skliau3-stai", "at-si-da3-ro"), api.ModeAllAsCharacters)
-	add(&res, ")", words("skliau3-stai", "už-si-da3-ro"), api.ModeAllAsCharacters)
-	add(&res, "|", words("ver-ti-ka-lu4s", "brūkš-ny3s"), api.ModeAllAsCharacters)
-	add(&res, "{", words("fi-gū3-ri-nių", "skliau3-stų", "a-ti-da3-ry-mas"), api.ModeAllAsCharacters)
-	add(&res, "}", words("fi-gū3-ri-nių", "skliau3-stų", "už-da3-ry-mas"), api.ModeAllAsCharacters)
-	add(&res, "[", words("lauž-ti4-nių", "skliau3-stų", "a-ti-da3-ry-mas"), api.ModeAllAsCharacters)
-	add(&res, "]", words("lauž-ti4-nių", "skliau3-stų", "už-da3-ry-mas"), api.ModeAllAsCharacters)
-	add(&res, "$", words("do-le3-rio", "že9n-klas"), api.ModeAllAsCharacters)
 	return res
+}
+
+//go:embed data/pronunciation.csv
+var pronunciationCSV string
+
+func readVocab(data string, res *map[api.Mode]map[string]*ldata) error {
+	r := csv.NewReader(strings.NewReader(data))
+	records, err := r.ReadAll()
+	if err != nil {
+		return err
+	}
+
+	for i, rec := range records {
+		if i == 0 {
+			continue // header
+		}
+		s := rec[0]
+		if s == "" {
+			continue
+		}
+		tp := strings.TrimSpace(rec[1])
+		base, err := parseBool(rec[3])
+		if err != nil {
+			return fmt.Errorf("invalid base flag '%s' in line %d: %v", rec[3], i+1, err)
+		}
+		isLetter, err := parseBool(rec[4])
+		if err != nil {
+			return fmt.Errorf("invalid isLetter flag '%s' in line %d: %v", rec[4], i+1, err)
+		}
+		var ld *ldata
+		switch tp {
+		case "f": // full
+			ld = words(strings.Split(rec[2], " ")...)
+		case "":
+			ld = wordsSimple(strings.Split(rec[2], " ")...)
+		default:
+			return fmt.Errorf("unknown type '%s' in line %d", tp, i+1)
+		}
+		mode := []api.Mode{api.ModeAllAsCharacters}
+		if !base {
+			mode = append(mode, api.ModeCharacters)
+		}
+		if isLetter {
+			add(res, strings.ToLower(s), ld, mode...)
+			add(res, strings.ToUpper(s), ld, mode...)
+		} else {
+			add(res, s, ld, mode...)
+		}
+	}
+	return nil
+}
+
+func parseBool(s string) (bool, error) {
+	s = strings.ToLower(s)
+	if s == "" {
+		return false, nil
+	}
+	return strconv.ParseBool(s)
 }
 
 func letterProns() []pronData {
@@ -180,6 +216,24 @@ func words(w ...string) *ldata {
 	add := res
 	for _, wn := range w[1:] {
 		nw := word(wn)
+		add.next = nw
+		add = nw
+	}
+	return res
+}
+
+func wordsSimple(w ...string) *ldata {
+	if len(w) == 0 {
+		log.Fatal().Msg("no words") // allow as it is initialization error
+	}
+	res := &ldata{ch: w[0]}
+	res.newWord = true
+	res.letter = w[0]
+	add := res
+	for _, wn := range w[1:] {
+		nw := &ldata{ch: wn}
+		nw.newWord = true
+		nw.letter = wn
 		add.next = nw
 		add = nw
 	}

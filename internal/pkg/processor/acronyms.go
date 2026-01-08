@@ -155,7 +155,7 @@ func mapAbbrOutput(data *synthesizer.TTSDataPart, abbrOut []acrWordOutput) error
 		}
 		om[iID] = abbr
 	}
-	res := make([]*synthesizer.ProcessedWord, 0)
+	res := make([]*synthesizer.ProcessedWord, 0, len(data.Words))
 	for i, w := range data.Words {
 		abbr, ok := om[i]
 		if ok {

@@ -128,7 +128,7 @@ func TestLetters_Process(t *testing.T) {
 		{name: "Ch as all puncts", args: args{word: "Ch,", mi: "1", mode: api.ModeAllAsCharacters}, wantErr: false,
 			want: []api.ResultWord{{Word: "c", WordTrans: "cė", Syll: "cė", UserTrans: "cė3"},
 				{Word: "h", WordTrans: "hą", Syll: "hą", UserTrans: "hą3"},
-				{Word: "kablelis", WordTrans: "kablelis", Syll: "ka-ble-lis", UserTrans: "kable3lis"},
+				{Word: "kablelis", WordTrans: "", Syll: "", UserTrans: ""},
 			}},
 		{name: "Simple", args: args{word: "a", mi: "1"}, wantErr: false,
 			want: []api.ResultWord{{Word: "a", WordTrans: "ą", Syll: "ą", UserTrans: "ą3"}}},

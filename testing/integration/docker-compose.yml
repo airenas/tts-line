@@ -62,7 +62,7 @@ services:
     restart: on-failure  
 
   transliterator:
-    image: intelektikalt/transliterator:0.2.0
+    image: intelektikalt/transliterator:0.3.1
     restart: on-failure    
 
   comparator:

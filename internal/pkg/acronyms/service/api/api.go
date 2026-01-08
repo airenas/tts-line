@@ -4,8 +4,8 @@ type Mode string
 
 const (
 	ModeNone             Mode = ""
-	ModeCharactersAsWord Mode = "charaactersAsWord" // read as word, accented the last character,
-	ModeCharacters       Mode = "charaacters"
+	ModeCharactersAsWord Mode = "charactersAsWord" // read as word, accented the last character,
+	ModeCharacters       Mode = "characters"
 	ModeAllAsCharacters  Mode = "all" // read all puntuations also
 )
 
