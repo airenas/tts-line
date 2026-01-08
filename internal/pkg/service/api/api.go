@@ -10,6 +10,7 @@ const (
 	SymbolModeNone         SymbolMode = ""
 	SymbolModeRead         SymbolMode = "read"
 	SymbolModeReadSelected SymbolMode = "readSelected"
+	SymbolModeReadAll      SymbolMode = "readAll" // read all symbols
 )
 
 // Input is sythesis input data

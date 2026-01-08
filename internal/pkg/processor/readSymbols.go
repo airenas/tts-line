@@ -33,7 +33,10 @@ func (p *readSymbols) Process(ctx context.Context, data *synthesizer.TTSData) er
 	}
 	var mp map[string]struct{}
 	modeType := synthesizer.NERReadableSymbol
-	if data.Cfg.Input.SymbolMode == api.SymbolModeReadSelected {
+	switch data.Cfg.Input.SymbolMode {
+	case api.SymbolModeReadAll:
+		modeType = synthesizer.NERReadableAllSymbol
+	case api.SymbolModeReadSelected:
 		modeType = synthesizer.NERReadableAllSymbol
 		mp = make(map[string]struct{})
 		for _, s := range data.Cfg.Input.SelectedSymbols {

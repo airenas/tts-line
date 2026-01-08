@@ -182,7 +182,7 @@ func (c *TTSConfigutaror) Configure(ctx context.Context, r *http.Request, inText
 }
 
 func getSymbolMode(symbolMode api.SymbolMode) (api.SymbolMode, error) {
-	for _, m := range [...]api.SymbolMode{api.SymbolModeNone, api.SymbolModeRead, api.SymbolModeReadSelected} {
+	for _, m := range [...]api.SymbolMode{api.SymbolModeNone, api.SymbolModeRead, api.SymbolModeReadSelected, api.SymbolModeReadAll} {
 		if symbolMode == m {
 			return m, nil
 		}

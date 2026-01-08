@@ -535,6 +535,7 @@ func Test_getSymbolMode(t *testing.T) {
 		{name: "Empty", symbolMode: "", want: api.SymbolModeNone, wantErr: false},
 		{name: "Read", symbolMode: "read", want: api.SymbolModeRead, wantErr: false},
 		{name: "Read Selected", symbolMode: "readSelected", want: api.SymbolModeReadSelected, wantErr: false},
+		{name: "Read All", symbolMode: "readAll", want: api.SymbolModeReadAll, wantErr: false},
 		{name: "Fail", symbolMode: "olia", want: api.SymbolModeNone, wantErr: true},
 	}
 	for _, tt := range tests {
