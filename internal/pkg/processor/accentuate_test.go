@@ -254,7 +254,7 @@ func TestFindBest_UseLemma(t *testing.T) {
 
 func Test_sanitizeWordForAccent(t *testing.T) {
 	tests := []struct {
-		name string 
+		name string
 		s    string
 		want string
 	}{
@@ -270,7 +270,7 @@ func Test_sanitizeWordForAccent(t *testing.T) {
 		{name: "GR lower", s: `αβγδεζηθικλμνξοπρστυφχψω`, want: ""},
 		{name: "mixed", s: `ĄΒGΔžΗθiΚ`, want: "ĄGži"},
 		{name: "num", s: `12ĄΒGΔžΗθiΚ`, want: "ĄGži"},
-		{name: "greek", s: `"Θmašina"` , want: "mašina"},
+		{name: "greek", s: `"Θmašina"`, want: "mašina"},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

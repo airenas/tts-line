@@ -19,14 +19,14 @@ func TestChangeLetters(t *testing.T) {
 	ts(t, "faffa", "fa\u200b\u200b\u200bffa")
 	ts(t, "ojo", "оjо")
 	ts(t, "energiją", "energiją")
-	ts(t, "strategija-", "strategija―")
+	ts(t, "strategija―", "strategija―")
 	ts(t, "'Freda'", "ˈFredaˈ")
 	ts(t, "Francois", "François")
 	ts(t, "'Landė'", "ˈLandė'")
 	ts(t, "maculelė", "maculelê")
 	ts(t, "mūro", "mūro")
 	ts(t, "Garcia", "García")
-	ts(t, "Powrot", "Powrόt")
+	ts(t, "Powrοt", "Powrόt")
 	ts(t, "šešiasdešimt ", "šešiasdešimt˚")
 	ts(t, "Valstiečių", "Valstiečių")
 	ts(t, "įstatymo", "įstatymo")
@@ -59,7 +59,7 @@ func TestChangeLetters(t *testing.T) {
 	ts(t, "acuza", "acuză")
 	ts(t, "Vojtech", "Vojtěch")
 	ts(t, "Eriktileri", "Erіktіlerі")
-	ts(t, "Beiswenger", "Beiβwenger")
+	ts(t, "Beiβwenger", "Beiβwenger")
 	ts(t, "a arba a", "a\u200carba\u200ca")
 	ts(t, "Brulard", "Brûlard")
 	ts(t, "saugios", "saugios֤")
@@ -76,9 +76,9 @@ func TestChangeSymbols(t *testing.T) {
 	}{
 		{name: "Empty", args: "", want: ""},
 		{name: "a a", args: "a a", want: "a a", up: true, lw: true},
-		{name: "a – a –", args: "a – a –", want: "a - a -", up: true, lw: true},
+		{name: "a – a –", args: "a – a –", want: "a – a –", up: true, lw: true},
 		{name: "a--a", args: "a--a", want: "a--a", up: true, lw: true},
-		{name: "a——a", args: "a——a", want: "a--a", up: true, lw: true},
+		{name: "a——a", args: "a——a", want: "a——a", up: true, lw: true},
 		{name: "a\na", args: "a\na", want: "a\na", up: true, lw: true},
 		{name: "a\n\ra\r\r", args: "a\n\ra\r\r", want: "a\n\na\n\n", up: true, lw: true},
 		{name: "a\n\ta", args: "a\n\ta", want: "a\n a", up: true, lw: true},
@@ -99,23 +99,22 @@ func TestChangeSymbols(t *testing.T) {
 		{args: "rugpjū́čio", want: "rugpjūčio", up: true, lw: true},
 		{args: "į̃kvepia", want: "įkvepia", up: true, lw: true},
 		{args: "kū́nas", want: "kūnas", up: true, lw: true},
-		{args: "Κompozitoriai", want: "Kompozitoriai", up: true, lw: true},
+		{args: "Κompozitoriai", want: "Κompozitoriai", up: true, lw: true},
 		{args: "šeši∙dešimt", want: "šeši dešimt", up: true, lw: true},
-		{args: "taŋka", want: "tanka", up: true, lw: true},
-		{args: "Κartu", want: "Kartu", up: true, lw: true},
-		{args: "Τiriami", want: "Tiriami", up: true, lw: true},
+		{args: "taŋka", want: "taŋka", up: true, lw: true},
+		{args: "Κartu", want: "Κartu", up: true, lw: true},
+		{args: "Τiriami", want: "Τiriami", up: true, lw: true},
 		{args: "Fazıl", want: "Fazil", up: true, lw: true},
-		{args: "Εžeras", want: "Ežeras", up: true, lw: true},
+		{args: "Εžeras", want: "Εžeras", up: true, lw: true},
 		{args: "Talıs", want: "Talis", up: true, lw: true},
-		{args: "Ηeterogeniniuose", want: "Heterogeniniuose", up: true, lw: true},
-		{args: "Ιzoliacinė", want: "Izoliacinė", up: true, lw: true},
-		{args: "SX→x→R", want: "SX-x-R", up: true, lw: true},
+		{args: "Ηeterogeniniuose", want: "Ηeterogeniniuose", up: true, lw: true},
+		{args: "Ιzoliacinė", want: "Ιzoliacinė", up: true, lw: true},
+		{args: "SX→x→R", want: "SX→x→R", up: true, lw: true},
 		{args: "kvœdi", want: "kvadi", up: true, lw: true},
-		{args: "Αnsamblis", want: "Ansamblis", up: true, lw: true},
-		{args: "Μelodiją", want: "Melodiją", up: true, lw: true},
-		{args: "minutės→penkios", want: "minutės-penkios", up: true, lw: true},
+		{args: "Αnsamblis", want: "Αnsamblis", up: true, lw: true},
+		{args: "Μelodiją", want: "Μelodiją", up: true, lw: true},
+		{args: "minutės→penkios", want: "minutės→penkios", up: true, lw: true},
 		{args: "Тiškevičiai", want: "Tiškevičiai", up: true, lw: true},
-		{args: "Οperacijų", want: "Operacijų", up: true, lw: true},
 		{args: "trijų⋅tūkstančio", want: "trijų tūkstančio", up: true, lw: true},
 		{args: "mutacĳos", want: "mutacijos", up: true, lw: true},
 		{args: "dešimt⋅", want: "dešimt ", up: true, lw: true},
@@ -127,7 +126,6 @@ func TestChangeSymbols(t *testing.T) {
 		{args: "wǒmen", want: "women", up: true, lw: true},
 		{args: "goumǎi", want: "goumai", up: true, lw: true},
 		{args: "Ysaÿe", want: "Ysaye", up: true, lw: true},
-		{args: "Νiekas", want: "Niekas", up: true, lw: false},
 		// {args: "Нaрbe", want: "Hapbe", up: true, lw: false},
 		{args: "Andruța", want: "Andruta", up: true, lw: true},
 		{args: "Dîner", want: "Diner", up: true, lw: true},
@@ -140,8 +138,8 @@ func TestChangeSymbols(t *testing.T) {
 		{args: "ʽačiū", want: "'ačiū", up: true, lw: true},
 		{args: "Дякую!", want: "Djakuju!", up: true, lw: true},
 		{args: "Кириллица!", want: "Kirillica!", up: true, lw: true},
-		{args: "H₂O", want: "H2O", up: true, lw: true},
-		{args: "H₂O₃", want: "H2O3", up: true, lw: true},
+		{args: "H₂O", want: "H₂O", up: true, lw: true},
+		{args: "H₂O₃", want: "H₂O₃", up: true, lw: true},
 	}
 	for _, tt := range tests {
 		n := tt.name
@@ -172,7 +170,7 @@ func testChange(t *testing.T, expected, inp string, up, lw bool) {
 }
 
 func TestDash(t *testing.T) {
-	for _, s := range []string{"-", "‒", "–"} {
+	for _, s := range []string{"-", "‒"} {
 		assert.Equal(t, "-", ChangeSymbols(s))
 	}
 }

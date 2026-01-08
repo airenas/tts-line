@@ -78,6 +78,7 @@ func getMaps() map[rune]rune {
 	addLetterMap(res, "ľⱡ", 'l')
 	addLetterMap(res, "ñ", 'n')
 	addLetterMap(res, "оôõóőòǒö", 'o')
+	addLetterMap(res, "ό", 'ο') // Greek omicron with tonos - drop tone
 	addLetterMap(res, "р", 'p')
 	addLetterMap(res, "ř", 'r')
 	addLetterMap(res, "şș", 's')
