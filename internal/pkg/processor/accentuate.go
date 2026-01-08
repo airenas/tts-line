@@ -34,6 +34,12 @@ func (p *accentuator) Process(ctx context.Context, data *synthesizer.TTSDataPart
 		log.Ctx(ctx).Info().Msg("Skip accentuator")
 		return nil
 	}
+
+	var err error
+	data.Words, err = fixWordsForAccent(data)
+	if err != nil {
+		return err
+	}
 	inData := mapAccentInput(data)
 	if len(inData) > 0 {
 
@@ -50,6 +56,37 @@ func (p *accentuator) Process(ctx context.Context, data *synthesizer.TTSDataPart
 		log.Ctx(ctx).Debug().Msg("Skip accenter - no data in")
 	}
 	return nil
+}
+
+func fixWordsForAccent(data *synthesizer.TTSDataPart) ([]*synthesizer.ProcessedWord, error) {
+	res := make([]*synthesizer.ProcessedWord, 0, len(data.Words))
+	for _, w := range data.Words {
+		tgw := &w.Tagged
+		if tgw.IsWord() && w.UserTranscription == "" {
+			tgw.Word = sanitizeWordForAccent(tgw.Word)
+			if tgw.Word == "" {
+				continue
+			}
+		}
+		res = append(res, w)
+	}
+	return res, nil
+}
+
+func sanitizeWordForAccent(s string) string {
+	runes := []rune(s)
+	// remove trailing punctuation
+	res := make([]rune, 0, len(runes))
+	for _, r := range runes {
+		if isLTRune(r) {
+			res = append(res, r)
+		}
+	}
+	return string(res)
+}
+
+func isLTRune(r rune) bool {
+	return (r >= 'A' && r <= 'Z') || (r >= 'a' && r <= 'z') || (r >= 'Ą' && r <= 'Ž') || (r >= 'ą' && r <= 'ž')
 }
 
 type accentOutputElement struct {

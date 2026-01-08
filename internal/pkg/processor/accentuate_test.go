@@ -251,3 +251,33 @@ func TestFindBest_UseLemma(t *testing.T) {
 
 	assert.Equal(t, 103, res.Accent)
 }
+
+func Test_sanitizeWordForAccent(t *testing.T) {
+	tests := []struct {
+		name string 
+		s    string
+		want string
+	}{
+		{name: "normal", s: "olia", want: "olia"},
+		{name: "with dash", s: "o-lia", want: "olia"},
+		{name: "with apostrophe", s: "o'lia", want: "olia"},
+		{name: "with quotes", s: `o"lia`, want: "olia"},
+		{name: "with multiple", s: `o-'li"a`, want: "olia"},
+		{name: "empty", s: ``, want: ""},
+		{name: "LT upper", s: `ĄČĘĖĮŠŲŪŽ`, want: "ĄČĘĖĮŠŲŪŽ"},
+		{name: "LT lower", s: `ąčęėįšųūž`, want: "ąčęėįšųūž"},
+		{name: "GR upper", s: `ΑΒΓΔΕΖΗΘΙΚΛΜΝΞΟΠΡΣΤΥΦΧΨΩ`, want: ""},
+		{name: "GR lower", s: `αβγδεζηθικλμνξοπρστυφχψω`, want: ""},
+		{name: "mixed", s: `ĄΒGΔžΗθiΚ`, want: "ĄGži"},
+		{name: "num", s: `12ĄΒGΔžΗθiΚ`, want: "ĄGži"},
+		{name: "greek", s: `"Θmašina"` , want: "mašina"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := sanitizeWordForAccent(tt.s)
+			if got != tt.want {
+				t.Errorf("sanitizeWordForAccent() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
