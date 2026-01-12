@@ -158,7 +158,7 @@ func addProcessors(synt *synthesizer.MainWorker, sp *mongodb.SessionProvider, cf
 		return errors.Wrap(err, "can't init text normalizer processor")
 	}
 	synt.Add(pr)
-	synt.Add(processor.NewURLReplacer())
+	//synt.Add(processor.NewURLReplacer())
 	//db saver
 	sv, err = processor.NewSaver(ts, utils.RequestCleaned)
 	if err != nil {
@@ -190,6 +190,13 @@ func addProcessors(synt *synthesizer.MainWorker, sp *mongodb.SessionProvider, cf
 		return fmt.Errorf("can't init transliterator: %w", err)
 	}
 	synt.Add(pr)
+	
+	pr, err = processor.NewURLReplacer(cfg.GetString("wordTagger.url"))
+	if err != nil {
+		return fmt.Errorf("can't init url replacer: %w", err)
+	}
+	synt.Add(pr)
+	
 
 	pr, err = processor.NewNER()
 	if err != nil {
@@ -277,7 +284,7 @@ func addSSMLProcessors(synt *synthesizer.MainWorker, sp *mongodb.SessionProvider
 		return errors.Wrap(err, "can't init text normalizer processor")
 	}
 	processors = append(processors, pr)
-	processors = append(processors, processor.NewURLReplacer())
+	// processors = append(processors, processor.NewURLReplacer())
 	//number replacer
 	pr, err = processor.NewSSMLNumberReplace(cfg.GetString("numberReplace.url"))
 	if err != nil {
