@@ -19,13 +19,56 @@ type HTTPInvoker interface {
 }
 
 type numberReplace struct {
-	httpWrap HTTPInvoker
+	httpWrap  HTTPInvoker
+	urlFinder *urlFinder
+}
+
+type replaceData struct {
+	data []*textURLReplace
+}
+
+type textURLReplace struct {
+	orig        string
+	links       []string
+	placeholder string
+	replaced    string
+}
+
+func (t *replaceData) textArray() []string {
+	var parts []string
+	for _, d := range t.data {
+		parts = append(parts, d.replaced)
+	}
+	return parts
+}
+
+func (t *replaceData) text() string {
+	return strings.Join(t.textArray(), " ")
+}
+
+func (t *replaceData) restore(textWithNumbers []string) ([]string, error) {
+	var res []string
+	if len(textWithNumbers) != len(t.data) {
+		return nil, fmt.Errorf("length mismatch: got %d, expected %d", len(textWithNumbers), len(t.data))
+	}
+	for i, part := range textWithNumbers {
+		r := t.data[i]
+		final := part
+		for _, link := range r.links {
+			final = strings.Replace(final, r.placeholder, link, 1)
+		}
+		res = append(res, final)
+	}
+	return res, nil
 }
 
 // NewNumberReplace creates new processor
 func NewNumberReplace(urlStr string) (synthesizer.Processor, error) {
-	res := &numberReplace{}
-	var err error
+	finder, err := NewURLFinder()
+	if err != nil {
+		return nil, fmt.Errorf("init url finder: %w", err)
+	}
+	res := &numberReplace{urlFinder: finder}
 	res.httpWrap, err = newHTTPWrapBackoff(urlStr, time.Second*20)
 
 	if err != nil {
@@ -42,13 +85,49 @@ func (p *numberReplace) Process(ctx context.Context, data *synthesizer.TTSData) 
 		log.Ctx(ctx).Info().Msg("Skip numberReplace")
 		return nil
 	}
+
+	noURLS, err := removeURLs(ctx, p.urlFinder, data.NormalizedText)
+	if err != nil {
+		return fmt.Errorf("remove URLs: %w", err)
+	}
 	res := ""
-	err := p.httpWrap.InvokeText(ctx, accent.ClearAccents(strings.Join(data.Text, " ")), &res)
+	err = p.httpWrap.InvokeText(ctx, accent.ClearAccents(noURLS.text()), &res)
 	if err != nil {
 		return err
 	}
-	data.TextWithNumbers, err = mapAccentsBack(ctx, res, data.Text)
+	textWithNumbers, err := mapAccentsBack(ctx, res, noURLS.textArray())
+	if err != nil {
+		return fmt.Errorf("map accents back: %w", err)
+	}
+	data.TextWithNumbers, err = noURLS.restore(textWithNumbers)
+	if err != nil {
+		return fmt.Errorf("restore URLs: %w", err)
+	}
+
 	return err
+}
+
+func removeURLs(ctx context.Context, replacer *urlFinder, s []string) (*replaceData, error) {
+	res := &replaceData{}
+	res.data = make([]*textURLReplace, 0, len(s))
+	for _, part := range s {
+		r, err := removeURL(ctx, replacer, part)
+		if err != nil {
+			return nil, err
+		}
+		res.data = append(res.data, r)
+	}
+	return res, nil
+}
+
+func removeURL(_ctx context.Context, replacer *urlFinder, part string) (*textURLReplace, error) {
+	placeholder := "URL"
+	for strings.Contains(part, placeholder) {
+		placeholder += "_"
+	}
+	res := &textURLReplace{orig: part, placeholder: placeholder}
+	res.links, res.replaced = replacer.replaceAll(part, placeholder)
+	return res, nil
 }
 
 func (p *numberReplace) skip(data *synthesizer.TTSData) bool {

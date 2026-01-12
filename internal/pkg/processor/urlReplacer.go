@@ -2,35 +2,62 @@ package processor
 
 import (
 	"context"
+	"fmt"
 	"regexp"
 	"strings"
+	"time"
 
 	"github.com/airenas/go-app/pkg/goapp"
+	"github.com/pkg/errors"
 	"github.com/rs/zerolog/log"
 	"mvdan.cc/xurls/v2"
 
 	"github.com/airenas/tts-line/internal/pkg/synthesizer"
-	"github.com/airenas/tts-line/internal/pkg/utils"
 )
+
+const (
+	linkMI  = "Dl"
+	emailMI = "De"
+)
+
+type urlFinder struct {
+	urlRegexp  *regexp.Regexp
+	emaiRegexp *regexp.Regexp
+}
+
+// NewURLReplacer creates new URL replacer processor
+func NewURLFinder() (*urlFinder, error) {
+	res := &urlFinder{}
+	res.urlRegexp = xurls.Relaxed()
+	// from https://html.spec.whatwg.org/#valid-e-mail-address
+	res.emaiRegexp = regexp.MustCompile("^[a-zA-Z0-9.!#$%&'*+\\/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$")
+	return res, nil
+}
 
 type urlReplacer struct {
 	urlPhrase   string
 	emailPhrase string
-	urlRegexp   *regexp.Regexp
-	emaiRegexp  *regexp.Regexp
-	skipURLs    map[string]bool
+	// urlFinder *urlFinder
+	skipURLs map[string]bool
+
+	taggerHTTPWrap HTTPInvokerJSON
 }
 
 // NewURLReplacer creates new URL replacer processor
-func NewURLReplacer() synthesizer.Processor {
+func NewURLReplacer(taggerURLStr string) (*urlReplacer, error) {
 	res := &urlReplacer{}
 	res.urlPhrase = "Internetinis adresas"
 	res.emailPhrase = "Elektroninio pašto adresas"
-	res.urlRegexp = xurls.Relaxed()
-	// from https://html.spec.whatwg.org/#valid-e-mail-address
-	res.emaiRegexp = regexp.MustCompile("^[a-zA-Z0-9.!#$%&'*+\\/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$")
+
+	var err error
+	res.taggerHTTPWrap, err = newHTTPWrapBackoff(taggerURLStr, time.Second*20)
+	if err != nil {
+		return nil, errors.Wrap(err, "can't init tagger http client")
+	}
+	log.Info().Str("word tagger url", taggerURLStr).Msg("URL Replacer initialized")
+
 	res.skipURLs = map[string]bool{"lrt.lt": true, "vdu.lt": true, "lrs.lt": true}
-	return res
+	return res, nil
 }
 
 func (p *urlReplacer) Process(ctx context.Context, data *synthesizer.TTSData) error {
@@ -39,29 +66,130 @@ func (p *urlReplacer) Process(ctx context.Context, data *synthesizer.TTSData) er
 		return nil
 	}
 	defer goapp.Estimate("URL replace")()
-	text := strings.Join(data.NormalizedText, " ")
-	utils.LogData(ctx, "Input", text, nil)
-	data.Text = nil
-	for _, s := range data.NormalizedText {
-		data.Text = append(data.Text, p.replaceURLs(s))
+	var err error
+	data.Words, err = p.replaceURLs(ctx, data.Words)
+	if err != nil {
+		return fmt.Errorf("replace URLs: %w", err)
 	}
-	utils.LogData(ctx, "Output", strings.Join(data.Text, " "), nil)
 	return nil
 }
 
-func (p *urlReplacer) replaceURLs(s string) string {
-	return p.urlRegexp.ReplaceAllStringFunc(s, func(in string) string {
-		// leave emails
-		if p.emaiRegexp.MatchString(in) {
-			return p.emailPhrase
+func (p *urlReplacer) replaceURLs(ctx context.Context, words []*synthesizer.ProcessedWord) ([]*synthesizer.ProcessedWord, error) {
+	urls := collectURLs(words)
+	if len(urls) == 0 {
+		return words, nil
+	}
+	mappedURLs, err := p.mapURLs(ctx, urls)
+	if err != nil {
+		return nil, fmt.Errorf("map URLs: %w", err)
+	}
+	urlWords := collectWords(mappedURLs)
+	if len(urlWords) == 0 {
+		return words, nil
+	}
+	taggedWords, err := p.tagWords(ctx, urlWords)
+	if err != nil {
+		return nil, fmt.Errorf("tag words: %w", err)
+	}
+
+	res := make([]*synthesizer.ProcessedWord, 0, len(words))
+	for _, w := range words {
+		if isURL(w) {
+			mapped, ok := mappedURLs[w.Tagged.Word]
+			if !ok {
+				return nil, fmt.Errorf("missing mapped URL for %s", w.Tagged.Word)
+			}
+			for _, urlW := range mapped.expanded {
+				tagged, ok := taggedWords[urlW]
+				if !ok {
+					return nil, fmt.Errorf("missing tagged words for %s", w.Tagged.Word)
+				}
+				res = append(res, &synthesizer.ProcessedWord{
+					Tagged:   *tagged,
+					TextPart: w.TextPart,
+				})
+			}
+		} else {
+			res = append(res, w)
 		}
-		// leave some URL
-		fixed := baseURL(in)
-		if p.skipURLs[strings.ToLower(fixed)] {
-			return fixed
+	}
+	return res, nil
+}
+
+func (p *urlReplacer) tagWords(ctx context.Context, urlWords map[string]struct{}) (map[string]*synthesizer.TaggedWord, error) {
+	input := [][]string{make([]string, 0, len(urlWords))}
+	for w := range urlWords {
+		input[0] = append(input[0], w)
+	}
+	var output []TaggedWord
+	err := p.taggerHTTPWrap.InvokeJSON(ctx, input, &output)
+	if err != nil {
+		return nil, fmt.Errorf("invoke tagger: %w", err)
+	} 
+	res := make(map[string]*synthesizer.TaggedWord)
+	for _, w := range output {
+		tw := mapTag(&w)
+		if tw.SentenceEnd {
+			continue
 		}
-		return p.urlPhrase
+		res[tw.Word] = &tw
+	}
+	return res, nil
+}
+
+func collectWords(mappedURLs map[string]*urlMap) map[string]struct{} {
+	res := make(map[string]struct{})
+	for _, v := range mappedURLs {
+		for _, w := range v.expanded {
+			res[w] = struct{}{}
+		}
+	}
+	return res
+}
+
+type urlMap struct {
+	orig     string
+	expanded []string
+}
+
+func (p *urlReplacer) mapURLs(ctx context.Context, urls map[string]string) (map[string]*urlMap, error) {
+	res := make(map[string]*urlMap)
+	for k, v := range urls {
+		if v == linkMI {
+			l := baseURL(k)
+			if p.skipURLs[l] {
+				res[k] = &urlMap{orig: k, expanded: []string{l}}
+			} else {
+				res[k] = &urlMap{orig: k, expanded: strings.Split(p.urlPhrase, " ")}
+			}
+		} else if v == emailMI {
+			res[k] = &urlMap{orig: k, expanded: strings.Split(p.emailPhrase, " ")}
+		}
+	}
+	return res, nil
+}
+
+func isURL(word *synthesizer.ProcessedWord) bool {
+	return word.Tagged.IsWord() && (word.Tagged.Mi == linkMI || word.Tagged.Mi == emailMI)
+}
+
+func collectURLs(words []*synthesizer.ProcessedWord) map[string]string {
+	res := make(map[string]string)
+	for _, w := range words {
+		if isURL(w) {
+			res[w.Tagged.Word] = w.Tagged.Mi
+		}
+	}
+	return res
+}
+
+func (p *urlFinder) replaceAll(text string, placeholder string) ([]string, string) {
+	var links []string
+	res := p.urlRegexp.ReplaceAllStringFunc(text, func(in string) string {
+		links = append(links, in)
+		return placeholder
 	})
+	return links, res
 }
 
 // baseURL removes http, https, www, and / at the end
