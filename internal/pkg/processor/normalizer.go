@@ -103,6 +103,9 @@ func getNextStr(resR [][]rune, at int) (int, int, error) {
 	for i := 0; i < len(resR); i++ {
 		res := resR[i]
 		l := len(res)
+		if i < len(resR)-1 {
+			l++ // compensate strings.Join(data.CleanedText, " ")
+		}
 		if at > l {
 			at -= l
 		} else {
