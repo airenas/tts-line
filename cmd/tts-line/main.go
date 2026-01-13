@@ -286,7 +286,7 @@ func addSSMLProcessors(synt *synthesizer.MainWorker, sp *mongodb.SessionProvider
 	processors = append(processors, pr)
 	// processors = append(processors, processor.NewURLReplacer())
 	//number replacer
-	pr, err = processor.NewSSMLNumberReplace(cfg.GetString("numberReplace.url"))
+	pr, err = processor.NewNumberReplace(cfg.GetString("numberReplace.url"))
 	if err != nil {
 		return errors.Wrap(err, "can't init number replace")
 	}
@@ -300,6 +300,12 @@ func addSSMLProcessors(synt *synthesizer.MainWorker, sp *mongodb.SessionProvider
 	pr, err = processor.NewTransliterator(cfg.GetString("transliterator.url"))
 	if err != nil {
 		return fmt.Errorf("can't init transliterator: %w", err)
+	}
+	processors = append(processors, pr)
+
+	pr, err = processor.NewURLReplacer(cfg.GetString("wordTagger.url"))
+	if err != nil {
+		return fmt.Errorf("can't init url replacer: %w", err)
 	}
 	processors = append(processors, pr)
 
