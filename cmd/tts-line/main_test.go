@@ -19,6 +19,7 @@ const testAMCfg = "acousticModel:\n  url: http://server\n"
 const testVocCfg = "vocoder:\n  url: http://server\n"
 const testCompCfg = "comparator:\n  url: http://server\n"
 const testTaggerCfg = "tagger:\n  url: http://server\n"
+const testWordTaggerCfg = "wordTagger:\n  url: http://server\n"
 const testValidatorCfg = "validator:\n  maxChars: 100\n"
 const testConvCfg = "audioConvert:\n  url: http://server\n"
 const testObsceneCfg = "obscene:\n  url: http://server\n"
@@ -29,7 +30,8 @@ const testNumberReplaceCfg = "numberReplace:\n  url: http://nr.su\n"
 const testSuffixLoaderCfg = "suffixLoader:\n  path: ./\n"
 
 var testAllCfg = testCompCfg +
-	testAccenterCfg + testTransCfg + testAMCfg + testVocCfg + testTaggerCfg + testValidatorCfg +
+	testAccenterCfg + testTransCfg + testAMCfg + testVocCfg + testTaggerCfg + testWordTaggerCfg +
+	testValidatorCfg +
 	testConvCfg + testAcrCfg + testCliticsCfg + testObsceneCfg + testCleanCfg +
 	testNumberReplaceCfg + testSuffixLoaderCfg + testNormalizeCfg + testTransliteratorCfg
 
@@ -99,7 +101,7 @@ func TestAddSSMLProcessors(t *testing.T) {
 		"SSMLPartRunner",
 		"cleaner(HTTPBackoff(HTTPWrap(http://cl.su, tm: 10s)))",
 		"normalizer(HTTPBackoff(HTTPWrap(http://norm.su, tm: 10s)))",
-		"SSMLNumberReplace(HTTPBackoff(HTTPWrap(http://nr.su, tm: 20s)))",
+		"numberReplace(HTTPBackoff(HTTPWrap(http://nr.su, tm: 20s)))",
 		"SSMLTagger(", "joinSSMLAudio(audioLoader(./))",
 		"audioConverter", "addMetrics"}
 	infos := strings.Split(info, "\n")

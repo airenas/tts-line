@@ -190,13 +190,12 @@ func addProcessors(synt *synthesizer.MainWorker, sp *mongodb.SessionProvider, cf
 		return fmt.Errorf("can't init transliterator: %w", err)
 	}
 	synt.Add(pr)
-	
+
 	pr, err = processor.NewURLReplacer(cfg.GetString("wordTagger.url"))
 	if err != nil {
 		return fmt.Errorf("can't init url replacer: %w", err)
 	}
 	synt.Add(pr)
-	
 
 	pr, err = processor.NewNER()
 	if err != nil {
