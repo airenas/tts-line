@@ -117,6 +117,10 @@ func (p *urlReplacer) replaceURLs(ctx context.Context, words []*synthesizer.Proc
 }
 
 func (p *urlReplacer) tagWords(ctx context.Context, urlWords map[string]struct{}) (map[string]*synthesizer.TaggedWord, error) {
+	res := make(map[string]*synthesizer.TaggedWord)
+	if len(urlWords) == 0 {
+		return res, nil
+	}
 	input := [][]string{make([]string, 0, len(urlWords))}
 	for w := range urlWords {
 		input[0] = append(input[0], w)
@@ -125,8 +129,7 @@ func (p *urlReplacer) tagWords(ctx context.Context, urlWords map[string]struct{}
 	err := p.taggerHTTPWrap.InvokeJSON(ctx, input, &output)
 	if err != nil {
 		return nil, fmt.Errorf("invoke tagger: %w", err)
-	} 
-	res := make(map[string]*synthesizer.TaggedWord)
+	}
 	for _, w := range output {
 		tw := mapTag(&w)
 		if tw.SentenceEnd {

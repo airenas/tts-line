@@ -20,6 +20,8 @@ var (
 )
 
 func initTestJSON(t *testing.T) {
+	t.Helper()
+
 	httpJSONMock = &mocks.HTTPInvokerJSON{}
 }
 
