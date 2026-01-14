@@ -80,15 +80,17 @@ func mapTagResult(tags []*TaggedWord) []*synthesizer.ProcessedWord {
 
 func mapTag(tag *TaggedWord) synthesizer.TaggedWord {
 	res := synthesizer.TaggedWord{}
-	if tag.Type == "SEPARATOR" {
+	switch tag.Type {
+	case "SEPARATOR":
 		res.Separator = tag.String
-	} else if tag.Type == "SENTENCE_END" {
+		res.Mi = tag.Mi
+	case "SENTENCE_END":
 		res.SentenceEnd = true
-	} else if tag.Type == "WORD" || tag.Type == "NUMBER" {
+	case "WORD", "NUMBER":
 		res.Word = tag.String
 		res.Lemma = tag.Lemma
 		res.Mi = tag.Mi
-	} else if tag.Type == "SPACE" {
+	case "SPACE":
 		res.Space = true
 	}
 	return res

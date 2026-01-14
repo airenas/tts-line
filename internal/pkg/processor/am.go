@@ -587,6 +587,9 @@ func getSep(s string, words []*synthesizer.ProcessedWord, pos int) string {
 	if s == ";" {
 		return ","
 	}
+	if words[pos].Tagged.Mi == DashMI {
+		s = "-"
+	}
 	if s == "-" || s == ":" {
 		if pos > 0 && pos < len(words)-1 && words[pos-1].Tagged.IsWord() && words[pos+1].Tagged.IsWord() {
 			return "" // drop dash and colon if between words
@@ -601,6 +604,9 @@ func addPause(s string, words []*synthesizer.ProcessedWord, pos int) bool {
 		if s == sep {
 			return true
 		}
+	}
+	if words[pos].Tagged.Mi == DashMI {
+		s = "-"
 	}
 	if s == "-" || s == ":" {
 		if pos > 0 && pos < len(words)-1 {
