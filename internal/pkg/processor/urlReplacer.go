@@ -15,11 +15,6 @@ import (
 	"github.com/airenas/tts-line/internal/pkg/synthesizer"
 )
 
-const (
-	linkMI  = "Dl"
-	emailMI = "De"
-)
-
 type urlFinder struct {
 	urlRegexp  *regexp.Regexp
 	emaiRegexp *regexp.Regexp
