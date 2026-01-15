@@ -112,7 +112,7 @@ const (
 	TagBreak    = "break"
 	TagVoice    = "voice"
 	TagProsody  = "prosody"
-	TagWord     = "intelektika:w"
+	TagWord     = "urn:intelektika:w"
 	TagLang     = "lang"
 	TagEmphasis = "emphasis"
 	TagSayAs    = "say-as"
@@ -250,10 +250,14 @@ func Parse(r io.Reader, def *Text, voiceFunc func(string) (string, error)) ([]Pa
 }
 
 func getXMLKey(name xml.Name) string {
-	if name.Space != "" {
-		return name.Space + ":" + name.Local
+	space := name.Space
+	if space == "" {
+		return name.Local
 	}
-	return name.Local
+	if space == "intelektika" {
+		space = "urn:intelektika"
+	}
+	return space + ":" + name.Local
 }
 
 func makeTextPart(se xml.CharData, wrk *wrkData) error {

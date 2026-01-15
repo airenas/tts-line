@@ -249,7 +249,26 @@ func TestParse(t *testing.T) {
 			wantErr: false},
 		{name: "speak empty text", xml: "<speak></speak> \n\n\n  ", want: []Part{},
 			wantErr: false},
+		//////////////////////////////////////////////////////////////////////////////////////////
+		/// <intelektika:w> tests
+		//////////////////////////////////////////////////////////////////////////////////////////
 		{name: "<w> ", xml: `<speak><intelektika:w acc="g{a/}li">gali</intelektika:w></speak>`,
+			want: []Part{
+				&Text{Voice: "aa", Texts: []TextPart{{Text: "gali", Accented: "g{a/}li"}}},
+			}, wantErr: false},
+		{name: "<w> with namespace", xml: `<speak xmlns:intelektika="urn:intelektika"><intelektika:w acc="g{a/}li">gali</intelektika:w></speak>`,
+			want: []Part{
+				&Text{Voice: "aa", Texts: []TextPart{{Text: "gali", Accented: "g{a/}li"}}},
+			}, wantErr: false},
+		{name: "<w> with any default namespace", xml: `<speak><w xmlns="urn:intelektika" acc="g{a/}li">gali</w></speak>`,
+			want: []Part{
+				&Text{Voice: "aa", Texts: []TextPart{{Text: "gali", Accented: "g{a/}li"}}},
+			}, wantErr: false},
+		{name: "<w> with any prefix namespace", xml: `<speak xmlns:olia="urn:intelektika"><olia:w acc="g{a/}li">gali</olia:w></speak>`,
+			want: []Part{
+				&Text{Voice: "aa", Texts: []TextPart{{Text: "gali", Accented: "g{a/}li"}}},
+			}, wantErr: false},
+		{name: "<w> with any prefix namespace", xml: `<speak xmlns:i="urn:intelektika"><i:w acc="g{a/}li">gali</i:w></speak>`,
 			want: []Part{
 				&Text{Voice: "aa", Texts: []TextPart{{Text: "gali", Accented: "g{a/}li"}}},
 			}, wantErr: false},
