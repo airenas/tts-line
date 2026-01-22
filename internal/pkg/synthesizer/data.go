@@ -121,6 +121,7 @@ type ProcessedWord struct {
 	NERType           NEREnum
 	IsLastInPart      bool
 	AudioPos          *AudioPos
+	FromWord          *TaggedWord
 }
 
 func (p *ProcessedWord) Clone() *ProcessedWord {

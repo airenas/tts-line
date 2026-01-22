@@ -74,12 +74,18 @@ func toTransliteratorInput(w *synthesizer.ProcessedWord) *transliteratorInput {
 	if tw.Separator != "" {
 		return &transliteratorInput{Type: tw.TypeStr(), String: tw.Separator}
 	}
-	lang := extractLanguage(w.TextPart)
+	lang := extractLanguage(w)
 	return &transliteratorInput{Type: tw.TypeStr(), String: tw.Word, Mi: tw.Mi, Lemma: tw.Lemma, Language: lang}
 }
 
-func extractLanguage(part *synthesizer.TTSTextPart) string {
-	if part != nil {
+func extractLanguage(word *synthesizer.ProcessedWord) string {
+	if from := word.FromWord; from != nil {
+		if from.Mi == miEmail || from.Mi == miLink {
+			return langURL
+		}
+	}
+
+	if part := word.TextPart; part != nil {
 		return mapLanguage(part.Language)
 	}
 	return ""
@@ -160,6 +166,8 @@ type transliteratorInput struct {
 	Lemma    string `json:"lemma,omitempty"`
 	Language string `json:"lang,omitempty"`
 }
+
+const langURL = "url" // fake language for transliteration
 
 type transliteratorOutput struct {
 	Type   string `json:"type"`
