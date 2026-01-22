@@ -10,7 +10,7 @@ services:
       - LOGGER_LEVEL=DEBUG
       - NUMBERREPLACE_URL=http://hnum2txt:80/api/
       - OBSCENE_URL=http://obscene:3000/obscene-filter
-      - NORMALIZE_URL=http://normalizer:3000/norm
+      - NORMALIZE_URL=http://normalizer:3000/norm_list
       - TAGGER_URL=http://tagger-ml:8000/tag
       - ACCENTER_URL=http://accenter:8000/accent?human=true&roe=true
       - ACRONYMS_URL=http://acronyms:8000/acronyms
