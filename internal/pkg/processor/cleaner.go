@@ -51,6 +51,9 @@ func (p *cleaner) Process(ctx context.Context, data *synthesizer.TTSData) error 
 	if emptyStrArr(data.CleanedText) {
 		return utils.ErrNoInput
 	}
+	if len(data.CleanedText) == 1 && len(data.OriginalTextParts) == 0 { // fix for simple case
+		data.OriginalTextParts = []*synthesizer.TTSTextPart{{Text: data.CleanedText[0]}}
+	}
 	utils.LogData(ctx, "Output", strings.Join(data.CleanedText, " "), nil)
 	return nil
 }
