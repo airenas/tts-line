@@ -185,15 +185,15 @@ func addProcessors(synt *synthesizer.MainWorker, sp *mongodb.SessionProvider, cf
 	}
 	synt.Add(pr)
 
-	pr, err = processor.NewTransliterator(cfg.GetString("transliterator.url"))
+	pr, err = processor.NewURLReplacer(cfg.GetString("urlReader.url"), cfg.GetString("wordTagger.url"))
 	if err != nil {
-		return fmt.Errorf("can't init transliterator: %w", err)
+		return fmt.Errorf("can't init url replacer: %w", err)
 	}
 	synt.Add(pr)
 
-	pr, err = processor.NewURLReplacer(cfg.GetString("wordTagger.url"))
+	pr, err = processor.NewTransliterator(cfg.GetString("transliterator.url"))
 	if err != nil {
-		return fmt.Errorf("can't init url replacer: %w", err)
+		return fmt.Errorf("can't init transliterator: %w", err)
 	}
 	synt.Add(pr)
 
@@ -296,15 +296,15 @@ func addSSMLProcessors(synt *synthesizer.MainWorker, sp *mongodb.SessionProvider
 	}
 	processors = append(processors, pr)
 
-	pr, err = processor.NewTransliterator(cfg.GetString("transliterator.url"))
+	pr, err = processor.NewURLReplacer(cfg.GetString("urlReader.url"), cfg.GetString("wordTagger.url"))
 	if err != nil {
-		return fmt.Errorf("can't init transliterator: %w", err)
+		return fmt.Errorf("can't init url replacer: %w", err)
 	}
 	processors = append(processors, pr)
 
-	pr, err = processor.NewURLReplacer(cfg.GetString("wordTagger.url"))
+	pr, err = processor.NewTransliterator(cfg.GetString("transliterator.url"))
 	if err != nil {
-		return fmt.Errorf("can't init url replacer: %w", err)
+		return fmt.Errorf("can't init transliterator: %w", err)
 	}
 	processors = append(processors, pr)
 
