@@ -29,9 +29,11 @@ file?=ssml.xml
 
 .data/input.json: $(file) | .data
 	@jq -n --arg text "$$(cat $(file))" --arg speed "1" --arg voice "astra" \
-		'{text: $$text, speed: ($$speed | tonumber), voice: $$voice, symbolMode: "", selectedSymbols: ["(", ")", "|", "?", ",", ".", "{", "}", "©", "←"], speechMarkTypes: ["word"], outputFormat: "wav", maxEdgeSilenceMillis: 100}' > $@
+		'{text: $$text, speed: ($$speed | tonumber), outputTextFormat: "accented", saveRequest: true, voice: $$voice, symbolMode: "", selectedSymbols: ["(", ")", "|", "?", ",", ".", "{", "}", "©", "←"], speechMarkTypes: ["word"], outputFormat: "wav", maxEdgeSilenceMillis: 100}' > $@
 .data/response.json: .data/input.json
 	curl -X POST http://localhost:$(service_port)/synthesize -H 'Content-type: application/json' -d @$< -o $@
+.data/responseCustom.json: .data/input.json
+	curl -X POST "http://localhost:$(service_port)/synthesizeCustom?requestID=${rID}" -H 'Content-type: application/json' -d @$< -o $@	
 .data/output.mp3: .data/response.json	
 	@jq -r '.audioAsString' .data/response.json | base64 --decode > $@
 .data/output.wav: .data/response.json	
