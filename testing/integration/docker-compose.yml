@@ -7,8 +7,10 @@ services:
       - CLEAN_URL=http://text-clean:8000/clean
       - NUMBERREPLACE_URL=http://integration-tests:9876/mock-number-replace
       - OBSCENE_URL=http://integration-tests:9876/mock-obscene-filter
-      - NORMALIZE_URL=http://normalizer:3000/norm
+      - NORMALIZE_URL=http://normalizer:3000/norm_list
+      - URLREADER_URL=http://normalizer:3000/norm_url
       - TAGGER_URL=http://tagger:8000/tag
+      - WORDTAGGER_URL=http://tagger:8000/tag-parsed?skip_model=true
       - ACCENTER_URL=http://accenter:8000/accent?human=true&roe=true
       - ACRONYMS_URL=http://acronyms:8000/acronyms
       - TRANSCRIBER_URL=http://transcriber:8000/transcription?gem=gem1&joinatsi=true
@@ -58,7 +60,7 @@ services:
     restart: on-failure 
 
   normalizer:
-    image: intelektikalt/text-normalizer:0.1.28
+    image: intelektikalt/text-normalizer:0.2.1
     restart: on-failure  
 
   transliterator:
