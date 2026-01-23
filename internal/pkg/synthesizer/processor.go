@@ -325,6 +325,7 @@ func mapTranscribed(data *TTSData) string {
 
 func mapAccentedText(data *TTSData) (string, error) {
 	res := strings.Builder{}
+	var prevTgw *TaggedWord
 	for _, p := range data.Parts {
 		for _, w := range p.Words {
 			tgw := w.Tagged
@@ -337,8 +338,12 @@ func mapAccentedText(data *TTSData) (string, error) {
 				if err != nil {
 					return "", errors.Wrapf(err, "Can't mark accent for %s", tgw.Word)
 				}
+				if prevTgw != nil && prevTgw.IsWord() {
+					res.WriteString(" ")
+				}
 				res.WriteString(aw)
 			}
+			prevTgw = &tgw
 		}
 	}
 	return res.String(), nil
