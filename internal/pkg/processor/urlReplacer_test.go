@@ -2,6 +2,7 @@ package processor
 
 import (
 	"context"
+	"reflect"
 	"testing"
 
 	"github.com/airenas/tts-line/internal/pkg/synthesizer"
@@ -12,15 +13,14 @@ import (
 
 func TestNewReplacer(t *testing.T) {
 	pr := testNewURLReplacer(t)
-	assert.Equal(t, "Internetinis adresas", pr.urlPhrase)
-	assert.Equal(t, "Elektroninio pašto adresas", pr.emailPhrase)
+	require.NotNil(t, pr)
 }
 
 func testNewURLReplacer(t *testing.T) *urlReplacer {
 	t.Helper()
 	initTestJSON(t)
 
-	pr, err := NewURLReplacer("http://tagger.lt")
+	pr, err := NewURLReplacer("http://replacer.lt", "http://tagger.lt")
 	require.Nil(t, err)
 	require.NotNil(t, pr)
 
@@ -44,7 +44,7 @@ func TestReplacerProcess(t *testing.T) {
 	d := &synthesizer.TTSData{}
 	d.Words = []*synthesizer.ProcessedWord{
 		{Tagged: synthesizer.TaggedWord{Word: "olia", Mi: "X-"}},
-		{Tagged: synthesizer.TaggedWord{Word: "www.delfi.lt", Mi: linkMI}},
+		{Tagged: synthesizer.TaggedWord{Word: "www.delfi.lt", Mi: miLink}},
 		{Tagged: synthesizer.TaggedWord{Word: "olia", Mi: "X-"}},
 	}
 	pr := testNewURLReplacer(t)
@@ -63,7 +63,7 @@ func TestReplacerProcess_email(t *testing.T) {
 	d := &synthesizer.TTSData{}
 	d.Words = []*synthesizer.ProcessedWord{
 		{Tagged: synthesizer.TaggedWord{Word: "olia", Mi: "X-"}},
-		{Tagged: synthesizer.TaggedWord{Word: "a@delfi.lt", Mi: emailMI}},
+		{Tagged: synthesizer.TaggedWord{Word: "a@delfi.lt", Mi: miEmail}},
 		{Tagged: synthesizer.TaggedWord{Word: "olia", Mi: "X-"}},
 	}
 	pr := testNewURLReplacer(t)
@@ -84,9 +84,9 @@ func TestReplacerProcess_several(t *testing.T) {
 	d := &synthesizer.TTSData{}
 	d.Words = []*synthesizer.ProcessedWord{
 		{Tagged: synthesizer.TaggedWord{Word: "olia", Mi: "X-"}},
-		{Tagged: synthesizer.TaggedWord{Word: "www.delfi.lt", Mi: linkMI}},
+		{Tagged: synthesizer.TaggedWord{Word: "www.delfi.lt", Mi: miLink}},
 		{Tagged: synthesizer.TaggedWord{Word: "olia", Mi: "X-"}},
-		{Tagged: synthesizer.TaggedWord{Word: "www.delfi.lt", Mi: linkMI}},
+		{Tagged: synthesizer.TaggedWord{Word: "www.delfi.lt", Mi: miLink}},
 	}
 	pr := testNewURLReplacer(t)
 	require.NotNil(t, pr)
@@ -107,9 +107,9 @@ func TestReplacer_Skip(t *testing.T) {
 	d.Cfg.JustAM = true
 	d.Words = []*synthesizer.ProcessedWord{
 		{Tagged: synthesizer.TaggedWord{Word: "olia", Mi: "X-"}},
-		{Tagged: synthesizer.TaggedWord{Word: "www.delfi.lt", Mi: linkMI}},
+		{Tagged: synthesizer.TaggedWord{Word: "www.delfi.lt", Mi: miLink}},
 		{Tagged: synthesizer.TaggedWord{Word: "olia", Mi: "X-"}},
-		{Tagged: synthesizer.TaggedWord{Word: "www.delfi.lt", Mi: linkMI}},
+		{Tagged: synthesizer.TaggedWord{Word: "www.delfi.lt", Mi: miLink}},
 	}
 	pr := testNewURLReplacer(t)
 	err := pr.Process(context.TODO(), d)
@@ -173,6 +173,49 @@ func Test_baseURL(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := baseURL(tt.args); got != tt.want {
 				t.Errorf("baseURL() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func Test_urlFinder_replaceAll(t *testing.T) {
+	tests := []struct {
+		name string // description of this test case
+		// Named input parameters for target function.
+		text        string
+		placeholder string
+		want        []string
+		want2       string
+	}{
+		{name: "No URLs", text: "Olia ooo ok", placeholder: "XXX", want: nil, want2: "Olia ooo ok"},
+		{name: "One URL", text: "Olia www.delfi.lt is OK", placeholder: "XXX",
+			want: []string{"www.delfi.lt"}, want2: "Olia XXX is OK"},
+		{name: "Several URLs", text: "Olia www.delfi.lt is OK. Info https://lrt.lt/test?aaa=111",
+			placeholder: "YYY",
+			want: []string{"www.delfi.lt", "https://lrt.lt/test?aaa=111"},
+			want2: "Olia YYY is OK. Info YYY"},
+		{name: "email", text: "Olia aaa@aaa.lt and?",
+			placeholder: "YYY",
+			want: []string{"aaa@aaa.lt"},
+			want2: "Olia YYY and?"},
+		{name: "ip", text: "Olia 192.168.1.1 and?",
+			placeholder: "YYY",
+			want: []string{"192.168.1.1"},
+			want2: "Olia YYY and?"},
+	}
+	p, err := NewURLFinder()
+	if err != nil {
+		t.Fatalf("could not construct receiver type: %v", err)
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, got2 := p.replaceAll(tt.text, tt.placeholder)
+			// TODO: update the condition below to compare got with tt.want.
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("replaceAll() = %v, want %v", got, tt.want)
+			}
+			if got2 != tt.want2 {
+				t.Errorf("replaceAll() = %v, want %v", got2, tt.want2)
 			}
 		})
 	}

@@ -20,6 +20,7 @@ const testVocCfg = "vocoder:\n  url: http://server\n"
 const testCompCfg = "comparator:\n  url: http://server\n"
 const testTaggerCfg = "tagger:\n  url: http://server\n"
 const testWordTaggerCfg = "wordTagger:\n  url: http://server\n"
+const testURLReaderCfg = "urlReader:\n  url: http://server\n"
 const testValidatorCfg = "validator:\n  maxChars: 100\n"
 const testConvCfg = "audioConvert:\n  url: http://server\n"
 const testObsceneCfg = "obscene:\n  url: http://server\n"
@@ -33,7 +34,7 @@ var testAllCfg = testCompCfg +
 	testAccenterCfg + testTransCfg + testAMCfg + testVocCfg + testTaggerCfg + testWordTaggerCfg +
 	testValidatorCfg +
 	testConvCfg + testAcrCfg + testCliticsCfg + testObsceneCfg + testCleanCfg +
-	testNumberReplaceCfg + testSuffixLoaderCfg + testNormalizeCfg + testTransliteratorCfg
+	testNumberReplaceCfg + testSuffixLoaderCfg + testNormalizeCfg + testTransliteratorCfg + testURLReaderCfg
 
 var testDBSession *mongodb.SessionProvider
 

@@ -45,9 +45,7 @@ func (p *normalizer) Process(ctx context.Context, data *synthesizer.TTSData) err
 	if err != nil {
 		return err
 	}
-	// txt := strings.Join(data.CleanedText, " ")
-	// utils.LogData(ctx, "Input", txt, nil)
-	inData := []*normRequestData{&normRequestData{Orig: inp}}
+	inData := []*normRequestData{{Orig: inp}}
 	var output []*normResponseData
 	err = p.httpWrap.InvokeJSON(ctx, inData, &output)
 	if err != nil {
