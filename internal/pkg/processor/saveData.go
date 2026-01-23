@@ -47,7 +47,7 @@ func getText(ctx context.Context, data *synthesizer.TTSData, t utils.RequestType
 	case utils.RequestOriginal:
 		return data.OriginalText
 	case utils.RequestCleaned:
-		return strings.Join(data.Text, " ")
+		return strings.Join(data.CleanedText, " ")
 	case utils.RequestNormalized:
 		return strings.Join(data.TextWithNumbers, " ")
 	case utils.RequestUser:

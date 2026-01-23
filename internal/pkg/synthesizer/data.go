@@ -18,9 +18,9 @@ type TTSData struct {
 
 	CleanedText []string // corresponds to OriginalTextParts
 
-	NormalizedText  []string // text after normalization, array corresponds to OriginalTextParts
-	Text            []string // text after cleaning and URL replacement
-	TextWithNumbers []string
+	NormalizedText []string // text after normalization, array corresponds to OriginalTextParts
+	// Text            []string // text after cleaning and URL replacement
+	TextWithNumbers []string // text after number replacement to words
 
 	AudioSuffix string // add audio suffix if var is set
 

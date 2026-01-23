@@ -164,11 +164,11 @@ func (p *ssmlNumberReplace) Process(ctx context.Context, data *synthesizer.TTSDa
 		return nil
 	}
 	res := ""
-	err := p.httpWrap.InvokeText(ctx, accent.ClearAccents(strings.Join(data.Text, " ")), &res)
+	err := p.httpWrap.InvokeText(ctx, accent.ClearAccents(strings.Join(data.CleanedText, " ")), &res)
 	if err != nil {
 		return err
 	}
-	data.TextWithNumbers, err = mapAccentsBack(ctx, res, data.Text)
+	data.TextWithNumbers, err = mapAccentsBack(ctx, res, data.CleanedText)
 	return err
 }
 
