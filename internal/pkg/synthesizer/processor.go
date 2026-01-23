@@ -204,7 +204,7 @@ func mapSpeechMarks(ctx context.Context, data *TTSData) ([]*api.SpeechMark, erro
 }
 
 func mapSpeechMarksInt(ctx context.Context, data *TTSData) ([]*api.SpeechMark, error) {
-	text := strings.Join(data.Text, " ")
+	text := strings.Join(data.CleanedText, " ")
 	if len(text) == 0 {
 		return nil, nil
 	}

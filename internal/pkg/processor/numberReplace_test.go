@@ -86,7 +86,7 @@ func TestInvokeSSMLNumberReplace(t *testing.T) {
 	pr, _ := NewSSMLNumberReplace("http://server")
 	assert.NotNil(t, pr)
 	pr.(*ssmlNumberReplace).httpWrap = httpInvokerMock
-	d := synthesizer.TTSData{Text: []string{"3 oli{a/} 4"}}
+	d := synthesizer.TTSData{CleanedText: []string{"3 oli{a/} 4"}}
 	httpInvokerMock.On("InvokeText", mock.Anything, mock.Anything).Run(
 		func(params mock.Arguments) {
 			*params[1].(*string) = "trys olia keturi"
@@ -161,7 +161,7 @@ func TestInvokeSSMLNumberReplace_Real3(t *testing.T) {
 			pr, _ := NewSSMLNumberReplace("http://server")
 			assert.NotNil(t, pr, "err on "+tt.name)
 			pr.(*ssmlNumberReplace).httpWrap = httpInvokerMock
-			d := synthesizer.TTSData{Text: []string{tt.in}}
+			d := synthesizer.TTSData{CleanedText: []string{tt.in}}
 			httpInvokerMock.On("InvokeText", mock.Anything, mock.Anything).Run(
 				func(params mock.Arguments) {
 					*params[1].(*string) = tt.out

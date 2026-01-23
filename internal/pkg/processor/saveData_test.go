@@ -107,7 +107,7 @@ func TestGetText(t *testing.T) {
 	d := &synthesizer.TTSData{}
 	d.RequestID = "olia"
 	d.OriginalText = "tata"
-	d.Text = []string{"cleaned"}
+	d.CleanedText = []string{"cleaned"}
 	d.TextWithNumbers = []string{"t numbers"}
 	assert.Equal(t, "tata", getText(context.TODO(), d, utils.RequestOriginal))
 	assert.Equal(t, "cleaned", getText(context.TODO(), d, utils.RequestCleaned))
