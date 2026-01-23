@@ -6,13 +6,19 @@ import (
 	"testing"
 
 	"github.com/airenas/tts-line/internal/pkg/synthesizer"
+	"github.com/airenas/tts-line/internal/pkg/test/mocks"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 )
 
+var (
+	urlReaderHTTPJSONMock *mocks.HTTPInvokerJSON
+)
+
 func TestNewReplacer(t *testing.T) {
 	pr := testNewURLReplacer(t)
+
 	require.NotNil(t, pr)
 }
 
@@ -32,19 +38,40 @@ func testNewURLReplacer(t *testing.T) *urlReplacer {
 			res := []TaggedWord{}
 			for _, s := range input {
 				for _, w := range s {
-					res = append(res, TaggedWord{String: w, Mi: "Nx", Type: "WORD"})
+					res = append(res, TaggedWord{String: w, Mi: "Nx", Type: "WORD", Lemma: w})
 				}
 			}
 			*params[1].(*[]TaggedWord) = res
+		}).Return(nil)
+
+	urlReaderHTTPJSONMock = &mocks.HTTPInvokerJSON{}
+	pr.urlReaderHTTPWrap = urlReaderHTTPJSONMock
+	urlReaderHTTPJSONMock.On("InvokeJSON", mock.Anything, mock.Anything).Run(
+		func(params mock.Arguments) {
+			input := params[0].(*urlReaderRequest)
+			_ = input
+			res := urlReaderResponse{}
+			for _, s := range input.URLs {
+				res.Items = append(res.Items, &urlChangeData{
+					Text: s.Text,
+					Exp: []*urlPartWord{
+						{Text: "vvv", Kind: urlPartWordTypeChars},
+						{Text: "taškas", Kind: urlPartWordTypeWord},
+						{Text: "com", Kind: urlPartWordTypeChars},
+					},
+				})
+			}
+			*params[1].(*urlReaderResponse) = res
 		}).Return(nil)
 	return pr
 }
 
 func TestReplacerProcess(t *testing.T) {
 	d := &synthesizer.TTSData{}
+	lw := &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Word: "www.delfi.lt", Mi: miLink}}
 	d.Words = []*synthesizer.ProcessedWord{
 		{Tagged: synthesizer.TaggedWord{Word: "olia", Mi: "X-"}},
-		{Tagged: synthesizer.TaggedWord{Word: "www.delfi.lt", Mi: miLink}},
+		lw,
 		{Tagged: synthesizer.TaggedWord{Word: "olia", Mi: "X-"}},
 	}
 	pr := testNewURLReplacer(t)
@@ -53,17 +80,20 @@ func TestReplacerProcess(t *testing.T) {
 	require.Nil(t, err)
 	assert.Equal(t, []*synthesizer.ProcessedWord{
 		{Tagged: synthesizer.TaggedWord{Word: "olia", Mi: "X-"}},
-		{Tagged: synthesizer.TaggedWord{Word: "Internetinis", Mi: "Nx"}},
-		{Tagged: synthesizer.TaggedWord{Word: "adresas", Mi: "Nx"}},
+		{Tagged: synthesizer.TaggedWord{Word: "vvv", Mi: "Ys", Lemma: "vvv"}, FromWord: &lw.Tagged},
+		{Tagged: synthesizer.TaggedWord{Word: "taškas", Mi: "Nx", Lemma: "taškas"}, FromWord: &lw.Tagged},
+		{Tagged: synthesizer.TaggedWord{Word: "com", Mi: "Ys", Lemma: "com"}, FromWord: &lw.Tagged},
 		{Tagged: synthesizer.TaggedWord{Word: "olia", Mi: "X-"}},
 	}, d.Words)
 }
 
 func TestReplacerProcess_email(t *testing.T) {
+
+	lw := &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Word: "a@elfi.lt", Mi: miEmail}}
 	d := &synthesizer.TTSData{}
 	d.Words = []*synthesizer.ProcessedWord{
 		{Tagged: synthesizer.TaggedWord{Word: "olia", Mi: "X-"}},
-		{Tagged: synthesizer.TaggedWord{Word: "a@delfi.lt", Mi: miEmail}},
+		lw,
 		{Tagged: synthesizer.TaggedWord{Word: "olia", Mi: "X-"}},
 	}
 	pr := testNewURLReplacer(t)
@@ -72,21 +102,21 @@ func TestReplacerProcess_email(t *testing.T) {
 	require.Nil(t, err)
 	assert.Equal(t, []*synthesizer.ProcessedWord{
 		{Tagged: synthesizer.TaggedWord{Word: "olia", Mi: "X-"}},
-		{Tagged: synthesizer.TaggedWord{Word: "Elektroninio", Mi: "Nx"}},
-		{Tagged: synthesizer.TaggedWord{Word: "pašto", Mi: "Nx"}},
-		{Tagged: synthesizer.TaggedWord{Word: "adresas", Mi: "Nx"}},
+		{Tagged: synthesizer.TaggedWord{Word: "vvv", Mi: "Ys", Lemma: "vvv"}, FromWord: &lw.Tagged},
+		{Tagged: synthesizer.TaggedWord{Word: "taškas", Mi: "Nx", Lemma: "taškas"}, FromWord: &lw.Tagged},
+		{Tagged: synthesizer.TaggedWord{Word: "com", Mi: "Ys", Lemma: "com"}, FromWord: &lw.Tagged},
 		{Tagged: synthesizer.TaggedWord{Word: "olia", Mi: "X-"}},
 	}, d.Words)
 }
 
 func TestReplacerProcess_several(t *testing.T) {
-	initTestJSON(t)
+	lw := &synthesizer.ProcessedWord{Tagged: synthesizer.TaggedWord{Word: "www.delfi.lt", Mi: miLink}}
 	d := &synthesizer.TTSData{}
 	d.Words = []*synthesizer.ProcessedWord{
 		{Tagged: synthesizer.TaggedWord{Word: "olia", Mi: "X-"}},
-		{Tagged: synthesizer.TaggedWord{Word: "www.delfi.lt", Mi: miLink}},
+		lw,
 		{Tagged: synthesizer.TaggedWord{Word: "olia", Mi: "X-"}},
-		{Tagged: synthesizer.TaggedWord{Word: "www.delfi.lt", Mi: miLink}},
+		lw,
 	}
 	pr := testNewURLReplacer(t)
 	require.NotNil(t, pr)
@@ -94,11 +124,13 @@ func TestReplacerProcess_several(t *testing.T) {
 	require.Nil(t, err)
 	assert.Equal(t, []*synthesizer.ProcessedWord{
 		{Tagged: synthesizer.TaggedWord{Word: "olia", Mi: "X-"}},
-		{Tagged: synthesizer.TaggedWord{Word: "Internetinis", Mi: "Nx"}},
-		{Tagged: synthesizer.TaggedWord{Word: "adresas", Mi: "Nx"}},
+		{Tagged: synthesizer.TaggedWord{Word: "vvv", Mi: "Ys", Lemma: "vvv"}, FromWord: &lw.Tagged},
+		{Tagged: synthesizer.TaggedWord{Word: "taškas", Mi: "Nx", Lemma: "taškas"}, FromWord: &lw.Tagged},
+		{Tagged: synthesizer.TaggedWord{Word: "com", Mi: "Ys", Lemma: "com"}, FromWord: &lw.Tagged},
 		{Tagged: synthesizer.TaggedWord{Word: "olia", Mi: "X-"}},
-		{Tagged: synthesizer.TaggedWord{Word: "Internetinis", Mi: "Nx"}},
-		{Tagged: synthesizer.TaggedWord{Word: "adresas", Mi: "Nx"}},
+		{Tagged: synthesizer.TaggedWord{Word: "vvv", Mi: "Ys", Lemma: "vvv"}, FromWord: &lw.Tagged},
+		{Tagged: synthesizer.TaggedWord{Word: "taškas", Mi: "Nx", Lemma: "taškas"}, FromWord: &lw.Tagged},
+		{Tagged: synthesizer.TaggedWord{Word: "com", Mi: "Ys", Lemma: "com"}, FromWord: &lw.Tagged},
 	}, d.Words)
 }
 
@@ -192,16 +224,16 @@ func Test_urlFinder_replaceAll(t *testing.T) {
 			want: []string{"www.delfi.lt"}, want2: "Olia XXX is OK"},
 		{name: "Several URLs", text: "Olia www.delfi.lt is OK. Info https://lrt.lt/test?aaa=111",
 			placeholder: "YYY",
-			want: []string{"www.delfi.lt", "https://lrt.lt/test?aaa=111"},
-			want2: "Olia YYY is OK. Info YYY"},
+			want:        []string{"www.delfi.lt", "https://lrt.lt/test?aaa=111"},
+			want2:       "Olia YYY is OK. Info YYY"},
 		{name: "email", text: "Olia aaa@aaa.lt and?",
 			placeholder: "YYY",
-			want: []string{"aaa@aaa.lt"},
-			want2: "Olia YYY and?"},
+			want:        []string{"aaa@aaa.lt"},
+			want2:       "Olia YYY and?"},
 		{name: "ip", text: "Olia 192.168.1.1 and?",
 			placeholder: "YYY",
-			want: []string{"192.168.1.1"},
-			want2: "Olia YYY and?"},
+			want:        []string{"192.168.1.1"},
+			want2:       "Olia YYY and?"},
 	}
 	p, err := NewURLFinder()
 	if err != nil {
