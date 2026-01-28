@@ -45,7 +45,7 @@ func (p *normalizer) Process(ctx context.Context, data *synthesizer.TTSData) err
 	if err != nil {
 		return err
 	}
-	inData := []*normRequestData{{Orig: inp}}
+	inData := &normRequestData{Items: []*normRequestOrigData{{Orig: inp}}}
 	var output []*normResponseData
 	err = p.httpWrap.InvokeJSON(ctx, inData, &output)
 	if err != nil {
@@ -196,6 +196,10 @@ func getNextStr(resR [][]rune, at int) (int, int, error) {
 }
 
 type normRequestData struct {
+	Items []*normRequestOrigData `json:"items"`
+}
+
+type normRequestOrigData struct {
 	Orig []*normText `json:"org"`
 }
 

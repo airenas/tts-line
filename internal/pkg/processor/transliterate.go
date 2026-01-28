@@ -41,16 +41,19 @@ func (p *transliterator) Process(ctx context.Context, data *synthesizer.TTSData)
 		return err
 	}
 	log.Ctx(ctx).Debug().Int("len", len(sentences)).Msg("sentences")
+	var res []*synthesizer.ProcessedWord
 	for _, s := range sentences {
-		err := processSentence(ctx, p.httpWrap, s)
+		sentenceRes, err := processSentence(ctx, p.httpWrap, s)
 		if err != nil {
 			return err
 		}
+		res = append(res, sentenceRes...)
 	}
+	data.Words = res
 	return nil
 }
 
-func processSentence(ctx context.Context, client HTTPInvokerJSON, s []*synthesizer.ProcessedWord) error {
+func processSentence(ctx context.Context, client HTTPInvokerJSON, s []*synthesizer.ProcessedWord) ([]*synthesizer.ProcessedWord, error) {
 	ctx, span := utils.StartSpan(ctx, "transliterator.processSentence")
 	defer span.End()
 
@@ -61,7 +64,7 @@ func processSentence(ctx context.Context, client HTTPInvokerJSON, s []*synthesiz
 	var output []*transliteratorOutput
 	err := client.InvokeJSON(ctx, input, &output)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	return mapTransliteratorRes(output, s)
 }
@@ -95,28 +98,56 @@ func mapLanguage(s string) string {
 	return strings.TrimSpace(strings.ToLower(s))
 }
 
-func mapTransliteratorRes(output []*transliteratorOutput, s []*synthesizer.ProcessedWord) error {
+func mapTransliteratorRes(output []*transliteratorOutput, s []*synthesizer.ProcessedWord) ([]*synthesizer.ProcessedWord, error) {
 	if len(output) != len(s) {
-		return fmt.Errorf("different length of input and output: %d != %d", len(s), len(output))
+		return nil, fmt.Errorf("different length of input and output: %d != %d", len(s), len(output))
 	}
+
+	res := make([]*synthesizer.ProcessedWord, 0, len(s))
 	for i, o := range output {
 		w := s[i]
 		tw := w.Tagged
 		if tw.IsWord() {
 			if !compareWords(tw.Word, o.String) {
-				return fmt.Errorf("different word: %s != %s", tw.Word, o.String)
+				return nil, fmt.Errorf("different word: %s != %s", tw.Word, o.String)
 			}
-			if o.User != "" {
-				if w.UserTranscription == "" && w.UserAccent == 0 { // do not overwrite user transcription
-					d := transcription.Parse(o.User)
-					w.UserTranscription = d.Transcription
-					w.UserSyllables = d.Sylls
-					w.TranscriptionWord = d.Word
+			if w.UserTranscription != "" || w.UserAccent != 0 { // do not overwrite user transcription
+				res = append(res, w)
+				continue
+			}
+			if len(o.Changes) == 0 {
+				res = append(res, w)
+				continue
+			}
+
+			for _, change := range o.Changes {
+				if change.Type == transliteratorTypeWord {
+					d := transcription.Parse(change.User)
+					nw := &synthesizer.ProcessedWord{
+						TextPart:          w.TextPart,
+						UserTranscription: d.Transcription,
+						UserSyllables:     d.Sylls,
+						TranscriptionWord: d.Word,
+					}
+					nw.Tagged.Word = d.Word
+					nw.Tagged.Mi = tw.Mi
+					nw.Tagged.Lemma = d.Word
+					res = append(res, nw)
+				} else if change.Type == transliteratorTypePunct {
+					res = append(res, &synthesizer.ProcessedWord{
+						Tagged: synthesizer.TaggedWord{
+							Separator: change.User,
+							Mi:        miComma,
+						},
+						TextPart: w.TextPart,
+					})
 				}
 			}
+		} else {
+			res = append(res, w)
 		}
 	}
-	return nil
+	return res, nil
 }
 
 func compareWords(old, new string) bool {
@@ -170,9 +201,22 @@ type transliteratorInput struct {
 const langURL = "url" // fake language for transliteration
 
 type transliteratorOutput struct {
-	Type   string `json:"type"`
-	String string `json:"string,omitempty"`
-	Mi     string `json:"mi,omitempty"`
-	Lemma  string `json:"lemma,omitempty"`
-	User   string `json:"user,omitempty"`
+	Type    string                        `json:"type"`
+	String  string                        `json:"string,omitempty"`
+	Mi      string                        `json:"mi,omitempty"`
+	Lemma   string                        `json:"lemma,omitempty"`
+	Changes []*transliteratorOutputChange `json:"change,omitempty"`
+}
+
+type transliteratorType string
+
+const (
+	transliteratorTypeWord  transliteratorType = "WORD"
+	transliteratorTypeSpace transliteratorType = "SPACE"
+	transliteratorTypePunct transliteratorType = "PUNCT"
+)
+
+type transliteratorOutputChange struct {
+	Type transliteratorType `json:"type"`
+	User string             `json:"user,omitempty"`
 }
