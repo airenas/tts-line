@@ -588,8 +588,9 @@ func Test_checkLanguage(t *testing.T) {
 		{name: "valid lang", lang: "en-GB", want: "en", wantErr: false},
 		{name: "valid lang", lang: "en", want: "en", wantErr: false},
 		{name: "valid lang", lang: "lt-LT", want: "lt", wantErr: false},
+		{name: "valid lang", lang: "eng", want: "en", wantErr: false},
 		{name: "valid lang", lang: "lt", want: "lt", wantErr: false},
-		{name: "valid lang", lang: "lt", want: "lt", wantErr: false},
+		{name: "valid lang", lang: "lit", want: "lt", wantErr: false},
 		{name: "valid lang Samogitian", lang: "sgs", want: "lt", wantErr: false},
 		{name: "en_US", lang: "en_US", want: "en", wantErr: false}, // works?
 		{name: "invalid lang", lang: "english", want: "", wantErr: true},
