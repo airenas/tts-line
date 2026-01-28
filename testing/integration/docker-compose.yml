@@ -60,11 +60,11 @@ services:
     restart: on-failure 
 
   normalizer:
-    image: intelektikalt/text-normalizer:0.2.1
+    image: intelektikalt/text-normalizer:0.2.2
     restart: on-failure  
 
   transliterator:
-    image: intelektikalt/transliterator:0.3.1
+    image: intelektikalt/transliterator:0.3.2
     restart: on-failure    
 
   comparator:
