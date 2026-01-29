@@ -172,12 +172,6 @@ func addProcessors(synt *synthesizer.MainWorker, sp *mongodb.SessionProvider, cf
 		return errors.Wrap(err, "can't init number replace")
 	}
 	synt.Add(pr)
-	//db saver
-	sv, err = processor.NewSaver(ts, utils.RequestNormalized)
-	if err != nil {
-		return errors.Wrap(err, "can't init text to DB saver")
-	}
-	synt.Add(sv)
 
 	pr, err = processor.NewTagger(cfg.GetString("tagger.url"))
 	if err != nil {
@@ -196,6 +190,13 @@ func addProcessors(synt *synthesizer.MainWorker, sp *mongodb.SessionProvider, cf
 		return fmt.Errorf("can't init transliterator: %w", err)
 	}
 	synt.Add(pr)
+
+	//db saver
+	sv, err = processor.NewSaver(ts, utils.RequestNormalized)
+	if err != nil {
+		return errors.Wrap(err, "can't init text to DB saver")
+	}
+	synt.Add(sv)
 
 	pr, err = processor.NewNER()
 	if err != nil {
