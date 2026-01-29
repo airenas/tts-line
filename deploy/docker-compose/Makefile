@@ -1,5 +1,6 @@
 -include ../../version
 -include Makefile.options
+voice?=astra
 #####################################################################################
 start: .env 
 	docker compose up -d
@@ -16,7 +17,7 @@ clean: stop
 	cat $< | envsubst > $@
 #####################################################################################
 test:
-	curl -i -X POST http://localhost:$(service_port)/synthesize -H 'Content-type: application/json' -d '{"text": "laba diena", "speed": 0.75, "voice": "astra"}'
+	curl -i -X POST http://localhost:$(service_port)/synthesize -H 'Content-type: application/json' -d '{"text": "laba diena", "speed": 0.75, "voice": "$(voice)"}'
 
 
 test/ssml:
@@ -28,7 +29,7 @@ file?=ssml.xml
 	mkdir -p $@
 
 .data/input.json: $(file) | .data
-	@jq -n --arg text "$$(cat $(file))" --arg speed "1" --arg voice "astra" \
+	@jq -n --arg text "$$(cat $(file))" --arg speed "1" --arg voice "$(voice)" \
 		'{text: $$text, speed: ($$speed | tonumber), outputTextFormat: "accented", saveRequest: true, voice: $$voice, symbolMode: "", selectedSymbols: ["(", ")", "|", "?", ",", ".", "{", "}", "©", "←"], speechMarkTypes: ["word"], outputFormat: "wav", maxEdgeSilenceMillis: 100}' > $@
 .data/response.json: .data/input.json
 	curl -X POST http://localhost:$(service_port)/synthesize -H 'Content-type: application/json' -d @$< -o $@
