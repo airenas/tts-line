@@ -94,8 +94,9 @@ func (p *urlReplacer) replaceURLs(ctx context.Context, words []*synthesizer.Proc
 			if !ok {
 				return nil, fmt.Errorf("missing mapped URL for %s", w.Tagged.Word)
 			}
-			for _, urlW := range mapped.expanded {
-				if urlW.kind == urlPartWordTypeWord {
+			for i, urlW := range mapped.expanded {
+				switch urlW.kind {
+				case urlPartWordTypeWord:
 					tagged, ok := taggedWords[urlW.text]
 					if !ok {
 						return nil, fmt.Errorf("missing tagged words for %s", w.Tagged.Word)
@@ -104,7 +105,17 @@ func (p *urlReplacer) replaceURLs(ctx context.Context, words []*synthesizer.Proc
 						Tagged:   *tagged,
 						TextPart: w.TextPart,
 						FromWord: &w.Tagged})
-				} else if urlW.kind == urlPartWordTypeChars {
+					if nextSlash(i, mapped.expanded) {
+						res = append(res, &synthesizer.ProcessedWord{
+							Tagged: synthesizer.TaggedWord{
+								Separator: ",",
+								Mi:        miComma,
+							},
+							TextPart: w.TextPart,
+							FromWord: &w.Tagged,
+						})
+					}
+				case urlPartWordTypeChars:
 					res = append(res, &synthesizer.ProcessedWord{
 						Tagged: synthesizer.TaggedWord{
 							Word:  urlW.text,
@@ -114,7 +125,7 @@ func (p *urlReplacer) replaceURLs(ctx context.Context, words []*synthesizer.Proc
 						TextPart: w.TextPart,
 						FromWord: &w.Tagged,
 					})
-				} else if urlW.kind == urlPartWordTypePunct {
+				case urlPartWordTypePunct:
 					res = append(res, &synthesizer.ProcessedWord{
 						Tagged: synthesizer.TaggedWord{
 							Separator: urlW.text,
@@ -123,7 +134,7 @@ func (p *urlReplacer) replaceURLs(ctx context.Context, words []*synthesizer.Proc
 						TextPart: w.TextPart,
 						FromWord: &w.Tagged,
 					})
-				} else {
+				default:
 					return nil, fmt.Errorf("unknown url part word type %s", urlW.kind)
 				}
 			}
@@ -132,6 +143,16 @@ func (p *urlReplacer) replaceURLs(ctx context.Context, words []*synthesizer.Proc
 		}
 	}
 	return res, nil
+}
+
+func nextSlash(i int, expandedWord []*expandedWord) bool {
+	if i+3 >= len(expandedWord) {
+		return false
+	}
+	if expandedWord[i+1].text == "dešininis" && expandedWord[i+2].text == "pasvirasis" && expandedWord[i+3].text == "brūkšnys" {
+		return true
+	}
+	return false
 }
 
 func (p *urlReplacer) tagWords(ctx context.Context, urlWords map[string]struct{}) (map[string]*synthesizer.TaggedWord, error) {
