@@ -53,7 +53,7 @@ func TestLoad(t *testing.T) {
 	ct := mocks.To[utils.RequestTypeEnum](loadMock.Calls[0].Arguments[1])
 
 	assert.Equal(t, "i1", cr)
-	assert.Equal(t, utils.RequestCleaned, ct)
+	assert.Equal(t, utils.RequestNormalized.String(), ct.String())
 }
 
 func TestLoad_Fail(t *testing.T) {

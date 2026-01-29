@@ -76,6 +76,9 @@ func TestSave_Normalized(t *testing.T) {
 	d := &synthesizer.TTSData{}
 	d.RequestID = "olia"
 	d.TextWithNumbers = []string{"normalized"}
+	d.Words = []*synthesizer.ProcessedWord{
+		{Tagged: synthesizer.TaggedWord{Word: "normalized"}},
+	}
 	d.Input = &api.TTSRequestConfig{AllowCollectData: true}
 	dbMock.On("Save", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
@@ -109,11 +112,41 @@ func TestGetText(t *testing.T) {
 	d.OriginalText = "tata"
 	d.CleanedText = []string{"cleaned"}
 	d.TextWithNumbers = []string{"t numbers"}
+	d.Words = []*synthesizer.ProcessedWord{
+		{Tagged: synthesizer.TaggedWord{Word: "data"}},
+		{Tagged: synthesizer.TaggedWord{Separator: ","}},
+		{Tagged: synthesizer.TaggedWord{Space: true, Separator: " "}},
+		{Tagged: synthesizer.TaggedWord{Word: "X"}},
+	}
+
 	assert.Equal(t, "tata", getText(context.TODO(), d, utils.RequestOriginal))
 	assert.Equal(t, "cleaned", getText(context.TODO(), d, utils.RequestCleaned))
-	assert.Equal(t, "t numbers", getText(context.TODO(), d, utils.RequestNormalized))
+	assert.Equal(t, "data, X", getText(context.TODO(), d, utils.RequestNormalized))
 	assert.Equal(t, "tata", getText(context.TODO(), d, utils.RequestUser))
 	assert.Equal(t, "tata", getText(context.TODO(), d, utils.RequestOriginalSSML))
+}
+
+func TestGetText_PartsNormalized(t *testing.T) {
+	d := &synthesizer.TTSData{}
+	d.RequestID = "olia"
+	d.OriginalText = "tata"
+	d.CleanedText = []string{"cleaned"}
+	d.TextWithNumbers = []string{"t numbers"}
+	d.Parts = []*synthesizer.TTSDataPart{
+		{Words: []*synthesizer.ProcessedWord{
+			{Tagged: synthesizer.TaggedWord{Word: "data"}},
+			{Tagged: synthesizer.TaggedWord{Separator: ","}},
+			{Tagged: synthesizer.TaggedWord{Space: true, Separator: " "}},
+			{Tagged: synthesizer.TaggedWord{Word: "X"}},
+		}},
+		{Words: []*synthesizer.ProcessedWord{
+			{Tagged: synthesizer.TaggedWord{Word: "data"}},
+			{Tagged: synthesizer.TaggedWord{Separator: ","}},
+			{Tagged: synthesizer.TaggedWord{Space: true, Separator: " "}},
+			{Tagged: synthesizer.TaggedWord{Word: "Y"}},
+		}},
+	}
+	assert.Equal(t, "data, X data, Y", getText(context.TODO(), d, utils.RequestNormalized))
 }
 
 type mockSaverDB struct{ mock.Mock }
