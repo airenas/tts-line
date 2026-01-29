@@ -12,6 +12,10 @@ help:
 test/unit: 
 	go test -race -count 1 -bench=. -benchmem ./...
 .PHONY: test/unit
+## call units tests fast
+test/unit/fast: 
+	go test -race -count 1 ./...
+.PHONY: test/unit
 ## run integration tests - start services, do tests, clean services
 test/integration:
 	cd testing/integration && $(MAKE) start test/integration clean || ( $(MAKE) clean; exit 1; ) 	
