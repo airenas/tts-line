@@ -130,8 +130,11 @@ func TestAddProcessors(t *testing.T) {
 		"normalizer(HTTPBackoff(HTTPWrap(http://norm.su, tm: 10s)))",
 		"saver(cleaned)",
 		"numberReplace(HTTPBackoff(HTTPWrap(http://nr.su, tm: 20s)))",
+		"tagger(",
+		"urlReplacer(",
+		"transliterator(",
 		"saver(normalized)",
-		"tagger(", "joinAudio(audioLoader(./))",
+		"joinAudio(audioLoader(./))",
 		"audioConverter", "addMetrics"}
 	infos := strings.Split(info, "\n")
 	pos := 0
