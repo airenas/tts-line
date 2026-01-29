@@ -76,6 +76,11 @@ func TestWork_ReturnText(t *testing.T) {
 	initTest(t)
 	processorMock.f = func(d *TTSData) error {
 		d.TextWithNumbers = []string{"olia lia"}
+		d.Words = []*ProcessedWord{
+			{Tagged: TaggedWord{Word: "olia"}},
+			{Tagged: TaggedWord{Space: true, Separator: " "}},
+			{Tagged: TaggedWord{Word: "lia"}},
+		}
 		return nil
 	}
 	res, _ := worker.Work(context.TODO(), &api.TTSRequestConfig{Text: "olia", OutputTextFormat: api.TextNormalized})
@@ -88,6 +93,11 @@ func TestWork_SSML(t *testing.T) {
 	initTest(t)
 	processorMock.f = func(d *TTSData) error {
 		d.TextWithNumbers = []string{"olia lia"}
+		d.Words = []*ProcessedWord{
+			{Tagged: TaggedWord{Word: "olia"}},
+			{Tagged: TaggedWord{Space: true, Separator: " "}},
+			{Tagged: TaggedWord{Word: "lia"}},
+		}
 		assert.Equal(t, 2, len(d.SSMLParts))
 		return nil
 	}
@@ -128,6 +138,9 @@ func TestMapResult_Normalized(t *testing.T) {
 	d := &TTSData{}
 	d.Input = &api.TTSRequestConfig{OutputTextFormat: api.TextNormalized}
 	d.TextWithNumbers = []string{"oo"}
+	d.Parts = []*TTSDataPart{
+		{Words: []*ProcessedWord{{Tagged: TaggedWord{Word: "oo"}}}},
+	}
 	res, err := mapResult(context.TODO(), d)
 	assert.Nil(t, err)
 	assert.Equal(t, "oo", res.Text)
