@@ -297,3 +297,8 @@ func baseURL(s string) string {
 func (p *urlReplacer) skip(data *synthesizer.TTSData) bool {
 	return data.Cfg.JustAM
 }
+
+// Info return info about processor
+func (p *urlReplacer) Info() string {
+	return fmt.Sprintf("urlReplacer(%s, %s)", utils.RetrieveInfo(p.urlReaderHTTPWrap), utils.RetrieveInfo(p.taggerHTTPWrap))
+}
