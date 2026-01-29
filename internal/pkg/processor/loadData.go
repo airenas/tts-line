@@ -31,7 +31,7 @@ func (p *loader) Process(ctx context.Context, data *synthesizer.TTSData) error {
 	defer goapp.Estimate("LoadDB")()
 
 	var err error
-	data.PreviousText, err = p.sDB.LoadText(data.Input.RequestID, utils.RequestCleaned)
+	data.PreviousText, err = p.sDB.LoadText(data.Input.RequestID, utils.RequestNormalized)
 	if err != nil {
 		return errors.Wrapf(err, "Can't load request from DB for id '%s'", data.Input.RequestID)
 	}

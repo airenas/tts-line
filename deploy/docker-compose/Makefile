@@ -38,6 +38,8 @@ file?=ssml.xml
 	@jq -r '.audioAsString' .data/response.json | base64 --decode > $@
 .data/output.wav: .data/response.json	
 	@jq -r '.audioAsString' .data/response.json | base64 --decode > $@
+.data/outputCustom.wav: .data/responseCustom.json	
+	@jq -r '.audioAsString' .data/responseCustom.json | base64 --decode > $@	
 .data/output.TextGrid: .data/response.json	
 	python to_praat.py --input $^ --output $@
 .PHONY: generate

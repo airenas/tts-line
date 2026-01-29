@@ -157,18 +157,19 @@ func mapResult(ctx context.Context, data *TTSData) (*api.Result, error) {
 		if data.Input.AllowCollectData {
 			res.RequestID = data.RequestID
 		}
-		if data.Input.OutputTextFormat == api.TextNormalized {
-			res.Text = strings.Join(data.TextWithNumbers, " ")
-		} else if data.Input.OutputTextFormat == api.TextTranscribed {
+		switch data.Input.OutputTextFormat {
+		case api.TextNormalized:
+			res.Text = data.GetNormalizedText()
+		case api.TextTranscribed:
 			res.Text = mapTranscribed(data)
-		} else if data.Input.OutputTextFormat == api.TextAccented {
+		case api.TextAccented:
 			var err error
 			res.Text, err = mapAccentedText(data)
 			if err != nil {
 				return nil, err
 			}
-		} else if data.Input.OutputTextFormat == api.TextNone {
-		} else {
+		case api.TextNone:
+		default:
 			return nil, errors.Errorf("can't process OutputTextFormat %s", data.Input.OutputTextFormat.String())
 		}
 	}
@@ -347,6 +348,38 @@ func mapAccentedText(data *TTSData) (string, error) {
 		}
 	}
 	return res.String(), nil
+}
+
+func (data *TTSData) GetNormalizedText() string {
+	res := strings.Builder{}
+
+	var prevTgw *TaggedWord
+	collextF := func(words []*ProcessedWord) {
+		for _, w := range words {
+			tgw := w.Tagged
+			if tgw.Space {
+				res.WriteString(" ")
+			} else if tgw.Separator != "" {
+				res.WriteString(tgw.Separator)
+			} else if tgw.IsWord() {
+				if prevTgw != nil && prevTgw.IsWord() {
+					res.WriteString(" ")
+				}
+				res.WriteString(tgw.Word)
+			}
+			prevTgw = &tgw
+		}
+	}
+
+	if len(data.Parts) > 0 {
+		for _, p := range data.Parts {
+			collextF(p.Words)
+		}
+	} else {
+		collextF(data.Words)
+	}
+
+	return res.String()
 }
 
 // GetTranscriberAccent return accent from ProcessedWord
