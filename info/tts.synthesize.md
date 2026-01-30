@@ -38,19 +38,15 @@ sequenceDiagram
     tts->>+Clean: clean text, drop html tags
     Clean -->>- tts: 
 
-    tts ->>+ Normalizer: normalize text, change some numbers
-    Normalizer -->>- tts: 
-
-    tts ->> tts: Replace URLs
-
     tts ->>+ DB: save cleaned text
     DB -->>- tts: 
+
+    tts ->>+ Normalizer: normalize text, change some numbers
+    Normalizer -->>- tts: 
 
     tts ->>+ num: 
     num -->>- tts: 
 
-    tts ->>+ DB: save normalized text
-    DB -->>- tts: 
 
     tts ->>+ Tagger: 
     Tagger ->>+ Lex: 
@@ -61,12 +57,21 @@ sequenceDiagram
 
     Tagger -->>- tts: 
 
-    tts ->> tts: Split into batches
+    tts ->>+ Normalizer: replace URLs to words
+    Normalizer -->>- tts: 
 
-    tts ->>+ Transliterator: 
+    tts ->>+ Tagger: Tag words from URLs
+    Tagger -->>- tts: 
+
+    tts ->>+ Transliterator: change non LT words as readable ones 
     Transliterator -->>- tts: 
 
+    tts ->>+ DB: save normalized text
+    DB -->>- tts: 
+
     tts ->> tts: Do minimal NER
+
+    tts ->> tts: Split into batches
 
     par Parallel Processing for each batch
         tts ->>+ obscene: 
