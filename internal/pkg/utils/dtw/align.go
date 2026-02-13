@@ -15,9 +15,9 @@ func Align(ctx context.Context, s1 []string, s2 []string) ([]int, error) {
 
 	var res []int
 	var err error
-	for i, band := range [...]int{40, 100, 200} {
+	for i, band := range [...]int{40, 100, 200, 2000} {
 		if i > 0 {
-			log.Ctx(ctx).Debug().Msgf("increase align band to %d", band)
+			log.Ctx(ctx).Debug().Int("band", band).Msg("increase align band")
 		}
 		res, err = alignBanded(s1, s2, band)
 		if err == nil {
