@@ -26,6 +26,8 @@ import (
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/vmihailenco/msgpack/v5"
 	"go.opentelemetry.io/contrib/instrumentation/github.com/labstack/echo/otelecho"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/propagation"
 	"go.opentelemetry.io/otel/trace"
 )
 
@@ -106,6 +108,7 @@ func initRoutes(data *Data) *echo.Echo {
 	promMdlw.Use(e)
 	e.Use(otelecho.Middleware(utils.ServiceName, otelecho.WithSkipper(skipper)))
 	e.Use(addTraceToLogContext())
+	e.Use(traceparentResponseHeader())
 
 	e.POST("/synthesize", synthesizeText(&data.SyntData))
 	e.POST("/synthesizeCustom", synthesizeCustom(&data.SyntCustomData))
@@ -310,6 +313,16 @@ func addTraceToLogContext() echo.MiddlewareFunc {
 			ctx := request.Context()
 			ctx = loggerWithTrace(ctx).WithContext(ctx)
 			c.SetRequest(request.WithContext(ctx))
+			return next(c)
+		}
+	}
+}
+
+func traceparentResponseHeader() echo.MiddlewareFunc {
+	return func(next echo.HandlerFunc) echo.HandlerFunc {
+		return func(c echo.Context) error {
+			ctx := c.Request().Context()
+			otel.GetTextMapPropagator().Inject(ctx, propagation.HeaderCarrier(c.Response().Header()))
 			return next(c)
 		}
 	}
