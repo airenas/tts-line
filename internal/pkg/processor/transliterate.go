@@ -2,6 +2,7 @@ package processor
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
@@ -64,9 +65,19 @@ func processSentence(ctx context.Context, client HTTPInvokerJSON, s []*synthesiz
 	var output []*transliteratorOutput
 	err := client.InvokeJSON(ctx, input, &output)
 	if err != nil {
+		tryLogInput(ctx, input)
 		return nil, err
 	}
 	return mapTransliteratorRes(output, s)
+}
+
+func tryLogInput(ctx context.Context, input []*transliteratorInput) {
+	json, err := json.Marshal(input)
+	if err != nil {
+		log.Ctx(ctx).Err(err).Msg("can't marshal transliterator input")
+		return
+	}
+	log.Ctx(ctx).Info().Str("input", string(json)).Msg("transliterator input")
 }
 
 func toTransliteratorInput(w *synthesizer.ProcessedWord) *transliteratorInput {
