@@ -321,8 +321,10 @@ func addTraceToLogContext() echo.MiddlewareFunc {
 func traceparentResponseHeader() echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
-			ctx := c.Request().Context()
-			otel.GetTextMapPropagator().Inject(ctx, propagation.HeaderCarrier(c.Response().Header()))
+			req := c.Request()
+			if req.Header.Get("traceparent") == "" { // return only if traceparent header is not present in request
+				otel.GetTextMapPropagator().Inject(req.Context(), propagation.HeaderCarrier(c.Response().Header()))
+			}
 			return next(c)
 		}
 	}
