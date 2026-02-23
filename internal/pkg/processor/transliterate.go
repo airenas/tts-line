@@ -132,7 +132,7 @@ func mapTransliteratorRes(output []*transliteratorOutput, s []*synthesizer.Proce
 			}
 
 			for _, change := range o.Changes {
-				if change.Type == transliteratorTypeWord {
+				if change.Type == transliteratorTypeWord || (change.Type == "" && len(o.Changes) == 1) {
 					d := transcription.Parse(change.User)
 					nw := &synthesizer.ProcessedWord{
 						TextPart:          w.TextPart,
@@ -152,6 +152,8 @@ func mapTransliteratorRes(output []*transliteratorOutput, s []*synthesizer.Proce
 						},
 						TextPart: w.TextPart,
 					})
+				} else {
+					return nil, fmt.Errorf("unknown change type: %s", change.Type)
 				}
 			}
 		} else {
