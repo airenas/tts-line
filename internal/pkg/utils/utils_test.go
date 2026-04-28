@@ -28,3 +28,24 @@ func TestFloatEqual(t *testing.T) {
 	assert.True(t, FloatEquals(2.0/3, 4.0/6))
 	assert.False(t, FloatEquals(200.0/3000, 200.0/3001))
 }
+
+func TestIsLithuanian(t *testing.T) {
+	tests := []struct {
+		name string // description of this test case
+		// Named input parameters for target function.
+		lang string
+		want bool
+	}{
+		{"empty string", "", true},
+		{"lithuanian", "lt", true},
+		{"english", "en", false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := IsLithuanian(tt.lang)
+			if got != tt.want {
+				t.Errorf("IsLithuanian() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}

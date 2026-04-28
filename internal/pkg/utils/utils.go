@@ -6,7 +6,10 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
+	"golang.org/x/text/language"
 )
+
+var ltLangTag = language.Lithuanian.String()
 
 func checkURL(urlStr string) (string, error) {
 	if strings.TrimSpace(urlStr) == "" {
@@ -66,4 +69,8 @@ func SlicesCopy[T any](in []T) []T {
 		return nil
 	}
 	return slices.Clone(in)
+}
+
+func IsLithuanian(lang string) bool {
+	return lang == "" || lang == ltLangTag
 }

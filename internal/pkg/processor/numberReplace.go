@@ -99,12 +99,37 @@ func (p *numberReplace) Process(ctx context.Context, data *synthesizer.TTSData) 
 	if err != nil {
 		return fmt.Errorf("map accents back: %w", err)
 	}
-	data.TextWithNumbers, err = noURLS.restore(textWithNumbers)
+	textWithNumbers, err = noURLS.restore(textWithNumbers)
 	if err != nil {
 		return fmt.Errorf("restore URLs: %w", err)
 	}
+	// restore texts, if there is no lt lang
+	data.TextWithNumbers, err = restoreLang(textWithNumbers, data)
+	if err != nil {
+		return fmt.Errorf("restore Lang: %w", err)
+	}
 
 	return err
+}
+
+func restoreLang(textWithNumbers []string, data *synthesizer.TTSData) ([]string, error) {
+	parts := data.OriginalTextParts
+	if parts == nil {
+		return textWithNumbers, nil
+	}
+	if len(textWithNumbers) != len(parts) || len(textWithNumbers) != len(data.NormalizedText) {
+		return nil, fmt.Errorf("length mismatch: got %d, expected %d, %d", len(textWithNumbers), len(parts), len(data.NormalizedText))
+	}
+	var res []string
+	for i, txt := range textWithNumbers {
+		p := parts[i]
+		if utils.IsLithuanian(p.Language) {
+			res = append(res, txt)
+			continue
+		}
+		res = append(res, data.NormalizedText[i])
+	}
+	return res, nil
 }
 
 func removeURLs(ctx context.Context, replacer *urlFinder, s []string) (*replaceData, error) {
