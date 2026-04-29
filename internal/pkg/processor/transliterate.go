@@ -10,6 +10,7 @@ import (
 	"github.com/airenas/tts-line/internal/pkg/synthesizer"
 	"github.com/airenas/tts-line/internal/pkg/transcription"
 	"github.com/airenas/tts-line/internal/pkg/utils"
+	"github.com/airenas/tts-line/pkg/ssml"
 	"github.com/rs/zerolog/log"
 )
 
@@ -127,6 +128,10 @@ func mapTransliteratorRes(output []*transliteratorOutput, s []*synthesizer.Proce
 				continue
 			}
 			if len(o.Changes) == 0 {
+				res = append(res, w)
+				continue
+			}
+			if w.TextPart != nil && w.TextPart.InterpretAs != ssml.InterpretAsTypeUnset { // do not change interpret-as words
 				res = append(res, w)
 				continue
 			}
