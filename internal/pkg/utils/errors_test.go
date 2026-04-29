@@ -26,3 +26,23 @@ func TestErrTextTooLong_Error(t *testing.T) {
 		})
 	}
 }
+
+func TestErrNumberNotExpected_Error(t *testing.T) {
+	tests := []struct {
+		name string // description of this test case
+		// Named input parameters for receiver constructor.
+		phrase string
+		want   string
+	}{
+		{name: "name", phrase: "test phrase 3$", want: "number not expected in phrase: 'test phrase 3$'"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			r := NewErrNumberNotExpected(tt.phrase)
+			got := r.Error()
+			if got != tt.want {
+				t.Errorf("Error() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}

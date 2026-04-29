@@ -297,6 +297,10 @@ func badReqError(err error) (bool, string) {
 	if errors.As(err, &errBadS) {
 		return true, fmt.Sprintf("Wrong symbols: '%s'", errBadS.Orig)
 	}
+	var errNumberNotExp *utils.ErrNumberNotExpected
+	if errors.As(err, &errNumberNotExp) {
+		return true, fmt.Sprintf("Number not expected: '%s'", errNumberNotExp.Phrase)
+	}
 	return false, ""
 }
 

@@ -70,3 +70,17 @@ func NewErrBadSymbols(word, cleaned string) *ErrBadSymbols {
 func (r *ErrBadSymbols) Error() string {
 	return fmt.Sprintf("wrong symbols: '%s' (%s)", r.Orig, r.Cleaned)
 }
+
+// ErrNumberNotExpected indicates non lt phrase with number
+type ErrNumberNotExpected struct {
+	Phrase string
+}
+
+// NewErrNumberNotExpected creates new error
+func NewErrNumberNotExpected(phrase string) *ErrNumberNotExpected {
+	return &ErrNumberNotExpected{Phrase: phrase}
+}
+
+func (r *ErrNumberNotExpected) Error() string {
+	return fmt.Sprintf("number not expected in phrase: '%s'", r.Phrase)
+}

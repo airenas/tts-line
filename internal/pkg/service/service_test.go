@@ -260,6 +260,7 @@ func TestBadReqError(t *testing.T) {
 		{v: errors.Wrap(utils.ErrNoInput, "err"), e: true, es: "No text"},
 		{v: errors.Wrap(utils.NewErrTextTooLong(300, 200), "err"), e: true, es: "Text too long: passed 300 chars, max allowed 200"},
 		{v: errors.Wrap(utils.NewErrBadSymbols("olia", "ooo2"), "err"), e: true, es: "Wrong symbols: 'olia'"},
+		{v: errors.Wrap(utils.NewErrNumberNotExpected("olia5"), "err"), e: true, es: "Number not expected: 'olia5'"},
 	}
 
 	for i, tc := range tests {

@@ -5,11 +5,13 @@ import (
 	"fmt"
 	"strings"
 	"time"
+	"unicode"
 
 	"github.com/airenas/tts-line/internal/pkg/accent"
 	"github.com/airenas/tts-line/internal/pkg/synthesizer"
 	"github.com/airenas/tts-line/internal/pkg/utils"
 	"github.com/airenas/tts-line/internal/pkg/utils/dtw"
+	"github.com/airenas/tts-line/pkg/ssml"
 	"github.com/rs/zerolog/log"
 )
 
@@ -123,13 +125,25 @@ func restoreLang(textWithNumbers []string, data *synthesizer.TTSData) ([]string,
 	var res []string
 	for i, txt := range textWithNumbers {
 		p := parts[i]
-		if utils.IsLithuanian(p.Language) {
+		if utils.IsLithuanian(p.Language) || p.InterpretAs != ssml.InterpretAsTypeUnset {
 			res = append(res, txt)
 			continue
+		}
+		if hasNumbers(data.NormalizedText[i]) {
+			return nil, utils.NewErrNumberNotExpected(data.NormalizedText[i])
 		}
 		res = append(res, data.NormalizedText[i])
 	}
 	return res, nil
+}
+
+func hasNumbers(s string) bool {
+	for _, r := range s {
+		if unicode.IsNumber(r) {
+			return true
+		}
+	}
+	return false
 }
 
 func removeURLs(ctx context.Context, replacer *urlFinder, s []string) (*replaceData, error) {

@@ -216,3 +216,26 @@ func (m *mockHTTPInvoker) InvokeText(ctx context.Context, in string, out interfa
 	args := m.Called(in, out)
 	return args.Error(0)
 }
+
+func Test_hasNumbers(t *testing.T) {
+	tests := []struct {
+		name string
+		s    string
+		want bool
+	}{
+		{name: "no numbers", s: "test phrase", want: false},
+		{name: "with number", s: "test phrase 3$", want: true},
+		{name: "with number", s: "test phrase 123", want: true},
+		{name: "with number", s: "12 test phrase", want: true},
+		{name: "with number", s: "0", want: true},
+		{name: "empty string", s: "", want: false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := hasNumbers(tt.s)
+			if got != tt.want {
+				t.Errorf("hasNumbers() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
