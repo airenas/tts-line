@@ -129,9 +129,9 @@ func restoreLang(textWithNumbers []string, data *synthesizer.TTSData) ([]string,
 			res = append(res, txt)
 			continue
 		}
-		if hasNumbers(data.NormalizedText[i]) {
-			return nil, utils.NewErrNumberNotExpected(data.NormalizedText[i])
-		}
+		// if hasNumbers(data.NormalizedText[i]) {
+		// 	return nil, utils.NewErrNumberNotExpected(data.NormalizedText[i])
+		// }
 		res = append(res, data.NormalizedText[i])
 	}
 	return res, nil
