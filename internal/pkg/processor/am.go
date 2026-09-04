@@ -2,6 +2,7 @@ package processor
 
 import (
 	"context"
+	"fmt"
 	"math"
 	"strings"
 	"time"
@@ -18,15 +19,22 @@ import (
 	"github.com/pkg/errors"
 )
 
-type amodel struct {
-	httpWrap      HTTPInvokerJSON
-	url           string
-	spaceSymbol   string
-	endSymbol     string
-	emphasisPause string
+type (
+	discovery interface {
+		URL(model string) (string, error)
+	}
 
-	hasVocoder bool
-}
+	amodel struct {
+		httpWrap HTTPInvokerJSON
+
+		srvDiscovery  discovery
+		spaceSymbol   string
+		endSymbol     string
+		emphasisPause string
+
+		hasVocoder bool
+	}
+)
 
 var trMap map[string]string
 
@@ -46,14 +54,26 @@ func init() {
 }
 
 // NewAcousticModel creates new processor
-func NewAcousticModel(config *viper.Viper) (synthesizer.PartProcessor, error) {
+func NewAcousticModel(config *viper.Viper, srvDiscovery discovery) (synthesizer.PartProcessor, error) {
 	if config == nil {
 		return nil, errors.New("No acousticModel config")
 	}
 
 	res := &amodel{}
-	res.url = config.GetString("url")
-	am, err := utils.NewHTTPWrapT(getVoiceURL(res.url, "testVoice"), time.Second*120)
+
+	url := config.GetString("url")
+	if srvDiscovery != nil {
+		url = "http://am.consul"
+		res.srvDiscovery = srvDiscovery
+	} else {
+		var err error
+		res.srvDiscovery, err = newDNSDiscovery(url)
+		if err != nil {
+			return nil, err
+		}
+		url = makeURL(url, "testVoice")
+	}
+	am, err := utils.NewHTTPWrapT(makeURL(url, "testVoice"), time.Second*120)
 	if err != nil {
 		return nil, errors.Wrap(err, "can't init AM client")
 	}
@@ -96,9 +116,15 @@ func (p *amodel) Process(ctx context.Context, data *synthesizer.TTSDataPart) err
 
 	inData, inIndexes, volChanges := p.mapAMInput(ctx, data)
 	data.TranscribedText = inData.Text
-	var output syntmodel.AMOutput
-	err := p.httpWrap.InvokeJSONU(ctx, getVoiceURL(p.url, data.Cfg.Voice), inData, &output)
+
+	amURL, err := p.srvDiscovery.URL(data.Cfg.Voice)
 	if err != nil {
+		return fmt.Errorf("no am URL: %w", err)
+	}
+
+	var output syntmodel.AMOutput
+
+	if err := p.httpWrap.InvokeJSONU(ctx, amURL, inData, &output); err != nil {
 		return err
 	}
 	// bug in am model
@@ -634,6 +660,22 @@ func newGPUBackoff() backoff.BackOff {
 	return backoff.WithMaxRetries(res, 3)
 }
 
-func getVoiceURL(url, voice string) string {
+type dnsDiscovery struct {
+	url string
+}
+
+func newDNSDiscovery(url string) (*dnsDiscovery, error) {
+	_, err := utils.NewHTTPWrapT(makeURL(url, "testVoice"), time.Second*120)
+	if err != nil {
+		return nil, errors.Wrap(err, "can't init dns docovery")
+	}
+	return &dnsDiscovery{url: url}, nil
+}
+
+func (d *dnsDiscovery) URL(voice string) (string, error) {
+	return makeURL(d.url, voice), nil
+}
+
+func makeURL(url, voice string) string {
 	return strings.Replace(url, "{{voice}}", voice, -1)
 }

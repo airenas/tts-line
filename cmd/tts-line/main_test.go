@@ -61,8 +61,9 @@ func TestAddPartProcessors_Custom(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			initTest(t)
 			syntC := &synthesizer.MainWorker{}
+			iData := &initData{sp: testDBSession}
 			assert.Equal(t, tt.wantErr,
-				addCustomProcessors(syntC, testDBSession, test.NewConfig(t, trim(testAllCfg, tt.trimCfg))) != nil)
+				addCustomProcessors(syntC, test.NewConfig(t, trim(testAllCfg, tt.trimCfg)), iData) != nil)
 		})
 	}
 }
@@ -86,14 +87,15 @@ func TestAddPartProcessors(t *testing.T) {
 			initTest(t)
 			partRunner := synthesizer.NewPartRunner(1)
 			assert.Equal(t, tt.wantErr,
-				addPartProcessors(partRunner, test.NewConfig(t, trim(testAllCfg, tt.trimCfg))) != nil)
+				addPartProcessors(partRunner, test.NewConfig(t, trim(testAllCfg, tt.trimCfg)), &initData{}) != nil)
 		})
 	}
 }
 
 func TestAddSSMLProcessors(t *testing.T) {
 	mw := synthesizer.MainWorker{}
-	err := addSSMLProcessors(&mw, &mongodb.SessionProvider{}, test.NewConfig(t, testAllCfg))
+	iData := &initData{sp: &mongodb.SessionProvider{}}
+	err := addSSMLProcessors(&mw, test.NewConfig(t, testAllCfg), iData)
 	assert.Nil(t, err)
 	info := mw.GetSSMLProcessorsInfo()
 	req := []string{"addMetrics",
@@ -121,7 +123,8 @@ func TestAddSSMLProcessors(t *testing.T) {
 
 func TestAddProcessors(t *testing.T) {
 	mw := synthesizer.MainWorker{}
-	err := addProcessors(&mw, &mongodb.SessionProvider{}, test.NewConfig(t, testAllCfg))
+	iData := &initData{sp: &mongodb.SessionProvider{}}
+	err := addProcessors(&mw, test.NewConfig(t, testAllCfg), iData)
 	assert.Nil(t, err)
 	info := mw.GetProcessorsInfo()
 	req := []string{"addMetrics",

@@ -21,7 +21,7 @@ func NewVocoder(urlStr string) (synthesizer.PartProcessor, error) {
 	res := &vocoder{}
 
 	res.url = urlStr
-	voc, err := utils.NewHTTPWrapT(getVoiceURL(res.url, "testVoice"), time.Second*120)
+	voc, err := utils.NewHTTPWrapT(makeURL(res.url, "testVoice"), time.Second*120)
 	if err != nil {
 		return nil, errors.Wrap(err, "can't init vocoder client")
 	}
@@ -44,7 +44,7 @@ func (p *vocoder) Process(ctx context.Context, data *synthesizer.TTSDataPart) er
 	}
 	inData := syntmodel.VocInput{Data: data.Spectogram, Voice: data.Cfg.Input.Voice, Priority: data.Cfg.Input.Priority}
 	var output syntmodel.VocOutput
-	err := p.httpWrap.InvokeJSONU(ctx, getVoiceURL(p.url, data.Cfg.Input.Voice), inData, &output)
+	err := p.httpWrap.InvokeJSONU(ctx, makeURL(p.url, data.Cfg.Input.Voice), inData, &output)
 	if err != nil {
 		return err
 	}

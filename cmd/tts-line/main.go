@@ -8,6 +8,7 @@ import (
 
 	"github.com/airenas/go-app/pkg/goapp"
 	"github.com/airenas/tts-line/internal/pkg/cache"
+	"github.com/airenas/tts-line/internal/pkg/consul"
 	"github.com/airenas/tts-line/internal/pkg/file"
 	"github.com/airenas/tts-line/internal/pkg/mongodb"
 	"github.com/airenas/tts-line/internal/pkg/processor"
@@ -44,6 +45,11 @@ func main() {
 	}
 }
 
+type initData struct {
+	discovery *consul.Discovery
+	sp        *mongodb.SessionProvider
+}
+
 func mainInt(ctx context.Context) error {
 	tp, err := initTracer(ctx, goapp.Config.GetString("otel.exporter.otlp.endpoint"))
 	if err != nil {
@@ -70,12 +76,21 @@ func mainInt(ctx context.Context) error {
 		return fmt.Errorf("init mongo session provider: %w", err)
 	}
 	defer sp.Close()
+	iData := &initData{}
+	iData.sp = sp
 
-	if err = addProcessors(synt, sp, goapp.Config); err != nil {
+	if goapp.Config.GetString("acousticModel.consul.service") != "" {
+		iData.discovery, err = consul.New(ctx, &consul.Config{Service: goapp.Config.GetString("acousticModel.consul.service"), RefreshWait: time.Second * 20})
+		if err != nil {
+			return fmt.Errorf("init consul discovery: %w", err)
+		}
+	}
+
+	if err = addProcessors(synt, goapp.Config, iData); err != nil {
 		return fmt.Errorf("init processors: %w", err)
 	}
 
-	if err = addSSMLProcessors(synt, sp, goapp.Config); err != nil {
+	if err = addSSMLProcessors(synt, goapp.Config, iData); err != nil {
 		return fmt.Errorf("init SSML processors: %w", err)
 	}
 
@@ -103,7 +118,7 @@ func mainInt(ctx context.Context) error {
 		return fmt.Errorf("init custom configurator: %w", err)
 	}
 	syntC := &synthesizer.MainWorker{}
-	err = addCustomProcessors(syntC, sp, goapp.Config)
+	err = addCustomProcessors(syntC, goapp.Config, iData)
 	if err != nil {
 		return fmt.Errorf("init custom processors: %w", err)
 	}
@@ -116,6 +131,13 @@ func mainInt(ctx context.Context) error {
 
 	go startPerfEndpoint()
 
+	if iData.discovery != nil {
+		err = iData.discovery.Run(ctx)
+		if err != nil {
+			return fmt.Errorf("init info getter: %w", err)
+		}
+	}
+
 	err = service.StartWebServer(&data)
 	if err != nil {
 		return fmt.Errorf("start the service: %w", err)
@@ -123,7 +145,7 @@ func mainInt(ctx context.Context) error {
 	return nil
 }
 
-func addProcessors(synt *synthesizer.MainWorker, sp *mongodb.SessionProvider, cfg *viper.Viper) error {
+func addProcessors(synt *synthesizer.MainWorker, cfg *viper.Viper, iData *initData) error {
 	pr, err := processor.NewAddMetrics(processor.NewMetricsCharsFunc("/synthesize"))
 	if err != nil {
 		return errors.Wrap(err, "can't init metrics processor")
@@ -136,7 +158,7 @@ func addProcessors(synt *synthesizer.MainWorker, sp *mongodb.SessionProvider, cf
 	}
 	synt.Add(pr)
 
-	ts, err := mongodb.NewTextSaver(sp)
+	ts, err := mongodb.NewTextSaver(iData.sp)
 	if err != nil {
 		return errors.Wrap(err, "can't init text to DB saver")
 	}
@@ -244,10 +266,10 @@ func addProcessors(synt *synthesizer.MainWorker, sp *mongodb.SessionProvider, cf
 		}
 		synt.Add(pr)
 	}
-	return addPartProcessors(partRunner, cfg)
+	return addPartProcessors(partRunner, cfg, iData)
 }
 
-func addSSMLProcessors(synt *synthesizer.MainWorker, sp *mongodb.SessionProvider, cfg *viper.Viper) error {
+func addSSMLProcessors(synt *synthesizer.MainWorker, cfg *viper.Viper, iData *initData) error {
 	pr, err := processor.NewAddMetrics(processor.NewMetricsCharsFunc("/synthesize"))
 	if err != nil {
 		return errors.Wrap(err, "can't init metrics processor")
@@ -260,7 +282,7 @@ func addSSMLProcessors(synt *synthesizer.MainWorker, sp *mongodb.SessionProvider
 	}
 	synt.AddSSML(pr)
 
-	ts, err := mongodb.NewTextSaver(sp)
+	ts, err := mongodb.NewTextSaver(iData.sp)
 	if err != nil {
 		return errors.Wrap(err, "can't init text to DB saver")
 	}
@@ -355,10 +377,10 @@ func addSSMLProcessors(synt *synthesizer.MainWorker, sp *mongodb.SessionProvider
 		}
 		synt.AddSSML(pr)
 	}
-	return addPartProcessors(partRunner, cfg)
+	return addPartProcessors(partRunner, cfg, iData)
 }
 
-func addCustomProcessors(synt *synthesizer.MainWorker, sp *mongodb.SessionProvider, cfg *viper.Viper) error {
+func addCustomProcessors(synt *synthesizer.MainWorker, cfg *viper.Viper, iData *initData) error {
 	pr, err := processor.NewAddMetrics(processor.NewMetricsCharsFunc("/synthesizeCustom"))
 	if err != nil {
 		return errors.Wrap(err, "can't init metrics processor")
@@ -371,7 +393,7 @@ func addCustomProcessors(synt *synthesizer.MainWorker, sp *mongodb.SessionProvid
 	}
 	synt.Add(pr)
 
-	ts, err := mongodb.NewTextSaver(sp)
+	ts, err := mongodb.NewTextSaver(iData.sp)
 	if err != nil {
 		return errors.Wrap(err, "can't init text to DB saver")
 	}
@@ -452,10 +474,10 @@ func addCustomProcessors(synt *synthesizer.MainWorker, sp *mongodb.SessionProvid
 		}
 		synt.Add(pr)
 	}
-	return addPartProcessors(partRunner, cfg)
+	return addPartProcessors(partRunner, cfg, iData)
 }
 
-func addPartProcessors(partRunner *synthesizer.PartRunner, cfg *viper.Viper) error {
+func addPartProcessors(partRunner *synthesizer.PartRunner, cfg *viper.Viper, iData *initData) error {
 	ppr, err := processor.NewObsceneFilter(cfg.GetString("obscene.url"))
 	if err != nil {
 		return errors.Wrap(err, "can't init obscene filter service")
@@ -486,7 +508,7 @@ func addPartProcessors(partRunner *synthesizer.PartRunner, cfg *viper.Viper) err
 	}
 	partRunner.Add(ppr)
 
-	ppr, err = processor.NewAcousticModel(goapp.Sub(cfg, "acousticModel"))
+	ppr, err = processor.NewAcousticModel(goapp.Sub(cfg, "acousticModel"), iData.discovery)
 	if err != nil {
 		return errors.Wrap(err, "can't init acousticModel")
 	}
