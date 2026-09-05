@@ -80,7 +80,7 @@ func mainInt(ctx context.Context) error {
 	iData.sp = sp
 
 	if goapp.Config.GetString("acousticModel.consul.service") != "" {
-		iData.discovery, err = consul.New(ctx, &consul.Config{Service: goapp.Config.GetString("acousticModel.consul.service"), RefreshWait: time.Second * 20})
+		iData.discovery, err = consul.New(ctx, &consul.Config{Service: goapp.Config.GetString("acousticModel.consul.service"), RefreshWait: goapp.Config.GetDuration("acousticModel.consul.refreshWait")})
 		if err != nil {
 			return fmt.Errorf("init consul discovery: %w", err)
 		}

@@ -74,10 +74,10 @@ type Config struct {
 }
 
 func New(ctx context.Context, cfg *Config) (*Discovery, error) {
-	log.Ctx(ctx).Info().Str("service", cfg.Service).Dur("every", cfg.RefreshWait).Msg("init consul discovery")
 	if cfg.RefreshWait <= 0 {
 		cfg.RefreshWait = 30 * time.Second
 	}
+	log.Ctx(ctx).Info().Str("service", cfg.Service).Dur("every", cfg.RefreshWait).Msg("init consul discovery")
 
 	d := &Discovery{
 		service:     cfg.Service,
