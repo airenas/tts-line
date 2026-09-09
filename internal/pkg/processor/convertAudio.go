@@ -16,6 +16,7 @@ import (
 	"go.opentelemetry.io/otel/codes"
 	"go.opentelemetry.io/otel/trace"
 	"google.golang.org/grpc"
+	_ "google.golang.org/grpc/balancer/roundrobin"
 	grpcCodes "google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/status"
@@ -36,7 +37,11 @@ func NewConverter(urlStr string) (synthesizer.Processor, error) {
 	res := &audioConverter{
 		timeout: time.Second * 120,
 	}
-	conn, err := grpc.NewClient(urlStr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	conn, err := grpc.NewClient(
+		urlStr,
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+		grpc.WithDefaultServiceConfig(`{"loadBalancingConfig":[{"round_robin":{}}]}`),
+	)
 	if err != nil {
 		return nil, fmt.Errorf("connect to gRPC server: %w", err)
 	}
