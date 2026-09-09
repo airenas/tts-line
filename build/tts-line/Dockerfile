@@ -28,6 +28,9 @@ RUN --mount=type=cache,target=/root/.cache/go-build \
 RUN --mount=type=cache,target=/root/.cache/go-build \
     --mount=type=cache,target=/go/pkg/mod \
     go build -o /go/bin/tts-export -trimpath  -ldflags "-s -w -X main.version=$BUILD_VERSION" cmd/tts-export/main.go
+
+#####################################################################################
+FROM ghcr.io/lvillis/salus:0.1.10 AS salus
 #####################################################################################
 FROM alpine:3.22 AS runner
 
@@ -56,6 +59,8 @@ RUN addgroup app && adduser -S -G app app --uid $UID app
 RUN mkdir -p /app && chown -R app:app /app
 RUN mkdir -p /suffixes && chown -R app:app /suffixes      
 
+COPY --from=salus /bin/salus /app/salus
+
 COPY --from=builder /go/bin/tts-line /app/
 COPY --from=builder /go/bin/tts-export /app/
 COPY build/tts-line/config.yaml /app/
@@ -63,5 +68,7 @@ COPY build/tts-line/config.yaml /app/
 RUN chown app:app /app/* /app
  
 USER app
+
+HEALTHCHECK --start-period=3s --interval=10s --timeout=3s --retries=3 CMD ["/app/salus", "http", "--url", "http://127.0.0.1:8000/live"]
 
 ENTRYPOINT ["./tts-line"]
