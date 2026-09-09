@@ -46,19 +46,19 @@ func TestDiscovery_OneInstance(t *testing.T) {
 	d.instances, err = buildInstances([]*api.ServiceEntry{{Node: &api.Node{}, Service: &api.AgentService{Service: "olia", Port: 8080, Address: "1.1.1.1", Tags: []string{"aa", "bb"},
 		Meta: map[string]string{META_PATH: "/olia"}}}})
 	require.NoError(t, err)
-	u, err := d.URL("cc")
+	u, err := d.URL(t.Context(), "cc", "")
 	assert.Error(t, err)
 	assert.Empty(t, u)
 
-	u, err = d.URL("aa")
+	u, err = d.URL(t.Context(), "aa", "")
 	assert.NoError(t, err)
 	assert.Equal(t, "http://1.1.1.1:8080/olia", u)
 
-	u, err = d.URL("aa")
+	u, err = d.URL(t.Context(), "aa", "")
 	assert.NoError(t, err)
 	assert.Equal(t, "http://1.1.1.1:8080/olia", u)
 
-	u, err = d.URL("bb")
+	u, err = d.URL(t.Context(), "bb", "")
 	assert.NoError(t, err)
 	assert.Equal(t, "http://1.1.1.1:8080/olia", u)
 }
@@ -68,11 +68,11 @@ func TestDiscovery_NoInstances(t *testing.T) {
 	require.NoError(t, err)
 	d.instances, err = buildInstances([]*api.ServiceEntry{})
 	require.NoError(t, err)
-	u, err := d.URL("cc")
+	u, err := d.URL(t.Context(), "cc", "")
 	assert.Error(t, err)
 	assert.Empty(t, u)
 
-	u, err = d.URL("aa")
+	u, err = d.URL(t.Context(), "aa", "")
 	assert.Error(t, err)
 	assert.Empty(t, u)
 }
@@ -89,30 +89,73 @@ func TestDiscovery_SeveralInstances(t *testing.T) {
 			Meta: map[string]string{META_PATH: "/olia"}}},
 	})
 	require.NoError(t, err)
-	u, _ := d.URL("cc")
+	u, _ := d.URL(t.Context(), "cc", "")
 	assert.Equal(t, "http://1.1.1.2:8000/olia", u)
 
 	// rr
-	u, _ = d.URL("aa")
+	u, _ = d.URL(t.Context(), "aa", "")
 	assert.Equal(t, "http://1.1.1.1:8080/olia", u)
-	u, _ = d.URL("aa")
+	u, _ = d.URL(t.Context(), "aa", "")
 	assert.Equal(t, "http://1.1.1.2:8000/olia", u)
-	u, _ = d.URL("aa")
+	u, _ = d.URL(t.Context(), "aa", "")
 	assert.Equal(t, "http://1.1.1.3:8060/olia", u)
-	u, _ = d.URL("aa")
+	u, _ = d.URL(t.Context(), "aa", "")
 	assert.Equal(t, "http://1.1.1.1:8080/olia", u)
 
-	u, _ = d.URL("bb")
+	u, _ = d.URL(t.Context(), "bb", "")
 	assert.Equal(t, "http://1.1.1.1:8080/olia", u)
-	u, _ = d.URL("bb")
+	u, _ = d.URL(t.Context(), "bb", "")
 	assert.Equal(t, "http://1.1.1.2:8000/olia", u)
-	u, _ = d.URL("bb")
+	u, _ = d.URL(t.Context(), "bb", "")
 	assert.Equal(t, "http://1.1.1.1:8080/olia", u)
-	u, _ = d.URL("bb")
+	u, _ = d.URL(t.Context(), "bb", "")
 	assert.Equal(t, "http://1.1.1.2:8000/olia", u)
 
-	u, _ = d.URL("aaa")
+	u, _ = d.URL(t.Context(), "aaa", "")
 	assert.Equal(t, "http://1.1.1.3:8060/olia", u)
-	u, _ = d.URL("aaa")
+	u, _ = d.URL(t.Context(), "aaa", "")
 	assert.Equal(t, "http://1.1.1.3:8060/olia", u)
+}
+
+func TestDiscovery_WithWantedGroup(t *testing.T) {
+	d, err := New(t.Context(), &Config{SkipConsul: true})
+	require.NoError(t, err)
+	d.instances, err = buildInstances([]*api.ServiceEntry{
+		{Node: &api.Node{}, Service: &api.AgentService{Service: "olia", Port: 8000, Address: "1.1.1.1", Tags: []string{"aa", "bb"},
+			Meta: map[string]string{META_PATH: "/olia", META_GROUP: "g1"}}},
+		{Node: &api.Node{}, Service: &api.AgentService{Service: "olia1", Port: 8000, Address: "1.1.1.2", Tags: []string{"aa", "bb", "cc"},
+			Meta: map[string]string{META_PATH: "/olia"}}},
+		{Node: &api.Node{}, Service: &api.AgentService{Service: "olia3", Port: 8000, Address: "1.1.1.3", Tags: []string{"aa", "aaa"},
+			Meta: map[string]string{META_PATH: "/olia"}}},
+	})
+	require.NoError(t, err)
+	u, _ := d.URL(t.Context(), "cc", "")
+	assert.Equal(t, "http://1.1.1.2:8000/olia", u)
+	u, _ = d.URL(t.Context(), "cc", "g1")
+	assert.Equal(t, "http://1.1.1.2:8000/olia", u)
+
+	// no group
+	u, _ = d.URL(t.Context(), "aa", "")
+	assert.Equal(t, "http://1.1.1.2:8000/olia", u)
+	u, _ = d.URL(t.Context(), "aa", "")
+	assert.Equal(t, "http://1.1.1.3:8000/olia", u)
+	u, _ = d.URL(t.Context(), "aa", "")
+	assert.Equal(t, "http://1.1.1.2:8000/olia", u)
+	// g1
+	u, _ = d.URL(t.Context(), "aa", "g1")
+	assert.Equal(t, "http://1.1.1.1:8000/olia", u)
+	u, _ = d.URL(t.Context(), "aa", "g1")
+	assert.Equal(t, "http://1.1.1.1:8000/olia", u)
+
+	u, _ = d.URL(t.Context(), "cc", "g1")
+	assert.Equal(t, "http://1.1.1.2:8000/olia", u) // return 2 because no g1 for cc
+
+	// return any as no g2 for bb
+	u, _ = d.URL(t.Context(), "bb", "g2")
+	assert.Equal(t, "http://1.1.1.1:8000/olia", u)
+	u, _ = d.URL(t.Context(), "bb", "g2")
+	assert.Equal(t, "http://1.1.1.2:8000/olia", u)
+	u, _ = d.URL(t.Context(), "bb", "g2")
+	assert.Equal(t, "http://1.1.1.3:8000/olia", u)
+
 }

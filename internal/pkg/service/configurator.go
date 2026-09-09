@@ -24,6 +24,7 @@ const (
 	headerSaveTags      = "x-tts-save-tags"
 	headerMaxTextLen    = "x-tts-max-text-len"
 	headerAudioSuffix   = "x-tts-audio-suffix"
+	headerWantedGPU     = "x-tts-wanted-gpu"
 
 	defaultVoiceKey = "default"
 )
@@ -132,6 +133,10 @@ func (c *TTSConfigutaror) Configure(ctx context.Context, r *http.Request, inText
 	res.SaveTags = getSaveTags(getHeader(r, headerSaveTags))
 
 	res.AudioSuffix = getHeader(r, headerAudioSuffix)
+	res.WantedGPU = getHeader(r, headerWantedGPU)
+	if strings.TrimSpace(res.WantedGPU) != "" {
+		log.Ctx(ctx).Info().Str("wantedGPU", res.WantedGPU).Msg("Request wants specific GPU")
+	}
 
 	res.Speed, err = getSpeed(inText.Speed)
 	if err != nil {

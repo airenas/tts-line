@@ -24,6 +24,7 @@ var (
 const (
 	META_SCHEME = "scheme"
 	META_PATH   = "path"
+	META_GROUP  = "group"
 )
 
 type Instance struct {
@@ -31,8 +32,9 @@ type Instance struct {
 	Address string
 	Port    int
 
-	Tags map[string]struct{}
-	Meta map[string]string
+	Tags  map[string]struct{}
+	Meta  map[string]string
+	Group string // name of the group this instance belongs to, if any
 }
 
 func (i Instance) URL() (string, error) {
@@ -176,6 +178,10 @@ func buildInstances(entries []*consul.ServiceEntry) ([]*Instance, error) {
 			instance.Tags[t] = struct{}{}
 		}
 		for k, v := range entry.Service.Meta {
+			if k == META_GROUP {
+				instance.Group = v
+				continue
+			} 
 			instance.Meta[k] = v
 		}
 
@@ -197,26 +203,38 @@ func buildInstances(entries []*consul.ServiceEntry) ([]*Instance, error) {
 	return res, nil
 }
 
-func (d *Discovery) URL(model string) (string, error) {
+func (d *Discovery) URL(ctx context.Context, model, wantedGroup string) (string, error) {
 	d.mutex.RLock()
 	instances := d.instances
 	d.mutex.RUnlock()
 
-	var c uint64
+	selected := make([]*Instance, 0, len(instances))
 	for _, ins := range instances {
 		if _, ok := ins.Tags[model]; ok {
-			c = c + 1
+			selected = append(selected, ins)
 		}
 	}
-	if c == 0 {
+	if len(selected) == 0 {
 		return "", ErrServiceNotFound
 	}
-	if c == 1 {
-		for _, ins := range instances {
-			if _, ok := ins.Tags[model]; ok {
-				return ins.URL()
-			}
+
+	filtered := make([]*Instance, 0, len(selected))
+	for _, ins := range selected {
+		if ins.Group == wantedGroup {
+			filtered = append(filtered, ins)
 		}
+	}
+	
+	if len(filtered) == 0 {
+		log.Ctx(ctx).Warn().Str("model", model).Str("wantedGroup", wantedGroup).Msg("No instances found for wanted group, using any")
+	}
+
+	if len(filtered) > 0 {
+		selected = filtered
+	}
+
+	if len(selected) == 1 {
+		return selected[0].URL()
 	}
 
 	d.counterMutex.Lock()
@@ -225,17 +243,8 @@ func (d *Discovery) URL(model string) (string, error) {
 	if !ok {
 		v = 0
 	}
-	at := int(v % c)
+	at := int(v % uint64(len(selected)))
 	v = v + 1
 	d.counter[model] = v
-	i := 0
-	for _, ins := range instances {
-		if _, ok := ins.Tags[model]; ok {
-			if i == at {
-				return ins.URL()
-			}
-			i = i + 1
-		}
-	}
-	return "", ErrServiceNotFound
+	return selected[at].URL()
 }

@@ -260,6 +260,16 @@ func TestConfigure_AudioSuffix(t *testing.T) {
 	}
 }
 
+func TestConfigure_WantedGPU(t *testing.T) {
+	c, _ := NewTTSConfigurator(test.NewConfig(t, "output:\n  defaultFormat: mp3\n  voices:\n   - default:aaa"))
+	req := httptest.NewRequest("POST", "/synthesize", strings.NewReader("text"))
+	req.Header.Add(headerWantedGPU, "gpu1")
+	res, err := c.Configure(context.TODO(), req, &api.Input{Text: "olia"})
+	assert.Nil(t, err)
+	require.NotNil(t, res)
+	assert.Equal(t, "gpu1", res.WantedGPU)
+}
+
 func TestConfigure_SSML(t *testing.T) {
 	c, _ := NewTTSConfigurator(test.NewConfig(t, "output:\n  defaultFormat: mp3\n  voices:\n   - default:aaa"))
 	req := httptest.NewRequest("POST", "/synthesize", strings.NewReader("text"))

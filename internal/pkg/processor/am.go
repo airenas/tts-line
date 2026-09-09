@@ -21,7 +21,7 @@ import (
 
 type (
 	discovery interface {
-		URL(model string) (string, error)
+		URL(ctx context.Context, model, wantedGroup string) (string, error)
 	}
 
 	amodel struct {
@@ -117,7 +117,7 @@ func (p *amodel) Process(ctx context.Context, data *synthesizer.TTSDataPart) err
 	inData, inIndexes, volChanges := p.mapAMInput(ctx, data)
 	data.TranscribedText = inData.Text
 
-	amURL, err := p.srvDiscovery.URL(data.Cfg.Voice)
+	amURL, err := p.srvDiscovery.URL(ctx, data.Cfg.Voice, data.Cfg.Input.WantedGPU)
 	if err != nil {
 		return fmt.Errorf("no am URL: %w", err)
 	}
@@ -672,7 +672,7 @@ func newDNSDiscovery(url string) (*dnsDiscovery, error) {
 	return &dnsDiscovery{url: url}, nil
 }
 
-func (d *dnsDiscovery) URL(voice string) (string, error) {
+func (d *dnsDiscovery) URL(_ctx context.Context, voice, _wantedGroup string) (string, error) {
 	return makeURL(d.url, voice), nil
 }
 
