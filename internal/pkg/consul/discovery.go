@@ -181,7 +181,7 @@ func buildInstances(entries []*consul.ServiceEntry) ([]*Instance, error) {
 			if k == META_GROUP {
 				instance.Group = v
 				continue
-			} 
+			}
 			instance.Meta[k] = v
 		}
 
@@ -224,7 +224,7 @@ func (d *Discovery) URL(ctx context.Context, model, wantedGroup string) (string,
 			filtered = append(filtered, ins)
 		}
 	}
-	
+
 	if len(filtered) == 0 {
 		log.Ctx(ctx).Warn().Str("model", model).Str("wantedGroup", wantedGroup).Msg("No instances found for wanted group, using any")
 	}

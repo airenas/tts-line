@@ -125,7 +125,7 @@ func TestDiscovery_WithWantedGroup(t *testing.T) {
 			Meta: map[string]string{META_PATH: "/olia", META_GROUP: "g1"}}},
 		{Node: &api.Node{}, Service: &api.AgentService{Service: "olia1", Port: 8000, Address: "1.1.1.2", Tags: []string{"aa", "bb", "cc"},
 			Meta: map[string]string{META_PATH: "/olia"}}},
-		{Node: &api.Node{}, Service: &api.AgentService{Service: "olia3", Port: 8000, Address: "1.1.1.3", Tags: []string{"aa", "aaa"},
+		{Node: &api.Node{}, Service: &api.AgentService{Service: "olia3", Port: 8000, Address: "1.1.1.3", Tags: []string{"aa", "bb"},
 			Meta: map[string]string{META_PATH: "/olia"}}},
 	})
 	require.NoError(t, err)
