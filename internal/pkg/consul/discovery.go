@@ -247,6 +247,6 @@ func (d *Discovery) URL(ctx context.Context, model, wantedGroup string) (string,
 	at := int(v % uint64(len(selected)))
 	v = v + 1
 	d.counter[model] = v
-	log.Ctx(ctx).Debug().Str("selected", selected[0].Node).Str("wantedGroup", wantedGroup).Msg("gpu")
+	log.Ctx(ctx).Debug().Str("selected", selected[at].Node).Str("wantedGroup", wantedGroup).Msg("gpu")
 	return selected[at].URL()
 }
