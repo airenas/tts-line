@@ -23,7 +23,6 @@ import (
 
 	"github.com/labstack/echo-contrib/prometheus"
 	"github.com/labstack/echo/v4"
-	"github.com/labstack/echo/v4/middleware"
 	"github.com/vmihailenco/msgpack/v5"
 	"go.opentelemetry.io/contrib/instrumentation/github.com/labstack/echo/otelecho"
 	"go.opentelemetry.io/otel"
@@ -104,10 +103,12 @@ func init() {
 
 func initRoutes(data *Data) *echo.Echo {
 	e := echo.New()
-	e.Use(middleware.Logger())
+	// e.Use(middleware.Logger())
 	promMdlw.Use(e)
 	e.Use(otelecho.Middleware(utils.ServiceName, otelecho.WithSkipper(skipper)))
 	e.Use(addTraceToLogContext())
+	e.Use(utils.EchoLogMiddleware())
+
 	e.Use(traceparentResponseHeader())
 
 	e.POST("/synthesize", synthesizeText(&data.SyntData))

@@ -10,10 +10,10 @@ import (
 	"github.com/airenas/go-app/pkg/goapp"
 	"github.com/airenas/tts-line/internal/pkg/acronyms/model"
 	"github.com/airenas/tts-line/internal/pkg/acronyms/service/api"
+	"github.com/airenas/tts-line/internal/pkg/utils"
 	"github.com/facebookgo/grace/gracehttp"
 	"github.com/labstack/echo-contrib/prometheus"
 	"github.com/labstack/echo/v4"
-	"github.com/labstack/echo/v4/middleware"
 
 	"github.com/pkg/errors"
 )
@@ -47,7 +47,7 @@ func StartWebServer(data *Data) error {
 
 func initRoutes(data *Data) *echo.Echo {
 	e := echo.New()
-	e.Use(middleware.Logger())
+	e.Use(utils.EchoLogMiddleware())
 	p := prometheus.NewPrometheus("acronyms", nil)
 	p.Use(e)
 
