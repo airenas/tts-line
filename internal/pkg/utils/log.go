@@ -47,7 +47,10 @@ func prepareLog(c echo.Context, v middleware.RequestLoggerValues) *zerolog.Event
 	if v.Status == 404 || v.Status == 405 {
 		return log.Ctx(c.Request().Context()).Info().Err(v.Error)
 	}
-	if v.Status >= 400 || v.Error != nil {
+	if v.Status == 400 {
+		return log.Ctx(c.Request().Context()).Warn().Err(v.Error)
+	}
+	if v.Status > 400 || v.Error != nil {
 		return log.Ctx(c.Request().Context()).Error().Err(v.Error)
 	}
 	if v.URIPath == "/live" || v.URIPath == "/metrics" {
