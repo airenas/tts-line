@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"math"
+	"reflect"
 	"strings"
 	"time"
 
@@ -62,7 +63,9 @@ func NewAcousticModel(config *viper.Viper, srvDiscovery discovery) (synthesizer.
 	res := &amodel{}
 
 	url := config.GetString("url")
-	if srvDiscovery != nil {
+	isDiscoveryNil := srvDiscovery == nil ||
+		(reflect.ValueOf(srvDiscovery).Kind() == reflect.Ptr && reflect.ValueOf(srvDiscovery).IsNil())
+	if !isDiscoveryNil {
 		url = "http://am.consul"
 		res.srvDiscovery = srvDiscovery
 	} else {
