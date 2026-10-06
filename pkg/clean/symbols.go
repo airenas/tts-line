@@ -37,6 +37,7 @@ func getMaps() map[rune]rune {
 
 	addMap(res, "'ˈ‚ʼ′´ꞌꞋ`ʽ‘", '\'')
 	addMap(res, "”‟¨″", '"')
+	addMap(res, "\u00a0\u1680\u2000\u2001\u2002\u2003\u2004\u2005\u2006\u2007\u2008\u2009\u200a\u202f\u205f\u3000", ' ')
 	addMap(res, "\u2028\uFEFF\u001e\x00\u007f\t•·­˚\u200c∙⋅‰", ' ')
 	addMap(res, "‐‑‒", '-')
 	addMap(res, "⁄", '/')

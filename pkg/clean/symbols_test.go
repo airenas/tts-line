@@ -140,6 +140,22 @@ func TestChangeSymbols(t *testing.T) {
 		{args: "Кириллица!", want: "Kirillica!", up: true, lw: true},
 		{args: "H₂O", want: "H₂O", up: true, lw: true},
 		{args: "H₂O₃", want: "H₂O₃", up: true, lw: true},
+		{name: "no-break space", args: "space\u00a0space", want: "space space", up: true, lw: true},
+		{name: "ogham space mark", args: "space\u1680space", want: "space space", up: true, lw: true},
+		{name: "en quad", args: "space\u2000space", want: "space space", up: true, lw: true},
+		{name: "em quad", args: "space\u2001space", want: "space space", up: true, lw: true},
+		{name: "en space", args: "space\u2002space", want: "space space", up: true, lw: true},
+		{name: "em space", args: "space\u2003space", want: "space space", up: true, lw: true},
+		{name: "three-per-em space", args: "space\u2004space", want: "space space", up: true, lw: true},
+		{name: "four-per-em space", args: "space\u2005space", want: "space space", up: true, lw: true},
+		{name: "six-per-em space", args: "space\u2006space", want: "space space", up: true, lw: true},
+		{name: "figure space", args: "space\u2007space", want: "space space", up: true, lw: true},
+		{name: "punctuation space", args: "space\u2008space", want: "space space", up: true, lw: true},
+		{name: "thin space", args: "space\u2009space", want: "space space", up: true, lw: true},
+		{name: "hair space", args: "space\u200aspace", want: "space space", up: true, lw: true},
+		{name: "narrow no-break space", args: "space\u202fspace", want: "space space", up: true, lw: true},
+		{name: "medium mathematical space", args: "space\u205fspace", want: "space space", up: true, lw: true},
+		{name: "ideographic space", args: "space\u3000space", want: "space space", up: true, lw: true},
 	}
 	for _, tt := range tests {
 		n := tt.name
