@@ -16,8 +16,8 @@ func Parse(str string) *Data {
 
 	res.Transcription = strings.ReplaceAll(strTmp, "-", "")
 	res.Sylls = TrimAccent(strTmp)
-	res.Sylls = strings.ToLower(res.Sylls)
-	res.Word = strings.ReplaceAll(res.Sylls, "-", "")
+	res.Sylls = strings.ReplaceAll(strings.ToLower(res.Sylls), "'", "")
+	res.Word = strings.ReplaceAll(strings.ReplaceAll(res.Sylls, "-", ""), "'", "")
 	return &res
 }
 
