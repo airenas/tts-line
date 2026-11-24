@@ -396,7 +396,7 @@ func GetTranscriberAccent(w *ProcessedWord) int {
 			res = 0
 		}
 		return res
-	} 
+	}
 	if w.UserTranscription != "" {
 		return accentFromTranscription(w.UserTranscription)
 	}
@@ -405,9 +405,8 @@ func GetTranscriberAccent(w *ProcessedWord) int {
 
 func accentFromTranscription(s string) int {
 	w := strings.TrimSpace(s)
-	runes := []rune(w)
 	li := 0
-	for _, r := range runes {
+	for _, r := range w {
 		if r == '\'' || r == '-' {
 			continue
 		}

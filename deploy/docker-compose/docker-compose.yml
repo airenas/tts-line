@@ -58,7 +58,7 @@ services:
       - RUST_LOG=DEBUG,tracing=ERROR,ml_tagger::processors::lemmatize_words=INFO,hyper_util::client::legacy::pool=INFO,ml_tagger::processors::embedding=INFO
       - ONNX_THREADS=4
       - DATA_DIR=/data
-      - EMBEDDINGS_FILE=mmap:/data/delfi_cbow.150.fifu
+      - EMBEDDINGS_FILE=mmap:/data/embeddings.fifu
       - ONNX_FILE=/data/model.onnx
       - LEMMA_URL=http://lema:8000/analyze/{}
       - LEX_URL=http://lex:8080/

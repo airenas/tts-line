@@ -298,9 +298,10 @@ func Test_accentFromTranscription(t *testing.T) {
 		{name: "with accent 4", s: "a4", want: 101},
 		{name: "with accent 3", s: "a3", want: 301},
 		{name: "with accent 9", s: "a9", want: 201},
-		{name: "with multiple accents", s: "abc9", want: 203},
+		{name: "with multiple accents", s: "abci9", want: 204},
 		{name: "with apostrophe", s: "a'4", want: 101},
-		{name: "with dash", s: "a-b4", want: 102},
+		{name: "with dash", s: "a-ba4", want: 103},
+		{name: "non ascii", s: "ąž-ba4", want: 104},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
