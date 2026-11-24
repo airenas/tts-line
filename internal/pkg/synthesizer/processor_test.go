@@ -286,3 +286,28 @@ func Test_dropPunctuation(t *testing.T) {
 		})
 	}
 }
+
+func Test_accentFromTranscription(t *testing.T) {
+	tests := []struct {
+		name string // description of this test case
+		// Named input parameters for target function.
+		s    string
+		want int
+	}{
+		{name: "empty string", s: "", want: 0},
+		{name: "with accent 4", s: "a4", want: 101},
+		{name: "with accent 3", s: "a3", want: 301},
+		{name: "with accent 9", s: "a9", want: 201},
+		{name: "with multiple accents", s: "abc9", want: 203},
+		{name: "with apostrophe", s: "a'4", want: 101},
+		{name: "with dash", s: "a-b4", want: 102},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := accentFromTranscription(tt.s)
+			if got != tt.want {
+				t.Errorf("accentFromTranscription() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
