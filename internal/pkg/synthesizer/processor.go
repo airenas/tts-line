@@ -397,7 +397,7 @@ func GetTranscriberAccent(w *ProcessedWord) int {
 		}
 		return res
 	}
-	if w.UserTranscription != "" {
+	if w.UserTranscription != "" && strings.EqualFold(w.TranscriptionWord, w.Tagged.Word) {
 		return accentFromTranscription(w.UserTranscription)
 	}
 	return 0
@@ -442,7 +442,8 @@ func getInfo(processors []Processor) string {
 			Info() string
 		})
 		if ok {
-			res.WriteString(nl + pri.Info())
+			res.WriteString(nl)
+			res.WriteString(pri.Info())
 			nl = "\n"
 		}
 	}

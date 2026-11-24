@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"strings"
 	"time"
+	"unicode"
 
 	"github.com/airenas/tts-line/internal/pkg/synthesizer"
 	"github.com/airenas/tts-line/internal/pkg/transcription"
@@ -145,7 +146,7 @@ func mapTransliteratorRes(output []*transliteratorOutput, s []*synthesizer.Proce
 						UserSyllables:     d.Sylls,
 						TranscriptionWord: d.Word,
 					}
-					nw.Tagged.Word = d.Word
+					nw.Tagged.Word = checkUpper(d.Word, tw.Word)
 					nw.Tagged.Mi = tw.Mi
 					nw.Tagged.Lemma = d.Word
 					res = append(res, nw)
@@ -166,6 +167,20 @@ func mapTransliteratorRes(output []*transliteratorOutput, s []*synthesizer.Proce
 		}
 	}
 	return res, nil
+}
+
+func checkUpper(s1, s2 string) string {
+	if len(s2) > 0 && len(s1) > 0 {
+		r2 := []rune(s2)
+		r1 := []rune(s1)
+		if strings.EqualFold(string(r1[0]), string(r2[0])) {
+			if unicode.IsUpper(r2[0]) {
+				r1[0] = unicode.ToUpper(r1[0])
+				return string(r1)
+			}
+		}
+	}
+	return s1
 }
 
 func compareWords(old, new string) bool {

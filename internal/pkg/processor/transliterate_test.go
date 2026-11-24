@@ -26,3 +26,26 @@ func Test_compareWords(t *testing.T) {
 		})
 	}
 }
+
+func Test_checkUpper(t *testing.T) {
+	tests := []struct {
+		name string
+		s1   string
+		s2   string
+		want string
+	}{
+		{name: "both uppercase", s1: "Hello", s2: "Hello", want: "Hello"},
+		{name: "need change", s1: "hello", s2: "Hello", want: "Hello"},
+		{name: "need change non asci", s1: "ąello", s2: "Ąello", want: "Ąello"},
+		{name: "no change", s1: "hello", s2: "hello", want: "hello"},
+		{name: "not same letters", s1: "hello", s2: "World", want: "hello"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := checkUpper(tt.s1, tt.s2)
+			if got != tt.want {
+				t.Errorf("checkUpper() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}

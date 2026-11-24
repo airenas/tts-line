@@ -184,7 +184,7 @@ func newWords(aw []acrResultWord, w *synthesizer.ProcessedWord) []*synthesizer.P
 	res := []*synthesizer.ProcessedWord{}
 	for i, r := range aw {
 		wd := synthesizer.ProcessedWord{}
-		wd.Tagged.Word = r.Word
+		wd.Tagged.Word = checkUpper(r.Word, w.Tagged.Word)
 		wd.Tagged.Mi = w.Tagged.Mi
 		if i == 0 {
 			wd.Tagged.Lemma = w.Tagged.Lemma
